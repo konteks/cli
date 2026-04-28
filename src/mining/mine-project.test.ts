@@ -2,8 +2,11 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { searchMemory } from '../memory/search-store.js'
+import { TaxonomyStore } from '../memory/taxonomy-store.js'
 import { loadProjectContext } from '../project/context.js'
 import { getProjectStatus } from '../project/status.js'
+import { openProjectDatabase } from '../storage/database.js'
 import { createToonStore } from '../storage/toon-store.js'
 import { getMiningFreshness, readMineManifest } from './manifest.js'
 import { mineProject } from './mine-project.js'
@@ -65,6 +68,7 @@ describe('mineProject', () => {
 
         expect(result.ok).toBe(true)
         expect(result.fileCount).toBe(3)
+        expect(result.chunkCount).toBeGreaterThan(3)
         expect(result.technologies).toEqual([
             'bun',
             'cli',
@@ -80,6 +84,35 @@ describe('mineProject', () => {
         ])
         expect(summary).toContain('name: fixture')
         expect(summary).not.toContain('.env.local')
+    })
+
+    it('stores mined chunks, search index entries, taxonomy links, and chronology events', async () => {
+        const projectRoot = await makeTempProject()
+        const context = await loadProjectContext(projectRoot)
+
+        await mineProject(context, 'full')
+
+        const adapter = await openProjectDatabase(context)
+        const chunks = await adapter.query<{ id: string; path: string }>(
+            'select id, path from chunks order by path',
+        )
+        const searchResults = await searchMemory(adapter, {
+            limit: 5,
+            query: 'Fixture',
+        })
+        const taxonomy = new TaxonomyStore(adapter)
+        const roots = await taxonomy.getSubtree(undefined, { maxDepth: 2 })
+        const events = await adapter.query<{ event_type: string }>(
+            'select event_type from memory_events where event_type = ?',
+            ['project_mined'],
+        )
+        await adapter.close()
+
+        expect(chunks.some(chunk => chunk.path === 'README.md')).toBe(true)
+        expect(searchResults[0]?.type).toBe('chunk')
+        expect(roots.map(node => node.name)).toContain('Project Files')
+        expect(roots.map(node => node.name)).toContain('src')
+        expect(events).toEqual([{ event_type: 'project_mined' }])
     })
 
     it('reports fresh status after mining and stale after a file change', async () => {

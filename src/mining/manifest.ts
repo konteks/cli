@@ -12,6 +12,7 @@ export type MineManifest = {
     minedAt: string
     mode: MineMode
     fileCount: number
+    chunkCount?: number
     files: ScannedFile[]
     metadata: ProjectMetadata
     summaryRef: string

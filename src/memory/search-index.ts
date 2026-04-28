@@ -2,7 +2,7 @@ import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 
 type SearchDocument = {
     id: string
-    type: 'memory' | 'session'
+    type: 'chunk' | 'memory' | 'session'
     kind?: string
     task?: string
     content: string

@@ -4,7 +4,7 @@ import { hasSearchIndex } from './search-index.js'
 
 export type MemorySearchResult = {
     id: string
-    type: 'memory' | 'session'
+    type: 'chunk' | 'memory' | 'session'
     kind?: string
     status?: string
     task?: string
@@ -30,7 +30,7 @@ type HandoffRow = {
 
 type FtsRow = {
     id: string
-    type: 'memory' | 'session'
+    type: 'chunk' | 'memory' | 'session'
     kind: string | null
     task: string | null
     content: string
@@ -113,7 +113,7 @@ limit ?
         createdAt: row.created_at,
         excerpt: row.content,
         id: row.id,
-        kind: row.type === 'memory' ? (row.kind ?? undefined) : undefined,
+        kind: row.type !== 'session' ? (row.kind ?? undefined) : undefined,
         score: Math.max(1, Math.round(Math.abs(row.rank) * 1000)),
         status: row.type === 'session' ? (row.kind ?? undefined) : undefined,
         task: row.task ?? undefined,

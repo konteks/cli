@@ -1,7 +1,8 @@
 import { mkdir } from 'node:fs/promises'
 import type { LoadedProjectContext } from '../project/context.js'
-import { ensureProjectDatabase } from '../storage/database.js'
+import { openProjectDatabase } from '../storage/database.js'
 import { createToonStore } from '../storage/toon-store.js'
+import { mineChunks } from './chunk-store.js'
 import { scanProjectFiles } from './file-scan.js'
 import type { MineManifest, MineMode } from './manifest.js'
 import { writeMineManifest } from './manifest.js'
@@ -15,6 +16,7 @@ type MineProjectResult = {
     fileCount: number
     minedAt: string
     summaryRef: string
+    chunkCount: number
     technologies: string[]
 }
 
@@ -23,11 +25,13 @@ export async function mineProject(
     mode: MineMode,
 ): Promise<MineProjectResult> {
     await mkdir(context.memoryDir, { recursive: true })
-    await ensureProjectDatabase(context)
 
     const files = await scanProjectFiles(context.projectRoot)
     const metadata = await extractProjectMetadata(context.projectRoot, files)
     const minedAt = new Date().toISOString()
+    const adapter = await openProjectDatabase(context)
+    const minedChunks = await mineChunks(adapter, context, files, minedAt)
+    await adapter.close()
     const toonStore = createToonStore(context.memoryDir)
     const summary = await toonStore.write(
         formatProjectSummaryToon({
@@ -53,6 +57,7 @@ export async function mineProject(
     await writeMineManifest(context.memoryDir, manifest)
 
     return {
+        chunkCount: minedChunks.chunkCount,
         fileCount: files.length,
         minedAt,
         mode,
