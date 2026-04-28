@@ -1,4 +1,5 @@
-import { resolveProjectContext } from '../../project/context.js'
+import { mineProject } from '../../mining/mine-project.js'
+import { loadProjectContext } from '../../project/context.js'
 import type { GlobalCliOptions } from '../options.js'
 
 type MineOptions = {
@@ -9,19 +10,9 @@ export async function mineCommand(
     options: GlobalCliOptions,
     mineOptions: MineOptions,
 ): Promise<void> {
-    const context = await resolveProjectContext(options.project)
+    const context = await loadProjectContext(options.project)
     const mode = mineOptions.changed ? 'changed' : 'full'
-    console.log(
-        JSON.stringify(
-            {
-                message:
-                    'Mining is not implemented yet. This command is scaffolded for Phase 6.',
-                mode,
-                ok: false,
-                projectRoot: context.projectRoot,
-            },
-            null,
-            2,
-        ),
-    )
+    const result = await mineProject(context, mode)
+
+    console.log(JSON.stringify(result, null, 2))
 }

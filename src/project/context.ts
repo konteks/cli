@@ -1,4 +1,4 @@
-import { access } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 
 type ProjectContext = {
@@ -16,6 +16,11 @@ type KonteksConfig = {
     recall: {
         maxTokens: number
     }
+}
+
+export type LoadedProjectContext = ProjectContext & {
+    config: KonteksConfig
+    configExists: boolean
 }
 
 export function createDefaultConfig(projectRoot: string): KonteksConfig {
@@ -46,6 +51,19 @@ export async function resolveProjectContext(
     }
 }
 
+export async function loadProjectContext(
+    projectOverride?: string,
+): Promise<LoadedProjectContext> {
+    const context = await resolveProjectContext(projectOverride)
+    const config = await readConfig(context.configPath, context.projectRoot)
+
+    return {
+        ...context,
+        config: config.config,
+        configExists: config.exists,
+    }
+}
+
 async function findProjectRoot(start: string): Promise<string> {
     let current = resolve(start)
 
@@ -71,5 +89,43 @@ export async function pathExists(path: string): Promise<boolean> {
         return true
     } catch {
         return false
+    }
+}
+
+async function readConfig(
+    configPath: string,
+    projectRoot: string,
+): Promise<{ config: KonteksConfig; exists: boolean }> {
+    if (!(await pathExists(configPath))) {
+        return {
+            config: createDefaultConfig(projectRoot),
+            exists: false,
+        }
+    }
+
+    const raw = await readFile(configPath, 'utf8')
+    const parsed = JSON.parse(raw) as Partial<KonteksConfig>
+
+    return {
+        config: mergeConfig(createDefaultConfig(projectRoot), parsed),
+        exists: true,
+    }
+}
+
+function mergeConfig(
+    defaults: KonteksConfig,
+    config: Partial<KonteksConfig>,
+): KonteksConfig {
+    return {
+        projectRoot: config.projectRoot ?? defaults.projectRoot,
+        recall: {
+            maxTokens: config.recall?.maxTokens ?? defaults.recall.maxTokens,
+        },
+        storage: {
+            inlinePayloadMaxBytes:
+                config.storage?.inlinePayloadMaxBytes ??
+                defaults.storage.inlinePayloadMaxBytes,
+            memoryDir: config.storage?.memoryDir ?? defaults.storage.memoryDir,
+        },
     }
 }

@@ -61,7 +61,7 @@ export async function startMcpServer(
         'konteks_bootstrap',
         {
             description:
-                'Load the stable project-wide briefing for the current repo and report whether memory is missing, fresh, stale, or unknown.',
+                'Load the stable project-wide briefing for the current repo and report whether memory is missing, fresh, or stale.',
             inputSchema: bootstrapInputSchema,
         },
         async input => {

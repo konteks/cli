@@ -48,29 +48,26 @@ describe('project context', () => {
         })
     })
 
-    it('reports missing memory with a mining recommendation', async () => {
+    it('reports missing memory when the project is not initialized', async () => {
         const projectRoot = await makeTempProject()
 
         const status = await getProjectStatus(projectRoot)
 
         expect(status.freshness).toEqual({
-            reason: 'Konteks project memory is not initialized or no database exists.',
+            reason: 'Konteks project memory is not initialized.',
             recommendedCommand: 'konteks init && konteks mine',
             status: 'missing',
         })
     })
 
-    it('reports unknown freshness when config and database exist', async () => {
+    it('reports missing mining metadata when config exists', async () => {
         const projectRoot = await makeTempProject()
         await mkdir(join(projectRoot, '.konteks'), { recursive: true })
         await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
-        await writeFile(join(projectRoot, '.konteks', 'memory.sqlite'), '')
 
         const status = await getProjectStatus(projectRoot)
 
-        expect(status.freshness.status).toBe('unknown')
-        expect(status.freshness.recommendedCommand).toBe(
-            'konteks mine --changed',
-        )
+        expect(status.freshness.status).toBe('missing')
+        expect(status.freshness.recommendedCommand).toBe('konteks mine')
     })
 })

@@ -1,4 +1,5 @@
-import { pathExists, resolveProjectContext } from './context.js'
+import { getMiningFreshness } from '../mining/manifest.js'
+import { loadProjectContext, pathExists } from './context.js'
 
 type ProjectStatus = {
     projectRoot: string
@@ -8,8 +9,9 @@ type ProjectStatus = {
     databasePath: string
     databaseExists: boolean
     freshness: {
-        status: 'missing' | 'fresh' | 'stale' | 'unknown'
+        status: 'missing' | 'fresh' | 'stale'
         reason: string
+        lastMinedAt?: string
         recommendedCommand?: string
     }
 }
@@ -17,27 +19,22 @@ type ProjectStatus = {
 export async function getProjectStatus(
     projectOverride?: string,
 ): Promise<ProjectStatus> {
-    const context = await resolveProjectContext(projectOverride)
+    const context = await loadProjectContext(projectOverride)
     const databasePath = `${context.memoryDir}/memory.sqlite`
     const memoryDirExists = await pathExists(context.memoryDir)
-    const configExists = await pathExists(context.configPath)
     const databaseExists = await pathExists(databasePath)
-    const missing = !memoryDirExists || !configExists || !databaseExists
+    const initialized = memoryDirExists && context.configExists
 
     return {
-        configExists,
+        configExists: context.configExists,
         databaseExists,
         databasePath,
-        freshness: missing
-            ? {
-                  reason: 'Konteks project memory is not initialized or no database exists.',
+        freshness: initialized
+            ? await getMiningFreshness(context)
+            : {
+                  reason: 'Konteks project memory is not initialized.',
                   recommendedCommand: 'konteks init && konteks mine',
                   status: 'missing',
-              }
-            : {
-                  reason: 'Freshness metadata is not implemented yet.',
-                  recommendedCommand: 'konteks mine --changed',
-                  status: 'unknown',
               },
         memoryDir: context.memoryDir,
         memoryDirExists,

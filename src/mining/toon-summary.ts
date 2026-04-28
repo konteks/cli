@@ -1,0 +1,36 @@
+import type { ScannedFile } from './file-scan.js'
+import type { ProjectMetadata } from './metadata.js'
+
+type ProjectSummaryInput = {
+    projectRoot: string
+    minedAt: string
+    fileCount: number
+    mode: string
+    metadata: ProjectMetadata
+    files: ScannedFile[]
+}
+
+export function formatProjectSummaryToon(input: ProjectSummaryInput): string {
+    const sourceFiles = input.files
+        .slice(0, 200)
+        .map(file => `  - path: ${file.path} | bytes: ${file.sizeBytes}`)
+        .join('\n')
+
+    return [
+        'project:',
+        `  root: ${input.projectRoot}`,
+        `  mined_at: ${input.minedAt}`,
+        `  mode: ${input.mode}`,
+        `  file_count: ${input.fileCount}`,
+        `  name: ${input.metadata.name ?? ''}`,
+        `  package_manager: ${input.metadata.packageManager ?? ''}`,
+        `  technologies: ${input.metadata.technologies.join(', ')}`,
+        `  scripts: ${input.metadata.scripts.join(', ')}`,
+        `  dependencies: ${input.metadata.dependencies.join(', ')}`,
+        `  dev_dependencies: ${input.metadata.devDependencies.join(', ')}`,
+        `  readmes: ${input.metadata.readmeFiles.join(', ')}`,
+        'files:',
+        sourceFiles,
+        '',
+    ].join('\n')
+}
