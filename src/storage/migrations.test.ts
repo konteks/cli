@@ -31,6 +31,7 @@ describe('migrations', () => {
     it('runs unapplied migrations through an adapter transaction', async () => {
         const executed: Array<{ params?: SqliteParams; sql: string }> = []
         const adapter: SqliteAdapter = {
+            async close() {},
             async execute(sql, params) {
                 executed.push({ params, sql })
             },

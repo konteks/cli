@@ -2,12 +2,13 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
     createDefaultConfig,
-    resolveProjectContext,
+    loadProjectContext,
 } from '../../project/context.js'
+import { ensureProjectDatabase } from '../../storage/database.js'
 import type { GlobalCliOptions } from '../options.js'
 
 export async function initCommand(options: GlobalCliOptions): Promise<void> {
-    const context = await resolveProjectContext(options.project)
+    const context = await loadProjectContext(options.project)
     await mkdir(context.memoryDir, { recursive: true })
     await mkdir(join(context.memoryDir, 'objects'), { recursive: true })
     await mkdir(join(context.memoryDir, 'chunks'), { recursive: true })
@@ -21,6 +22,7 @@ export async function initCommand(options: GlobalCliOptions): Promise<void> {
             throw error
         }
     })
+    await ensureProjectDatabase(await loadProjectContext(options.project))
 
     console.log(`Initialized Konteks at ${context.memoryDir}`)
 }

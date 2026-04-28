@@ -6,6 +6,7 @@ describe('event log', () => {
     it('inserts memory events with chronology metadata', async () => {
         const executed: Array<{ params?: SqliteParams; sql: string }> = []
         const adapter: SqliteAdapter = {
+            async close() {},
             async execute(sql, params) {
                 executed.push({ params, sql })
             },

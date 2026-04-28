@@ -1,4 +1,5 @@
 import { getMiningFreshness } from '../mining/manifest.js'
+import { projectDatabasePath } from '../storage/database.js'
 import { loadProjectContext, pathExists } from './context.js'
 
 type ProjectStatus = {
@@ -20,7 +21,7 @@ export async function getProjectStatus(
     projectOverride?: string,
 ): Promise<ProjectStatus> {
     const context = await loadProjectContext(projectOverride)
-    const databasePath = `${context.memoryDir}/memory.sqlite`
+    const databasePath = projectDatabasePath(context)
     const memoryDirExists = await pathExists(context.memoryDir)
     const databaseExists = await pathExists(databasePath)
     const initialized = memoryDirExists && context.configExists

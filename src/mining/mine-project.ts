@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import type { LoadedProjectContext } from '../project/context.js'
+import { ensureProjectDatabase } from '../storage/database.js'
 import { createToonStore } from '../storage/toon-store.js'
 import { scanProjectFiles } from './file-scan.js'
 import type { MineManifest, MineMode } from './manifest.js'
@@ -29,6 +30,7 @@ export async function mineProject(
             { flag: 'wx' },
         )
     }
+    await ensureProjectDatabase(context)
 
     const files = await scanProjectFiles(context.projectRoot)
     const metadata = await extractProjectMetadata(context.projectRoot, files)

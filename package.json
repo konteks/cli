@@ -4,6 +4,7 @@
     },
     "dependencies": {
         "@modelcontextprotocol/sdk": "^1.7.0",
+        "@sqlite.org/sqlite-wasm": "^3.53.0-build1",
         "commander": "^14.0.3"
     },
     "description": "A local context graph for AI coding agents.",
