@@ -70,6 +70,50 @@ describe('save and search stores', () => {
         await adapter.close()
     })
 
+    it('deduplicates durable memories by content hash', async () => {
+        const context = await makeTempContext()
+        const adapter = await openProjectDatabase(context)
+        const content = 'Use content hashes to avoid duplicate durable memory.'
+
+        const first = await saveKonteksInput(adapter, context, {
+            content,
+            kind: 'decision',
+            type: 'memory',
+        })
+        const second = await saveKonteksInput(adapter, context, {
+            content,
+            kind: 'decision',
+            type: 'memory',
+        })
+
+        expect(second).toMatchObject({
+            duplicateOf: first.id,
+            id: first.id,
+        })
+        await adapter.close()
+    })
+
+    it('rejects low-quality or sensitive memory content', async () => {
+        const context = await makeTempContext()
+        const adapter = await openProjectDatabase(context)
+
+        await expect(
+            saveKonteksInput(adapter, context, {
+                content: 'too short',
+                kind: 'note',
+                type: 'memory',
+            }),
+        ).rejects.toThrow('too short')
+        await expect(
+            saveKonteksInput(adapter, context, {
+                content: 'api_key = abcdefghijklmnopqrstuvwxyz',
+                kind: 'note',
+                type: 'memory',
+            }),
+        ).rejects.toThrow('secret')
+        await adapter.close()
+    })
+
     it('returns trimmed excerpts and scoring metadata for long memories', async () => {
         const context = await makeTempContext()
         const adapter = await openProjectDatabase(context)

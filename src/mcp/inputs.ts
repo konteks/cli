@@ -93,7 +93,7 @@ type BootstrapInput = {
     maxTokens?: number
 }
 
-type ForgetInput = {
+export type ForgetInput = {
     id?: string
     mode?: 'hard_delete' | 'invalidate' | 'soft_delete'
     query?: string

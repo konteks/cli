@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
+import { forgetMemory } from '../memory/forget-store.js'
 import { GraphStore } from '../memory/graph-store.js'
 import { saveKonteksInput } from '../memory/save-store.js'
 import {
@@ -119,6 +120,14 @@ export async function startMcpServer(
                 },
                 recentChanges: [],
                 recentHandoffs: [],
+                staleMemory: {
+                    detected: status.freshness.status === 'stale',
+                    reason:
+                        status.freshness.status === 'stale'
+                            ? status.freshness.reason
+                            : undefined,
+                    recommendedCommand: status.freshness.recommendedCommand,
+                },
                 suggestedNext:
                     status.freshness.recommendedCommand ??
                     `Call konteks_recall with a task-specific prompt. Requested budget: ${parsed.maxTokens ?? 2000} tokens.`,
@@ -208,12 +217,10 @@ export async function startMcpServer(
         },
         async input => {
             const parsed = parseForgetInput(input)
-            return textResult({
-                accepted: true,
-                message:
-                    'Forget validation passed. Memory hygiene persistence is planned in Phase 9.',
-                mode: parsed.mode ?? 'soft_delete',
-            })
+            const result = await withProjectDatabase(options, adapter =>
+                forgetMemory(adapter, parsed),
+            )
+            return textResult(result)
         },
     )
 

@@ -6,7 +6,16 @@ describe('migrations', () => {
     it('defines the initial schema migration', () => {
         expect(migrations.map(migration => migration.id)).toEqual([
             '001_initial_schema',
+            '002_memory_hygiene',
         ])
+    })
+
+    it('adds memory hygiene metadata', () => {
+        const sql = migrations[1]?.sql ?? ''
+
+        expect(sql).toContain('observations add column content_hash')
+        expect(sql).toContain('chunks add column deleted_at')
+        expect(sql).toContain('session_handoffs add column forget_reason')
     })
 
     it('creates the core memory tables', () => {

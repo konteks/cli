@@ -161,6 +161,29 @@ create index if not exists memory_events_created_at_idx on memory_events(created
 create index if not exists memory_events_subject_idx on memory_events(subject_type, subject_id);
 `,
     },
+    {
+        id: '002_memory_hygiene',
+        sql: `
+alter table observations add column content_hash text;
+alter table observations add column deleted_at text;
+alter table observations add column suppressed_at text;
+alter table observations add column forget_reason text;
+
+alter table chunks add column deleted_at text;
+alter table chunks add column suppressed_at text;
+alter table chunks add column forget_reason text;
+
+alter table session_handoffs add column content_hash text;
+alter table session_handoffs add column deleted_at text;
+alter table session_handoffs add column suppressed_at text;
+alter table session_handoffs add column forget_reason text;
+
+create index if not exists observations_content_hash_idx on observations(content_hash);
+create index if not exists observations_deleted_idx on observations(deleted_at, suppressed_at);
+create index if not exists chunks_deleted_idx on chunks(deleted_at, suppressed_at);
+create index if not exists session_handoffs_deleted_idx on session_handoffs(deleted_at, suppressed_at);
+`,
+    },
 ]
 
 export async function runMigrations(adapter: SqliteAdapter): Promise<void> {
