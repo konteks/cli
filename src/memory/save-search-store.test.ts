@@ -52,6 +52,24 @@ describe('save and search stores', () => {
         await adapter.close()
     })
 
+    it('uses FTS indexed documents for saved memories', async () => {
+        const context = await makeTempContext()
+        const adapter = await openProjectDatabase(context)
+
+        const saved = await saveKonteksInput(adapter, context, {
+            content: 'Konteks should retrieve context with full text search.',
+            kind: 'decision',
+            type: 'memory',
+        })
+        const results = await searchMemory(adapter, {
+            limit: 5,
+            query: 'retrieve context',
+        })
+
+        expect(results[0]?.id).toBe(saved.id)
+        await adapter.close()
+    })
+
     it('persists session handoffs and searches task summaries', async () => {
         const context = await makeTempContext()
         const adapter = await openProjectDatabase(context)

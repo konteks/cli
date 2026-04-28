@@ -5,6 +5,7 @@ import { appendMemoryEvent } from '../storage/event-log.js'
 import { storePayload } from '../storage/payload.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 import { createToonStore } from '../storage/toon-store.js'
+import { indexSearchDocument } from './search-index.js'
 
 type SaveResult = {
     accepted: true
@@ -67,6 +68,13 @@ insert into observations (
             subjectType: 'observation',
             summary,
         })
+        await indexSearchDocument(adapter, {
+            content: stored.contentInline ?? summary,
+            createdAt,
+            id,
+            kind: input.kind,
+            type: 'memory',
+        })
     })
 
     return {
@@ -120,6 +128,14 @@ insert into session_handoffs (
             subjectId: id,
             subjectType: 'session_handoff',
             summary: input.summary,
+        })
+        await indexSearchDocument(adapter, {
+            content: input.summary,
+            createdAt,
+            id,
+            kind: input.status,
+            task: input.task,
+            type: 'session',
         })
     })
 

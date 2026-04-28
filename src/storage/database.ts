@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { ensureSearchIndex } from '../memory/search-index.js'
 import type { LoadedProjectContext } from '../project/context.js'
 import { runMigrations } from './migrations.js'
 import { openWasmSqliteAdapter } from './wasm-sqlite-adapter.js'
@@ -14,6 +15,7 @@ export async function openProjectDatabase(
     await ensureConfigFile(context)
     const adapter = await openWasmSqliteAdapter(projectDatabasePath(context))
     await runMigrations(adapter)
+    await ensureSearchIndex(adapter)
     return adapter
 }
 

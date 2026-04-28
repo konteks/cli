@@ -1,5 +1,6 @@
 import type { RecallInput, SearchInput } from '../mcp/inputs.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
+import { hasSearchIndex } from './search-index.js'
 
 export type MemorySearchResult = {
     id: string
@@ -27,6 +28,16 @@ type HandoffRow = {
     created_at: string
 }
 
+type FtsRow = {
+    id: string
+    type: 'memory' | 'session'
+    kind: string | null
+    task: string | null
+    content: string
+    created_at: string
+    rank: number
+}
+
 export async function searchMemory(
     adapter: SqliteAdapter,
     input: SearchInput | RecallInput,
@@ -37,6 +48,13 @@ export async function searchMemory(
 
     if (terms.length === 0) {
         return []
+    }
+
+    if (await hasSearchIndex(adapter)) {
+        const ftsResults = await searchFts(adapter, terms, limit)
+        if (ftsResults.length > 0) {
+            return ftsResults
+        }
     }
 
     const observations = await adapter.query<ObservationRow>(
@@ -68,6 +86,39 @@ limit ?
     ]
         .sort(compareSearchResults)
         .slice(0, limit)
+}
+
+async function searchFts(
+    adapter: SqliteAdapter,
+    terms: string[],
+    limit: number,
+): Promise<MemorySearchResult[]> {
+    const ftsQuery = toFtsQuery(terms)
+    if (!ftsQuery) {
+        return []
+    }
+
+    const rows = await adapter.query<FtsRow>(
+        `
+select id, type, kind, task, content, created_at, bm25(memory_fts) as rank
+from memory_fts
+where memory_fts match ?
+order by rank
+limit ?
+`,
+        [ftsQuery, limit],
+    )
+
+    return rows.map(row => ({
+        createdAt: row.created_at,
+        excerpt: row.content,
+        id: row.id,
+        kind: row.type === 'memory' ? (row.kind ?? undefined) : undefined,
+        score: Math.max(1, Math.round(Math.abs(row.rank) * 1000)),
+        status: row.type === 'session' ? (row.kind ?? undefined) : undefined,
+        task: row.task ?? undefined,
+        type: row.type,
+    }))
 }
 
 function observationToResult(
@@ -108,6 +159,15 @@ function tokenize(query: string): string[] {
                 .filter(term => term.length >= 2),
         ),
     ].slice(0, 12)
+}
+
+function toFtsQuery(terms: string[]): string | undefined {
+    const ftsTerms = terms
+        .map(term => term.replaceAll(/[^a-z0-9_]/gu, ''))
+        .filter(Boolean)
+        .map(term => `"${term}"`)
+
+    return ftsTerms.length > 0 ? ftsTerms.join(' OR ') : undefined
 }
 
 function scoreText(text: string, terms: string[]): number {
