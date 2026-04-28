@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { GraphStore } from '../memory/graph-store.js'
 import { loadProjectContext } from '../project/context.js'
 import { openProjectDatabase } from '../storage/database.js'
-import { recallGraph } from './server.js'
+import { recallGraph, recallHistory } from './server.js'
 
 const tempDirs: string[] = []
 
@@ -66,6 +66,51 @@ describe('recallGraph', () => {
             entityName: 'Konteks',
             predicate: 'prefers_runtime',
         })
+        await adapter.close()
+    })
+
+    it('only returns historical graph context when the task asks for it', async () => {
+        const { adapter, graph } = await makeGraph()
+        const project = await graph.upsertEntity({
+            aliases: ['memory system'],
+            name: 'Konteks',
+            type: 'project',
+        })
+        const oldStorage = await graph.upsertEntity({
+            name: 'Global Memory',
+            type: 'storage',
+        })
+        const currentStorage = await graph.upsertEntity({
+            name: '.konteks',
+            type: 'storage',
+        })
+        const oldRelation = await graph.addRelation({
+            objectId: oldStorage.id,
+            predicate: 'stores_in',
+            subjectId: project.id,
+        })
+        await graph.addRelation({
+            objectId: currentStorage.id,
+            predicate: 'stores_in',
+            subjectId: project.id,
+            supersedesRelationId: oldRelation.id,
+        })
+
+        const normal = await recallHistory(adapter, 'work on memory system')
+        const historical = await recallHistory(
+            adapter,
+            'why did the previous memory system storage decision change',
+        )
+
+        expect(normal).toEqual([])
+        expect(historical).toEqual([
+            expect.objectContaining({
+                objectEntityName: 'Global Memory',
+                predicate: 'stores_in',
+                status: 'superseded',
+                subjectEntityName: 'Konteks',
+            }),
+        ])
         await adapter.close()
     })
 })

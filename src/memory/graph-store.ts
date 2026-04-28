@@ -47,6 +47,16 @@ type GraphNeighbor = {
     entity: EntityRecord
 }
 
+type HistoricalRelation = {
+    relationId: string
+    predicate: string
+    status: 'invalidated' | 'superseded'
+    validFrom?: string
+    validTo?: string
+    subject: EntityRecord
+    object: EntityRecord
+}
+
 type GraphPathStep = {
     depth: number
     relationId: string
@@ -78,6 +88,24 @@ type PathRow = {
     relation_path: string
     entity_path: string
     predicate_path: string
+}
+
+type HistoricalRelationRow = {
+    relation_id: string
+    predicate: string
+    status: 'invalidated' | 'superseded'
+    valid_from: string | null
+    valid_to: string | null
+    subject_id: string
+    subject_type: string
+    subject_name: string
+    subject_canonical_name: string
+    subject_summary: string | null
+    object_id: string
+    object_type: string
+    object_name: string
+    object_canonical_name: string
+    object_summary: string | null
 }
 
 export class GraphStore {
@@ -366,6 +394,50 @@ limit ?
         }))
     }
 
+    async historicalRelations(
+        entityId: string,
+        options: { limit?: number } = {},
+    ): Promise<HistoricalRelation[]> {
+        const rows = await this.adapter.query<HistoricalRelationRow>(
+            `
+select
+    r.id as relation_id,
+    r.predicate,
+    r.status,
+    r.valid_from,
+    r.valid_to,
+    s.id as subject_id,
+    s.type as subject_type,
+    s.name as subject_name,
+    s.canonical_name as subject_canonical_name,
+    s.summary as subject_summary,
+    o.id as object_id,
+    o.type as object_type,
+    o.name as object_name,
+    o.canonical_name as object_canonical_name,
+    o.summary as object_summary
+from relations r
+join entities s on s.id = r.subject_id
+join entities o on o.id = r.object_id
+where (r.subject_id = ? or r.object_id = ?)
+  and r.status in ('invalidated', 'superseded')
+order by r.updated_at desc
+limit ?
+`,
+            [entityId, entityId, options.limit ?? 10],
+        )
+
+        return rows.map(row => ({
+            object: entityFromHistoricalRow(row, 'object'),
+            predicate: row.predicate,
+            relationId: row.relation_id,
+            status: row.status,
+            subject: entityFromHistoricalRow(row, 'subject'),
+            validFrom: row.valid_from ?? undefined,
+            validTo: row.valid_to ?? undefined,
+        }))
+    }
+
     async findPath(
         fromEntityId: string,
         toEntityId: string,
@@ -458,6 +530,24 @@ function entityFromRow(row: EntityRow): EntityRecord {
         name: row.name,
         summary: row.summary ?? undefined,
         type: row.type,
+    }
+}
+
+function entityFromHistoricalRow(
+    row: HistoricalRelationRow,
+    side: 'object' | 'subject',
+): EntityRecord {
+    return {
+        canonicalName:
+            side === 'subject'
+                ? row.subject_canonical_name
+                : row.object_canonical_name,
+        id: side === 'subject' ? row.subject_id : row.object_id,
+        name: side === 'subject' ? row.subject_name : row.object_name,
+        summary:
+            (side === 'subject' ? row.subject_summary : row.object_summary) ??
+            undefined,
+        type: side === 'subject' ? row.subject_type : row.object_type,
     }
 }
 

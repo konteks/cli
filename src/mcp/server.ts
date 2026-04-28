@@ -53,6 +53,19 @@ type RecallGraphItem = {
     relatedEntityType: string
 }
 
+type RecallHistoryItem = {
+    relationId: string
+    predicate: string
+    status: 'invalidated' | 'superseded'
+    subjectEntityId: string
+    subjectEntityName: string
+    objectEntityId: string
+    objectEntityName: string
+    validFrom?: string
+    validTo?: string
+    reason: string
+}
+
 export async function startMcpServer(
     options: StartMcpServerOptions,
 ): Promise<void> {
@@ -132,11 +145,13 @@ export async function startMcpServer(
                 options,
                 async adapter => ({
                     graph: await recallGraph(adapter, parsed.task),
+                    history: await recallHistory(adapter, parsed.task),
                     memories: await searchMemory(adapter, parsed),
                 }),
             )
             return textResult({
                 graph: recall.graph,
+                history: recall.history,
                 memories: applyTokenBudget(
                     recall.memories,
                     parsed.maxTokens ?? 2000,
@@ -205,6 +220,42 @@ export async function startMcpServer(
     await server.connect(new StdioServerTransport())
 }
 
+export async function recallHistory(
+    adapter: SqliteAdapter,
+    task: string,
+): Promise<RecallHistoryItem[]> {
+    if (!needsHistory(task)) {
+        return []
+    }
+
+    const graph = new GraphStore(adapter)
+    const entities = await graph.searchEntities(task, { limit: 4 })
+    const items: RecallHistoryItem[] = []
+
+    for (const entity of entities) {
+        const relations = await graph.historicalRelations(entity.id, {
+            limit: 6,
+        })
+
+        for (const relation of relations) {
+            items.push({
+                objectEntityId: relation.object.id,
+                objectEntityName: relation.object.name,
+                predicate: relation.predicate,
+                reason: `Included because task asks for historical or superseded context.`,
+                relationId: relation.relationId,
+                status: relation.status,
+                subjectEntityId: relation.subject.id,
+                subjectEntityName: relation.subject.name,
+                validFrom: relation.validFrom,
+                validTo: relation.validTo,
+            })
+        }
+    }
+
+    return dedupeHistory(items).slice(0, 8)
+}
+
 export async function recallGraph(
     adapter: SqliteAdapter,
     task: string,
@@ -237,6 +288,28 @@ export async function recallGraph(
     }
 
     return items.sort((left, right) => right.score - left.score).slice(0, 12)
+}
+
+function needsHistory(task: string): boolean {
+    return /\b(history|historical|previous|prior|old|before|changed|why|superseded|invalidated|replaced|migration|attempt|rollback|decision)\b/iu.test(
+        task,
+    )
+}
+
+function dedupeHistory(items: RecallHistoryItem[]): RecallHistoryItem[] {
+    const seen = new Set<string>()
+    const deduped: RecallHistoryItem[] = []
+
+    for (const item of items) {
+        if (seen.has(item.relationId)) {
+            continue
+        }
+
+        seen.add(item.relationId)
+        deduped.push(item)
+    }
+
+    return deduped
 }
 
 async function withProjectDatabase<T>(
