@@ -70,6 +70,33 @@ describe('save and search stores', () => {
         await adapter.close()
     })
 
+    it('returns trimmed excerpts and scoring metadata for long memories', async () => {
+        const context = await makeTempContext()
+        const adapter = await openProjectDatabase(context)
+        const longContent = Array.from(
+            { length: 180 },
+            (_, index) => `context-${index}`,
+        ).join(' ')
+
+        await saveKonteksInput(adapter, context, {
+            content: `needle ${longContent}`,
+            kind: 'note',
+            type: 'memory',
+        })
+        const results = await searchMemory(adapter, {
+            limit: 5,
+            query: 'needle',
+        })
+
+        expect(results[0]?.excerpt.endsWith('...')).toBe(true)
+        expect(results[0]?.tokenCost).toBeLessThanOrEqual(120)
+        expect(results[0]?.scoreDetails).toMatchObject({
+            confidence: 1,
+            lexical: 1,
+        })
+        await adapter.close()
+    })
+
     it('persists session handoffs and searches task summaries', async () => {
         const context = await makeTempContext()
         const adapter = await openProjectDatabase(context)

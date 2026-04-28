@@ -110,6 +110,9 @@ describe('mineProject', () => {
 
         expect(chunks.some(chunk => chunk.path === 'README.md')).toBe(true)
         expect(searchResults[0]?.type).toBe('chunk')
+        expect(searchResults[0]?.sourceId).toStartWith('source_')
+        expect(searchResults[0]?.tokenCost).toBeGreaterThan(0)
+        expect(searchResults[0]?.scoreDetails.lexical).toBeGreaterThan(0)
         expect(roots.map(node => node.name)).toContain('Project Files')
         expect(roots.map(node => node.name)).toContain('src')
         expect(events).toEqual([{ event_type: 'project_mined' }])

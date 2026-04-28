@@ -6,10 +6,18 @@ export type MemorySearchResult = {
     id: string
     type: 'chunk' | 'memory' | 'session'
     kind?: string
+    sourceId?: string
     status?: string
     task?: string
     excerpt: string
     score: number
+    tokenCost: number
+    scoreDetails: {
+        confidence: number
+        lexical: number
+        recency: number
+        tokenCostPenalty: number
+    }
     createdAt: string
 }
 
@@ -17,6 +25,7 @@ type ObservationRow = {
     id: string
     kind: string
     text_inline: string | null
+    confidence: number
     created_at: string
 }
 
@@ -36,7 +45,12 @@ type FtsRow = {
     content: string
     created_at: string
     rank: number
+    source_id: string | null
+    token_count: number | null
+    confidence: number | null
 }
+
+const maxExcerptTokens = 120
 
 export async function searchMemory(
     adapter: SqliteAdapter,
@@ -59,7 +73,7 @@ export async function searchMemory(
 
     const observations = await adapter.query<ObservationRow>(
         `
-select id, kind, text_inline, created_at
+select id, kind, text_inline, confidence, created_at
 from observations
 where ${terms.map(() => "lower(coalesce(text_inline, '')) like ?").join(' or ')}
 order by created_at desc
@@ -100,8 +114,20 @@ async function searchFts(
 
     const rows = await adapter.query<FtsRow>(
         `
-select id, type, kind, task, content, created_at, bm25(memory_fts) as rank
+select
+    memory_fts.id,
+    memory_fts.type,
+    memory_fts.kind,
+    memory_fts.task,
+    memory_fts.content,
+    memory_fts.created_at,
+    bm25(memory_fts) as rank,
+    c.source_id,
+    c.token_count,
+    o.confidence
 from memory_fts
+left join chunks c on c.id = memory_fts.id
+left join observations o on o.id = memory_fts.id
 where memory_fts match ?
 order by rank
 limit ?
@@ -109,16 +135,29 @@ limit ?
         [ftsQuery, limit],
     )
 
-    return rows.map(row => ({
-        createdAt: row.created_at,
-        excerpt: row.content,
-        id: row.id,
-        kind: row.type !== 'session' ? (row.kind ?? undefined) : undefined,
-        score: Math.max(1, Math.round(Math.abs(row.rank) * 1000)),
-        status: row.type === 'session' ? (row.kind ?? undefined) : undefined,
-        task: row.task ?? undefined,
-        type: row.type,
-    }))
+    return rows
+        .map(row =>
+            makeSearchResult({
+                confidence: row.confidence ?? 1,
+                content: row.content,
+                createdAt: row.created_at,
+                id: row.id,
+                kind:
+                    row.type !== 'session'
+                        ? (row.kind ?? undefined)
+                        : undefined,
+                sourceId: row.source_id ?? undefined,
+                status:
+                    row.type === 'session'
+                        ? (row.kind ?? undefined)
+                        : undefined,
+                task: row.task ?? undefined,
+                terms,
+                tokenCost: row.token_count ?? estimateTokens(row.content),
+                type: row.type,
+            }),
+        )
+        .sort(compareSearchResults)
 }
 
 function observationToResult(
@@ -126,26 +165,75 @@ function observationToResult(
     terms: string[],
 ): MemorySearchResult {
     const excerpt = row.text_inline ?? ''
-    return {
+    return makeSearchResult({
+        confidence: row.confidence,
+        content: excerpt,
         createdAt: row.created_at,
-        excerpt,
         id: row.id,
         kind: row.kind,
-        score: scoreText(excerpt, terms),
+        terms,
         type: 'memory',
-    }
+    })
 }
 
 function handoffToResult(row: HandoffRow, terms: string[]): MemorySearchResult {
     const text = `${row.task}\n${row.summary}`
-    return {
+    return makeSearchResult({
+        confidence: 1,
+        content: row.summary,
         createdAt: row.created_at,
-        excerpt: row.summary,
         id: row.id,
-        score: scoreText(text, terms),
         status: row.status,
         task: row.task,
+        terms,
+        textForScoring: text,
         type: 'session',
+    })
+}
+
+function makeSearchResult(input: {
+    confidence: number
+    content: string
+    createdAt: string
+    id: string
+    kind?: string
+    sourceId?: string
+    status?: string
+    task?: string
+    terms: string[]
+    textForScoring?: string
+    tokenCost?: number
+    type: MemorySearchResult['type']
+}): MemorySearchResult {
+    const tokenCost = input.tokenCost ?? estimateTokens(input.content)
+    const lexical = scoreText(
+        input.textForScoring ?? input.content,
+        input.terms,
+    )
+    const recency = recencyBoost(input.createdAt)
+    const tokenCostPenalty = Math.ceil(tokenCost / 120)
+    const confidence = Math.max(0, Math.min(input.confidence, 1))
+    const score = Math.round(
+        lexical * 100 + confidence * 20 + recency - tokenCostPenalty,
+    )
+
+    return {
+        createdAt: input.createdAt,
+        excerpt: trimToTokenBudget(input.content, maxExcerptTokens),
+        id: input.id,
+        kind: input.kind,
+        score,
+        scoreDetails: {
+            confidence,
+            lexical,
+            recency,
+            tokenCostPenalty,
+        },
+        sourceId: input.sourceId,
+        status: input.status,
+        task: input.task,
+        tokenCost: Math.min(tokenCost, maxExcerptTokens),
+        type: input.type,
     }
 }
 
@@ -176,6 +264,31 @@ function scoreText(text: string, terms: string[]): number {
         (score, term) => score + (lowerText.includes(term) ? 1 : 0),
         0,
     )
+}
+
+function recencyBoost(createdAt: string): number {
+    const timestamp = Date.parse(createdAt)
+    if (Number.isNaN(timestamp)) {
+        return 0
+    }
+
+    const ageDays = (Date.now() - timestamp) / 86_400_000
+    return Math.max(0, 20 - Math.floor(ageDays))
+}
+
+function estimateTokens(text: string): number {
+    return Math.ceil(text.trim().split(/\s+/u).filter(Boolean).length * 1.33)
+}
+
+function trimToTokenBudget(text: string, maxTokens: number): string {
+    const words = text.trim().split(/\s+/u).filter(Boolean)
+    const maxWords = Math.max(1, Math.floor(maxTokens / 1.33))
+
+    if (words.length <= maxWords) {
+        return text
+    }
+
+    return `${words.slice(0, maxWords).join(' ')}...`
 }
 
 function compareSearchResults(

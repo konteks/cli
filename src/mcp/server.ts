@@ -208,7 +208,7 @@ function applyTokenBudget(
     let usedTokens = 0
 
     for (const memory of memories) {
-        const tokenCost = estimateTokens(memory.excerpt)
+        const tokenCost = memory.tokenCost
         if (selected.length > 0 && usedTokens + tokenCost > maxTokens) {
             continue
         }
@@ -218,8 +218,4 @@ function applyTokenBudget(
     }
 
     return selected
-}
-
-function estimateTokens(text: string): number {
-    return Math.ceil(text.trim().split(/\s+/u).filter(Boolean).length * 1.33)
 }
