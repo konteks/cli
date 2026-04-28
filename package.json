@@ -1,0 +1,33 @@
+{
+    "bin": {
+        "konteks": "./dist/cli.js"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.7.0",
+        "commander": "^14.0.3"
+    },
+    "description": "A local context graph for AI coding agents.",
+    "devDependencies": {
+        "@biomejs/biome": "2.4.13",
+        "@types/bun": "^1.3.13",
+        "knip": "^6.7.0",
+        "tsup": "^8.3.0",
+        "typescript": "^6.0.3"
+    },
+    "engines": {
+        "node": ">=20"
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "name": "konteks",
+    "scripts": {
+        "build": "tsup src/cli.ts --format esm --dts --clean",
+        "dev": "bun src/cli.ts",
+        "lint": "knip && biome check --write && tsc --noEmit",
+        "test": "bun test"
+    },
+    "type": "module",
+    "version": "0.0.1"
+}
