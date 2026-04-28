@@ -1,7 +1,15 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
+import { saveKonteksInput } from '../memory/save-store.js'
+import {
+    type MemorySearchResult,
+    searchMemory,
+} from '../memory/search-store.js'
+import { loadProjectContext } from '../project/context.js'
 import { getProjectStatus } from '../project/status.js'
+import { openProjectDatabase } from '../storage/database.js'
+import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 import {
     bootstrapInputSchema,
     emptyInputSchema,
@@ -105,11 +113,12 @@ export async function startMcpServer(
         },
         async input => {
             const parsed = parseRecallInput(input)
+            const memories = await withProjectDatabase(options, adapter =>
+                searchMemory(adapter, parsed),
+            )
             return textResult({
                 graph: [],
-                memories: [],
-                message:
-                    'Recall is scaffolded. Storage and ranking are planned in later phases.',
+                memories: applyTokenBudget(memories, parsed.maxTokens ?? 2000),
                 task: parsed.task,
                 tokenBudget: parsed.maxTokens ?? 2000,
             })
@@ -125,12 +134,13 @@ export async function startMcpServer(
         },
         async input => {
             const parsed = parseSearchInput(input)
+            const results = await withProjectDatabase(options, adapter =>
+                searchMemory(adapter, parsed),
+            )
             return textResult({
                 limit: parsed.limit ?? 10,
-                message:
-                    'Search is scaffolded. SearchStore is planned in Phase 4.',
                 query: parsed.query,
-                results: [],
+                results,
             })
         },
     )
@@ -143,12 +153,12 @@ export async function startMcpServer(
         },
         async input => {
             const parsed = parseSaveInput(input)
-            return textResult({
-                accepted: true,
-                message:
-                    'Save validation passed. Persistence is planned in Phase 4.',
-                type: parsed.type,
-            })
+            const saved = await withProjectDatabase(
+                options,
+                (adapter, context) =>
+                    saveKonteksInput(adapter, context, parsed),
+            )
+            return textResult(saved)
         },
     )
 
@@ -171,4 +181,45 @@ export async function startMcpServer(
     )
 
     await server.connect(new StdioServerTransport())
+}
+
+async function withProjectDatabase<T>(
+    options: StartMcpServerOptions,
+    operation: (
+        adapter: SqliteAdapter,
+        context: Awaited<ReturnType<typeof loadProjectContext>>,
+    ) => Promise<T>,
+): Promise<T> {
+    const context = await loadProjectContext(options.project)
+    const adapter = await openProjectDatabase(context)
+
+    try {
+        return await operation(adapter, context)
+    } finally {
+        await adapter.close()
+    }
+}
+
+function applyTokenBudget(
+    memories: MemorySearchResult[],
+    maxTokens: number,
+): MemorySearchResult[] {
+    const selected: MemorySearchResult[] = []
+    let usedTokens = 0
+
+    for (const memory of memories) {
+        const tokenCost = estimateTokens(memory.excerpt)
+        if (selected.length > 0 && usedTokens + tokenCost > maxTokens) {
+            continue
+        }
+
+        selected.push(memory)
+        usedTokens += tokenCost
+    }
+
+    return selected
+}
+
+function estimateTokens(text: string): number {
+    return Math.ceil(text.trim().split(/\s+/u).filter(Boolean).length * 1.33)
 }

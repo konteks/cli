@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir } from 'node:fs/promises'
 import type { LoadedProjectContext } from '../project/context.js'
 import { ensureProjectDatabase } from '../storage/database.js'
 import { createToonStore } from '../storage/toon-store.js'
@@ -23,13 +23,6 @@ export async function mineProject(
     mode: MineMode,
 ): Promise<MineProjectResult> {
     await mkdir(context.memoryDir, { recursive: true })
-    if (!context.configExists) {
-        await writeFile(
-            context.configPath,
-            `${JSON.stringify(context.config, null, 2)}\n`,
-            { flag: 'wx' },
-        )
-    }
     await ensureProjectDatabase(context)
 
     const files = await scanProjectFiles(context.projectRoot)

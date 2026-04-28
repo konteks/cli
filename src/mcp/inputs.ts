@@ -100,13 +100,13 @@ type ForgetInput = {
     reason?: string
 }
 
-type RecallInput = {
+export type RecallInput = {
     includeSources?: boolean
     maxTokens?: number
     task: string
 }
 
-type SaveInput =
+export type SaveInput =
     | {
           content: string
           entities?: string[]
@@ -130,7 +130,7 @@ type SaveInput =
           type: 'session'
       }
 
-type SearchInput = {
+export type SearchInput = {
     limit?: number
     query: string
 }
