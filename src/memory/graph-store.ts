@@ -63,6 +63,10 @@ type EntityRow = {
     summary: string | null
 }
 
+type EntitySearchRow = EntityRow & {
+    score: number
+}
+
 type NeighborRow = EntityRow & {
     depth: number
     relation_id: string
@@ -162,6 +166,54 @@ limit 1
         )
 
         return rows[0] ? entityFromRow(rows[0]) : undefined
+    }
+
+    async searchEntities(
+        query: string,
+        options: { limit?: number } = {},
+    ): Promise<EntityRecord[]> {
+        const terms = tokenize(query)
+        if (terms.length === 0) {
+            return []
+        }
+
+        const rows = await this.adapter.query<EntitySearchRow>(
+            `
+select *
+from (
+select
+    e.id,
+    e.type,
+    e.name,
+    e.canonical_name,
+    e.summary,
+    (
+        case when lower(e.name) in (${terms.map(() => '?').join(', ')}) then 4 else 0 end
+        + case when ${terms.map(() => 'lower(e.name) like ?').join(' or ')} then 3 else 0 end
+        + case when ${terms.map(() => "lower(coalesce(e.summary, '')) like ?").join(' or ')} then 1 else 0 end
+        + case when exists (
+            select 1
+            from entity_aliases a
+            where a.entity_id = e.id
+              and (${terms.map(() => 'a.normalized_value like ?').join(' or ')})
+        ) then 3 else 0 end
+    ) as score
+from entities e
+) scored_entities
+where score > 0
+order by score desc
+limit ?
+`,
+            [
+                ...terms,
+                ...terms.map(term => `%${term}%`),
+                ...terms.map(term => `%${term}%`),
+                ...terms.map(term => `%${term}%`),
+                options.limit ?? 5,
+            ],
+        )
+
+        return rows.map(entityFromRow)
     }
 
     async addRelation(input: RelationInput): Promise<RelationRecord> {
@@ -411,6 +463,18 @@ function entityFromRow(row: EntityRow): EntityRecord {
 
 function normalizeEntityName(name: string): string {
     return name.trim().toLowerCase().replaceAll(/\s+/gu, ' ')
+}
+
+function tokenize(query: string): string[] {
+    return [
+        ...new Set(
+            query
+                .toLowerCase()
+                .split(/[^a-z0-9_./-]+/u)
+                .map(term => term.trim())
+                .filter(term => term.length >= 2),
+        ),
+    ].slice(0, 8)
 }
 
 function clampDepth(depth: number): number {

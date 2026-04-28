@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
+import { GraphStore } from '../memory/graph-store.js'
 import { saveKonteksInput } from '../memory/save-store.js'
 import {
     type MemorySearchResult,
@@ -37,6 +38,20 @@ type FlexibleRegisterTool = (
     },
     callback: (input: unknown) => CallToolResult | Promise<CallToolResult>,
 ) => unknown
+
+type RecallGraphItem = {
+    entityId: string
+    entityName: string
+    entityType: string
+    relationId: string
+    predicate: string
+    direction: 'incoming' | 'outgoing'
+    depth: number
+    score: number
+    relatedEntityId: string
+    relatedEntityName: string
+    relatedEntityType: string
+}
 
 export async function startMcpServer(
     options: StartMcpServerOptions,
@@ -113,12 +128,19 @@ export async function startMcpServer(
         },
         async input => {
             const parsed = parseRecallInput(input)
-            const memories = await withProjectDatabase(options, adapter =>
-                searchMemory(adapter, parsed),
+            const recall = await withProjectDatabase(
+                options,
+                async adapter => ({
+                    graph: await recallGraph(adapter, parsed.task),
+                    memories: await searchMemory(adapter, parsed),
+                }),
             )
             return textResult({
-                graph: [],
-                memories: applyTokenBudget(memories, parsed.maxTokens ?? 2000),
+                graph: recall.graph,
+                memories: applyTokenBudget(
+                    recall.memories,
+                    parsed.maxTokens ?? 2000,
+                ),
                 task: parsed.task,
                 tokenBudget: parsed.maxTokens ?? 2000,
             })
@@ -181,6 +203,40 @@ export async function startMcpServer(
     )
 
     await server.connect(new StdioServerTransport())
+}
+
+export async function recallGraph(
+    adapter: SqliteAdapter,
+    task: string,
+): Promise<RecallGraphItem[]> {
+    const graph = new GraphStore(adapter)
+    const entities = await graph.searchEntities(task, { limit: 4 })
+    const items: RecallGraphItem[] = []
+
+    for (const entity of entities) {
+        const neighbors = await graph.traverseNeighbors(entity.id, {
+            limit: 8,
+            maxDepth: 2,
+        })
+
+        for (const neighbor of neighbors) {
+            items.push({
+                depth: neighbor.depth,
+                direction: neighbor.direction,
+                entityId: entity.id,
+                entityName: entity.name,
+                entityType: entity.type,
+                predicate: neighbor.predicate,
+                relatedEntityId: neighbor.entity.id,
+                relatedEntityName: neighbor.entity.name,
+                relatedEntityType: neighbor.entity.type,
+                relationId: neighbor.relationId,
+                score: Math.max(1, 10 - neighbor.depth * 2),
+            })
+        }
+    }
+
+    return items.sort((left, right) => right.score - left.score).slice(0, 12)
 }
 
 async function withProjectDatabase<T>(

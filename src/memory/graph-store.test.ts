@@ -89,6 +89,23 @@ describe('GraphStore', () => {
         await graph.close()
     })
 
+    it('searches entities by name, summary, and aliases', async () => {
+        const graph = await makeGraphStore()
+        await graph.store.upsertEntity({
+            aliases: ['Project Context Memory'],
+            name: 'Konteks',
+            summary: 'Local memory system for coding agents',
+            type: 'project',
+        })
+
+        const byAlias = await graph.store.searchEntities('context memory')
+        const bySummary = await graph.store.searchEntities('coding agents')
+
+        expect(byAlias[0]?.name).toBe('Konteks')
+        expect(bySummary[0]?.name).toBe('Konteks')
+        await graph.close()
+    })
+
     it('finds a small directed path with a recursive CTE', async () => {
         const graph = await makeGraphStore()
         const a = await graph.store.upsertEntity({ name: 'A', type: 'node' })
