@@ -1,6 +1,13 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
+import {
+    CallToolRequestSchema,
+    type CallToolResult,
+    ErrorCode,
+    ListToolsRequestSchema,
+    McpError,
+    type Tool,
+} from '@modelcontextprotocol/sdk/types.js'
 import { forgetMemory } from '../memory/forget-store.js'
 import { GraphStore } from '../memory/graph-store.js'
 import { saveKonteksInput } from '../memory/save-store.js'
@@ -35,7 +42,7 @@ type FlexibleRegisterTool = (
     name: string,
     config: {
         description: string
-        inputSchema?: unknown
+        inputSchema: Tool['inputSchema']
     },
     callback: (input: unknown) => CallToolResult | Promise<CallToolResult>,
 ) => unknown
@@ -70,19 +77,28 @@ type RecallHistoryItem = {
 export async function startMcpServer(
     options: StartMcpServerOptions,
 ): Promise<void> {
-    const server = new McpServer(
+    const server = new Server(
         {
             name: 'konteks',
             version: '0.0.0',
         },
         {
+            capabilities: {
+                tools: {},
+            },
             instructions:
                 'Use konteks_bootstrap at session start, konteks_recall before project-specific work, and konteks_save to persist durable decisions or session handoffs. Do not expect MCP tools to perform heavy project mining.',
         },
     )
-    const registerTool = server.registerTool.bind(
-        server,
-    ) as unknown as FlexibleRegisterTool
+    const tools = new Map<string, ToolRegistration>()
+    const registerTool: FlexibleRegisterTool = (name, config, callback) => {
+        tools.set(name, {
+            callback,
+            description: config.description,
+            inputSchema: config.inputSchema,
+            name,
+        })
+    }
 
     registerTool(
         'konteks_status',
@@ -224,7 +240,42 @@ export async function startMcpServer(
         },
     )
 
+    server.setRequestHandler(ListToolsRequestSchema, async () => ({
+        tools: [...tools.values()].map(tool => ({
+            description: tool.description,
+            inputSchema: tool.inputSchema,
+            name: tool.name,
+        })),
+    }))
+
+    server.setRequestHandler(CallToolRequestSchema, async request => {
+        const tool = tools.get(request.params.name)
+
+        if (!tool) {
+            throw new McpError(
+                ErrorCode.MethodNotFound,
+                `Unknown Konteks tool: ${request.params.name}`,
+            )
+        }
+
+        try {
+            return await tool.callback(request.params.arguments ?? {})
+        } catch (error) {
+            throw new McpError(
+                ErrorCode.InvalidParams,
+                error instanceof Error ? error.message : String(error),
+            )
+        }
+    })
+
     await server.connect(new StdioServerTransport())
+}
+
+type ToolRegistration = {
+    callback: (input: unknown) => CallToolResult | Promise<CallToolResult>
+    description: string
+    inputSchema: Tool['inputSchema']
+    name: string
 }
 
 export async function recallHistory(
