@@ -1,5 +1,7 @@
-.agents
-dist
-node_modules
-
-.codex
+.agents/
+.gemini/
+.codex/
+.konteks/
+.specs/
+dist/
+node_modules/
