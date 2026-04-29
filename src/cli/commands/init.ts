@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
     createDefaultConfig,
@@ -23,6 +23,34 @@ export async function initCommand(options: GlobalCliOptions): Promise<void> {
         }
     })
     await ensureProjectDatabase(await loadProjectContext(options.project))
+    await ensureKonteksGitignore(context.projectRoot)
 
     console.log(`Initialized Konteks at ${context.memoryDir}`)
+}
+
+export async function ensureKonteksGitignore(
+    projectRoot: string,
+): Promise<void> {
+    const gitignorePath = join(projectRoot, '.gitignore')
+    const existing = await readFile(gitignorePath, 'utf8').catch(error => {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            return ''
+        }
+
+        throw error
+    })
+
+    if (hasKonteksIgnoreEntry(existing)) {
+        return
+    }
+
+    const prefix = existing.length > 0 && !existing.endsWith('\n') ? '\n' : ''
+    await writeFile(gitignorePath, `${existing}${prefix}.konteks/\n`)
+}
+
+function hasKonteksIgnoreEntry(content: string): boolean {
+    return content
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .some(line => line === '.konteks' || line === '.konteks/')
 }
