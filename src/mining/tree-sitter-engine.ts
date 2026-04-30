@@ -92,7 +92,7 @@ export class TreeSitterEngine {
 
     private extractMetadata(
         root: Node,
-        content: string,
+        _: string,
         metadata: CodeMetadata,
         lang: string,
     ) {
