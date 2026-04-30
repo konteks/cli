@@ -50,13 +50,13 @@
         "url": "git+https://github.com/dominosaurs/konteks.git"
     },
     "scripts": {
-        "build": "tsup src/cli.ts --format esm --dts --clean",
-        "check": "bun run lint && bun run test && bun run build",
+        "build": "tsup src/cli.ts --format esm --dts --clean --silent",
+        "check": "bun --silent run lint && bun --silent run test && bun --silent run build",
         "dev": "bun src/cli.ts",
-        "format": "biome check --write",
-        "lint": "knip && biome check && tsc --noEmit",
+        "format": "biome check --write --reporter=github",
+        "lint": "knip -n --reporter compact && tsc --noEmit --pretty false && biome check --reporter=github",
         "prepack": "bun run build",
-        "test": "bun test"
+        "test": "bun test --reporter=dots > /dev/null 2>&1 || bun test --only-failures"
     },
     "type": "module",
     "version": "0.0.1"
