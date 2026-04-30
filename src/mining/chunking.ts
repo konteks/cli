@@ -1,6 +1,7 @@
 import type { ScannedFile } from './file-scan.js'
+import type { TreeSitterEngine } from './tree-sitter-engine.js'
 
-type MinedChunk = {
+export type MinedChunk = {
     anchor: string
     anchorType: 'file' | 'heading' | 'json_path' | 'symbol'
     content: string
@@ -10,9 +11,15 @@ type MinedChunk = {
     heading?: string
     summary: string
     symbol?: string
+    startLine?: number
+    endLine?: number
 }
 
-export function chunkFile(file: ScannedFile, content: string): MinedChunk[] {
+export async function chunkFile(
+    file: ScannedFile,
+    content: string,
+    engine?: TreeSitterEngine,
+): Promise<MinedChunk[]> {
     const trimmed = content.trim()
     if (!trimmed) {
         return []
@@ -27,10 +34,72 @@ export function chunkFile(file: ScannedFile, content: string): MinedChunk[] {
     }
 
     if (isCode(file.path)) {
-        return chunkCode(file.path, trimmed)
+        if (engine) {
+            try {
+                const metadata = await engine.parse(file.path, content)
+                if (metadata && metadata.symbols.length > 0) {
+                    return chunkCodeWithTreeSitter(file.path, metadata)
+                }
+            } catch (error) {
+                // Fallback to heuristic if engine fails
+                console.error(`Tree-sitter failed for ${file.path}:`, error)
+            }
+        }
+        return chunkCodeHeuristic(file.path, trimmed)
     }
 
     return chunkByWords(file.path, trimmed, 'text')
+}
+
+function chunkCodeWithTreeSitter(
+    path: string,
+    metadata: { symbols: { name: string; kind: string; startLine: number; endLine: number; content: string; isExported: boolean }[] },
+): MinedChunk[] {
+    return metadata.symbols.flatMap(symbol => {
+        return chunkByWords(path, symbol.content, 'code', {
+            anchor: symbol.name,
+            anchorType: 'symbol',
+            endLine: symbol.endLine,
+            startLine: symbol.startLine,
+            symbol: symbol.name,
+        })
+    })
+}
+
+function chunkCodeHeuristic(path: string, content: string): MinedChunk[] {
+    const lines = content.split('\n')
+    const chunks: MinedChunk[] = []
+    let current: string[] = []
+    let currentSymbol: string | undefined
+
+    for (const line of lines) {
+        const symbol = extractCodeSymbol(line)
+        if (symbol && current.length > 0) {
+            chunks.push(
+                ...chunkByWords(path, current.join('\n'), 'code', {
+                    anchor: currentSymbol,
+                    anchorType: currentSymbol ? 'symbol' : 'file',
+                    symbol: currentSymbol,
+                }),
+            )
+            current = []
+        }
+
+        currentSymbol = symbol ?? currentSymbol
+        current.push(line)
+    }
+
+    if (current.length > 0) {
+        chunks.push(
+            ...chunkByWords(path, current.join('\n'), 'code', {
+                anchor: currentSymbol,
+                anchorType: currentSymbol ? 'symbol' : 'file',
+                symbol: currentSymbol,
+            }),
+        )
+    }
+
+    return chunks.length > 0 ? chunks : chunkByWords(path, content, 'code')
 }
 
 function chunkMarkdown(path: string, content: string): MinedChunk[] {
@@ -73,42 +142,6 @@ function chunkJson(path: string, content: string): MinedChunk[] {
     return chunkByWords(path, content, 'json')
 }
 
-function chunkCode(path: string, content: string): MinedChunk[] {
-    const lines = content.split('\n')
-    const chunks: MinedChunk[] = []
-    let current: string[] = []
-    let currentSymbol: string | undefined
-
-    for (const line of lines) {
-        const symbol = extractCodeSymbol(line)
-        if (symbol && current.length > 0) {
-            chunks.push(
-                ...chunkByWords(path, current.join('\n'), 'code', {
-                    anchor: currentSymbol,
-                    anchorType: currentSymbol ? 'symbol' : 'file',
-                    symbol: currentSymbol,
-                }),
-            )
-            current = []
-        }
-
-        currentSymbol = symbol ?? currentSymbol
-        current.push(line)
-    }
-
-    if (current.length > 0) {
-        chunks.push(
-            ...chunkByWords(path, current.join('\n'), 'code', {
-                anchor: currentSymbol,
-                anchorType: currentSymbol ? 'symbol' : 'file',
-                symbol: currentSymbol,
-            }),
-        )
-    }
-
-    return chunks.length > 0 ? chunks : chunkByWords(path, content, 'code')
-}
-
 function chunkByWords(
     path: string,
     content: string,
@@ -119,6 +152,8 @@ function chunkByWords(
         heading?: string
         jsonPath?: string
         symbol?: string
+        startLine?: number
+        endLine?: number
     } = {},
 ): MinedChunk[] {
     const words = content.split(/\s+/u).filter(Boolean)
@@ -137,6 +172,8 @@ function chunkByWords(
                 path,
                 summary: summarize(path, kind, content, metadata.symbol),
                 symbol: metadata.symbol,
+                startLine: metadata.startLine,
+                endLine: metadata.endLine,
             },
         ]
     }
@@ -155,6 +192,8 @@ function chunkByWords(
             path,
             summary: summarize(path, kind, body, metadata.symbol),
             symbol: metadata.symbol,
+            startLine: metadata.startLine,
+            endLine: metadata.endLine,
         })
     }
 

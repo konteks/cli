@@ -15,11 +15,13 @@ import {
     extractTopics,
 } from './classification.js'
 import type { ScannedFile } from './file-scan.js'
+import { initTreeSitterWithBundledGrammars } from './grammar-loader.js'
 import { rebuildModuleArtifacts } from './module-store.js'
 import {
     buildChunkRetrievalTexts,
     upsertRetrievalDocument,
 } from './retrieval-documents.js'
+import { TreeSitterEngine } from './tree-sitter-engine.js'
 
 type MineChunksResult = {
     chunkCount: number
@@ -36,6 +38,18 @@ export async function mineChunks(
 ): Promise<MineChunksResult> {
     const toonStore = createToonStore(context.memoryDir)
     const taxonomy = new TaxonomyStore(adapter)
+    let engine: TreeSitterEngine | undefined
+    try {
+        engine = new TreeSitterEngine()
+        await initTreeSitterWithBundledGrammars(engine)
+    } catch (error) {
+        console.error(
+            'Tree-sitter initialization failed, using heuristic chunking fallback:',
+            error,
+        )
+        engine = undefined
+    }
+
     let chunkCount = 0
     let filesTruncatedByChunkLimit = 0
 
@@ -51,7 +65,7 @@ export async function mineChunks(
                 join(context.projectRoot, file.path),
                 'utf8',
             )
-            const allChunks = chunkFile(file, content)
+            const allChunks = await chunkFile(file, content, engine)
             const chunks = allChunks.slice(0, defaultMaxChunksPerFile)
             if (allChunks.length > chunks.length) {
                 filesTruncatedByChunkLimit += 1
@@ -140,8 +154,10 @@ insert into chunks (
     json_path,
     topics_json,
     entities_json,
-    metadata_json
-) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    metadata_json,
+    start_line,
+    end_line
+) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `,
                     [
                         chunkId,
@@ -165,6 +181,8 @@ insert into chunks (
                         JSON.stringify(chunkTopics),
                         JSON.stringify([]),
                         JSON.stringify({}),
+                        chunk.startLine ?? null,
+                        chunk.endLine ?? null,
                     ],
                 )
                 await taxonomy.linkTarget({
