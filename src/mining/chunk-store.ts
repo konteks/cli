@@ -21,8 +21,8 @@ import {
     buildChunkRetrievalTexts,
     upsertRetrievalDocument,
 } from './retrieval-documents.js'
-import { TreeSitterEngine } from './tree-sitter-engine.js'
 import type { CodeMetadata } from './tree-sitter-engine.js'
+import { TreeSitterEngine } from './tree-sitter-engine.js'
 
 type MineChunksResult = {
     chunkCount: number
@@ -86,15 +86,22 @@ export async function mineChunks(
                 }
             }
 
-            const allChunks = await chunkFile(file, content, engine, parsedMetadata)
-            const chunks = allChunks.map(chunk => ({
-                ...chunk,
-                metadata: {
-                    parserEngine,
-                    parserStatus,
-                    ...chunk.metadata,
-                },
-            })).slice(0, defaultMaxChunksPerFile)
+            const allChunks = await chunkFile(
+                file,
+                content,
+                engine,
+                parsedMetadata,
+            )
+            const chunks = allChunks
+                .map(chunk => ({
+                    ...chunk,
+                    metadata: {
+                        parserEngine,
+                        parserStatus,
+                        ...chunk.metadata,
+                    },
+                }))
+                .slice(0, defaultMaxChunksPerFile)
 
             if (allChunks.length > chunks.length) {
                 filesTruncatedByChunkLimit += 1

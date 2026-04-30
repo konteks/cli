@@ -1,6 +1,5 @@
 import type { ScannedFile } from './file-scan.js'
-import type { CodeMetadata } from './tree-sitter-engine.js'
-import type { TreeSitterEngine } from './tree-sitter-engine.js'
+import type { CodeMetadata, TreeSitterEngine } from './tree-sitter-engine.js'
 
 export type MinedChunk = {
     anchor: string
@@ -179,15 +178,15 @@ function chunkByWords(
                 anchor,
                 anchorType,
                 content,
+                endLine: metadata.endLine,
                 heading: metadata.heading,
                 jsonPath: metadata.jsonPath,
                 kind,
+                metadata: metadata.metadata,
                 path,
+                startLine: metadata.startLine,
                 summary: summarize(path, kind, content, metadata.symbol),
                 symbol: metadata.symbol,
-                startLine: metadata.startLine,
-                endLine: metadata.endLine,
-                metadata: metadata.metadata,
             },
         ]
     }
@@ -200,15 +199,15 @@ function chunkByWords(
             anchor: chunkAnchor,
             anchorType,
             content: body,
+            endLine: metadata.endLine,
             heading: metadata.heading,
             jsonPath: metadata.jsonPath,
             kind,
+            metadata: metadata.metadata,
             path,
+            startLine: metadata.startLine,
             summary: summarize(path, kind, body, metadata.symbol),
             symbol: metadata.symbol,
-            startLine: metadata.startLine,
-            endLine: metadata.endLine,
-            metadata: metadata.metadata,
         })
     }
 
