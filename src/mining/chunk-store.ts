@@ -22,6 +22,7 @@ import {
     upsertRetrievalDocument,
 } from './retrieval-documents.js'
 import { TreeSitterEngine } from './tree-sitter-engine.js'
+import type { CodeMetadata } from './tree-sitter-engine.js'
 
 type MineChunksResult = {
     chunkCount: number
@@ -65,8 +66,36 @@ export async function mineChunks(
                 join(context.projectRoot, file.path),
                 'utf8',
             )
-            const allChunks = await chunkFile(file, content, engine)
-            const chunks = allChunks.slice(0, defaultMaxChunksPerFile)
+            const sourceRole = classifySourceRole(file.path)
+            const language = detectLanguage(file.path)
+            let parserEngine = 'heuristic'
+            let parserStatus = 'not_applicable'
+            let parsedMetadata: CodeMetadata | undefined
+
+            if (engine && isTreeSitterLanguage(language)) {
+                parserEngine = 'tree_sitter'
+                try {
+                    parsedMetadata = await engine.parse(file.path, content)
+                    parserStatus = parsedMetadata ? 'ok' : 'unavailable'
+                } catch (error) {
+                    parserStatus = 'failed'
+                    console.error(
+                        `Tree-sitter parse failed for ${file.path}, falling back to heuristic chunking:`,
+                        error,
+                    )
+                }
+            }
+
+            const allChunks = await chunkFile(file, content, engine, parsedMetadata)
+            const chunks = allChunks.map(chunk => ({
+                ...chunk,
+                metadata: {
+                    parserEngine,
+                    parserStatus,
+                    ...chunk.metadata,
+                },
+            })).slice(0, defaultMaxChunksPerFile)
+
             if (allChunks.length > chunks.length) {
                 filesTruncatedByChunkLimit += 1
             }
@@ -75,12 +104,16 @@ export async function mineChunks(
             }
 
             const sourceId = sourceIdForPath(file.path)
-            const sourceRole = classifySourceRole(file.path)
-            const language = detectLanguage(file.path)
             const sourceTopics = extractTopics(
                 file.path,
                 chunks.map(chunk => chunk.summary).join('\n'),
             )
+            const sourceMetadata = {
+                exports: parsedMetadata?.exports ?? [],
+                imports: parsedMetadata?.imports ?? [],
+                parserEngine,
+                parserStatus,
+            }
             await adapter.execute(
                 `
 insert into sources (
@@ -106,7 +139,7 @@ insert into sources (
                     language,
                     JSON.stringify(sourceTopics),
                     JSON.stringify([]),
-                    JSON.stringify({}),
+                    JSON.stringify(sourceMetadata),
                 ],
             )
             const taxonomyNode = await ensurePathTaxonomy(
@@ -180,7 +213,7 @@ insert into chunks (
                         chunk.jsonPath ?? null,
                         JSON.stringify(chunkTopics),
                         JSON.stringify([]),
-                        JSON.stringify({}),
+                        JSON.stringify(chunk.metadata ?? {}),
                         chunk.startLine ?? null,
                         chunk.endLine ?? null,
                     ],
@@ -314,4 +347,12 @@ function chunkIdFor(
     hash: string,
 ): string {
     return `chunk_${contentHash(`${path}:${anchor || index}:${hash}`).slice(0, 32)}`
+}
+
+function isTreeSitterLanguage(language: string): boolean {
+    return (
+        language === 'javascript' ||
+        language === 'typescript' ||
+        language === 'tsx'
+    )
 }

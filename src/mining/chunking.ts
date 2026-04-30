@@ -1,4 +1,5 @@
 import type { ScannedFile } from './file-scan.js'
+import type { CodeMetadata } from './tree-sitter-engine.js'
 import type { TreeSitterEngine } from './tree-sitter-engine.js'
 
 export type MinedChunk = {
@@ -13,12 +14,14 @@ export type MinedChunk = {
     symbol?: string
     startLine?: number
     endLine?: number
+    metadata?: Record<string, unknown>
 }
 
 export async function chunkFile(
     file: ScannedFile,
     content: string,
     engine?: TreeSitterEngine,
+    parsedMetadata?: CodeMetadata,
 ): Promise<MinedChunk[]> {
     const trimmed = content.trim()
     if (!trimmed) {
@@ -34,6 +37,9 @@ export async function chunkFile(
     }
 
     if (isCode(file.path)) {
+        if (parsedMetadata && parsedMetadata.symbols.length > 0) {
+            return chunkCodeWithTreeSitter(file.path, parsedMetadata)
+        }
         if (engine) {
             try {
                 const metadata = await engine.parse(file.path, content)
@@ -53,13 +59,19 @@ export async function chunkFile(
 
 function chunkCodeWithTreeSitter(
     path: string,
-    metadata: { symbols: { name: string; kind: string; startLine: number; endLine: number; content: string; isExported: boolean }[] },
+    metadata: CodeMetadata,
 ): MinedChunk[] {
     return metadata.symbols.flatMap(symbol => {
         return chunkByWords(path, symbol.content, 'code', {
             anchor: symbol.name,
             anchorType: 'symbol',
             endLine: symbol.endLine,
+            metadata: {
+                exported: symbol.isExported,
+                nodeKind: symbol.kind,
+                parserEngine: 'tree_sitter',
+                parserStatus: 'ok',
+            },
             startLine: symbol.startLine,
             symbol: symbol.name,
         })
@@ -154,6 +166,7 @@ function chunkByWords(
         symbol?: string
         startLine?: number
         endLine?: number
+        metadata?: Record<string, unknown>
     } = {},
 ): MinedChunk[] {
     const words = content.split(/\s+/u).filter(Boolean)
@@ -174,6 +187,7 @@ function chunkByWords(
                 symbol: metadata.symbol,
                 startLine: metadata.startLine,
                 endLine: metadata.endLine,
+                metadata: metadata.metadata,
             },
         ]
     }
@@ -194,6 +208,7 @@ function chunkByWords(
             symbol: metadata.symbol,
             startLine: metadata.startLine,
             endLine: metadata.endLine,
+            metadata: metadata.metadata,
         })
     }
 
