@@ -184,6 +184,81 @@ create index if not exists chunks_deleted_idx on chunks(deleted_at, suppressed_a
 create index if not exists session_handoffs_deleted_idx on session_handoffs(deleted_at, suppressed_at);
 `,
     },
+    {
+        id: '003_mining_artifact_contract',
+        sql: `
+alter table sources add column source_role text;
+alter table sources add column language text;
+alter table sources add column topics_json text;
+alter table sources add column entities_json text;
+alter table sources add column metadata_json text;
+
+alter table chunks add column source_role text;
+alter table chunks add column language text;
+alter table chunks add column anchor_type text;
+alter table chunks add column anchor text;
+alter table chunks add column heading text;
+alter table chunks add column json_path text;
+alter table chunks add column start_line integer;
+alter table chunks add column end_line integer;
+alter table chunks add column topics_json text;
+alter table chunks add column entities_json text;
+alter table chunks add column metadata_json text;
+
+create table if not exists retrieval_documents (
+    target_id text not null,
+    target_type text not null,
+    source_id text,
+    source_role text,
+    path text,
+    anchor text,
+    summary text,
+    fts_text text not null,
+    fts_hash text not null,
+    embedding_text text not null,
+    embedding_hash text not null,
+    updated_at text not null,
+    primary key (target_id, target_type)
+);
+
+create table if not exists target_embeddings (
+    target_id text not null,
+    target_type text not null,
+    model text not null,
+    dimensions integer not null,
+    dtype text not null,
+    normalized integer not null,
+    embedding_hash text not null,
+    vector_blob blob not null,
+    created_at text not null,
+    primary key (target_id, target_type, model)
+);
+
+create table if not exists modules (
+    id text primary key,
+    path text not null,
+    source_role text,
+    package_name text,
+    summary text not null,
+    file_count integer not null default 0,
+    chunk_count integer not null default 0,
+    exported_symbols_json text,
+    imports_json text,
+    topics_json text,
+    entities_json text,
+    updated_at text not null
+);
+
+create index if not exists retrieval_documents_target_idx on retrieval_documents(target_type, target_id);
+create index if not exists retrieval_documents_source_idx on retrieval_documents(source_id);
+create index if not exists retrieval_documents_role_idx on retrieval_documents(source_role);
+create index if not exists target_embeddings_hash_idx on target_embeddings(embedding_hash);
+create index if not exists modules_path_idx on modules(path);
+create index if not exists sources_role_idx on sources(source_role);
+create index if not exists chunks_role_idx on chunks(source_role);
+create index if not exists chunks_anchor_idx on chunks(path, anchor);
+`,
+    },
 ]
 
 export async function runMigrations(adapter: SqliteAdapter): Promise<void> {

@@ -3,7 +3,7 @@ import type { LoadedProjectContext } from '../project/context.js'
 import { openProjectDatabase } from '../storage/database.js'
 import { createToonStore } from '../storage/toon-store.js'
 import { mineChunks } from './chunk-store.js'
-import { scanProjectFiles } from './file-scan.js'
+import { scanProjectFilesWithDiagnostics } from './file-scan.js'
 import type { MineManifest, MineMode } from './manifest.js'
 import { writeMineManifest } from './manifest.js'
 import { extractProjectMetadata } from './metadata.js'
@@ -26,7 +26,8 @@ export async function mineProject(
 ): Promise<MineProjectResult> {
     await mkdir(context.memoryDir, { recursive: true })
 
-    const files = await scanProjectFiles(context.projectRoot)
+    const scan = await scanProjectFilesWithDiagnostics(context.projectRoot)
+    const files = scan.files
     const metadata = await extractProjectMetadata(context.projectRoot, files)
     const minedAt = new Date().toISOString()
     const adapter = await openProjectDatabase(context)
@@ -45,6 +46,11 @@ export async function mineProject(
     )
 
     const manifest: MineManifest = {
+        diagnostics: {
+            ...scan.diagnostics,
+            chunkCount: minedChunks.chunkCount,
+            filesTruncatedByChunkLimit: minedChunks.filesTruncatedByChunkLimit,
+        },
         fileCount: files.length,
         files,
         metadata,

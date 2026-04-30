@@ -7,6 +7,7 @@ describe('migrations', () => {
         expect(migrations.map(migration => migration.id)).toEqual([
             '001_initial_schema',
             '002_memory_hygiene',
+            '003_mining_artifact_contract',
         ])
     })
 
@@ -16,6 +17,16 @@ describe('migrations', () => {
         expect(sql).toContain('observations add column content_hash')
         expect(sql).toContain('chunks add column deleted_at')
         expect(sql).toContain('session_handoffs add column forget_reason')
+    })
+
+    it('adds the mining artifact contract', () => {
+        const sql = migrations[2]?.sql ?? ''
+
+        expect(sql).toContain('sources add column source_role')
+        expect(sql).toContain('chunks add column anchor_type')
+        expect(sql).toContain('create table if not exists retrieval_documents')
+        expect(sql).toContain('create table if not exists target_embeddings')
+        expect(sql).toContain('create table if not exists modules')
     })
 
     it('creates the core memory tables', () => {

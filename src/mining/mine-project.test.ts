@@ -77,6 +77,14 @@ describe('mineProject', () => {
             'typescript',
         ])
         expect(manifest?.summaryRef).toBe(result.summaryRef)
+        expect(manifest?.diagnostics).toMatchObject({
+            chunkCount: result.chunkCount,
+            filesIncluded: 3,
+            filesSkipped: {
+                secret: 1,
+            },
+            filesTruncatedByChunkLimit: 0,
+        })
         expect(manifest?.files.map(file => file.path)).toEqual([
             'README.md',
             'package.json',
@@ -93,8 +101,27 @@ describe('mineProject', () => {
         await mineProject(context, 'full')
 
         const adapter = await openProjectDatabase(context)
-        const chunks = await adapter.query<{ id: string; path: string }>(
-            'select id, path from chunks order by path',
+        const chunks = await adapter.query<{
+            anchor: string | null
+            id: string
+            language: string | null
+            path: string
+            source_role: string | null
+        }>(
+            'select id, path, source_role, language, anchor from chunks order by path',
+        )
+        const retrievalDocuments = await adapter.query<{
+            source_role: string | null
+            target_type: string
+        }>(
+            `
+select target_type, source_role
+from retrieval_documents
+order by target_type, source_role
+`,
+        )
+        const modules = await adapter.query<{ path: string }>(
+            'select path from modules order by path',
         )
         const searchResults = await searchMemory(adapter, {
             limit: 5,
@@ -109,6 +136,22 @@ describe('mineProject', () => {
         await adapter.close()
 
         expect(chunks.some(chunk => chunk.path === 'README.md')).toBe(true)
+        expect(chunks.some(chunk => chunk.source_role === 'product_doc')).toBe(
+            true,
+        )
+        expect(chunks.some(chunk => chunk.language === 'typescript')).toBe(true)
+        expect(chunks.some(chunk => chunk.anchor)).toBe(true)
+        expect(
+            retrievalDocuments.some(
+                document => document.target_type === 'chunk',
+            ),
+        ).toBe(true)
+        expect(
+            retrievalDocuments.some(
+                document => document.target_type === 'module',
+            ),
+        ).toBe(true)
+        expect(modules.map(module => module.path)).toContain('src')
         expect(searchResults[0]?.type).toBe('chunk')
         expect(searchResults[0]?.sourceId).toStartWith('source_')
         expect(searchResults[0]?.tokenCost).toBeGreaterThan(0)
@@ -136,6 +179,31 @@ describe('mineProject', () => {
         expect(stale.freshness.recommendedCommand).toBe(
             'konteks mine --changed',
         )
+    })
+
+    it('caps chunks per file and reports the diagnostic', async () => {
+        const projectRoot = await makeTempProject()
+        await writeFile(
+            join(projectRoot, 'src', 'many.ts'),
+            Array.from(
+                { length: 205 },
+                (_, index) => `export const value${index} = ${index}`,
+            ).join('\n'),
+        )
+        const context = await loadProjectContext(projectRoot)
+
+        await mineProject(context, 'full')
+
+        const adapter = await openProjectDatabase(context)
+        const chunks = await adapter.query<{ count: number }>(
+            'select count(*) as count from chunks where path = ?',
+            ['src/many.ts'],
+        )
+        await adapter.close()
+        const manifest = await readMineManifest(context.memoryDir)
+
+        expect(chunks[0]?.count).toBe(200)
+        expect(manifest?.diagnostics?.filesTruncatedByChunkLimit).toBe(1)
     })
 
     it('stores the manifest as local JSON', async () => {

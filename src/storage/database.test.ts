@@ -36,6 +36,7 @@ describe('project database', () => {
         expect(migrations).toEqual([
             { id: '001_initial_schema' },
             { id: '002_memory_hygiene' },
+            { id: '003_mining_artifact_contract' },
         ])
     })
 })

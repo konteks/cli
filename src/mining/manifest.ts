@@ -2,7 +2,11 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { LoadedProjectContext } from '../project/context.js'
 import { pathExists } from '../project/context.js'
-import { type ScannedFile, scanProjectFiles } from './file-scan.js'
+import {
+    type ScanDiagnostics,
+    type ScannedFile,
+    scanProjectFiles,
+} from './file-scan.js'
 import type { ProjectMetadata } from './metadata.js'
 
 export type MineMode = 'changed' | 'full'
@@ -17,6 +21,12 @@ export type MineManifest = {
     metadata: ProjectMetadata
     summaryRef: string
     summaryHash: string
+    diagnostics?: MineDiagnostics
+}
+
+type MineDiagnostics = ScanDiagnostics & {
+    chunkCount: number
+    filesTruncatedByChunkLimit: number
 }
 
 type MiningFreshness = {
