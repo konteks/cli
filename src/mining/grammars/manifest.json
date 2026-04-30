@@ -1,0 +1,27 @@
+{
+    "grammars": {
+        "javascript": {
+            "aliases": ["js"],
+            "extensions": [".js", ".mjs", ".cjs"],
+            "language": "javascript",
+            "package": "tree-sitter-javascript",
+            "wasmFile": "tree-sitter-javascript.wasm"
+        },
+        "tsx": {
+            "aliases": [],
+            "extensions": [".tsx"],
+            "language": "tsx",
+            "package": "tree-sitter-typescript",
+            "wasmFile": "tree-sitter-tsx.wasm"
+        },
+        "typescript": {
+            "aliases": ["ts", "mts", "cts"],
+            "extensions": [".ts", ".mts", ".cts"],
+            "language": "typescript",
+            "package": "tree-sitter-typescript",
+            "wasmFile": "tree-sitter-typescript.wasm"
+        }
+    },
+    "manifestVersion": 1,
+    "runtime": "web-tree-sitter@0.26.8"
+}

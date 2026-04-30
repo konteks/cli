@@ -1,32 +1,49 @@
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { pathExists } from '../project/context.js'
+import grammarManifest from './grammars/manifest.json'
 import type { TreeSitterEngine } from './tree-sitter-engine.js'
 
-export async function initTreeSitterWithBundledGrammars(engine: TreeSitterEngine) {
-    await engine.init()
-    
-    // In v0.1 we heuristic-find them in node_modules for dev
-    // and expect them in a certain place for production
-    const nodeModulesPath = join(process.cwd(), 'node_modules')
-    
-    const grammars = [
-        {
-            lang: 'javascript' as const,
-            path: join(nodeModulesPath, 'tree-sitter-javascript', 'tree-sitter-javascript.wasm'),
-        },
-        {
-            lang: 'typescript' as const,
-            path: join(nodeModulesPath, 'tree-sitter-typescript', 'tree-sitter-typescript.wasm'),
-        },
-        {
-            lang: 'tsx' as const,
-            path: join(nodeModulesPath, 'tree-sitter-typescript', 'tree-sitter-tsx.wasm'),
-        },
-    ]
+type BundledGrammar = {
+    language: 'javascript' | 'typescript' | 'tsx'
+    package: string
+    wasmFile: string
+}
 
-    for (const grammar of grammars) {
-        if (await pathExists(grammar.path)) {
-            await engine.loadLanguage(grammar.lang, grammar.path)
+type GrammarManifest = {
+    runtime: string
+    manifestVersion: number
+    grammars: Record<string, BundledGrammar>
+}
+
+const bundledManifest = grammarManifest as GrammarManifest
+
+export function getBundledGrammarManifest(): GrammarManifest {
+    return bundledManifest
+}
+
+export async function initTreeSitterWithBundledGrammars(
+    engine: TreeSitterEngine,
+) {
+    await engine.init()
+
+    const candidateRoots = resolveCandidateRoots()
+    for (const grammar of Object.values(bundledManifest.grammars)) {
+        for (const root of candidateRoots) {
+            const wasmPath = join(root, grammar.package, grammar.wasmFile)
+            if (await pathExists(wasmPath)) {
+                await engine.loadLanguage(grammar.language, wasmPath)
+                break
+            }
         }
     }
+}
+
+function resolveCandidateRoots(): string[] {
+    const roots: string[] = []
+    if (process.env.KONTEKS_GRAMMAR_ROOT) {
+        roots.push(resolve(process.env.KONTEKS_GRAMMAR_ROOT))
+    }
+    roots.push(resolve(process.cwd(), '.konteks', 'grammars', 'bundled'))
+    roots.push(resolve(process.cwd(), 'node_modules'))
+    return roots
 }
