@@ -1,11 +1,17 @@
+import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { pathExists } from '../project/context.js'
 import grammarManifest from './grammars/manifest.json'
 import type { TreeSitterEngine } from './tree-sitter-engine.js'
 
 type BundledGrammar = {
+    aliases: string[]
+    extensions: string[]
     language: 'javascript' | 'typescript' | 'tsx'
     package: string
+    sha256: string
+    url: string
+    version: string
     wasmFile: string
 }
 
@@ -43,7 +49,15 @@ function resolveCandidateRoots(): string[] {
     if (process.env.KONTEKS_GRAMMAR_ROOT) {
         roots.push(resolve(process.env.KONTEKS_GRAMMAR_ROOT))
     }
+    roots.push(join(resolveGlobalGrammarCacheDir(), 'bundled'))
     roots.push(resolve(process.cwd(), '.konteks', 'grammars', 'bundled'))
     roots.push(resolve(process.cwd(), 'node_modules'))
     return roots
+}
+
+function resolveGlobalGrammarCacheDir(): string {
+    if (process.env.KONTEKS_GRAMMAR_CACHE_DIR) {
+        return resolve(process.env.KONTEKS_GRAMMAR_CACHE_DIR)
+    }
+    return join(homedir(), '.cache', 'konteks', 'grammars')
 }
