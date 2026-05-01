@@ -226,6 +226,19 @@ order by target_type, source_role
         expect(JSON.parse(rawManifest).mode).toBe('changed')
     })
 
+    it('stores reindex mode in manifest', async () => {
+        const projectRoot = await makeTempProject()
+        const context = await loadProjectContext(projectRoot)
+
+        await mineProject(context, 'reindex')
+
+        const rawManifest = await readFile(
+            join(projectRoot, '.konteks', 'mine-manifest.json'),
+            'utf8',
+        )
+        expect(JSON.parse(rawManifest).mode).toBe('reindex')
+    })
+
     it('changed mode removes deleted-file chunks and preserves unchanged chunks', async () => {
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)

@@ -36,7 +36,10 @@ export async function mineChunks(
     context: LoadedProjectContext,
     files: ScannedFile[],
     minedAt: string,
-    options: { deletedPaths?: string[]; mode?: 'changed' | 'full' } = {},
+    options: {
+        deletedPaths?: string[]
+        mode?: 'changed' | 'full' | 'reindex'
+    } = {},
 ): Promise<MineChunksResult> {
     const toonStore = createToonStore(context.memoryDir)
     const taxonomy = new TaxonomyStore(adapter)

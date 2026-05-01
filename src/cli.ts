@@ -42,6 +42,7 @@ program
         '--changed',
         'Only mine files changed since the last successful mine',
     )
+    .option('--reindex', 'Force a full rebuild of mined artifacts and indexes')
     .action(async options => {
         await mineCommand(program.opts(), options)
     })

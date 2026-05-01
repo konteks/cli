@@ -115,6 +115,10 @@ function selectFilesForMode(
     previousManifest: MineManifest | undefined,
     mode: MineMode,
 ): { deletedPaths: string[]; filesToMine: ScannedFile[] } {
+    if (mode === 'reindex') {
+        return { deletedPaths: [], filesToMine: currentFiles }
+    }
+
     if (mode !== 'changed' || !previousManifest) {
         return { deletedPaths: [], filesToMine: currentFiles }
     }

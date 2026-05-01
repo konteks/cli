@@ -5,6 +5,7 @@ import type { GlobalCliOptions } from '../options.js'
 
 type MineOptions = {
     changed?: boolean
+    reindex?: boolean
 }
 
 export async function mineCommand(
@@ -12,7 +13,15 @@ export async function mineCommand(
     mineOptions: MineOptions,
 ): Promise<void> {
     const context = await loadProjectContext(options.project)
-    const mode = mineOptions.changed ? 'changed' : 'full'
+    if (mineOptions.changed && mineOptions.reindex) {
+        throw new Error('Use either --changed or --reindex, not both.')
+    }
+
+    const mode = mineOptions.reindex
+        ? 'reindex'
+        : mineOptions.changed
+          ? 'changed'
+          : 'full'
     const result = await mineProject(context, mode, {
         embeddingProvider: new HuggingFaceEmbeddingProvider(),
     })

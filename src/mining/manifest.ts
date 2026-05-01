@@ -9,7 +9,7 @@ import {
 } from './file-scan.js'
 import type { ProjectMetadata } from './metadata.js'
 
-export type MineMode = 'changed' | 'full'
+export type MineMode = 'changed' | 'full' | 'reindex'
 
 export type MineManifest = {
     version: 1
