@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
 import {
@@ -8,6 +9,7 @@ import {
 } from './ignore-rules.js'
 
 export type ScannedFile = {
+    contentHash: string
     path: string
     sizeBytes: number
     mtimeMs: number
@@ -117,8 +119,10 @@ async function scanDirectory(
             diagnostics.filesSkipped.large += 1
             continue
         }
+        const bytes = await readFile(absolutePath)
 
         files.push({
+            contentHash: hashBytes(bytes),
             mtimeMs: Math.trunc(fileStat.mtimeMs),
             path: relativePath,
             sizeBytes: fileStat.size,
@@ -203,4 +207,8 @@ function compareText(left: string, right: string): number {
         return 1
     }
     return 0
+}
+
+function hashBytes(bytes: Uint8Array): string {
+    return createHash('sha256').update(bytes).digest('hex')
 }

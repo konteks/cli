@@ -48,6 +48,9 @@ describe('scanProjectFiles', () => {
             'package.json',
             'src/index.ts',
         ])
+        expect(scan.files.every(file => file.contentHash.length === 64)).toBe(
+            true,
+        )
         expect(scan.diagnostics.filesIncluded).toBe(4)
         expect(scan.diagnostics.filesSkipped.vcsIgnore).toBe(2)
         expect(scan.diagnostics.filesSkipped.konteksignore).toBe(1)

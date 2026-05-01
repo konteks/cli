@@ -109,13 +109,21 @@ function findStaleReason(
         if (!previous) {
             return `New file detected: ${current.path}.`
         }
-        if (
-            previous.sizeBytes !== current.sizeBytes ||
-            previous.mtimeMs !== current.mtimeMs
-        ) {
+        if (hasFileChanged(previous, current)) {
             return `Changed file detected: ${current.path}.`
         }
     }
 
     return undefined
+}
+
+function hasFileChanged(previous: ScannedFile, current: ScannedFile): boolean {
+    if (previous.contentHash && current.contentHash) {
+        return previous.contentHash !== current.contentHash
+    }
+
+    return (
+        previous.sizeBytes !== current.sizeBytes ||
+        previous.mtimeMs !== current.mtimeMs
+    )
 }

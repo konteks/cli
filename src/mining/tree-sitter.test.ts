@@ -80,7 +80,12 @@ describe('TreeSitterEngine', () => {
         `
 
         const chunks = await chunkFile(
-            { mtimeMs: 0, path: 'test.ts', sizeBytes: 100 },
+            {
+                contentHash: 'hash',
+                mtimeMs: 0,
+                path: 'test.ts',
+                sizeBytes: 100,
+            },
             code,
             engine,
         )
@@ -95,7 +100,12 @@ describe('TreeSitterEngine', () => {
     it('falls back to heuristic when engine is missing or fails', async () => {
         const code = 'export const x = 1\nexport const y = 2'
         const chunks = await chunkFile(
-            { mtimeMs: 0, path: 'test.ts', sizeBytes: 100 },
+            {
+                contentHash: 'hash',
+                mtimeMs: 0,
+                path: 'test.ts',
+                sizeBytes: 100,
+            },
             code,
         )
 

@@ -133,10 +133,7 @@ function selectFilesForMode(
         if (!previous) {
             return true
         }
-        return (
-            previous.sizeBytes !== file.sizeBytes ||
-            previous.mtimeMs !== file.mtimeMs
-        )
+        return hasFileChanged(previous, file)
     })
 
     const deletedPaths = previousManifest.files
@@ -144,4 +141,15 @@ function selectFilesForMode(
         .map(file => file.path)
 
     return { deletedPaths, filesToMine }
+}
+
+function hasFileChanged(previous: ScannedFile, current: ScannedFile): boolean {
+    if (previous.contentHash && current.contentHash) {
+        return previous.contentHash !== current.contentHash
+    }
+
+    return (
+        previous.sizeBytes !== current.sizeBytes ||
+        previous.mtimeMs !== current.mtimeMs
+    )
 }
