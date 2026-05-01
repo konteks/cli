@@ -1,5 +1,15 @@
 {
     "grammars": {
+        "html": {
+            "aliases": ["htm"],
+            "extensions": [".html", ".htm"],
+            "language": "html",
+            "package": "tree-sitter-html",
+            "sha256": "c48fcd82c7ea8bf943180088ba7f28c48b2bb5287874179168bf9d31e394cf85",
+            "url": "https://unpkg.com/tree-sitter-html@0.23.2/tree-sitter-html.wasm",
+            "version": "0.23.2",
+            "wasmFile": "tree-sitter-html.wasm"
+        },
         "javascript": {
             "aliases": ["js"],
             "extensions": [".js", ".mjs", ".cjs"],
@@ -9,6 +19,36 @@
             "url": "https://unpkg.com/tree-sitter-javascript@0.25.0/tree-sitter-javascript.wasm",
             "version": "0.25.0",
             "wasmFile": "tree-sitter-javascript.wasm"
+        },
+        "jsdoc": {
+            "aliases": [],
+            "extensions": [".jsdoc"],
+            "language": "jsdoc",
+            "package": "tree-sitter-jsdoc",
+            "sha256": "5530e630fd42424b1c026ec4b2b260ff1b73b78b7040239ac33d4be22a9b2271",
+            "url": "https://unpkg.com/tree-sitter-jsdoc@0.25.0/tree-sitter-jsdoc.wasm",
+            "version": "0.25.0",
+            "wasmFile": "tree-sitter-jsdoc.wasm"
+        },
+        "json": {
+            "aliases": ["jsonc"],
+            "extensions": [".json", ".jsonc"],
+            "language": "json",
+            "package": "tree-sitter-json",
+            "sha256": "d2119fb98d5912719b13f9458574f8608d2d29dfbe45f6be1f860ea1fe2a2405",
+            "url": "https://unpkg.com/tree-sitter-json@0.24.8/tree-sitter-json.wasm",
+            "version": "0.24.8",
+            "wasmFile": "tree-sitter-json.wasm"
+        },
+        "php": {
+            "aliases": ["phtml"],
+            "extensions": [".php", ".phtml"],
+            "language": "php",
+            "package": "tree-sitter-php",
+            "sha256": "d4df6a6ff08c87c3ec4f9cbb785fe09998a0cb570e03f57d7b19b3acfb146aa7",
+            "url": "https://unpkg.com/tree-sitter-php@0.24.2/tree-sitter-php.wasm",
+            "version": "0.24.2",
+            "wasmFile": "tree-sitter-php.wasm"
         },
         "tsx": {
             "aliases": [],

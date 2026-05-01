@@ -11,7 +11,9 @@ type SourceRole =
     | 'unknown'
 
 type MinedLanguage =
+    | 'html'
     | 'javascript'
+    | 'jsdoc'
     | 'json'
     | 'jsx'
     | 'markdown'
@@ -20,6 +22,7 @@ type MinedLanguage =
     | 'typescript_declaration'
     | 'unknown'
     | 'yaml'
+    | 'php'
 
 const packageConfigFiles = new Set([
     'package.json',
@@ -59,6 +62,15 @@ export function detectLanguage(path: string): MinedLanguage {
     }
     if (/\.(json|jsonc)$/u.test(lowerPath)) {
         return 'json'
+    }
+    if (/\.(html|htm)$/u.test(lowerPath)) {
+        return 'html'
+    }
+    if (/\.(php|phtml)$/u.test(lowerPath)) {
+        return 'php'
+    }
+    if (lowerPath.endsWith('.jsdoc')) {
+        return 'jsdoc'
     }
     if (/\.(ya?ml)$/u.test(lowerPath)) {
         return 'yaml'

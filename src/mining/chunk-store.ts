@@ -358,7 +358,11 @@ function chunkIdFor(
 
 function isTreeSitterLanguage(language: string): boolean {
     return (
+        language === 'html' ||
         language === 'javascript' ||
+        language === 'jsdoc' ||
+        language === 'json' ||
+        language === 'php' ||
         language === 'typescript' ||
         language === 'tsx'
     )

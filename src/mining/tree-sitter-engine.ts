@@ -1,5 +1,14 @@
 import { Language, type Node, Parser, Query } from 'web-tree-sitter'
 
+export type TreeSitterLanguage =
+    | 'html'
+    | 'javascript'
+    | 'jsdoc'
+    | 'json'
+    | 'php'
+    | 'tsx'
+    | 'typescript'
+
 export type CodeSymbol = {
     name: string
     kind: string
@@ -29,10 +38,7 @@ export class TreeSitterEngine {
         this.parser = new Parser()
     }
 
-    async loadLanguage(
-        lang: 'javascript' | 'typescript' | 'tsx',
-        wasmPath: string,
-    ) {
+    async loadLanguage(lang: TreeSitterLanguage, wasmPath: string) {
         if (this.languages.has(lang)) {
             return
         }
@@ -76,9 +82,11 @@ export class TreeSitterEngine {
         return metadata
     }
 
-    private detectLanguage(
-        path: string,
-    ): 'javascript' | 'typescript' | 'tsx' | undefined {
+    private detectLanguage(path: string): TreeSitterLanguage | undefined {
+        if (path.endsWith('.jsdoc')) return 'jsdoc'
+        if (/\.(json|jsonc)$/u.test(path)) return 'json'
+        if (/\.(html|htm)$/u.test(path)) return 'html'
+        if (/\.(php|phtml)$/u.test(path)) return 'php'
         if (path.endsWith('.tsx')) return 'tsx'
         if (path.endsWith('.ts')) return 'typescript'
         if (
@@ -94,8 +102,13 @@ export class TreeSitterEngine {
         root: Node,
         _: string,
         metadata: CodeMetadata,
-        lang: string,
+        lang: TreeSitterLanguage,
     ) {
+        // Structural symbol extraction is currently implemented only for JS/TS.
+        if (lang !== 'javascript' && lang !== 'typescript' && lang !== 'tsx') {
+            return
+        }
+
         const query = this.buildQuery(root.tree.language, lang)
         const captures = query.captures(root)
 
@@ -124,7 +137,10 @@ export class TreeSitterEngine {
         }
     }
 
-    private buildQuery(language: Language, lang: string): Query {
+    private buildQuery(
+        language: Language,
+        lang: 'javascript' | 'typescript' | 'tsx',
+    ): Query {
         const baseQueries = `
             (import_statement) @import
             (export_statement) @export

@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
 import { doctorCommand } from './cli/commands/doctor.js'
-import { grammarCommand } from './cli/commands/grammar.js'
 import { initCommand } from './cli/commands/init.js'
 import { mcpCommand } from './cli/commands/mcp.js'
 import { mineCommand } from './cli/commands/mine.js'
@@ -52,33 +51,6 @@ program
     .description('Start the Konteks MCP server over stdio.')
     .action(async () => {
         await mcpCommand(program.opts())
-    })
-
-const grammar = program
-    .command('grammar')
-    .description('Manage Konteks grammar assets.')
-
-grammar
-    .command('list')
-    .description('List built-in grammars and installation status.')
-    .action(async () => {
-        await grammarCommand('list')
-    })
-
-grammar
-    .command('add')
-    .description('Install a bundled grammar into global cache.')
-    .argument('<language>', 'Language (javascript, typescript, tsx)')
-    .action(async language => {
-        await grammarCommand('add', language)
-    })
-
-grammar
-    .command('remove')
-    .description('Remove an installed grammar from global cache.')
-    .argument('<language>', 'Language (javascript, typescript, tsx)')
-    .action(async language => {
-        await grammarCommand('remove', language)
     })
 
 await program.parseAsync(process.argv)
