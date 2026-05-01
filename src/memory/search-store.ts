@@ -4,7 +4,7 @@ import { hasSearchIndex } from './search-index.js'
 
 export type MemorySearchResult = {
     id: string
-    type: 'chunk' | 'memory' | 'session'
+    type: 'chunk' | 'memory' | 'module' | 'session'
     kind?: string
     sourceId?: string
     status?: string
@@ -50,6 +50,19 @@ type FtsRow = {
     confidence: number | null
 }
 
+type RetrievalDocumentRow = {
+    target_id: string
+    target_type: 'chunk' | 'module'
+    summary: string | null
+    fts_text: string
+    source_id: string | null
+    source_role: string | null
+    path: string | null
+    anchor: string | null
+    updated_at: string
+    token_count: number | null
+}
+
 const maxExcerptTokens = 120
 
 export async function searchMemory(
@@ -62,6 +75,15 @@ export async function searchMemory(
 
     if (terms.length === 0) {
         return []
+    }
+
+    const retrievalResults = await searchRetrievalDocuments(
+        adapter,
+        terms,
+        limit,
+    )
+    if (retrievalResults.length > 0) {
+        return retrievalResults
     }
 
     if (await hasSearchIndex(adapter)) {
@@ -102,6 +124,45 @@ limit ?
         ...observations.map(row => observationToResult(row, terms)),
         ...handoffs.map(row => handoffToResult(row, terms)),
     ]
+        .sort(compareSearchResults)
+        .slice(0, limit)
+}
+
+async function searchRetrievalDocuments(
+    adapter: SqliteAdapter,
+    terms: string[],
+    limit: number,
+): Promise<MemorySearchResult[]> {
+    const whereClause = terms
+        .map(() => 'lower(rd.fts_text) like ?')
+        .join(' or ')
+    const rows = await adapter.query<RetrievalDocumentRow>(
+        `
+select
+    rd.target_id,
+    rd.target_type,
+    rd.summary,
+    rd.fts_text,
+    rd.source_id,
+    rd.source_role,
+    rd.path,
+    rd.anchor,
+    rd.updated_at,
+    c.token_count
+from retrieval_documents rd
+left join chunks c
+    on c.id = rd.target_id
+   and rd.target_type = 'chunk'
+where rd.target_type in ('chunk', 'module')
+  and (${whereClause})
+order by rd.updated_at desc
+limit ?
+`,
+        [...terms.map(term => `%${term}%`), limit * 4],
+    )
+
+    return rows
+        .map(row => retrievalDocumentToResult(row, terms))
         .sort(compareSearchResults)
         .slice(0, limit)
 }
@@ -208,6 +269,34 @@ function handoffToResult(row: HandoffRow, terms: string[]): MemorySearchResult {
         terms,
         textForScoring: text,
         type: 'session',
+    })
+}
+
+function retrievalDocumentToResult(
+    row: RetrievalDocumentRow,
+    terms: string[],
+): MemorySearchResult {
+    const location = row.path
+        ? row.anchor
+            ? `${row.path}#${row.anchor}`
+            : row.path
+        : row.target_id
+    const type = row.target_type
+    const excerpt = row.summary
+        ? `${location}\n${row.summary}`
+        : `${location}\n${row.fts_text}`
+
+    return makeSearchResult({
+        confidence: 1,
+        content: excerpt,
+        createdAt: row.updated_at,
+        id: row.target_id,
+        kind: row.source_role ?? undefined,
+        sourceId: row.source_id ?? undefined,
+        terms,
+        tokenCost:
+            row.token_count ?? estimateTokens(row.summary ?? row.fts_text),
+        type,
     })
 }
 
