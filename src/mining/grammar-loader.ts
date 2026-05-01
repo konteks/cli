@@ -1,10 +1,12 @@
 import { join, resolve } from 'node:path'
 import { pathExists } from '../project/context.js'
 import grammarManifest from './grammars/manifest.json' with { type: 'json' }
-import type {
-    TreeSitterEngine,
-    TreeSitterLanguage,
-} from './tree-sitter-engine.js'
+import type { TreeSitterLanguage } from './tree-sitter-engine.js'
+
+type TreeSitterBootstrapEngine = {
+    init(): Promise<void>
+    loadLanguage(lang: TreeSitterLanguage, wasmPath: string): Promise<void>
+}
 
 type BundledGrammar = {
     aliases: string[]
@@ -30,7 +32,7 @@ export function getBundledGrammarManifest(): GrammarManifest {
 }
 
 export async function initTreeSitterWithBundledGrammars(
-    engine: TreeSitterEngine,
+    engine: TreeSitterBootstrapEngine,
 ) {
     await engine.init()
 

@@ -11,6 +11,7 @@ import type { MineManifest, MineMode } from './manifest.js'
 import { readMineManifest, writeMineManifest } from './manifest.js'
 import { extractProjectMetadata } from './metadata.js'
 import { formatProjectSummaryToon } from './toon-summary.js'
+import type { TreeSitterEngine } from './tree-sitter-engine.js'
 
 type MineProjectResult = {
     ok: true
@@ -28,7 +29,10 @@ type MineProjectResult = {
 export async function mineProject(
     context: LoadedProjectContext,
     mode: MineMode,
-    options: { embeddingProvider?: EmbeddingProvider } = {},
+    options: {
+        embeddingProvider?: EmbeddingProvider
+        treeSitterEngine?: TreeSitterEngine
+    } = {},
 ): Promise<MineProjectResult> {
     await mkdir(context.memoryDir, { recursive: true })
 
@@ -54,6 +58,7 @@ export async function mineProject(
         {
             deletedPaths,
             mode,
+            treeSitterEngine: options.treeSitterEngine,
         },
     )
     const embeddingRun = options.embeddingProvider

@@ -41,13 +41,14 @@ export async function mineChunks(
     options: {
         deletedPaths?: string[]
         mode?: 'changed' | 'full' | 'reindex'
+        treeSitterEngine?: TreeSitterEngine
     } = {},
 ): Promise<MineChunksResult> {
     const toonStore = createToonStore(context.memoryDir)
     const taxonomy = new TaxonomyStore(adapter)
     let engine: TreeSitterEngine | undefined
     try {
-        engine = new TreeSitterEngine()
+        engine = options.treeSitterEngine ?? new TreeSitterEngine()
         await initTreeSitterWithBundledGrammars(engine)
     } catch (error) {
         console.error(

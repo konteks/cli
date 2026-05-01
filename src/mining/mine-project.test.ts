@@ -17,8 +17,19 @@ import { openProjectDatabase } from '../storage/database.js'
 import { createToonStore } from '../storage/toon-store.js'
 import { getMiningFreshness, readMineManifest } from './manifest.js'
 import { mineProject } from './mine-project.js'
+import type { TreeSitterLanguage } from './tree-sitter-engine.js'
 
 const tempDirs: string[] = []
+
+class FailingTreeSitterEngine {
+    async init() {}
+
+    async loadLanguage(_: TreeSitterLanguage, __: string) {}
+
+    async parse(): Promise<never> {
+        throw new Error('forced parser failure')
+    }
+}
 
 async function makeTempProject(): Promise<string> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-mine-test-'))
@@ -270,5 +281,20 @@ order by target_type, source_role
         expect(readmeChunks[0]?.count).toBe(0)
         expect(indexChunks[0]?.count).toBeGreaterThan(0)
         expect(newChunks[0]?.count).toBeGreaterThan(0)
+    })
+
+    it('falls back deterministically when parser fails', async () => {
+        const projectRoot = await makeTempProject()
+        const context = await loadProjectContext(projectRoot)
+
+        const result = await mineProject(context, 'full', {
+            treeSitterEngine: new FailingTreeSitterEngine() as never,
+        })
+        const manifest = await readMineManifest(context.memoryDir)
+
+        expect(result.ok).toBe(true)
+        expect(result.chunkCount).toBeGreaterThan(0)
+        expect(manifest?.diagnostics?.parserFallbackFiles).toBeGreaterThan(0)
+        expect(manifest?.diagnostics?.parserUsedFiles).toBe(0)
     })
 })
