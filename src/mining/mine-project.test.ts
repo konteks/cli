@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import {
+    mkdir,
+    mkdtemp,
+    readFile,
+    rm,
+    unlink,
+    writeFile,
+} from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { searchMemory } from '../memory/search-store.js'
@@ -217,5 +224,38 @@ order by target_type, source_role
             'utf8',
         )
         expect(JSON.parse(rawManifest).mode).toBe('changed')
+    })
+
+    it('changed mode removes deleted-file chunks and preserves unchanged chunks', async () => {
+        const projectRoot = await makeTempProject()
+        const context = await loadProjectContext(projectRoot)
+
+        await mineProject(context, 'full')
+
+        await unlink(join(projectRoot, 'README.md'))
+        await writeFile(
+            join(projectRoot, 'src', 'new.ts'),
+            'export const n = 1\n',
+        )
+        await mineProject(context, 'changed')
+
+        const adapter = await openProjectDatabase(context)
+        const readmeChunks = await adapter.query<{ count: number }>(
+            'select count(*) as count from chunks where path = ?',
+            ['README.md'],
+        )
+        const indexChunks = await adapter.query<{ count: number }>(
+            'select count(*) as count from chunks where path = ?',
+            ['src/index.ts'],
+        )
+        const newChunks = await adapter.query<{ count: number }>(
+            'select count(*) as count from chunks where path = ?',
+            ['src/new.ts'],
+        )
+        await adapter.close()
+
+        expect(readmeChunks[0]?.count).toBe(0)
+        expect(indexChunks[0]?.count).toBeGreaterThan(0)
+        expect(newChunks[0]?.count).toBeGreaterThan(0)
     })
 })

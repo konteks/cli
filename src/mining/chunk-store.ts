@@ -36,6 +36,7 @@ export async function mineChunks(
     context: LoadedProjectContext,
     files: ScannedFile[],
     minedAt: string,
+    options: { deletedPaths?: string[]; mode?: 'changed' | 'full' } = {},
 ): Promise<MineChunksResult> {
     const toonStore = createToonStore(context.memoryDir)
     const taxonomy = new TaxonomyStore(adapter)
@@ -55,7 +56,14 @@ export async function mineChunks(
     let filesTruncatedByChunkLimit = 0
 
     await adapter.transaction(async () => {
-        await clearMinedChunks(adapter)
+        if (options.mode === 'changed') {
+            await clearMinedChunksForPaths(adapter, [
+                ...files.map(file => file.path),
+                ...(options.deletedPaths ?? []),
+            ])
+        } else {
+            await clearMinedChunks(adapter)
+        }
         const rootNode = await taxonomy.upsertNode({
             name: 'Project Files',
             summary: 'Files mined from the current project.',
@@ -318,6 +326,92 @@ where source_id in (select id from sources where type = 'mined_file');
 delete from sources
 where type = 'mined_file';
 `)
+}
+
+async function clearMinedChunksForPaths(
+    adapter: SqliteAdapter,
+    paths: string[],
+): Promise<void> {
+    const uniquePaths = [...new Set(paths)].filter(Boolean)
+    if (uniquePaths.length === 0) {
+        return
+    }
+
+    const placeholders = uniquePaths.map(() => '?').join(', ')
+
+    await adapter.execute(
+        `
+delete from memory_fts_indexed
+where id in (
+    select id
+    from chunks
+    where path in (${placeholders})
+);
+`,
+        uniquePaths,
+    )
+    await adapter.execute(
+        `
+delete from memory_fts
+where id in (
+    select id
+    from chunks
+    where path in (${placeholders})
+);
+`,
+        uniquePaths,
+    )
+    await adapter.execute(
+        `
+delete from taxonomy_links
+where target_type = 'chunk'
+  and target_id in (
+    select id
+    from chunks
+    where path in (${placeholders})
+);
+`,
+        uniquePaths,
+    )
+    await adapter.execute(
+        `
+delete from retrieval_documents
+where target_type = 'chunk'
+  and target_id in (
+    select id
+    from chunks
+    where path in (${placeholders})
+);
+`,
+        uniquePaths,
+    )
+    await adapter.execute(
+        `
+delete from target_embeddings
+where target_type = 'chunk'
+  and target_id in (
+    select id
+    from chunks
+    where path in (${placeholders})
+);
+`,
+        uniquePaths,
+    )
+    await adapter.execute(
+        `
+delete from chunks
+where path in (${placeholders});
+`,
+        uniquePaths,
+    )
+    await adapter.execute(
+        `
+delete from sources
+where type = 'mined_file'
+  and uri in (${placeholders});
+`,
+        uniquePaths,
+    )
 }
 
 async function ensurePathTaxonomy(
