@@ -1,3 +1,4 @@
+import { HuggingFaceEmbeddingProvider } from '../../mining/embedding-provider.js'
 import { mineProject } from '../../mining/mine-project.js'
 import { loadProjectContext } from '../../project/context.js'
 import type { GlobalCliOptions } from '../options.js'
@@ -12,7 +13,9 @@ export async function mineCommand(
 ): Promise<void> {
     const context = await loadProjectContext(options.project)
     const mode = mineOptions.changed ? 'changed' : 'full'
-    const result = await mineProject(context, mode)
+    const result = await mineProject(context, mode, {
+        embeddingProvider: new HuggingFaceEmbeddingProvider(),
+    })
 
     console.log(JSON.stringify(result, null, 2))
 }

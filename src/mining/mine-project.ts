@@ -3,6 +3,8 @@ import type { LoadedProjectContext } from '../project/context.js'
 import { openProjectDatabase } from '../storage/database.js'
 import { createToonStore } from '../storage/toon-store.js'
 import { mineChunks } from './chunk-store.js'
+import { generateTargetEmbeddings } from './embedding-pipeline.js'
+import type { EmbeddingProvider } from './embedding-provider.js'
 import { scanProjectFilesWithDiagnostics } from './file-scan.js'
 import type { MineManifest, MineMode } from './manifest.js'
 import { writeMineManifest } from './manifest.js'
@@ -17,12 +19,15 @@ type MineProjectResult = {
     minedAt: string
     summaryRef: string
     chunkCount: number
+    embeddedCount: number
+    embeddingReusedCount: number
     technologies: string[]
 }
 
 export async function mineProject(
     context: LoadedProjectContext,
     mode: MineMode,
+    options: { embeddingProvider?: EmbeddingProvider } = {},
 ): Promise<MineProjectResult> {
     await mkdir(context.memoryDir, { recursive: true })
 
@@ -32,6 +37,14 @@ export async function mineProject(
     const minedAt = new Date().toISOString()
     const adapter = await openProjectDatabase(context)
     const minedChunks = await mineChunks(adapter, context, files, minedAt)
+    const embeddingRun = options.embeddingProvider
+        ? await generateTargetEmbeddings(
+              adapter,
+              options.embeddingProvider,
+              ['chunk', 'module'],
+              minedAt,
+          )
+        : { embeddedCount: 0, reusedCount: 0 }
     await adapter.close()
     const toonStore = createToonStore(context.memoryDir)
     const summary = await toonStore.write(
@@ -49,6 +62,8 @@ export async function mineProject(
         diagnostics: {
             ...scan.diagnostics,
             chunkCount: minedChunks.chunkCount,
+            embeddedCount: embeddingRun.embeddedCount,
+            embeddingReusedCount: embeddingRun.reusedCount,
             filesTruncatedByChunkLimit: minedChunks.filesTruncatedByChunkLimit,
         },
         fileCount: files.length,
@@ -64,6 +79,8 @@ export async function mineProject(
 
     return {
         chunkCount: minedChunks.chunkCount,
+        embeddedCount: embeddingRun.embeddedCount,
+        embeddingReusedCount: embeddingRun.reusedCount,
         fileCount: files.length,
         minedAt,
         mode,

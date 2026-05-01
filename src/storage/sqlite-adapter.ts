@@ -1,4 +1,4 @@
-type SqliteValue = boolean | number | string | null
+type SqliteValue = Uint8Array | boolean | number | string | null
 
 export type SqliteParams = Record<string, SqliteValue> | SqliteValue[]
 

@@ -26,6 +26,8 @@ export type MineManifest = {
 
 type MineDiagnostics = ScanDiagnostics & {
     chunkCount: number
+    embeddedCount: number
+    embeddingReusedCount: number
     filesTruncatedByChunkLimit: number
 }
 
