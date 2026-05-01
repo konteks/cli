@@ -29,6 +29,8 @@ type MineDiagnostics = ScanDiagnostics & {
     embeddedCount: number
     embeddingReusedCount: number
     filesTruncatedByChunkLimit: number
+    parserFallbackFiles: number
+    parserUsedFiles: number
 }
 
 type MiningFreshness = {

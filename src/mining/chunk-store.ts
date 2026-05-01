@@ -27,6 +27,8 @@ import { TreeSitterEngine } from './tree-sitter-engine.js'
 type MineChunksResult = {
     chunkCount: number
     filesTruncatedByChunkLimit: number
+    parserFallbackFiles: number
+    parserUsedFiles: number
 }
 
 const defaultMaxChunksPerFile = 200
@@ -57,6 +59,8 @@ export async function mineChunks(
 
     let chunkCount = 0
     let filesTruncatedByChunkLimit = 0
+    let parserFallbackFiles = 0
+    let parserUsedFiles = 0
 
     await adapter.transaction(async () => {
         if (options.mode === 'changed') {
@@ -113,6 +117,12 @@ export async function mineChunks(
                     },
                 }))
                 .slice(0, defaultMaxChunksPerFile)
+
+            if (parserEngine === 'tree_sitter' && parserStatus === 'ok') {
+                parserUsedFiles += 1
+            } else if (chunks.some(c => c.kind === 'code')) {
+                parserFallbackFiles += 1
+            }
 
             if (allChunks.length > chunks.length) {
                 filesTruncatedByChunkLimit += 1
@@ -285,7 +295,12 @@ insert into chunks (
         })
     })
 
-    return { chunkCount, filesTruncatedByChunkLimit }
+    return {
+        chunkCount,
+        filesTruncatedByChunkLimit,
+        parserFallbackFiles,
+        parserUsedFiles,
+    }
 }
 
 async function clearMinedChunks(adapter: SqliteAdapter): Promise<void> {

@@ -84,6 +84,8 @@ export async function mineProject(
             embeddedCount: embeddingRun.embeddedCount,
             embeddingReusedCount: embeddingRun.reusedCount,
             filesTruncatedByChunkLimit: minedChunks.filesTruncatedByChunkLimit,
+            parserFallbackFiles: minedChunks.parserFallbackFiles,
+            parserUsedFiles: minedChunks.parserUsedFiles,
         },
         fileCount: files.length,
         files,
