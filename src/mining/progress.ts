@@ -16,6 +16,10 @@ export type MineProgressStatus = 'done' | 'progress' | 'start'
 export type MineProgressEvent = {
     chunkCount?: number
     current?: number
+    downloadFile?: string
+    downloadLoadedBytes?: number
+    downloadPercent?: number
+    downloadTotalBytes?: number
     embeddedCount?: number
     message?: string
     path?: string

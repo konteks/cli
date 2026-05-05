@@ -2,6 +2,7 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { env, pipeline } from '@huggingface/transformers'
+import type { MineProgressReporter } from './progress.js'
 
 export interface EmbeddingProvider {
     model: string
@@ -13,9 +14,15 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
     readonly model = 'Xenova/all-MiniLM-L6-v2'
     readonly dimensions = 384
 
+    private readonly onProgress?: MineProgressReporter
+
     private extractor:
         | ((text: string, options: Record<string, unknown>) => Promise<unknown>)
         | undefined
+
+    constructor(options: { onProgress?: MineProgressReporter } = {}) {
+        this.onProgress = options.onProgress
+    }
 
     async embed(texts: string[]): Promise<Float32Array[]> {
         if (texts.length === 0) {
@@ -47,10 +54,15 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
         await mkdir(cacheDir, { recursive: true })
         env.cacheDir = cacheDir
 
-        this.extractor = (await pipeline(
-            'feature-extraction',
-            this.model,
-        )) as unknown as (
+        this.onProgress?.({
+            message: `Loading embedding model ${this.model}`,
+            phase: 'embeddings',
+            status: 'progress',
+        })
+        this.extractor = (await pipeline('feature-extraction', this.model, {
+            progress_callback: progress =>
+                this.reportModelProgress(progress as ModelProgressInfo),
+        })) as unknown as (
             text: string,
             options: Record<string, unknown>,
         ) => Promise<unknown>
@@ -62,7 +74,93 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
         })
         return this.extractor
     }
+
+    private reportModelProgress(progress: ModelProgressInfo): void {
+        if (!this.onProgress) {
+            return
+        }
+
+        if (progress.status === 'ready') {
+            this.onProgress({
+                message: `Embedding model ready: ${progress.model}`,
+                phase: 'embeddings',
+                status: 'progress',
+            })
+            return
+        }
+
+        if (progress.status === 'progress_total') {
+            this.onProgress({
+                downloadLoadedBytes: progress.loaded,
+                downloadPercent: progress.progress,
+                downloadTotalBytes: progress.total,
+                message: `Downloading embedding model ${formatPercent(progress.progress)} (${formatBytes(progress.loaded)}/${formatBytes(progress.total)})`,
+                phase: 'embeddings',
+                status: 'progress',
+            })
+            return
+        }
+
+        if (progress.status === 'progress') {
+            this.onProgress({
+                downloadFile: progress.file,
+                downloadLoadedBytes: progress.loaded,
+                downloadPercent: progress.progress,
+                downloadTotalBytes: progress.total,
+                message: `Downloading ${progress.file} ${formatPercent(progress.progress)} (${formatBytes(progress.loaded)}/${formatBytes(progress.total)})`,
+                phase: 'embeddings',
+                status: 'progress',
+            })
+            return
+        }
+
+        if (progress.status === 'download') {
+            this.onProgress({
+                downloadFile: progress.file,
+                message: `Downloading ${progress.file}`,
+                phase: 'embeddings',
+                status: 'progress',
+            })
+            return
+        }
+
+        if (progress.status === 'initiate') {
+            this.onProgress({
+                downloadFile: progress.file,
+                message: `Preparing ${progress.file}`,
+                phase: 'embeddings',
+                status: 'progress',
+            })
+        }
+    }
 }
+
+type ModelProgressInfo =
+    | {
+          file: string
+          name: string
+          status: 'download' | 'done' | 'initiate'
+      }
+    | {
+          file: string
+          loaded: number
+          name: string
+          progress: number
+          status: 'progress'
+          total: number
+      }
+    | {
+          loaded: number
+          name: string
+          progress: number
+          status: 'progress_total'
+          total: number
+      }
+    | {
+          model: string
+          status: 'ready'
+          task: string
+      }
 
 export class FakeEmbeddingProvider implements EmbeddingProvider {
     readonly model = 'fake/all-MiniLM-L6-v2'
@@ -135,6 +233,26 @@ async function estimateCacheSize(path: string): Promise<number> {
     } catch {
         return 0
     }
+}
+
+function formatPercent(value: number): string {
+    return `${Math.max(0, Math.min(100, value)).toFixed(1)}%`
+}
+
+function formatBytes(value: number): string {
+    if (!Number.isFinite(value) || value <= 0) {
+        return '0 B'
+    }
+
+    const units = ['B', 'KB', 'MB', 'GB']
+    let size = value
+    let unitIndex = 0
+    while (size >= 1024 && unitIndex < units.length - 1) {
+        size /= 1024
+        unitIndex += 1
+    }
+
+    return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
 }
 
 function toFloat32Array(value: unknown): Float32Array {

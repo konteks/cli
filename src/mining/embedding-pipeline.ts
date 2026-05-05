@@ -46,6 +46,7 @@ where target_type in (${placeholders})
     let embeddedCount = 0
     let reusedCount = 0
     options.onProgress?.({
+        current: 0,
         message: `Embedding ${rows.length} retrieval documents`,
         phase: 'embeddings',
         status: 'start',
@@ -89,6 +90,18 @@ limit 1
             continue
         }
 
+        options.onProgress?.({
+            current: index + 1,
+            embeddedCount,
+            message:
+                index === 0
+                    ? `Loading embedding model and embedding ${row.target_type}:${row.target_id}`
+                    : `Embedding ${row.target_type}:${row.target_id}`,
+            phase: 'embeddings',
+            reusedCount,
+            status: 'progress',
+            total: rows.length,
+        })
         const vectors = await provider.embed([row.embedding_text])
         const vector = vectors[0]
         if (!vector) {
