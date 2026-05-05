@@ -1,6 +1,10 @@
 import { contentHash } from '../storage/content.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
-import { upsertRetrievalDocument } from './retrieval-documents.js'
+import type { ProjectMetadata } from './metadata.js'
+import {
+    deleteRetrievalDocuments,
+    upsertRetrievalDocument,
+} from './retrieval-documents.js'
 
 type ModuleSummaryRow = {
     chunk_count: number
@@ -12,11 +16,9 @@ type ModuleSummaryRow = {
 export async function rebuildModuleArtifacts(
     adapter: SqliteAdapter,
     minedAt: string,
+    metadata?: ProjectMetadata,
 ): Promise<void> {
-    await adapter.execute(
-        'delete from retrieval_documents where target_type = ?',
-        ['module'],
-    )
+    await deleteRetrievalDocuments(adapter, 'module')
     await adapter.execute(
         'delete from target_embeddings where target_type = ?',
         ['module'],
@@ -98,6 +100,10 @@ insert into modules (
             updatedAt: minedAt,
         })
     }
+
+    if (metadata) {
+        await insertPackageModule(adapter, metadata, minedAt)
+    }
 }
 
 function summarizeModule(row: ModuleSummaryRow): string {
@@ -112,4 +118,93 @@ function moduleTopics(path: string): string[] {
         .map(part => part.toLowerCase())
         .filter(part => part.length > 2)
         .slice(0, 8)
+}
+
+async function insertPackageModule(
+    adapter: SqliteAdapter,
+    metadata: ProjectMetadata,
+    minedAt: string,
+): Promise<void> {
+    const dependencyNames = [
+        ...metadata.dependencies,
+        ...metadata.devDependencies,
+        ...metadata.peerDependencies,
+        ...metadata.optionalDependencies,
+    ].slice(0, 80)
+    const modulePath = metadata.packagePath
+    const moduleId = `module_${contentHash(`package:${modulePath}:${metadata.name ?? ''}`).slice(0, 32)}`
+    const summary = `Package ${metadata.name ?? 'project'} uses ${metadata.packageManager ?? 'unknown package manager'} with ${dependencyNames.length} tracked dependencies.`
+    const topics = [
+        'package',
+        metadata.name,
+        metadata.packageManager,
+        metadata.workspaceManager,
+        ...dependencyNames.slice(0, 24),
+    ].filter((value): value is string => Boolean(value))
+
+    await adapter.execute(
+        `
+insert into modules (
+    id,
+    path,
+    source_role,
+    package_name,
+    summary,
+    file_count,
+    chunk_count,
+    exported_symbols_json,
+    imports_json,
+    topics_json,
+    entities_json,
+    updated_at
+) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`,
+        [
+            moduleId,
+            modulePath,
+            'package_config',
+            metadata.name ?? null,
+            summary,
+            1,
+            0,
+            JSON.stringify([]),
+            JSON.stringify(dependencyNames),
+            JSON.stringify(topics),
+            JSON.stringify([]),
+            minedAt,
+        ],
+    )
+
+    const text = [
+        `module: ${modulePath}`,
+        'role: package_config',
+        metadata.name ? `package: ${metadata.name}` : '',
+        metadata.packageManager
+            ? `package manager: ${metadata.packageManager}`
+            : '',
+        metadata.workspaceManager
+            ? `workspace manager: ${metadata.workspaceManager}`
+            : '',
+        metadata.workspaceGlobs.length > 0
+            ? `workspace globs: ${metadata.workspaceGlobs.join(', ')}`
+            : '',
+        dependencyNames.length > 0
+            ? `dependencies: ${dependencyNames.join(', ')}`
+            : '',
+        `summary: ${summary}`,
+    ]
+        .filter(Boolean)
+        .join('\n')
+
+    await upsertRetrievalDocument(adapter, {
+        anchor: modulePath,
+        embeddingText: text,
+        ftsText: text,
+        path: modulePath,
+        sourceRole: 'package_config',
+        summary,
+        targetId: moduleId,
+        targetType: 'module',
+        updatedAt: minedAt,
+    })
 }

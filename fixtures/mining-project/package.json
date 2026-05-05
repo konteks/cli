@@ -1,0 +1,15 @@
+{
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.0.0",
+        "commander": "^14.0.0"
+    },
+    "devDependencies": {
+        "typescript": "^5.9.0"
+    },
+    "name": "konteks-mining-fixture",
+    "private": true,
+    "scripts": {
+        "test": "bun test"
+    },
+    "type": "module"
+}

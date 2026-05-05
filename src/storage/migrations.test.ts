@@ -8,6 +8,7 @@ describe('migrations', () => {
             '001_initial_schema',
             '002_memory_hygiene',
             '003_mining_artifact_contract',
+            '004_retrieval_fts_and_mining_suppressions',
         ])
     })
 
@@ -27,6 +28,13 @@ describe('migrations', () => {
         expect(sql).toContain('create table if not exists retrieval_documents')
         expect(sql).toContain('create table if not exists target_embeddings')
         expect(sql).toContain('create table if not exists modules')
+    })
+
+    it('adds retrieval FTS and mining suppressions', () => {
+        const sql = migrations[3]?.sql ?? ''
+
+        expect(sql).toContain('retrieval_documents_fts')
+        expect(sql).toContain('create table if not exists mined_suppressions')
     })
 
     it('creates the core memory tables', () => {

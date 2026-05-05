@@ -1,6 +1,7 @@
 import { contentHash } from '../storage/content.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 import type { EmbeddingProvider } from './embedding-provider.js'
+import type { MineProgressReporter } from './progress.js'
 
 type TargetType = 'chunk' | 'diary' | 'memory' | 'module'
 
@@ -24,6 +25,9 @@ export async function generateTargetEmbeddings(
     provider: EmbeddingProvider,
     targetTypes: TargetType[],
     createdAt: string,
+    options: {
+        onProgress?: MineProgressReporter
+    } = {},
 ): Promise<EmbeddingRunResult> {
     if (targetTypes.length === 0) {
         return { embeddedCount: 0, reusedCount: 0 }
@@ -41,8 +45,14 @@ where target_type in (${placeholders})
 
     let embeddedCount = 0
     let reusedCount = 0
+    options.onProgress?.({
+        message: `Embedding ${rows.length} retrieval documents`,
+        phase: 'embeddings',
+        status: 'start',
+        total: rows.length,
+    })
 
-    for (const row of rows) {
+    for (const [index, row] of rows.entries()) {
         const existing = await adapter.query<ExistingEmbeddingRow>(
             `
 select embedding_hash
@@ -67,6 +77,15 @@ limit 1
 
         if (existing[0]?.embedding_hash === embeddingHash) {
             reusedCount += 1
+            options.onProgress?.({
+                current: index + 1,
+                embeddedCount,
+                message: `Reused embedding for ${row.target_type}:${row.target_id}`,
+                phase: 'embeddings',
+                reusedCount,
+                status: 'progress',
+                total: rows.length,
+            })
             continue
         }
 
@@ -110,7 +129,25 @@ insert or replace into target_embeddings (
             ],
         )
         embeddedCount += 1
+        options.onProgress?.({
+            current: index + 1,
+            embeddedCount,
+            message: `Embedded ${row.target_type}:${row.target_id}`,
+            phase: 'embeddings',
+            reusedCount,
+            status: 'progress',
+            total: rows.length,
+        })
     }
+
+    options.onProgress?.({
+        embeddedCount,
+        message: `Embeddings ready: ${embeddedCount} embedded, ${reusedCount} reused`,
+        phase: 'embeddings',
+        reusedCount,
+        status: 'done',
+        total: rows.length,
+    })
 
     return { embeddedCount, reusedCount }
 }

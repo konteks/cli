@@ -1,4 +1,5 @@
 import type { RecallInput, SearchInput } from '../mcp/inputs.js'
+import type { EmbeddingProvider } from '../mining/embedding-provider.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 import { hasSearchIndex } from './search-index.js'
 
@@ -6,7 +7,12 @@ export type MemorySearchResult = {
     id: string
     type: 'chunk' | 'memory' | 'module' | 'session'
     kind?: string
+    anchor?: string
+    embeddingDimensions?: number
+    embeddingModel?: string
+    path?: string
     sourceId?: string
+    sourceRole?: string
     status?: string
     task?: string
     excerpt: string
@@ -17,8 +23,15 @@ export type MemorySearchResult = {
         lexical: number
         recency: number
         tokenCostPenalty: number
+        vector?: number
     }
+    targetType?: 'chunk' | 'module'
+    vectorScore?: number
     createdAt: string
+}
+
+type SearchMemoryOptions = {
+    embeddingProvider?: EmbeddingProvider
 }
 
 type ObservationRow = {
@@ -51,16 +64,20 @@ type FtsRow = {
 }
 
 type RetrievalDocumentRow = {
+    anchor: string | null
+    embedding_dimensions: number | null
+    embedding_model: string | null
+    path: string | null
+    rank: number
+    source_id: string | null
+    source_role: string | null
     target_id: string
     target_type: 'chunk' | 'module'
     summary: string | null
     fts_text: string
-    source_id: string | null
-    source_role: string | null
-    path: string | null
-    anchor: string | null
     updated_at: string
     token_count: number | null
+    vector_blob: Uint8Array | null
 }
 
 const maxExcerptTokens = 120
@@ -68,6 +85,7 @@ const maxExcerptTokens = 120
 export async function searchMemory(
     adapter: SqliteAdapter,
     input: SearchInput | RecallInput,
+    options: SearchMemoryOptions = {},
 ): Promise<MemorySearchResult[]> {
     const limit = 'limit' in input ? (input.limit ?? 10) : 10
     const query = 'query' in input ? input.query : input.task
@@ -81,6 +99,7 @@ export async function searchMemory(
         adapter,
         terms,
         limit,
+        options,
     )
     if (retrievalResults.length > 0) {
         return retrievalResults
@@ -132,10 +151,13 @@ async function searchRetrievalDocuments(
     adapter: SqliteAdapter,
     terms: string[],
     limit: number,
+    options: SearchMemoryOptions,
 ): Promise<MemorySearchResult[]> {
-    const whereClause = terms
-        .map(() => 'lower(rd.fts_text) like ?')
-        .join(' or ')
+    const ftsQuery = toFtsQuery(terms)
+    if (!ftsQuery) {
+        return []
+    }
+    const queryVector = await embedSearchQuery(options.embeddingProvider, terms)
     const rows = await adapter.query<RetrievalDocumentRow>(
         `
 select
@@ -148,21 +170,49 @@ select
     rd.path,
     rd.anchor,
     rd.updated_at,
-    c.token_count
-from retrieval_documents rd
+    c.token_count,
+    bm25(retrieval_documents_fts) as rank,
+    te.model as embedding_model,
+    te.dimensions as embedding_dimensions,
+    te.vector_blob
+from retrieval_documents_fts
+join retrieval_documents rd
+    on rd.target_id = retrieval_documents_fts.target_id
+   and rd.target_type = retrieval_documents_fts.target_type
 left join chunks c
     on c.id = rd.target_id
    and rd.target_type = 'chunk'
+left join target_embeddings te
+    on te.target_id = rd.target_id
+   and te.target_type = rd.target_type
+   and te.model = ?
+   and te.dimensions = ?
 where rd.target_type in ('chunk', 'module')
-  and (${whereClause})
-order by rd.updated_at desc
+  and retrieval_documents_fts match ?
+  and not exists (
+      select 1 from chunks dc
+      where dc.id = rd.target_id
+        and rd.target_type = 'chunk'
+        and (dc.deleted_at is not null or dc.suppressed_at is not null)
+  )
+order by rank
 limit ?
 `,
-        [...terms.map(term => `%${term}%`), limit * 4],
+        [
+            options.embeddingProvider?.model ?? '',
+            options.embeddingProvider?.dimensions ?? 0,
+            ftsQuery,
+            limit * 4,
+        ],
     )
 
     return rows
-        .map(row => retrievalDocumentToResult(row, terms))
+        .map(row =>
+            retrievalDocumentToResult(row, terms, {
+                provider: options.embeddingProvider,
+                queryVector,
+            }),
+        )
         .sort(compareSearchResults)
         .slice(0, limit)
 }
@@ -275,6 +325,10 @@ function handoffToResult(row: HandoffRow, terms: string[]): MemorySearchResult {
 function retrievalDocumentToResult(
     row: RetrievalDocumentRow,
     terms: string[],
+    vectorInput: {
+        provider?: EmbeddingProvider
+        queryVector?: Float32Array
+    },
 ): MemorySearchResult {
     const location = row.path
         ? row.anchor
@@ -286,33 +340,49 @@ function retrievalDocumentToResult(
         ? `${location}\n${row.summary}`
         : `${location}\n${row.fts_text}`
 
+    const vectorScore = computeVectorScore(row, vectorInput)
+
     return makeSearchResult({
+        anchor: row.anchor ?? undefined,
         confidence: 1,
         content: excerpt,
         createdAt: row.updated_at,
+        embeddingDimensions: row.embedding_dimensions ?? undefined,
+        embeddingModel: row.embedding_model ?? undefined,
         id: row.target_id,
         kind: row.source_role ?? undefined,
+        path: row.path ?? undefined,
         sourceId: row.source_id ?? undefined,
+        sourceRole: row.source_role ?? undefined,
+        targetType: row.target_type,
         terms,
         tokenCost:
             row.token_count ?? estimateTokens(row.summary ?? row.fts_text),
         type,
+        vectorScore,
     })
 }
 
 function makeSearchResult(input: {
+    anchor?: string
     confidence: number
     content: string
     createdAt: string
+    embeddingDimensions?: number
+    embeddingModel?: string
     id: string
     kind?: string
+    path?: string
     sourceId?: string
+    sourceRole?: string
     status?: string
+    targetType?: 'chunk' | 'module'
     task?: string
     terms: string[]
     textForScoring?: string
     tokenCost?: number
     type: MemorySearchResult['type']
+    vectorScore?: number
 }): MemorySearchResult {
     const tokenCost = input.tokenCost ?? estimateTokens(input.content)
     const lexical = scoreText(
@@ -323,27 +393,108 @@ function makeSearchResult(input: {
     const tokenCostPenalty = Math.ceil(tokenCost / 120)
     const confidence = Math.max(0, Math.min(input.confidence, 1))
     const score = Math.round(
-        lexical * 100 + confidence * 20 + recency - tokenCostPenalty,
+        lexical * 100 +
+            (input.vectorScore ?? 0) * 60 +
+            confidence * 20 +
+            recency -
+            tokenCostPenalty,
     )
 
     return {
+        anchor: input.anchor,
         createdAt: input.createdAt,
+        embeddingDimensions: input.embeddingDimensions,
+        embeddingModel: input.embeddingModel,
         excerpt: trimToTokenBudget(input.content, maxExcerptTokens),
         id: input.id,
         kind: input.kind,
+        path: input.path,
         score,
         scoreDetails: {
             confidence,
             lexical,
             recency,
             tokenCostPenalty,
+            vector: input.vectorScore,
         },
         sourceId: input.sourceId,
+        sourceRole: input.sourceRole,
         status: input.status,
+        targetType: input.targetType,
         task: input.task,
         tokenCost: Math.min(tokenCost, maxExcerptTokens),
         type: input.type,
+        vectorScore: input.vectorScore,
     }
+}
+
+async function embedSearchQuery(
+    provider: EmbeddingProvider | undefined,
+    terms: string[],
+): Promise<Float32Array | undefined> {
+    if (!provider) {
+        return undefined
+    }
+
+    try {
+        const vectors = await provider.embed([terms.join(' ')])
+        const vector = vectors[0]
+        return vector?.length === provider.dimensions ? vector : undefined
+    } catch {
+        return undefined
+    }
+}
+
+function computeVectorScore(
+    row: RetrievalDocumentRow,
+    input: {
+        provider?: EmbeddingProvider
+        queryVector?: Float32Array
+    },
+): number | undefined {
+    if (
+        !input.provider ||
+        !input.queryVector ||
+        !row.vector_blob ||
+        row.embedding_model !== input.provider.model ||
+        row.embedding_dimensions !== input.provider.dimensions
+    ) {
+        return undefined
+    }
+
+    const vector = blobToFloat32Array(row.vector_blob)
+    if (vector.length !== input.provider.dimensions) {
+        return undefined
+    }
+
+    return cosineSimilarity(input.queryVector, vector)
+}
+
+function blobToFloat32Array(blob: Uint8Array): Float32Array {
+    const buffer = blob.buffer.slice(
+        blob.byteOffset,
+        blob.byteOffset + blob.byteLength,
+    )
+    return new Float32Array(buffer)
+}
+
+function cosineSimilarity(left: Float32Array, right: Float32Array): number {
+    let dot = 0
+    let leftNorm = 0
+    let rightNorm = 0
+    for (let index = 0; index < left.length; index += 1) {
+        const leftValue = left[index] ?? 0
+        const rightValue = right[index] ?? 0
+        dot += leftValue * rightValue
+        leftNorm += leftValue * leftValue
+        rightNorm += rightValue * rightValue
+    }
+
+    if (leftNorm === 0 || rightNorm === 0) {
+        return 0
+    }
+
+    return dot / Math.sqrt(leftNorm * rightNorm)
 }
 
 function tokenize(query: string): string[] {

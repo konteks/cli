@@ -54,6 +54,98 @@ insert or replace into retrieval_documents (
             input.updatedAt,
         ],
     )
+    await adapter.execute(
+        `
+delete from retrieval_documents_fts
+where target_id = ? and target_type = ?
+`,
+        [input.targetId, input.targetType],
+    )
+    await adapter.execute(
+        `
+insert into retrieval_documents_fts (
+    target_id,
+    target_type,
+    source_role,
+    path,
+    anchor,
+    fts_text
+) values (?, ?, ?, ?, ?, ?)
+`,
+        [
+            input.targetId,
+            input.targetType,
+            input.sourceRole ?? null,
+            input.path ?? null,
+            input.anchor ?? null,
+            input.ftsText,
+        ],
+    )
+}
+
+export async function deleteRetrievalDocuments(
+    adapter: SqliteAdapter,
+    targetType: RetrievalDocumentInput['targetType'],
+    targetIds?: string[],
+): Promise<void> {
+    if (targetIds && targetIds.length === 0) {
+        return
+    }
+
+    if (targetIds) {
+        const placeholders = targetIds.map(() => '?').join(', ')
+        await adapter.execute(
+            `
+delete from retrieval_documents_fts
+where target_type = ?
+  and target_id in (${placeholders})
+`,
+            [targetType, ...targetIds],
+        )
+        await adapter.execute(
+            `
+delete from retrieval_documents
+where target_type = ?
+  and target_id in (${placeholders})
+`,
+            [targetType, ...targetIds],
+        )
+        return
+    }
+
+    await adapter.execute(
+        'delete from retrieval_documents_fts where target_type = ?',
+        [targetType],
+    )
+    await adapter.execute(
+        'delete from retrieval_documents where target_type = ?',
+        [targetType],
+    )
+}
+
+export async function reindexRetrievalDocumentFts(
+    adapter: SqliteAdapter,
+): Promise<void> {
+    await adapter.execute('delete from retrieval_documents_fts')
+    await adapter.execute(`
+insert into retrieval_documents_fts (
+    target_id,
+    target_type,
+    source_role,
+    path,
+    anchor,
+    fts_text
+)
+select
+    target_id,
+    target_type,
+    source_role,
+    path,
+    anchor,
+    fts_text
+from retrieval_documents
+where target_type in ('chunk', 'module');
+`)
 }
 
 export function buildChunkRetrievalTexts(input: {

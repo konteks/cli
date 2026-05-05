@@ -1,4 +1,4 @@
-import { mkdir } from 'node:fs/promises'
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { env, pipeline } from '@huggingface/transformers'
@@ -54,6 +54,12 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
             text: string,
             options: Record<string, unknown>,
         ) => Promise<unknown>
+        await writeModelCacheMetadata(cacheDir, {
+            dimensions: this.dimensions,
+            downloadedAt: new Date().toISOString(),
+            lastUsedAt: new Date().toISOString(),
+            model: this.model,
+        })
         return this.extractor
     }
 }
@@ -76,6 +82,59 @@ function resolveGlobalModelCacheDir(): string {
         return resolve(process.env.KONTEKS_MODEL_CACHE_DIR)
     }
     return join(homedir(), '.cache', 'konteks', 'models')
+}
+
+async function writeModelCacheMetadata(
+    cacheDir: string,
+    metadata: {
+        dimensions: number
+        downloadedAt: string
+        lastUsedAt: string
+        model: string
+    },
+): Promise<void> {
+    const metadataPath = join(cacheDir, 'metadata.json')
+    const previous = await readExistingMetadata(metadataPath)
+    await writeFile(
+        metadataPath,
+        `${JSON.stringify(
+            {
+                ...previous,
+                [metadata.model]: {
+                    dimensions: metadata.dimensions,
+                    downloaded_at:
+                        previous[metadata.model]?.downloaded_at ??
+                        metadata.downloadedAt,
+                    last_used_at: metadata.lastUsedAt,
+                    model: metadata.model,
+                    size: await estimateCacheSize(cacheDir),
+                },
+            },
+            null,
+            2,
+        )}\n`,
+    )
+}
+
+async function readExistingMetadata(
+    path: string,
+): Promise<Record<string, Record<string, unknown>>> {
+    try {
+        return JSON.parse(await readFile(path, 'utf8')) as Record<
+            string,
+            Record<string, unknown>
+        >
+    } catch {
+        return {}
+    }
+}
+
+async function estimateCacheSize(path: string): Promise<number> {
+    try {
+        return (await stat(path)).size
+    } catch {
+        return 0
+    }
 }
 
 function toFloat32Array(value: unknown): Float32Array {

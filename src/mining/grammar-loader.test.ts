@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import {
+    getBundledGrammarForPath,
     getBundledGrammarManifest,
     initTreeSitterWithBundledGrammars,
 } from './grammar-loader.js'
@@ -48,5 +49,22 @@ describe('grammar loader', () => {
             'tsx',
             'typescript',
         ])
+    })
+
+    it('routes paths through the bundled grammar registry', () => {
+        expect(getBundledGrammarForPath('src/index.ts')?.language).toBe(
+            'typescript',
+        )
+        expect(getBundledGrammarForPath('src/view.tsx')?.language).toBe('tsx')
+        expect(getBundledGrammarForPath('src/index.js')?.language).toBe(
+            'javascript',
+        )
+        expect(getBundledGrammarForPath('public/index.html')?.language).toBe(
+            'html',
+        )
+        expect(getBundledGrammarForPath('composer.json')?.language).toBe('json')
+        expect(getBundledGrammarForPath('index.php')?.language).toBe('php')
+        expect(getBundledGrammarForPath('api.jsdoc')?.language).toBe('jsdoc')
+        expect(getBundledGrammarForPath('Makefile')).toBeUndefined()
     })
 })

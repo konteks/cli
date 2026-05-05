@@ -16,9 +16,13 @@ import {
 } from './classification.js'
 import type { ScannedFile } from './file-scan.js'
 import { initTreeSitterWithBundledGrammars } from './grammar-loader.js'
+import type { ProjectMetadata } from './metadata.js'
 import { rebuildModuleArtifacts } from './module-store.js'
+import type { MineProgressReporter } from './progress.js'
 import {
     buildChunkRetrievalTexts,
+    deleteRetrievalDocuments,
+    reindexRetrievalDocumentFts,
     upsertRetrievalDocument,
 } from './retrieval-documents.js'
 import type { CodeMetadata } from './tree-sitter-engine.js'
@@ -31,6 +35,43 @@ type MineChunksResult = {
     parserUsedFiles: number
 }
 
+type PreparedChunk = {
+    anchor: string
+    anchorType: string
+    contentInline?: string
+    contentHash: string
+    endLine?: number
+    heading?: string
+    id: string
+    jsonPath?: string
+    kind: string
+    metadata: Record<string, unknown>
+    path: string
+    payloadRef?: string
+    retrievalTexts: {
+        embeddingText: string
+        ftsText: string
+    }
+    startLine?: number
+    summary: string
+    symbol?: string
+    tokenCount: number
+    topics: string[]
+}
+
+type PreparedFile = {
+    chunks: PreparedChunk[]
+    language: string
+    parserEngine: string
+    parserStatus: string
+    path: string
+    sourceId: string
+    sourceMetadata: Record<string, unknown>
+    sourceRole: string
+    sourceTopics: string[]
+    truncated: boolean
+}
+
 const defaultMaxChunksPerFile = 200
 
 export async function mineChunks(
@@ -40,22 +81,40 @@ export async function mineChunks(
     minedAt: string,
     options: {
         deletedPaths?: string[]
+        metadata?: ProjectMetadata
         mode?: 'changed' | 'full' | 'reindex'
+        onProgress?: MineProgressReporter
         treeSitterEngine?: TreeSitterEngine
     } = {},
 ): Promise<MineChunksResult> {
+    const progress = options.onProgress
     const toonStore = createToonStore(context.memoryDir)
     const taxonomy = new TaxonomyStore(adapter)
     let engine: TreeSitterEngine | undefined
+    progress?.({
+        message: 'Loading Tree-sitter grammars',
+        phase: 'chunks',
+        status: 'start',
+    })
     try {
         engine = options.treeSitterEngine ?? new TreeSitterEngine()
         await initTreeSitterWithBundledGrammars(engine)
+        progress?.({
+            message: 'Tree-sitter grammars ready',
+            phase: 'chunks',
+            status: 'progress',
+        })
     } catch (error) {
         console.error(
             'Tree-sitter initialization failed, using heuristic chunking fallback:',
             error,
         )
         engine = undefined
+        progress?.({
+            message: 'Tree-sitter unavailable; using heuristic fallback',
+            phase: 'chunks',
+            status: 'progress',
+        })
     }
 
     let chunkCount = 0
@@ -63,6 +122,12 @@ export async function mineChunks(
     let parserFallbackFiles = 0
     let parserUsedFiles = 0
 
+    let rootNodeId = ''
+    progress?.({
+        message: 'Preparing mining tables',
+        phase: 'database',
+        status: 'progress',
+    })
     await adapter.transaction(async () => {
         if (options.mode === 'changed') {
             await clearMinedChunksForPaths(adapter, [
@@ -76,73 +141,41 @@ export async function mineChunks(
             name: 'Project Files',
             summary: 'Files mined from the current project.',
         })
+        rootNodeId = rootNode.id
+    })
 
-        for (const file of files) {
-            const content = await readFile(
-                join(context.projectRoot, file.path),
-                'utf8',
-            )
-            const sourceRole = classifySourceRole(file.path)
-            const language = detectLanguage(file.path)
-            let parserEngine = 'heuristic'
-            let parserStatus = 'not_applicable'
-            let parsedMetadata: CodeMetadata | undefined
+    progress?.({
+        message: `Mining ${files.length} files`,
+        phase: 'chunks',
+        status: 'start',
+        total: files.length,
+    })
+    for (const [fileIndex, file] of files.entries()) {
+        const preparedFile = await prepareFileChunks({
+            adapter,
+            context,
+            engine,
+            file,
+            toonStore,
+        })
 
-            if (engine && isTreeSitterLanguage(language)) {
-                parserEngine = 'tree_sitter'
-                try {
-                    parsedMetadata = await engine.parse(file.path, content)
-                    parserStatus = parsedMetadata ? 'ok' : 'unavailable'
-                } catch (error) {
-                    parserStatus = 'failed'
-                    console.error(
-                        `Tree-sitter parse failed for ${file.path}, falling back to heuristic chunking:`,
-                        error,
-                    )
-                }
-            }
+        if (
+            preparedFile.parserEngine === 'tree_sitter' &&
+            preparedFile.parserStatus === 'ok'
+        ) {
+            parserUsedFiles += 1
+        } else if (preparedFile.chunks.some(chunk => chunk.kind === 'code')) {
+            parserFallbackFiles += 1
+        }
 
-            const allChunks = await chunkFile(
-                file,
-                content,
-                engine,
-                parsedMetadata,
-            )
-            const chunks = allChunks
-                .map(chunk => ({
-                    ...chunk,
-                    metadata: {
-                        parserEngine,
-                        parserStatus,
-                        ...chunk.metadata,
-                    },
-                }))
-                .slice(0, defaultMaxChunksPerFile)
+        if (preparedFile.truncated) {
+            filesTruncatedByChunkLimit += 1
+        }
+        if (preparedFile.chunks.length === 0) {
+            continue
+        }
 
-            if (parserEngine === 'tree_sitter' && parserStatus === 'ok') {
-                parserUsedFiles += 1
-            } else if (chunks.some(c => c.kind === 'code')) {
-                parserFallbackFiles += 1
-            }
-
-            if (allChunks.length > chunks.length) {
-                filesTruncatedByChunkLimit += 1
-            }
-            if (chunks.length === 0) {
-                continue
-            }
-
-            const sourceId = sourceIdForPath(file.path)
-            const sourceTopics = extractTopics(
-                file.path,
-                chunks.map(chunk => chunk.summary).join('\n'),
-            )
-            const sourceMetadata = {
-                exports: parsedMetadata?.exports ?? [],
-                imports: parsedMetadata?.imports ?? [],
-                parserEngine,
-                parserStatus,
-            }
+        await adapter.transaction(async () => {
             await adapter.execute(
                 `
 insert into sources (
@@ -159,40 +192,25 @@ insert into sources (
 ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `,
                 [
-                    sourceId,
+                    preparedFile.sourceId,
                     'mined_file',
-                    file.path,
+                    preparedFile.path,
                     null,
                     minedAt,
-                    sourceRole,
-                    language,
-                    JSON.stringify(sourceTopics),
+                    preparedFile.sourceRole,
+                    preparedFile.language,
+                    JSON.stringify(preparedFile.sourceTopics),
                     JSON.stringify([]),
-                    JSON.stringify(sourceMetadata),
+                    JSON.stringify(preparedFile.sourceMetadata),
                 ],
             )
             const taxonomyNode = await ensurePathTaxonomy(
                 taxonomy,
-                rootNode.id,
-                file.path,
+                rootNodeId,
+                preparedFile.path,
             )
 
-            for (const [index, chunk] of chunks.entries()) {
-                const stored = await storePayload(chunk.content, {
-                    inlineMaxBytes:
-                        context.config.storage.inlinePayloadMaxBytes,
-                    toonStore,
-                })
-                const chunkTopics = extractTopics(
-                    `${file.path} ${chunk.anchor}`,
-                    `${chunk.summary}\n${chunk.content}`,
-                )
-                const chunkId = chunkIdFor(
-                    file.path,
-                    index,
-                    chunk.anchor,
-                    stored.contentHash,
-                )
+            for (const chunk of preparedFile.chunks) {
                 await adapter.execute(
                     `
 insert into chunks (
@@ -222,25 +240,25 @@ insert into chunks (
 ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `,
                     [
-                        chunkId,
-                        sourceId,
+                        chunk.id,
+                        preparedFile.sourceId,
                         chunk.kind,
                         chunk.path,
                         chunk.symbol ?? null,
                         chunk.summary,
-                        stored.contentInline ?? null,
-                        stored.payloadRef ?? null,
-                        stored.contentHash,
-                        stored.tokenCount,
+                        chunk.contentInline ?? null,
+                        chunk.payloadRef ?? null,
+                        chunk.contentHash,
+                        chunk.tokenCount,
                         minedAt,
                         minedAt,
-                        sourceRole,
-                        language,
+                        preparedFile.sourceRole,
+                        preparedFile.language,
                         chunk.anchorType,
                         chunk.anchor,
                         chunk.heading ?? null,
                         chunk.jsonPath ?? null,
-                        JSON.stringify(chunkTopics),
+                        JSON.stringify(chunk.topics),
                         JSON.stringify([]),
                         JSON.stringify(chunk.metadata ?? {}),
                         chunk.startLine ?? null,
@@ -249,43 +267,58 @@ insert into chunks (
                 )
                 await taxonomy.linkTarget({
                     nodeId: taxonomyNode.id,
-                    targetId: chunkId,
+                    targetId: chunk.id,
                     targetType: 'chunk',
                 })
                 await indexSearchDocument(adapter, {
-                    content: stored.contentInline ?? chunk.summary,
+                    content: chunk.contentInline ?? chunk.summary,
                     createdAt: minedAt,
-                    id: chunkId,
+                    id: chunk.id,
                     kind: chunk.kind,
                     task: chunk.path,
                     type: 'chunk',
                 })
-                const retrievalTexts = buildChunkRetrievalTexts({
-                    anchor: chunk.anchor,
-                    content: chunk.content,
-                    language,
-                    path: chunk.path,
-                    sourceRole,
-                    summary: chunk.summary,
-                    topics: chunkTopics,
-                })
                 await upsertRetrievalDocument(adapter, {
                     anchor: chunk.anchor,
-                    embeddingText: retrievalTexts.embeddingText,
-                    ftsText: retrievalTexts.ftsText,
+                    embeddingText: chunk.retrievalTexts.embeddingText,
+                    ftsText: chunk.retrievalTexts.ftsText,
                     path: chunk.path,
-                    sourceId,
-                    sourceRole,
+                    sourceId: preparedFile.sourceId,
+                    sourceRole: preparedFile.sourceRole,
                     summary: chunk.summary,
-                    targetId: chunkId,
+                    targetId: chunk.id,
                     targetType: 'chunk',
                     updatedAt: minedAt,
                 })
                 chunkCount += 1
             }
-        }
+        })
+        progress?.({
+            chunkCount,
+            current: fileIndex + 1,
+            message: `Mined ${file.path} (${preparedFile.chunks.length} chunks)`,
+            path: file.path,
+            phase: 'chunks',
+            status: 'progress',
+            total: files.length,
+        })
+    }
 
-        await rebuildModuleArtifacts(adapter, minedAt)
+    progress?.({
+        chunkCount,
+        message: `Mined ${chunkCount} chunks`,
+        phase: 'chunks',
+        status: 'done',
+        total: files.length,
+    })
+    progress?.({
+        message: 'Rebuilding module artifacts and retrieval index',
+        phase: 'modules',
+        status: 'start',
+    })
+    await adapter.transaction(async () => {
+        await rebuildModuleArtifacts(adapter, minedAt, options.metadata)
+        await reindexRetrievalDocumentFts(adapter)
 
         await appendMemoryEvent(adapter, {
             actor: 'cli',
@@ -294,6 +327,11 @@ insert into chunks (
             subjectType: 'project',
             summary: `Mined ${files.length} files into ${chunkCount} chunks.`,
         })
+    })
+    progress?.({
+        message: 'Module artifacts and retrieval index ready',
+        phase: 'modules',
+        status: 'done',
     })
 
     return {
@@ -304,7 +342,157 @@ insert into chunks (
     }
 }
 
+async function prepareFileChunks(input: {
+    adapter: SqliteAdapter
+    context: LoadedProjectContext
+    engine?: TreeSitterEngine
+    file: ScannedFile
+    toonStore: ReturnType<typeof createToonStore>
+}): Promise<PreparedFile> {
+    const content = await readFile(
+        join(input.context.projectRoot, input.file.path),
+        'utf8',
+    )
+    const sourceRole = classifySourceRole(input.file.path)
+    const language = detectLanguage(input.file.path)
+    let parserEngine = 'heuristic'
+    let parserStatus = 'not_applicable'
+    let parsedMetadata: CodeMetadata | undefined
+
+    if (input.engine && isTreeSitterLanguage(language)) {
+        parserEngine = 'tree_sitter'
+        try {
+            parsedMetadata = await input.engine.parse(input.file.path, content)
+            parserStatus = parsedMetadata ? 'ok' : 'unavailable'
+        } catch (error) {
+            parserStatus = 'failed'
+            console.error(
+                `Tree-sitter parse failed for ${input.file.path}, falling back to heuristic chunking:`,
+                error,
+            )
+        }
+    }
+
+    const allChunks = await chunkFile(
+        input.file,
+        content,
+        input.engine,
+        parsedMetadata,
+    )
+    const chunks = allChunks
+        .map(chunk => ({
+            ...chunk,
+            metadata: {
+                parserEngine,
+                parserStatus,
+                ...chunk.metadata,
+            },
+        }))
+        .slice(0, defaultMaxChunksPerFile)
+
+    const sourceTopics = extractTopics(
+        input.file.path,
+        chunks.map(chunk => chunk.summary).join('\n'),
+    )
+    const preparedChunks: PreparedChunk[] = []
+
+    for (const [index, chunk] of chunks.entries()) {
+        const stored = await storePayload(chunk.content, {
+            inlineMaxBytes: input.context.config.storage.inlinePayloadMaxBytes,
+            toonStore: input.toonStore,
+        })
+        if (
+            await isMinedChunkSuppressed(
+                input.adapter,
+                input.file.path,
+                chunk.anchor,
+                stored.contentHash,
+            )
+        ) {
+            continue
+        }
+
+        const topics = extractTopics(
+            `${input.file.path} ${chunk.anchor}`,
+            `${chunk.summary}\n${chunk.content}`,
+        )
+        preparedChunks.push({
+            anchor: chunk.anchor,
+            anchorType: chunk.anchorType,
+            contentHash: stored.contentHash,
+            contentInline: stored.contentInline,
+            endLine: chunk.endLine,
+            heading: chunk.heading,
+            id: chunkIdFor(
+                input.file.path,
+                index,
+                chunk.anchor,
+                stored.contentHash,
+            ),
+            jsonPath: chunk.jsonPath,
+            kind: chunk.kind,
+            metadata: chunk.metadata ?? {},
+            path: chunk.path,
+            payloadRef: stored.payloadRef,
+            retrievalTexts: buildChunkRetrievalTexts({
+                anchor: chunk.anchor,
+                content: chunk.content,
+                language,
+                path: chunk.path,
+                sourceRole,
+                summary: chunk.summary,
+                topics,
+            }),
+            startLine: chunk.startLine,
+            summary: chunk.summary,
+            symbol: chunk.symbol,
+            tokenCount: stored.tokenCount,
+            topics,
+        })
+    }
+
+    return {
+        chunks: preparedChunks,
+        language,
+        parserEngine,
+        parserStatus,
+        path: input.file.path,
+        sourceId: sourceIdForPath(input.file.path),
+        sourceMetadata: {
+            exports: parsedMetadata?.exports ?? [],
+            imports: parsedMetadata?.imports ?? [],
+            parserEngine,
+            parserStatus,
+        },
+        sourceRole,
+        sourceTopics,
+        truncated: allChunks.length > chunks.length,
+    }
+}
+
+async function isMinedChunkSuppressed(
+    adapter: SqliteAdapter,
+    path: string,
+    anchor: string,
+    contentHashValue: string,
+): Promise<boolean> {
+    const rows = await adapter.query<{ content_hash: string }>(
+        `
+select content_hash
+from mined_suppressions
+where path = ?
+  and anchor = ?
+  and content_hash = ?
+limit 1
+`,
+        [path, anchor, contentHashValue],
+    )
+
+    return rows.length > 0
+}
+
 async function clearMinedChunks(adapter: SqliteAdapter): Promise<void> {
+    await recordMinedSuppressions(adapter)
     await adapter.execute(`
 delete from memory_fts_indexed
 where id in (select id from chunks where source_id in (select id from sources where type = 'mined_file'));
@@ -318,15 +506,15 @@ delete from taxonomy_links
 where target_type = 'chunk'
   and target_id in (select id from chunks where source_id in (select id from sources where type = 'mined_file'));
 `)
-    await adapter.execute(`
-delete from retrieval_documents
-where target_type = 'chunk'
-  and target_id in (select id from chunks where source_id in (select id from sources where type = 'mined_file'));
+    const chunkIds = await adapter.query<{ id: string }>(`
+select id from chunks where source_id in (select id from sources where type = 'mined_file');
 `)
-    await adapter.execute(`
-delete from retrieval_documents
-where target_type = 'module';
-`)
+    await deleteRetrievalDocuments(
+        adapter,
+        'chunk',
+        chunkIds.map(row => row.id),
+    )
+    await deleteRetrievalDocuments(adapter, 'module')
     await adapter.execute(`
 delete from target_embeddings
 where target_type = 'chunk'
@@ -358,6 +546,16 @@ async function clearMinedChunksForPaths(
 
     const placeholders = uniquePaths.map(() => '?').join(', ')
 
+    await recordMinedSuppressions(adapter, uniquePaths)
+    const chunkIds = await adapter.query<{ id: string }>(
+        `
+select id
+from chunks
+where path in (${placeholders});
+`,
+        uniquePaths,
+    )
+
     await adapter.execute(
         `
 delete from memory_fts_indexed
@@ -392,17 +590,10 @@ where target_type = 'chunk'
 `,
         uniquePaths,
     )
-    await adapter.execute(
-        `
-delete from retrieval_documents
-where target_type = 'chunk'
-  and target_id in (
-    select id
-    from chunks
-    where path in (${placeholders})
-);
-`,
-        uniquePaths,
+    await deleteRetrievalDocuments(
+        adapter,
+        'chunk',
+        chunkIds.map(row => row.id),
     )
     await adapter.execute(
         `
@@ -430,6 +621,38 @@ where type = 'mined_file'
   and uri in (${placeholders});
 `,
         uniquePaths,
+    )
+}
+
+async function recordMinedSuppressions(
+    adapter: SqliteAdapter,
+    paths?: string[],
+): Promise<void> {
+    const pathFilter =
+        paths && paths.length > 0
+            ? `and path in (${paths.map(() => '?').join(', ')})`
+            : ''
+    await adapter.execute(
+        `
+insert or ignore into mined_suppressions (
+    path,
+    anchor,
+    content_hash,
+    reason,
+    created_at
+)
+select
+    path,
+    coalesce(anchor, ''),
+    content_hash,
+    forget_reason,
+    coalesce(suppressed_at, deleted_at, updated_at)
+from chunks
+where (suppressed_at is not null or deleted_at is not null)
+  and path is not null
+  ${pathFilter};
+`,
+        paths ?? [],
     )
 }
 
@@ -466,7 +689,7 @@ function chunkIdFor(
     anchor: string,
     hash: string,
 ): string {
-    return `chunk_${contentHash(`${path}:${anchor || index}:${hash}`).slice(0, 32)}`
+    return `chunk_${contentHash(`${path}:${index}:${anchor}:${hash}`).slice(0, 32)}`
 }
 
 function isTreeSitterLanguage(language: string): boolean {

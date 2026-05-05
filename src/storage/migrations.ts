@@ -259,6 +259,30 @@ create index if not exists chunks_role_idx on chunks(source_role);
 create index if not exists chunks_anchor_idx on chunks(path, anchor);
 `,
     },
+    {
+        id: '004_retrieval_fts_and_mining_suppressions',
+        sql: `
+create virtual table if not exists retrieval_documents_fts using fts5(
+    target_id unindexed,
+    target_type unindexed,
+    source_role unindexed,
+    path unindexed,
+    anchor unindexed,
+    fts_text
+);
+
+create table if not exists mined_suppressions (
+    path text not null,
+    anchor text not null,
+    content_hash text not null,
+    reason text,
+    created_at text not null,
+    primary key (path, anchor, content_hash)
+);
+
+create index if not exists mined_suppressions_path_idx on mined_suppressions(path);
+`,
+    },
 ]
 
 export async function runMigrations(adapter: SqliteAdapter): Promise<void> {

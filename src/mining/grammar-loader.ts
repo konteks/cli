@@ -31,6 +31,15 @@ export function getBundledGrammarManifest(): GrammarManifest {
     return bundledManifest
 }
 
+export function getBundledGrammarForPath(
+    path: string,
+): BundledGrammar | undefined {
+    const lowerPath = path.toLowerCase()
+    return Object.values(bundledManifest.grammars).find(grammar =>
+        grammar.extensions.some(extension => lowerPath.endsWith(extension)),
+    )
+}
+
 export async function initTreeSitterWithBundledGrammars(
     engine: TreeSitterBootstrapEngine,
 ) {

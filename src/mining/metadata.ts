@@ -6,9 +6,14 @@ import type { ScannedFile } from './file-scan.js'
 export type ProjectMetadata = {
     name?: string
     packageManager?: string
+    workspaceManager?: string
+    workspaceGlobs: string[]
+    packagePath: string
     scripts: string[]
     dependencies: string[]
     devDependencies: string[]
+    peerDependencies: string[]
+    optionalDependencies: string[]
     readmeFiles: string[]
     technologies: string[]
 }
@@ -19,6 +24,9 @@ type PackageJson = {
     scripts?: unknown
     dependencies?: unknown
     devDependencies?: unknown
+    optionalDependencies?: unknown
+    peerDependencies?: unknown
+    workspaces?: unknown
 }
 
 export async function extractProjectMetadata(
@@ -28,7 +36,10 @@ export async function extractProjectMetadata(
     const packageJson = await readPackageJson(projectRoot)
     const dependencies = keysOfRecord(packageJson?.dependencies)
     const devDependencies = keysOfRecord(packageJson?.devDependencies)
+    const peerDependencies = keysOfRecord(packageJson?.peerDependencies)
+    const optionalDependencies = keysOfRecord(packageJson?.optionalDependencies)
     const scripts = keysOfRecord(packageJson?.scripts)
+    const workspaceGlobs = parseWorkspaceGlobs(packageJson?.workspaces)
     const readmeFiles = files
         .map(file => file.path)
         .filter(path => /^readme(\..+)?$/i.test(path.split('/').at(-1) ?? ''))
@@ -40,13 +51,18 @@ export async function extractProjectMetadata(
             typeof packageJson?.name === 'string'
                 ? packageJson.name
                 : undefined,
+        optionalDependencies,
         packageManager:
             typeof packageJson?.packageManager === 'string'
                 ? packageJson.packageManager
                 : undefined,
+        packagePath: 'package.json',
+        peerDependencies,
         readmeFiles,
         scripts,
         technologies: inferTechnologies(files, dependencies, devDependencies),
+        workspaceGlobs,
+        workspaceManager: detectWorkspaceManager(files, workspaceGlobs),
     }
 }
 
@@ -67,6 +83,43 @@ function keysOfRecord(value: unknown): string[] {
     }
 
     return Object.keys(value).sort((left, right) => left.localeCompare(right))
+}
+
+function parseWorkspaceGlobs(value: unknown): string[] {
+    if (Array.isArray(value)) {
+        return value.filter(item => typeof item === 'string').sort()
+    }
+    if (
+        value &&
+        typeof value === 'object' &&
+        !Array.isArray(value) &&
+        Array.isArray((value as { packages?: unknown }).packages)
+    ) {
+        return (value as { packages: unknown[] }).packages
+            .filter(item => typeof item === 'string')
+            .sort() as string[]
+    }
+    return []
+}
+
+function detectWorkspaceManager(
+    files: ScannedFile[],
+    workspaceGlobs: string[],
+): string | undefined {
+    const paths = new Set(files.map(file => file.path))
+    if (paths.has('pnpm-workspace.yaml')) {
+        return 'pnpm'
+    }
+    if (paths.has('turbo.json')) {
+        return 'turbo'
+    }
+    if (paths.has('nx.json')) {
+        return 'nx'
+    }
+    if (workspaceGlobs.length > 0) {
+        return 'package.json'
+    }
+    return undefined
 }
 
 function inferTechnologies(

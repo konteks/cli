@@ -10,6 +10,7 @@ import { scanProjectFilesWithDiagnostics } from './file-scan.js'
 import type { MineManifest, MineMode } from './manifest.js'
 import { readMineManifest, writeMineManifest } from './manifest.js'
 import { extractProjectMetadata } from './metadata.js'
+import type { MineProgressReporter } from './progress.js'
 import { formatProjectSummaryToon } from './toon-summary.js'
 import type { TreeSitterEngine } from './tree-sitter-engine.js'
 
@@ -31,13 +32,31 @@ export async function mineProject(
     mode: MineMode,
     options: {
         embeddingProvider?: EmbeddingProvider
+        onProgress?: MineProgressReporter
         treeSitterEngine?: TreeSitterEngine
     } = {},
 ): Promise<MineProjectResult> {
+    const progress = options.onProgress
+    progress?.({
+        message: `Mining ${context.projectRoot}`,
+        phase: 'start',
+        status: 'start',
+    })
     await mkdir(context.memoryDir, { recursive: true })
 
+    progress?.({
+        message: 'Scanning project files',
+        phase: 'scan',
+        status: 'start',
+    })
     const scan = await scanProjectFilesWithDiagnostics(context.projectRoot)
     const files = scan.files
+    progress?.({
+        message: `Scanned ${files.length} files`,
+        phase: 'scan',
+        status: 'done',
+        total: files.length,
+    })
     const previousManifest =
         mode === 'changed'
             ? await readMineManifest(context.memoryDir)
@@ -47,9 +66,35 @@ export async function mineProject(
         previousManifest,
         mode,
     )
+    progress?.({
+        message: `Selected ${filesToMine.length} files to mine`,
+        phase: 'select',
+        status: 'done',
+        total: filesToMine.length,
+    })
+    progress?.({
+        message: 'Extracting project metadata',
+        phase: 'metadata',
+        status: 'start',
+    })
     const metadata = await extractProjectMetadata(context.projectRoot, files)
+    progress?.({
+        message: `Detected ${metadata.technologies.length} technologies`,
+        phase: 'metadata',
+        status: 'done',
+    })
     const minedAt = new Date().toISOString()
+    progress?.({
+        message: 'Opening local memory database',
+        phase: 'database',
+        status: 'start',
+    })
     const adapter = await openProjectDatabase(context)
+    progress?.({
+        message: 'Local memory database ready',
+        phase: 'database',
+        status: 'done',
+    })
     const minedChunks = await mineChunks(
         adapter,
         context,
@@ -57,7 +102,9 @@ export async function mineProject(
         minedAt,
         {
             deletedPaths,
+            metadata,
             mode,
+            onProgress: progress,
             treeSitterEngine: options.treeSitterEngine,
         },
     )
@@ -67,10 +114,16 @@ export async function mineProject(
               options.embeddingProvider,
               ['chunk', 'module'],
               minedAt,
+              { onProgress: progress },
           )
         : { embeddedCount: 0, reusedCount: 0 }
     await adapter.close()
     const toonStore = createToonStore(context.memoryDir)
+    progress?.({
+        message: 'Writing project summary',
+        phase: 'summary',
+        status: 'start',
+    })
     const summary = await toonStore.write(
         formatProjectSummaryToon({
             fileCount: files.length,
@@ -81,6 +134,11 @@ export async function mineProject(
             projectRoot: context.projectRoot,
         }),
     )
+    progress?.({
+        message: 'Project summary written',
+        phase: 'summary',
+        status: 'done',
+    })
 
     const manifest: MineManifest = {
         diagnostics: {
@@ -101,7 +159,20 @@ export async function mineProject(
         summaryRef: summary.ref,
         version: 1,
     }
+    progress?.({
+        message: 'Writing mine manifest',
+        phase: 'manifest',
+        status: 'start',
+    })
     await writeMineManifest(context.memoryDir, manifest)
+    progress?.({
+        chunkCount: minedChunks.chunkCount,
+        embeddedCount: embeddingRun.embeddedCount,
+        message: `Mining complete: ${minedChunks.chunkCount} chunks, ${embeddingRun.embeddedCount} embedded, ${embeddingRun.reusedCount} reused`,
+        phase: 'done',
+        reusedCount: embeddingRun.reusedCount,
+        status: 'done',
+    })
 
     return {
         chunkCount: minedChunks.chunkCount,

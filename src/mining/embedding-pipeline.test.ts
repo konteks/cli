@@ -65,12 +65,18 @@ describe('generateTargetEmbeddings', () => {
         expect(second.embeddedCount).toBe(0)
         expect(second.reusedCount).toBe(1)
 
-        const rows = await adapter.query<{ dimensions: number; model: string }>(
-            'select model, dimensions from target_embeddings where target_id = ? and target_type = ?',
+        const rows = await adapter.query<{
+            dimensions: number
+            model: string
+            vector_blob: Uint8Array
+        }>(
+            'select model, dimensions, vector_blob from target_embeddings where target_id = ? and target_type = ?',
             ['chunk_a', 'chunk'],
         )
         await adapter.close()
 
-        expect(rows).toEqual([{ dimensions: 8, model: provider.model }])
+        expect(rows[0]?.model).toBe(provider.model)
+        expect(rows[0]?.dimensions).toBe(8)
+        expect(rows[0]?.vector_blob.byteLength).toBe(8 * 4)
     })
 })

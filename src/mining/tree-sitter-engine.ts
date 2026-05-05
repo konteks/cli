@@ -1,4 +1,5 @@
 import { Language, type Node, Parser, Query } from 'web-tree-sitter'
+import { getBundledGrammarForPath } from './grammar-loader.js'
 
 export type TreeSitterLanguage =
     | 'html'
@@ -83,19 +84,7 @@ export class TreeSitterEngine {
     }
 
     private detectLanguage(path: string): TreeSitterLanguage | undefined {
-        if (path.endsWith('.jsdoc')) return 'jsdoc'
-        if (/\.(json|jsonc)$/u.test(path)) return 'json'
-        if (/\.(html|htm)$/u.test(path)) return 'html'
-        if (/\.(php|phtml)$/u.test(path)) return 'php'
-        if (path.endsWith('.tsx')) return 'tsx'
-        if (path.endsWith('.ts')) return 'typescript'
-        if (
-            path.endsWith('.js') ||
-            path.endsWith('.mjs') ||
-            path.endsWith('.cjs')
-        )
-            return 'javascript'
-        return undefined
+        return getBundledGrammarForPath(path)?.language
     }
 
     private extractMetadata(
