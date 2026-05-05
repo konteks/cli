@@ -159,7 +159,7 @@ insert or replace into target_embeddings (
 
     options.onProgress?.({
         embeddedCount,
-        message: `Embeddings ready: ${embeddedCount} embedded, ${reusedCount} reused`,
+        message: `Index ready: ${embeddedCount} indexed, ${reusedCount} unchanged`,
         phase: 'embeddings',
         reusedCount,
         stage: 'embed',

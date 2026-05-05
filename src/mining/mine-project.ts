@@ -168,7 +168,7 @@ export async function mineProject(
     progress?.({
         chunkCount: minedChunks.chunkCount,
         embeddedCount: embeddingRun.embeddedCount,
-        message: `Extraction complete: ${minedChunks.chunkCount} sections, ${embeddingRun.embeddedCount} embedded, ${embeddingRun.reusedCount} reused`,
+        message: `Extraction complete: ${minedChunks.chunkCount} sections, ${embeddingRun.embeddedCount} indexed, ${embeddingRun.reusedCount} unchanged`,
         phase: 'done',
         reusedCount: embeddingRun.reusedCount,
         status: 'done',

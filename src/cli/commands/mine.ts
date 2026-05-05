@@ -263,7 +263,7 @@ function formatInlineDetail(event: MineProgressEvent): string {
         event.embeddedCount !== undefined &&
         event.total !== undefined
     ) {
-        return `${event.embeddedCount} embedded, ${event.reusedCount ?? 0} reused`
+        return `${event.embeddedCount} indexed, ${event.reusedCount ?? 0} unchanged`
     }
 
     if (event.downloadFile) {

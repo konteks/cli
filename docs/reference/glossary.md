@@ -18,6 +18,10 @@ Relevant project knowledge given to an agent so it can work without rediscoverin
 
 A chronological activity record saved by an agent. Diary entries help future sessions avoid repeated work, but they are not part of default Warm Up context.
 
+## Indexed
+
+A section, module, memory, or diary entry that Konteks has prepared for search and recall.
+
 ## Knowledge Curation
 
 The process of turning raw project artifacts and agent findings into durable, retrievable memory.
@@ -65,6 +69,10 @@ The local persistence layer for Konteks memory, currently based on WASM SQLite a
 ## TOON
 
 A compact text format used for agent-readable stored summaries and payloads.
+
+## Unchanged
+
+An item whose indexed content has not changed since the previous extraction, so Konteks can keep its existing search data.
 
 ## Build
 
