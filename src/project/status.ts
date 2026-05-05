@@ -12,7 +12,7 @@ type ProjectStatus = {
     freshness: {
         status: 'missing' | 'fresh' | 'stale'
         reason: string
-        lastMinedAt?: string
+        lastExtractedAt?: string
         recommendedCommand?: string
     }
 }
@@ -34,7 +34,7 @@ export async function getProjectStatus(
             ? await getMiningFreshness(context)
             : {
                   reason: 'Konteks project memory is not initialized.',
-                  recommendedCommand: 'konteks init && konteks mine',
+                  recommendedCommand: 'konteks init',
                   status: 'missing',
               },
         memoryDir: context.memoryDir,

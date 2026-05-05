@@ -334,9 +334,7 @@ where path = ? and anchor = ? and content_hash = ?
 
         const stale = await getProjectStatus(projectRoot)
         expect(stale.freshness.status).toBe('stale')
-        expect(stale.freshness.recommendedCommand).toBe(
-            'konteks mine --changed',
-        )
+        expect(stale.freshness.recommendedCommand).toBe('konteks repair')
     })
 
     it('caps chunks per file and reports the diagnostic', async () => {

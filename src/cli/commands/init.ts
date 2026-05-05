@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { mineProject } from '../../mining/mine-project.js'
 import {
     createDefaultConfig,
     loadProjectContext,
@@ -24,8 +25,15 @@ export async function initCommand(options: GlobalCliOptions): Promise<void> {
     })
     await ensureProjectDatabase(await loadProjectContext(options.project))
     await ensureKonteksGitignore(context.projectRoot)
+    const extraction = await mineProject(
+        await loadProjectContext(options.project),
+        'full',
+    )
 
     console.log(`Initialized Konteks at ${context.memoryDir}`)
+    console.log(
+        `Extracted ${extraction.fileCount} files into ${extraction.chunkCount} sections`,
+    )
 }
 
 export async function ensureKonteksGitignore(

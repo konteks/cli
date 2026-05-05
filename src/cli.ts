@@ -3,7 +3,7 @@ import { Command } from 'commander'
 import { doctorCommand } from './cli/commands/doctor.js'
 import { initCommand } from './cli/commands/init.js'
 import { mcpCommand } from './cli/commands/mcp.js'
-import { mineCommand } from './cli/commands/mine.js'
+import { repairCommand } from './cli/commands/mine.js'
 import { statusCommand } from './cli/commands/status.js'
 
 const VERSION = '0.0.0'
@@ -36,15 +36,10 @@ program
     })
 
 program
-    .command('mine')
-    .description('Scan the project and populate Konteks memory.')
-    .option(
-        '--changed',
-        'Only mine files changed since the last successful mine',
-    )
-    .option('--reindex', 'Force a full rebuild of mined artifacts and indexes')
-    .action(async options => {
-        await mineCommand(program.opts(), options)
+    .command('repair')
+    .description('Repair Konteks memory by rebuilding artifacts from scratch.')
+    .action(async () => {
+        await repairCommand(program.opts())
     })
 
 program

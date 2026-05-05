@@ -124,7 +124,7 @@ export async function mineChunks(
 
     let rootNodeId = ''
     progress?.({
-        message: 'Preparing mining tables',
+        message: 'Preparing extraction tables',
         phase: 'database',
         status: 'progress',
     })
@@ -139,13 +139,13 @@ export async function mineChunks(
         }
         const rootNode = await taxonomy.upsertNode({
             name: 'Project Files',
-            summary: 'Files mined from the current project.',
+            summary: 'Files extracted from the current project.',
         })
         rootNodeId = rootNode.id
     })
 
     progress?.({
-        message: `Mining ${files.length} files`,
+        message: `Extracting ${files.length} files`,
         phase: 'chunks',
         status: 'start',
         total: files.length,
@@ -296,7 +296,7 @@ insert into chunks (
         progress?.({
             chunkCount,
             current: fileIndex + 1,
-            message: `Mined ${file.path} (${preparedFile.chunks.length} chunks)`,
+            message: `Extracted ${file.path} (${preparedFile.chunks.length} sections)`,
             path: file.path,
             phase: 'chunks',
             status: 'progress',
@@ -306,7 +306,7 @@ insert into chunks (
 
     progress?.({
         chunkCount,
-        message: `Mined ${chunkCount} chunks`,
+        message: `Extracted ${chunkCount} sections`,
         phase: 'chunks',
         status: 'done',
         total: files.length,
@@ -325,7 +325,7 @@ insert into chunks (
             eventType: 'project_mined',
             id: `event_${contentHash(`${context.projectRoot}:${minedAt}`).slice(0, 32)}`,
             subjectType: 'project',
-            summary: `Mined ${files.length} files into ${chunkCount} chunks.`,
+            summary: `Extracted ${files.length} files into ${chunkCount} sections.`,
         })
     })
     progress?.({

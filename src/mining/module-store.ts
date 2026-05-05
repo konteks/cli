@@ -109,7 +109,7 @@ insert into modules (
 function summarizeModule(row: ModuleSummaryRow): string {
     const path =
         row.module_path === '.' ? 'Project root' : `Module ${row.module_path}`
-    return `${path} contains ${row.file_count} files and ${row.chunk_count} mined chunks.`
+    return `${path} contains ${row.file_count} files and ${row.chunk_count} extracted sections.`
 }
 
 function moduleTopics(path: string): string[] {

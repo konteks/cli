@@ -55,12 +55,12 @@ describe('project context', () => {
 
         expect(status.freshness).toEqual({
             reason: 'Konteks project memory is not initialized.',
-            recommendedCommand: 'konteks init && konteks mine',
+            recommendedCommand: 'konteks init',
             status: 'missing',
         })
     })
 
-    it('reports missing mining metadata when config exists', async () => {
+    it('reports missing extraction metadata when config exists', async () => {
         const projectRoot = await makeTempProject()
         await mkdir(join(projectRoot, '.konteks'), { recursive: true })
         await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
@@ -68,6 +68,6 @@ describe('project context', () => {
         const status = await getProjectStatus(projectRoot)
 
         expect(status.freshness.status).toBe('missing')
-        expect(status.freshness.recommendedCommand).toBe('konteks mine')
+        expect(status.freshness.recommendedCommand).toBe('konteks repair')
     })
 })

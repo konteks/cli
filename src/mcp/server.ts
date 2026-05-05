@@ -4,8 +4,12 @@ import {
     CallToolRequestSchema,
     type CallToolResult,
     ErrorCode,
+    GetPromptRequestSchema,
+    type GetPromptResult,
+    ListPromptsRequestSchema,
     ListToolsRequestSchema,
     McpError,
+    type Prompt,
     type Tool,
 } from '@modelcontextprotocol/sdk/types.js'
 import { forgetMemory } from '../memory/forget-store.js'
@@ -20,17 +24,17 @@ import { getProjectStatus } from '../project/status.js'
 import { openProjectDatabase } from '../storage/database.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 import {
-    bootstrapInputSchema,
     emptyInputSchema,
     forgetInputSchema,
-    parseBootstrapInput,
     parseForgetInput,
     parseRecallInput,
     parseSaveInput,
     parseSearchInput,
+    parseWarmUpInput,
     recallInputSchema,
     saveInputSchema,
     searchInputSchema,
+    warmUpInputSchema,
 } from './inputs.js'
 import { textResult } from './result.js'
 
@@ -84,10 +88,11 @@ export async function startMcpServer(
         },
         {
             capabilities: {
+                prompts: {},
                 tools: {},
             },
             instructions:
-                'Use konteks_bootstrap at session start, konteks_recall before project-specific work, and konteks_save to persist durable decisions or session handoffs. Do not expect MCP tools to perform heavy project mining.',
+                'Use prompts for the Warm Up -> Build -> Save flow. Use konteks_warm_up at session start, konteks_recall as supplemental Build context, and konteks_save to persist durable decisions or session handoffs.',
         },
     )
     const tools = new Map<string, ToolRegistration>()
@@ -111,22 +116,22 @@ export async function startMcpServer(
     )
 
     registerTool(
-        'konteks_bootstrap',
+        'konteks_warm_up',
         {
             description:
                 'Load the stable project-wide briefing for the current repo and report whether memory is missing, fresh, or stale.',
-            inputSchema: bootstrapInputSchema,
+            inputSchema: warmUpInputSchema,
         },
         async input => {
-            const parsed = parseBootstrapInput(input)
+            const parsed = parseWarmUpInput(input)
             const status = await getProjectStatus(options.project)
             return textResult({
                 commonCommands: [
                     'konteks status',
-                    'konteks mine --changed',
+                    'konteks repair',
                     'konteks mcp',
                 ],
-                constraints: ['MCP tools do not run heavy project mining.'],
+                constraints: ['Use repair only for recovery rebuilds.'],
                 freshness: status.freshness,
                 keyFiles: [],
                 project: {
@@ -150,7 +155,7 @@ export async function startMcpServer(
                 summary:
                     status.freshness.status === 'missing'
                         ? 'Konteks memory is not initialized yet.'
-                        : 'Konteks bootstrap summaries are not implemented yet.',
+                        : 'Konteks warm-up summaries are not implemented yet.',
                 taxonomy: [],
                 technologies: [],
             })
@@ -240,6 +245,24 @@ export async function startMcpServer(
         },
     )
 
+    const prompts = createPromptDefinitions()
+
+    server.setRequestHandler(ListPromptsRequestSchema, async () => ({
+        prompts,
+    }))
+
+    server.setRequestHandler(GetPromptRequestSchema, async request => {
+        const prompt = prompts.find(item => item.name === request.params.name)
+        if (!prompt) {
+            throw new McpError(
+                ErrorCode.MethodNotFound,
+                `Unknown Konteks prompt: ${request.params.name}`,
+            )
+        }
+
+        return getPromptResult(prompt, request.params.arguments ?? {})
+    })
+
     server.setRequestHandler(ListToolsRequestSchema, async () => ({
         tools: [...tools.values()].map(tool => ({
             description: tool.description,
@@ -276,6 +299,104 @@ type ToolRegistration = {
     description: string
     inputSchema: Tool['inputSchema']
     name: string
+}
+
+function createPromptDefinitions(): Prompt[] {
+    return [
+        {
+            description: 'Open a fresh Konteks session with project context.',
+            name: 'warm-up',
+            title: 'Warm Up',
+        },
+        {
+            arguments: [
+                {
+                    description:
+                        'The module, feature, file, decision, or constraint to recall.',
+                    name: 'task',
+                    required: true,
+                },
+            ],
+            description:
+                'Supplement a Build task with context from known project memory.',
+            name: 'recall',
+            title: 'Recall',
+        },
+        {
+            arguments: [
+                {
+                    description:
+                        'The existing feature, module, file, or behavior to change.',
+                    name: 'task',
+                    required: true,
+                },
+            ],
+            description: 'Continue an existing task in the Build phase.',
+            name: 'work-on-existing',
+            title: 'Work On Existing',
+        },
+        {
+            arguments: [
+                {
+                    description: 'The new task or feature to build.',
+                    name: 'task',
+                    required: true,
+                },
+            ],
+            description: 'Start a new task in the Build phase.',
+            name: 'work-on-new',
+            title: 'Work On New',
+        },
+        {
+            arguments: [
+                {
+                    description:
+                        'Optional extra save instructions for the current task.',
+                    name: 'task',
+                    required: false,
+                },
+            ],
+            description: 'Persist durable progress at the end of a task.',
+            name: 'save-session',
+            title: 'Save Session',
+        },
+    ]
+}
+
+function getPromptResult(
+    prompt: Prompt,
+    args: Record<string, string>,
+): GetPromptResult {
+    const task = args.task?.trim()
+    return {
+        description: prompt.description,
+        messages: [
+            {
+                content: {
+                    text: promptText(prompt.name, task),
+                    type: 'text',
+                },
+                role: 'user',
+            },
+        ],
+    }
+}
+
+function promptText(name: string, task: string | undefined): string {
+    switch (name) {
+        case 'warm-up':
+            return 'Warm up this Konteks session. Call konteks_warm_up and summarize the project architecture, active constraints, and durable decisions.'
+        case 'recall':
+            return `Recall relevant Konteks context for this task: ${task ?? '<task>'}. Call konteks_recall before answering.`
+        case 'work-on-existing':
+            return `Build on this existing code or behavior: ${task ?? '<task>'}. Use Konteks context as needed, then propose and implement the change.`
+        case 'work-on-new':
+            return `Build this new task: ${task ?? '<task>'}. Discover relevant code during implementation and keep durable findings ready for save-session.`
+        case 'save-session':
+            return `Save this Konteks session. Call konteks_save with completed work, pending items, tradeoffs, tests run, and exact next steps${task ? ` for: ${task}` : ''}.`
+        default:
+            return ''
+    }
 }
 
 export async function recallHistory(

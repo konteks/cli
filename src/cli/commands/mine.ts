@@ -10,13 +10,17 @@ type MineOptions = {
     reindex?: boolean
 }
 
+export async function repairCommand(options: GlobalCliOptions): Promise<void> {
+    await mineCommand(options, { reindex: true })
+}
+
 export async function mineCommand(
     options: GlobalCliOptions,
     mineOptions: MineOptions,
 ): Promise<void> {
     const context = await loadProjectContext(options.project)
     if (mineOptions.changed && mineOptions.reindex) {
-        throw new Error('Use either --changed or --reindex, not both.')
+        throw new Error('Use either changed or repair mode, not both.')
     }
 
     const mode = mineOptions.reindex
@@ -27,11 +31,21 @@ export async function mineCommand(
     if (
         mode === 'reindex' &&
         !(await confirmInteractive(
-            'Rebuild all Konteks mining artifacts for this project?',
+            'Repair Konteks memory by rebuilding artifacts for this project?',
             true,
         ))
     ) {
-        console.log(JSON.stringify({ mode, ok: false, skipped: true }, null, 2))
+        console.log(
+            JSON.stringify(
+                {
+                    mode: mode === 'reindex' ? 'repair' : mode,
+                    ok: false,
+                    skipped: true,
+                },
+                null,
+                2,
+            ),
+        )
         return
     }
 
@@ -45,7 +59,16 @@ export async function mineCommand(
             onProgress: progress.report,
         })
 
-        console.log(JSON.stringify(result, null, 2))
+        console.log(
+            JSON.stringify(
+                {
+                    ...result,
+                    mode: result.mode === 'reindex' ? 'repair' : result.mode,
+                },
+                null,
+                2,
+            ),
+        )
     } finally {
         progress.done()
     }
@@ -187,7 +210,7 @@ function formatFinalLine(
     event: MineProgressEvent,
     color: ColorPalette,
 ): string {
-    return `${color.success('✓')} ${event.message ?? 'Mining complete'}`
+    return `${color.success('✓')} ${event.message ?? 'Extraction complete'}`
 }
 
 function compactMessage(event: MineProgressEvent): string {
@@ -201,7 +224,7 @@ function compactMessage(event: MineProgressEvent): string {
             /^Embedded chunk:/u.test(message) ||
             /^Embedding chunk:/u.test(message)
         ) {
-            return 'Embedding chunk'
+            return 'Embedding section'
         }
         if (
             /^Embedded module:/u.test(message) ||
@@ -210,13 +233,13 @@ function compactMessage(event: MineProgressEvent): string {
             return 'Embedding module'
         }
         if (/^Reused embedding for chunk:/u.test(message)) {
-            return 'Reusing chunk embedding'
+            return 'Reusing section embedding'
         }
         if (/^Reused embedding for module:/u.test(message)) {
             return 'Reusing module embedding'
         }
         if (/^Loading embedding model and embedding chunk:/u.test(message)) {
-            return 'Loading model, embedding chunk'
+            return 'Loading model, embedding section'
         }
         if (/^Loading embedding model and embedding module:/u.test(message)) {
             return 'Loading model, embedding module'
@@ -224,7 +247,7 @@ function compactMessage(event: MineProgressEvent): string {
     }
 
     if (event.phase === 'chunks' && event.path) {
-        return 'Mining file'
+        return 'Extracting file'
     }
 
     return message
@@ -269,7 +292,7 @@ function formatPercentAndCount(event: MineProgressEvent): string {
 
 function phaseTitle(phase: MineProgressEvent['phase']): string {
     const labels: Record<MineProgressEvent['phase'], string> = {
-        chunks: 'Mining files',
+        chunks: 'Extracting files',
         database: 'Database',
         done: 'Complete',
         embeddings: 'Embeddings',
@@ -278,7 +301,7 @@ function phaseTitle(phase: MineProgressEvent['phase']): string {
         modules: 'Modules',
         scan: 'Scan',
         select: 'Selection',
-        start: 'Konteks mine',
+        start: 'Konteks repair',
         summary: 'Summary',
     }
 

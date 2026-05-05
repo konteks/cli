@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'bun:test'
 import {
-    parseBootstrapInput,
     parseForgetInput,
     parseRecallInput,
     parseSaveInput,
     parseSearchInput,
+    parseWarmUpInput,
 } from './inputs.js'
 
 describe('MCP input parsing', () => {
-    it('accepts bootstrap options', () => {
+    it('accepts warm-up options', () => {
         expect(
-            parseBootstrapInput({
+            parseWarmUpInput({
                 includeCommands: true,
                 maxTokens: 2000,
             }),

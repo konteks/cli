@@ -37,7 +37,7 @@ type MiningFreshness = {
     status: 'missing' | 'fresh' | 'stale'
     reason: string
     recommendedCommand?: string
-    lastMinedAt?: string
+    lastExtractedAt?: string
 }
 
 function mineManifestPath(memoryDir: string): string {
@@ -71,8 +71,8 @@ export async function getMiningFreshness(
     const manifest = await readMineManifest(context.memoryDir)
     if (!manifest) {
         return {
-            reason: 'No mining manifest exists yet.',
-            recommendedCommand: 'konteks mine',
+            reason: 'No extraction manifest exists yet.',
+            recommendedCommand: 'konteks repair',
             status: 'missing',
         }
     }
@@ -82,16 +82,16 @@ export async function getMiningFreshness(
 
     if (staleReason) {
         return {
-            lastMinedAt: manifest.minedAt,
+            lastExtractedAt: manifest.minedAt,
             reason: staleReason,
-            recommendedCommand: 'konteks mine --changed',
+            recommendedCommand: 'konteks repair',
             status: 'stale',
         }
     }
 
     return {
-        lastMinedAt: manifest.minedAt,
-        reason: `Project mining is current for ${manifest.fileCount} files.`,
+        lastExtractedAt: manifest.minedAt,
+        reason: `Project extraction is current for ${manifest.fileCount} files.`,
         status: 'fresh',
     }
 }
@@ -101,7 +101,7 @@ function findStaleReason(
     currentFiles: ScannedFile[],
 ): string | undefined {
     if (previousFiles.length !== currentFiles.length) {
-        return 'Project file set changed since the last mine.'
+        return 'Project file set changed since the last extraction.'
     }
 
     const previousByPath = new Map(previousFiles.map(file => [file.path, file]))

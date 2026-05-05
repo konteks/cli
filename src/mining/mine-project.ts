@@ -38,7 +38,7 @@ export async function mineProject(
 ): Promise<MineProjectResult> {
     const progress = options.onProgress
     progress?.({
-        message: `Mining ${context.projectRoot}`,
+        message: `Extracting ${context.projectRoot}`,
         phase: 'start',
         status: 'start',
     })
@@ -67,7 +67,7 @@ export async function mineProject(
         mode,
     )
     progress?.({
-        message: `Selected ${filesToMine.length} files to mine`,
+        message: `Selected ${filesToMine.length} files to extract`,
         phase: 'select',
         status: 'done',
         total: filesToMine.length,
@@ -160,7 +160,7 @@ export async function mineProject(
         version: 1,
     }
     progress?.({
-        message: 'Writing mine manifest',
+        message: 'Writing extraction manifest',
         phase: 'manifest',
         status: 'start',
     })
@@ -168,7 +168,7 @@ export async function mineProject(
     progress?.({
         chunkCount: minedChunks.chunkCount,
         embeddedCount: embeddingRun.embeddedCount,
-        message: `Mining complete: ${minedChunks.chunkCount} chunks, ${embeddingRun.embeddedCount} embedded, ${embeddingRun.reusedCount} reused`,
+        message: `Extraction complete: ${minedChunks.chunkCount} sections, ${embeddingRun.embeddedCount} embedded, ${embeddingRun.reusedCount} reused`,
         phase: 'done',
         reusedCount: embeddingRun.reusedCount,
         status: 'done',

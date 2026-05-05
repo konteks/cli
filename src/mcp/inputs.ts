@@ -20,7 +20,7 @@ export const emptyInputSchema = {
     type: 'object',
 } satisfies ObjectSchema
 
-export const bootstrapInputSchema = {
+export const warmUpInputSchema = {
     additionalProperties: false,
     properties: {
         includeCommands: { type: 'boolean' },
@@ -86,7 +86,7 @@ type MemoryKind =
     | 'note'
     | 'preference'
 
-type BootstrapInput = {
+type WarmUpInput = {
     includeCommands?: boolean
     includeOpenTasks?: boolean
     includeRecentSessions?: boolean
@@ -135,7 +135,7 @@ export type SearchInput = {
     query: string
 }
 
-export function parseBootstrapInput(input: unknown): BootstrapInput {
+export function parseWarmUpInput(input: unknown): WarmUpInput {
     const record = asRecord(input)
     return {
         includeCommands: optionalBoolean(
