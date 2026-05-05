@@ -1,5 +1,8 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import type { EmbeddingProvider } from '../../mining/embedding-provider.js'
+import { HuggingFaceEmbeddingProvider } from '../../mining/embedding-provider.js'
+import { readMineManifest } from '../../mining/manifest.js'
 import { mineProject } from '../../mining/mine-project.js'
 import {
     createDefaultConfig,
@@ -7,9 +10,21 @@ import {
 } from '../../project/context.js'
 import { ensureProjectDatabase } from '../../storage/database.js'
 import type { GlobalCliOptions } from '../options.js'
+import { createMineProgressReporter } from './mine.js'
 
-export async function initCommand(options: GlobalCliOptions): Promise<void> {
+type InitCommandOptions = GlobalCliOptions & {
+    embeddingProvider?: EmbeddingProvider
+}
+
+export async function initCommand(options: InitCommandOptions): Promise<void> {
     const context = await loadProjectContext(options.project)
+    if (context.configExists && (await readMineManifest(context.memoryDir))) {
+        console.log(
+            `Konteks is already initialized at ${context.memoryDir}. Use 'konteks repair' if memory artifacts need recovery.`,
+        )
+        return
+    }
+
     await mkdir(context.memoryDir, { recursive: true })
     await mkdir(join(context.memoryDir, 'objects'), { recursive: true })
     await mkdir(join(context.memoryDir, 'chunks'), { recursive: true })
@@ -25,10 +40,25 @@ export async function initCommand(options: GlobalCliOptions): Promise<void> {
     })
     await ensureProjectDatabase(await loadProjectContext(options.project))
     await ensureKonteksGitignore(context.projectRoot)
-    const extraction = await mineProject(
-        await loadProjectContext(options.project),
-        'full',
-    )
+    const progress = createMineProgressReporter()
+    let extraction: Awaited<ReturnType<typeof mineProject>>
+    try {
+        const embeddingProvider =
+            options.embeddingProvider ??
+            new HuggingFaceEmbeddingProvider({
+                onProgress: progress.report,
+            })
+        extraction = await mineProject(
+            await loadProjectContext(options.project),
+            context.configExists ? 'resume' : 'full',
+            {
+                embeddingProvider,
+                onProgress: progress.report,
+            },
+        )
+    } finally {
+        progress.done()
+    }
 
     console.log(`Initialized Konteks at ${context.memoryDir}`)
     console.log(

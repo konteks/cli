@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { FakeEmbeddingProvider } from '../../mining/embedding-provider.js'
 import { ensureKonteksGitignore, initCommand } from './init.js'
 
 const tempDirs: string[] = []
@@ -22,10 +23,13 @@ afterEach(async () => {
 })
 
 describe('init command', () => {
+    const init = (project: string) =>
+        initCommand({ embeddingProvider: new FakeEmbeddingProvider(), project })
+
     it('adds .konteks to .gitignore during init', async () => {
         const projectRoot = await makeTempProject()
 
-        await initCommand({ project: projectRoot })
+        await init(projectRoot)
 
         await expect(
             readFile(join(projectRoot, '.gitignore'), 'utf8'),
@@ -51,10 +55,57 @@ describe('init command', () => {
             'node_modules\n.konteks/\n',
         )
 
-        await initCommand({ project: projectRoot })
+        await init(projectRoot)
 
         await expect(
             readFile(join(projectRoot, '.gitignore'), 'utf8'),
         ).resolves.toBe('node_modules\n.konteks/\n')
+    })
+
+    it('skips when the project is already initialized', async () => {
+        const projectRoot = await makeTempProject()
+
+        await init(projectRoot)
+        const manifestPath = join(projectRoot, '.konteks', 'mine-manifest.json')
+        const firstManifest = await readFile(manifestPath, 'utf8')
+
+        await init(projectRoot)
+
+        const secondManifest = await readFile(manifestPath, 'utf8')
+        expect(secondManifest).toBe(firstManifest)
+    })
+
+    it('finishes setup when a previous init stopped before extraction', async () => {
+        const projectRoot = await makeTempProject()
+        await mkdir(join(projectRoot, '.konteks'), { recursive: true })
+        await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
+
+        await init(projectRoot)
+
+        await expect(
+            readFile(
+                join(projectRoot, '.konteks', 'mine-manifest.json'),
+                'utf8',
+            ),
+        ).resolves.toContain('"version": 1')
+    })
+
+    it('continues from existing sections when the manifest is missing', async () => {
+        const projectRoot = await makeTempProject()
+
+        await init(projectRoot)
+        const manifestPath = join(projectRoot, '.konteks', 'mine-manifest.json')
+        const firstManifest = JSON.parse(await readFile(manifestPath, 'utf8'))
+        await rm(manifestPath)
+
+        await init(projectRoot)
+
+        const resumedManifest = JSON.parse(await readFile(manifestPath, 'utf8'))
+        expect(resumedManifest.diagnostics.chunkCount).toBe(
+            firstManifest.diagnostics.chunkCount,
+        )
+        expect(
+            resumedManifest.diagnostics.embeddingReusedCount,
+        ).toBeGreaterThan(0)
     })
 })

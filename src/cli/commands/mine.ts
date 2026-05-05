@@ -74,7 +74,7 @@ export async function mineCommand(
     }
 }
 
-function createMineProgressReporter(): {
+export function createMineProgressReporter(): {
     done(): void
     report(event: MineProgressEvent): void
 } {
@@ -218,7 +218,19 @@ function compactMessage(event: MineProgressEvent): string {
 
     if (event.phase === 'embeddings') {
         if (event.stage === 'download') {
-            return 'Downloading model'
+            if (event.downloadPercent !== undefined) {
+                return 'Downloading model'
+            }
+            if (/^Embedding model ready:/u.test(message)) {
+                return 'Model ready'
+            }
+            if (/^Loading embedding model/u.test(message)) {
+                return 'Loading downloaded model'
+            }
+            if (/^Preparing /u.test(message)) {
+                return 'Preparing model'
+            }
+            return message
         }
         if (
             /^Embedded chunk:/u.test(message) ||
@@ -247,7 +259,7 @@ function compactMessage(event: MineProgressEvent): string {
     }
 
     if (event.phase === 'chunks' && event.path) {
-        return 'Extracting file'
+        return 'Extracting files'
     }
 
     return message
@@ -255,7 +267,7 @@ function compactMessage(event: MineProgressEvent): string {
 
 function formatInlineDetail(event: MineProgressEvent): string {
     if (event.phase === 'chunks' && event.path) {
-        return event.path
+        return ''
     }
 
     if (
@@ -301,7 +313,7 @@ function phaseTitle(phase: MineProgressEvent['phase']): string {
         modules: 'Modules',
         scan: 'Scan',
         select: 'Selection',
-        start: 'Konteks repair',
+        start: 'Konteks extraction',
         summary: 'Summary',
     }
 

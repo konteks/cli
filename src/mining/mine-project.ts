@@ -61,17 +61,6 @@ export async function mineProject(
         mode === 'changed'
             ? await readMineManifest(context.memoryDir)
             : undefined
-    const { deletedPaths, filesToMine } = selectFilesForMode(
-        files,
-        previousManifest,
-        mode,
-    )
-    progress?.({
-        message: `Selected ${filesToMine.length} files to extract`,
-        phase: 'select',
-        status: 'done',
-        total: filesToMine.length,
-    })
     progress?.({
         message: 'Extracting project metadata',
         phase: 'metadata',
@@ -95,6 +84,20 @@ export async function mineProject(
         phase: 'database',
         status: 'done',
     })
+    const alreadyExtractedPaths =
+        mode === 'resume' ? await readExtractedPaths(adapter) : undefined
+    const { deletedPaths, filesToMine } = selectFilesForMode(
+        files,
+        previousManifest,
+        mode,
+        alreadyExtractedPaths,
+    )
+    progress?.({
+        message: `Selected ${filesToMine.length} files to extract`,
+        phase: 'select',
+        status: 'done',
+        total: filesToMine.length,
+    })
     const minedChunks = await mineChunks(
         adapter,
         context,
@@ -117,6 +120,7 @@ export async function mineProject(
               { onProgress: progress },
           )
         : { embeddedCount: 0, reusedCount: 0 }
+    const totalChunkCount = await readTotalChunkCount(adapter)
     await adapter.close()
     const toonStore = createToonStore(context.memoryDir)
     progress?.({
@@ -143,7 +147,7 @@ export async function mineProject(
     const manifest: MineManifest = {
         diagnostics: {
             ...scan.diagnostics,
-            chunkCount: minedChunks.chunkCount,
+            chunkCount: totalChunkCount,
             embeddedCount: embeddingRun.embeddedCount,
             embeddingReusedCount: embeddingRun.reusedCount,
             filesTruncatedByChunkLimit: minedChunks.filesTruncatedByChunkLimit,
@@ -168,14 +172,14 @@ export async function mineProject(
     progress?.({
         chunkCount: minedChunks.chunkCount,
         embeddedCount: embeddingRun.embeddedCount,
-        message: `Extraction complete: ${minedChunks.chunkCount} sections, ${embeddingRun.embeddedCount} indexed, ${embeddingRun.reusedCount} unchanged`,
+        message: `Extraction complete: ${totalChunkCount} sections, ${embeddingRun.embeddedCount} indexed, ${embeddingRun.reusedCount} unchanged`,
         phase: 'done',
         reusedCount: embeddingRun.reusedCount,
         status: 'done',
     })
 
     return {
-        chunkCount: minedChunks.chunkCount,
+        chunkCount: totalChunkCount,
         embeddedCount: embeddingRun.embeddedCount,
         embeddingReusedCount: embeddingRun.reusedCount,
         fileCount: files.length,
@@ -192,9 +196,19 @@ function selectFilesForMode(
     currentFiles: ScannedFile[],
     previousManifest: MineManifest | undefined,
     mode: MineMode,
+    alreadyExtractedPaths?: Set<string>,
 ): { deletedPaths: string[]; filesToMine: ScannedFile[] } {
     if (mode === 'reindex') {
         return { deletedPaths: [], filesToMine: currentFiles }
+    }
+
+    if (mode === 'resume') {
+        return {
+            deletedPaths: [],
+            filesToMine: currentFiles.filter(
+                file => !alreadyExtractedPaths?.has(file.path),
+            ),
+        }
     }
 
     if (mode !== 'changed' || !previousManifest) {
@@ -219,6 +233,32 @@ function selectFilesForMode(
         .map(file => file.path)
 
     return { deletedPaths, filesToMine }
+}
+
+async function readExtractedPaths(
+    adapter: Awaited<ReturnType<typeof openProjectDatabase>>,
+): Promise<Set<string>> {
+    const rows = await adapter.query<{ path: string }>(
+        `
+select distinct sources.uri as path
+from sources
+inner join chunks on chunks.source_id = sources.id
+where sources.type = 'mined_file'
+  and sources.uri is not null
+`,
+    )
+
+    return new Set(rows.map(row => row.path))
+}
+
+async function readTotalChunkCount(
+    adapter: Awaited<ReturnType<typeof openProjectDatabase>>,
+): Promise<number> {
+    const rows = await adapter.query<{ count: number }>(
+        'select count(*) as count from chunks',
+    )
+
+    return rows[0]?.count ?? 0
 }
 
 function hasFileChanged(previous: ScannedFile, current: ScannedFile): boolean {

@@ -82,7 +82,7 @@ export async function mineChunks(
     options: {
         deletedPaths?: string[]
         metadata?: ProjectMetadata
-        mode?: 'changed' | 'full' | 'reindex'
+        mode?: 'changed' | 'full' | 'reindex' | 'resume'
         onProgress?: MineProgressReporter
         treeSitterEngine?: TreeSitterEngine
     } = {},
@@ -91,30 +91,33 @@ export async function mineChunks(
     const toonStore = createToonStore(context.memoryDir)
     const taxonomy = new TaxonomyStore(adapter)
     let engine: TreeSitterEngine | undefined
-    progress?.({
-        message: 'Loading Tree-sitter grammars',
-        phase: 'chunks',
-        status: 'start',
-    })
-    try {
-        engine = options.treeSitterEngine ?? new TreeSitterEngine()
-        await initTreeSitterWithBundledGrammars(engine)
+
+    if (files.length > 0) {
         progress?.({
-            message: 'Tree-sitter grammars ready',
+            message: 'Loading Tree-sitter grammars',
             phase: 'chunks',
-            status: 'progress',
+            status: 'start',
         })
-    } catch (error) {
-        console.error(
-            'Tree-sitter initialization failed, using heuristic chunking fallback:',
-            error,
-        )
-        engine = undefined
-        progress?.({
-            message: 'Tree-sitter unavailable; using heuristic fallback',
-            phase: 'chunks',
-            status: 'progress',
-        })
+        try {
+            engine = options.treeSitterEngine ?? new TreeSitterEngine()
+            await initTreeSitterWithBundledGrammars(engine)
+            progress?.({
+                message: 'Tree-sitter grammars ready',
+                phase: 'chunks',
+                status: 'progress',
+            })
+        } catch (error) {
+            console.error(
+                'Tree-sitter initialization failed, using heuristic chunking fallback:',
+                error,
+            )
+            engine = undefined
+            progress?.({
+                message: 'Tree-sitter unavailable; using heuristic fallback',
+                phase: 'chunks',
+                status: 'progress',
+            })
+        }
     }
 
     let chunkCount = 0
@@ -134,7 +137,7 @@ export async function mineChunks(
                 ...files.map(file => file.path),
                 ...(options.deletedPaths ?? []),
             ])
-        } else {
+        } else if (options.mode !== 'resume') {
             await clearMinedChunks(adapter)
         }
         const rootNode = await taxonomy.upsertNode({
@@ -144,12 +147,14 @@ export async function mineChunks(
         rootNodeId = rootNode.id
     })
 
-    progress?.({
-        message: `Extracting ${files.length} files`,
-        phase: 'chunks',
-        status: 'start',
-        total: files.length,
-    })
+    if (files.length > 0) {
+        progress?.({
+            message: `Extracting ${files.length} files`,
+            phase: 'chunks',
+            status: 'start',
+            total: files.length,
+        })
+    }
     for (const [fileIndex, file] of files.entries()) {
         const preparedFile = await prepareFileChunks({
             adapter,
@@ -304,13 +309,15 @@ insert into chunks (
         })
     }
 
-    progress?.({
-        chunkCount,
-        message: `Extracted ${chunkCount} sections`,
-        phase: 'chunks',
-        status: 'done',
-        total: files.length,
-    })
+    if (files.length > 0) {
+        progress?.({
+            chunkCount,
+            message: `Extracted ${chunkCount} sections`,
+            phase: 'chunks',
+            status: 'done',
+            total: files.length,
+        })
+    }
     progress?.({
         message: 'Rebuilding module artifacts and retrieval index',
         phase: 'modules',
