@@ -57,6 +57,7 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
         this.onProgress?.({
             message: `Loading embedding model ${this.model}`,
             phase: 'embeddings',
+            stage: 'download',
             status: 'progress',
         })
         this.extractor = (await pipeline('feature-extraction', this.model, {
@@ -84,6 +85,7 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
             this.onProgress({
                 message: `Embedding model ready: ${progress.model}`,
                 phase: 'embeddings',
+                stage: 'download',
                 status: 'progress',
             })
             return
@@ -96,6 +98,7 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
                 downloadTotalBytes: progress.total,
                 message: `Downloading embedding model ${formatPercent(progress.progress)} (${formatBytes(progress.loaded)}/${formatBytes(progress.total)})`,
                 phase: 'embeddings',
+                stage: 'download',
                 status: 'progress',
             })
             return
@@ -109,6 +112,7 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
                 downloadTotalBytes: progress.total,
                 message: `Downloading ${progress.file} ${formatPercent(progress.progress)} (${formatBytes(progress.loaded)}/${formatBytes(progress.total)})`,
                 phase: 'embeddings',
+                stage: 'download',
                 status: 'progress',
             })
             return
@@ -119,6 +123,7 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
                 downloadFile: progress.file,
                 message: `Downloading ${progress.file}`,
                 phase: 'embeddings',
+                stage: 'download',
                 status: 'progress',
             })
             return
@@ -129,6 +134,7 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
                 downloadFile: progress.file,
                 message: `Preparing ${progress.file}`,
                 phase: 'embeddings',
+                stage: 'download',
                 status: 'progress',
             })
         }

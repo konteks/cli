@@ -24,6 +24,7 @@ export type MineProgressEvent = {
     message?: string
     path?: string
     phase: MineProgressPhase
+    stage?: 'download' | 'embed'
     reusedCount?: number
     status: MineProgressStatus
     total?: number

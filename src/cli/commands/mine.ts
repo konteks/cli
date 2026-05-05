@@ -55,10 +55,11 @@ function createMineProgressReporter(): {
     done(): void
     report(event: MineProgressEvent): void
 } {
-    let activePhase = ''
+    let activeStep = ''
     let lastInlineLength = 0
-    let lastPhase = ''
+    let lastStep = ''
     let spinnerIndex = 0
+    let lastCompactMessage = ''
     const downloadBuckets = new Map<string, number>()
     const isTty = process.stderr.isTTY
     const color = createColorPalette(Boolean(isTty && !process.env.NO_COLOR))
@@ -76,7 +77,8 @@ function createMineProgressReporter(): {
             }
 
             if (!isTty) {
-                const downloadKey = event.downloadFile ?? event.phase
+                const step = stepKey(event)
+                const downloadKey = event.downloadFile ?? step
                 const downloadBucket =
                     event.downloadPercent === undefined
                         ? undefined
@@ -85,12 +87,12 @@ function createMineProgressReporter(): {
                     downloadBuckets.get(downloadKey) ?? -1
                 if (
                     event.status !== 'progress' ||
-                    event.phase !== lastPhase ||
+                    step !== lastStep ||
                     (downloadBucket !== undefined &&
                         downloadBucket > previousDownloadBucket)
                 ) {
                     console.error(message)
-                    lastPhase = event.phase
+                    lastStep = step
                     if (downloadBucket !== undefined) {
                         downloadBuckets.set(downloadKey, downloadBucket)
                     }
@@ -98,24 +100,35 @@ function createMineProgressReporter(): {
                 return
             }
 
-            if (event.phase !== activePhase || event.status === 'start') {
+            const step = stepKey(event)
+            if (step !== activeStep || event.status === 'start') {
                 if (lastInlineLength > 0) {
                     process.stderr.write('\n')
                     lastInlineLength = 0
                 }
-                activePhase = event.phase
+                activeStep = step
+                lastCompactMessage = ''
                 process.stderr.write(`${formatStepHeader(event, color)}\n`)
             }
 
             if (event.status === 'progress') {
                 spinnerIndex += 1
+                const compact = compactMessage(event)
                 const output = formatInlineProgress(event, spinnerIndex, color)
+                if (
+                    event.stage === 'download' &&
+                    compact === lastCompactMessage &&
+                    event.downloadPercent === undefined
+                ) {
+                    return
+                }
                 const padding = Math.max(
                     0,
                     lastInlineLength - visibleLength(output),
                 )
                 process.stderr.write(`\r${output}${' '.repeat(padding)}`)
                 lastInlineLength = visibleLength(output)
+                lastCompactMessage = compact
                 return
             }
 
@@ -150,7 +163,7 @@ function formatStepHeader(
     event: MineProgressEvent,
     color: ColorPalette,
 ): string {
-    return `${color.dim('┌')} ${color.accent(phaseTitle(event.phase))} ${color.dim('•')} ${event.message ?? phaseTitle(event.phase)}`
+    return `${color.dim('┌')} ${color.accent(stepTitle(event))}`
 }
 
 function formatInlineProgress(
@@ -181,6 +194,9 @@ function compactMessage(event: MineProgressEvent): string {
     const message = event.message ?? phaseTitle(event.phase)
 
     if (event.phase === 'embeddings') {
+        if (event.stage === 'download') {
+            return 'Downloading model'
+        }
         if (
             /^Embedded chunk:/u.test(message) ||
             /^Embedding chunk:/u.test(message)
@@ -267,6 +283,20 @@ function phaseTitle(phase: MineProgressEvent['phase']): string {
     }
 
     return labels[phase]
+}
+
+function stepTitle(event: MineProgressEvent): string {
+    if (event.phase === 'embeddings') {
+        return event.stage === 'download'
+            ? 'Embeddings: Model Download'
+            : 'Embeddings: Vector Generation'
+    }
+
+    return phaseTitle(event.phase)
+}
+
+function stepKey(event: MineProgressEvent): string {
+    return `${event.phase}:${event.stage ?? 'default'}`
 }
 
 function spinnerFrame(index: number): string {

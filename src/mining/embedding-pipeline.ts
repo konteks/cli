@@ -49,6 +49,7 @@ where target_type in (${placeholders})
         current: 0,
         message: `Embedding ${rows.length} retrieval documents`,
         phase: 'embeddings',
+        stage: 'embed',
         status: 'start',
         total: rows.length,
     })
@@ -84,6 +85,7 @@ limit 1
                 message: `Reused embedding for ${row.target_type}:${row.target_id}`,
                 phase: 'embeddings',
                 reusedCount,
+                stage: 'embed',
                 status: 'progress',
                 total: rows.length,
             })
@@ -99,6 +101,7 @@ limit 1
                     : `Embedding ${row.target_type}:${row.target_id}`,
             phase: 'embeddings',
             reusedCount,
+            stage: 'embed',
             status: 'progress',
             total: rows.length,
         })
@@ -148,6 +151,7 @@ insert or replace into target_embeddings (
             message: `Embedded ${row.target_type}:${row.target_id}`,
             phase: 'embeddings',
             reusedCount,
+            stage: 'embed',
             status: 'progress',
             total: rows.length,
         })
@@ -158,6 +162,7 @@ insert or replace into target_embeddings (
         message: `Embeddings ready: ${embeddedCount} embedded, ${reusedCount} reused`,
         phase: 'embeddings',
         reusedCount,
+        stage: 'embed',
         status: 'done',
         total: rows.length,
     })
