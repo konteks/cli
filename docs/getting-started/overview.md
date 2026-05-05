@@ -52,3 +52,5 @@ Konteks focuses on **curated context**. Instead of logging every raw conversatio
 **Ready to get started?** Follow the [Quickstart](quickstart.md) to set up your project memory in minutes.
 
 **Want to see the technical details?** Check out the [Architecture Overview](../core-concepts/overview.md) to see how Konteks is built under the hood.
+
+**Need terminology?** Use the [Glossary](../reference/glossary.md) for short definitions of Konteks concepts.

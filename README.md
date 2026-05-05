@@ -29,6 +29,7 @@ For a deep dive into the philosophy, architecture, and usage, see the [Full Docu
 * [Overview](docs/getting-started/overview.md): Vision, Philosophy, and the "Why."
 * [Session Lifecycle](docs/getting-started/lifecycle.md): How to work with Konteks (Bootstrap -> Work -> Save).
 * [Architecture Overview](docs/core-concepts/overview.md): How the memory engine works under the hood.
+* [Glossary](docs/reference/glossary.md): Short definitions for Konteks terms.
 
 ## 🛠 Supported Languages
 
