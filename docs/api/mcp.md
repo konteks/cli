@@ -9,7 +9,7 @@ For terms, see the [Glossary](../reference/glossary.md).
 | Surface | What It Does |
 | :--- | :--- |
 | **Tools** | Actions the agent can call. |
-| **Prompts** | Guided workflows for Bootstrap -> Work -> Save. |
+| **Prompts** | Guided workflows for Warm Up -> Build -> Save. |
 | **Resources** | Readable memory artifacts for inspection. |
 
 ## Tools
@@ -18,8 +18,8 @@ Canonical tool names use the `konteks_*` prefix so they stay clear when an agent
 
 | Tool | Capability | Use When |
 | :--- | :--- | :--- |
-| `konteks_bootstrap` | Bootstrap | Start a fresh agent session with stable project context. |
-| `konteks_recall` | Recall | Work on existing code, modules, features, or decisions. |
+| `konteks_warm_up` | Warm Up | Start a fresh agent session with stable project context. |
+| `konteks_recall` | Recall | Continue an existing task on known code, modules, features, or decisions. |
 | `konteks_save` | Save | Preserve completed work, decisions, or durable findings. |
 | `konteks_search` | Search | Inspect memory directly with a query. |
 | `konteks_status` | Status | Check memory health and freshness. |
@@ -33,9 +33,10 @@ Prompts are user-invoked workflow templates. They guide the agent through the [S
 
 | Prompt | Lifecycle Phase | Use When |
 | :--- | :--- | :--- |
-| `start-session` | Bootstrap | Open a fresh agent session in a project. |
-| `work-on-existing` | Work | Change known code and recall context first. |
-| `work-on-new` | Work | Start a genuinely new feature. |
+| `warm-up` | Warm Up | Open a fresh agent session in a project. |
+| `recall` | Build | Supplement a task with context from known modules, constraints, or decisions. |
+| `work-on-existing` | Build | Change known code; add recall context when needed. |
+| `work-on-new` | Build | Start a genuinely new feature. |
 | `save-session` | Save | Persist the outcome of the current task. |
 
 ## Resources
@@ -44,21 +45,10 @@ Resources are readable memory artifacts. They are useful for inspection, picker 
 
 | Resource | Shows |
 | :--- | :--- |
-| `konteks://mine/manifest` | Mining state and diagnostics. |
-| `konteks://project/summary` | Stable mined project summary. |
+| `konteks://extraction/manifest` | Extraction and indexing state diagnostics. |
+| `konteks://project/summary` | Stable extracted project summary. |
 | `konteks://project/modules` | Current module and architecture index. |
 | `konteks://memory/{id}` | One saved durable memory. |
 | `konteks://retrieval/{targetType}/{targetId}` | One retrieval document for debugging. |
 
-Resource lists are dynamic because memory changes after `mine`, `save`, and `forget`. Resource URIs should remain stable for the artifact they identify.
-
-## Lifecycle Map
-
-| User Intent | MCP Surface | Primary Capability |
-| :--- | :--- | :--- |
-| Start a fresh session | Prompt or tool | `start-session` / `konteks_bootstrap` |
-| Work on existing code | Prompt or tool | `work-on-existing` / `konteks_recall` |
-| Start new work | Prompt | `work-on-new` |
-| Save progress | Prompt or tool | `save-session` / `konteks_save` |
-| Inspect memory | Tool or resource | `konteks_search` / `konteks://...` |
-| Check health | Tool | `konteks_status` |
+Resource lists are dynamic because memory changes after initialization, repair, `save`, and `forget`. Resource URIs should remain stable for the artifact they identify.

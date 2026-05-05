@@ -9,18 +9,10 @@ For terms, see the [Glossary](../reference/glossary.md).
 | Command | Capability | Use When |
 | :--- | :--- | :--- |
 | `konteks init` | Initialize | Prepare a project for local memory storage. |
-| `konteks mine` | Mine | Extract project knowledge into memory. |
+| `konteks repair` | Repair | Repair project memory artifacts by rebuilding them from scratch. |
 | `konteks status` | Status | Check memory health and freshness. |
 | `konteks doctor` | Diagnose | Inspect runtime and project setup problems. |
 | `konteks mcp` | Serve | Start the MCP server for an agent client. |
-
-## Mining
-
-| Command | Use When |
-| :--- | :--- |
-| `konteks mine` | Build or refresh project memory. |
-| `konteks mine --changed` | Process only files changed since the last successful mine. |
-| `konteks mine --reindex` | Rebuild mined artifacts and indexes from scratch. |
 
 ## MCP Debugging
 
@@ -37,7 +29,7 @@ Examples:
 ```bash
 konteks mcp tools
 konteks mcp call status
-konteks mcp call bootstrap '{"maxTokens":500}'
+konteks mcp call warm_up '{"maxTokens":500}'
 konteks mcp call search '{"query":"memory","limit":3}'
 ```
 
@@ -46,7 +38,7 @@ CLI debug aliases:
 | Alias | MCP Tool |
 | :--- | :--- |
 | `status` | `konteks_status` |
-| `bootstrap` | `konteks_bootstrap` |
+| `warm_up` | `konteks_warm_up` |
 | `recall` | `konteks_recall` |
 | `search` | `konteks_search` |
 | `save` | `konteks_save` |
@@ -59,14 +51,3 @@ CLI debug aliases:
 | `--project <path>` | Run Konteks against a specific project root. |
 | `--verbose` | Show detailed diagnostic output. |
 | `--help` | Show command help. |
-
-## Lifecycle Map
-
-| User Intent | CLI Command |
-| :--- | :--- |
-| Set up memory | `konteks init` |
-| Populate memory | `konteks mine` |
-| Check readiness | `konteks status` |
-| Register an agent | `konteks mcp` |
-| Inspect MCP tools | `konteks mcp tools` |
-| Debug MCP output | `konteks mcp call <tool>` |
