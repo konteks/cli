@@ -2,12 +2,21 @@
 
 This document describes how Konteks transforms a static repository into a living **semantic substrate**. We follow the journey of project knowledge—from its latent state in source code to its final synthesis as a "Recall Package" for an AI agent.
 
+The following chart illustrates the high-level system interactions between the User (CLI), the Agent (MCP), and the underlying storage engine.
+
+```mermaid
+graph TD
+    User([User]) -- "CLI (init, mine, status)" --> Engine[Konteks Memory Engine]
+    Agent([AI Agent]) -- "MCP (bootstrap, recall)" --> Engine
+    Engine -- "read/write" --> Substrate[(Storage Substrate)]
+    Agent -- "save" --> Engine
+```
+
 ## Overview: The Mission of Context
 
 At the heart of every software project lies a vast amount of latent knowledge: decisions made in commits, relationships between modules, and the chronological evolution of features. Typically, this knowledge is "forgotten" between AI sessions, forcing agents into a cycle of constant rediscovery.
 
-Konteks acts as a **memory engine**. Its architecture is built to systematically capture this latent knowledge through **knowledge curation** and consolidate it into a durable, project-local memory.
- By grounding agentic work in this memory, we enable a development experience where the agent is already "familiar" with the project's soul.
+Konteks acts as a **memory engine**. Its architecture is built to systematically capture this latent knowledge through **knowledge curation** and consolidate it into a durable, project-local memory. By grounding agentic work in this memory, we enable a development experience where the agent is already "familiar" with the project's soul.
 
 ## System Architecture: The Memory Environment
 
@@ -33,6 +42,28 @@ This knowledge is anchored in a [Storage Substrate](storage.md) that ensures pri
 ## The Analytic Pipeline: The Life of a Context Signal
 
 The journey of a single piece of knowledge follows a formal analytic pipeline, evolving from raw text to synthesized insight.
+
+The **Knowledge Transformation Pipeline** below maps the evolution of raw source artifacts into synthesized recall and reinforced insights.
+
+```mermaid
+graph LR
+    subgraph Ingestion
+    Code[(Source Code)] -- "Static Analysis" --> Extractor(Semantic Extractor)
+    end
+
+    subgraph Memory
+    Extractor -- "Atomic Units" --> Indexer(Indexing Service)
+    Indexer -- "Consolidation" --> Store[(Memory Store)]
+    end
+
+    subgraph Interaction
+    Store -- "Signals" --> Synthesizer(Contextual Synthesizer)
+    Agent([AI Agent]) -- "Task Request" --> Synthesizer
+    Synthesizer -- "Recall Package" --> Agent
+    Agent -- "New Insights" --> Consolidator(Knowledge Consolidator)
+    Consolidator -- "Update" --> Store
+    end
+```
 
 ### 1. Emergence: Semantic Extraction
 

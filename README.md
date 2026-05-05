@@ -6,12 +6,11 @@ It builds a project-local context graph through autonomous **knowledge curation*
 
 > **🚧 Work in Progress**: The core architecture is functional, but the retrieval logic and language support are being actively refined.
 
-```text
-[ Your Code ] --( mine )--> [ Konteks Memory ]
-                                     |
-                                 ( recall )
-                                     v
-                            [ AI Coding Agent ]
+```mermaid
+graph LR
+    Code[Your Code] -- "mine" --> Memory[(Konteks Memory)]
+    Memory -- "recall" --> Agent[AI Coding Agent]
+    Agent -- "save" --> Memory
 ```
 
 Memory artifacts are stored directly inside your repository, exposing compact, task-specific recall through an MCP server without requiring global installation or cloud dependencies.
@@ -28,7 +27,7 @@ Memory artifacts are stored directly inside your repository, exposing compact, t
 For a deep dive into the philosophy, architecture, and usage, see the [Full Documentation](docs/README.md).
 
 * [Overview](docs/getting-started/overview.md): Vision, Philosophy, and the "Why."
-* [The Session Lifecycle](docs/getting-started/lifecycle.md): How to work with Konteks (Bootstrap -> Vibe Code -> Save).
+* [The Session Lifecycle](docs/getting-started/lifecycle.md): How to work with Konteks (Bootstrap -> AI-Assisted Development -> Save).
 * [Architecture Overview](docs/core-concepts/overview.md): How the memory engine works under the hood.
 
 ## 🛠 Supported Languages

@@ -37,7 +37,7 @@ We believe that setup should not be a barrier. Konteks is designed to be used th
 Konteks is built from the ground up for the **Model Context Protocol (MCP)**.
 
 * It doesn't just return "search results"; it provides **Recall**—a ranked, token-efficient package of context tailored for LLM consumption.
-* It follows a structured [Session Lifecycle](lifecycle.md) (Bootstrap -> Vibe Code -> Save) to keep the agent-human collaboration seamless.
+* It follows a structured [Session Lifecycle](lifecycle.md) (Bootstrap -> AI-Assisted Development -> Save) to keep the agent-human collaboration seamless.
 
 ### 4. High Signal, Low Noise
 
@@ -49,4 +49,6 @@ Konteks focuses on **curated context**. Instead of logging every raw conversatio
 
 ---
 
-**Ready to dive into the technical details?** Check out the [Architecture Overview](../core-concepts/overview.md) to see how Konteks is built under the hood.
+**Ready to get started?** Follow the [Quickstart](quickstart.md) to set up your project memory in minutes.
+
+**Want to see the technical details?** Check out the [Architecture Overview](../core-concepts/overview.md) to see how Konteks is built under the hood.
