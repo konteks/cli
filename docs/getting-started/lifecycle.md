@@ -11,7 +11,7 @@ graph TD
     
     End -.->|New Task| Start
 
-    style P2 fill:#f9f,stroke:#333,stroke-width:2px
+    style P2 fill:#0165fc,stroke:#333,stroke-width:2px
 ```
 
 ## Phase 1: Warm Up
