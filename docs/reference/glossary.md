@@ -68,4 +68,4 @@ A compact text format used for agent-readable stored summaries and payloads.
 
 ## Build
 
-The second lifecycle phase. Existing tasks should use Recall first; genuinely new tasks may start directly.
+The second lifecycle phase. Use Build prompts to continue existing tasks or start new ones; Recall can supplement either path when related context is useful.

@@ -80,7 +80,3 @@ When the task is complete or worth preserving:
 ```text
 /save-session
 ```
-
----
-
-**Next: Learn the [Warm Up -> Build -> Save lifecycle](lifecycle.md)** to see how to use this memory with your AI agent.

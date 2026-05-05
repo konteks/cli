@@ -9,7 +9,7 @@ graph TD
     P2 --> P3[Phase 3: Save]
     P3 --> End((Session Memory Saved))
     
-    End -.->|New Unrelated Task| Start
+    End -.->|New Task| Start
 
     style P2 fill:#f9f,stroke:#333,stroke-width:2px
 ```
@@ -18,7 +18,7 @@ graph TD
 
 When you open a fresh AI agent session in a project, start by giving it the project-level picture.
 
-Use the `/warm-up` prompt to start this phase. This ensure the agent is familiar with the project without you manually explaining architecture, constraints, and durable decisions.
+Use the `/warm-up` prompt to start this phase. This ensures the agent is familiar with the project without you manually explaining architecture, constraints, and durable decisions.
 
 > [!NOTE]
 > Resuming a Session: If you close your agent before finishing a task and later resume the same session, you can skip Warm Up because the agent already has the project briefing in context.
@@ -54,7 +54,7 @@ The `/work-on-new` prompt helps the agent discover new context during implementa
 
 Once the goal is achieved or meaningful progress should be preserved, save the agent's work back to Konteks.
 
-Use the `/save-session` prompt to persist the outcome of the current task. This record durable progress, decisions, and task state so future sessions do not repeat the same discovery work.
+Use the `/save-session` prompt to persist the outcome of the current task. This records durable progress, decisions, and task state so future sessions do not repeat the same discovery work.
 
 > [!TIP]
 > Recommendation: Prefer saving when the current task is complete. If the task is partial, pause and resume the same agent session when possible.
