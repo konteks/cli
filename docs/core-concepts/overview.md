@@ -1,16 +1,10 @@
+<img width="1672" height="941" alt="Architecture Overview Illustration" src="https://github.com/user-attachments/assets/c99adc15-366c-4988-913f-1f17925b0ea3" />
+
 # Architecture Overview: The Journey of Project Knowledge
 
 This document describes how Konteks transforms a static repository into a living **semantic substrate**. We follow the journey of project knowledge—from its latent state in source code to its final synthesis as a "Recall Package" for an AI agent.
 
 The following chart illustrates the high-level system interactions between the User (CLI), the Agent (MCP), and the underlying storage engine.
-
-```mermaid
-graph TD
-    User([User]) -- "CLI (init)" --> Engine[Konteks Memory Engine]
-    Agent([AI Agent]) -- "MCP (warm up, recall)" --> Engine
-    Engine -- "read/write" --> Substrate[(Storage Substrate)]
-    Agent -- "save" --> Engine
-```
 
 ## Overview: The Mission of Context
 

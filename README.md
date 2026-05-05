@@ -1,3 +1,5 @@
+<img width="1774" height="887" alt="Konteks Illustration" src="https://github.com/user-attachments/assets/d2959067-5c4a-47ec-b46a-4710748b1aa7" />
+
 # Konteks
 
 **Konteks** is a memory engine for AI coding agents.
@@ -6,13 +8,6 @@ It builds a project-local context graph through autonomous **knowledge curation*
 
 > [!IMPORTANT]
 > 🚧 Work in Progress: The core architecture is functional, but the retrieval logic and language support are being actively refined.
-
-```mermaid
-graph LR
-    Code[Your Code] -- "indexing" --> Memory[(Konteks Memory)]
-    Memory -- "recall" --> Agent[AI Coding Agent]
-    Agent -- "save" --> Memory
-```
 
 Memory artifacts are stored directly inside your repository, exposing compact, task-specific recall through an MCP server without requiring global installation or cloud dependencies.
 

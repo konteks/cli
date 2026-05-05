@@ -1,3 +1,5 @@
+<img width="1672" height="941" alt="Overview Illustration" src="https://github.com/user-attachments/assets/fa7d859e-41d9-41cf-b735-440cc86d6b5c" />
+
 # Overview
 
 **Konteks** is a local context graph for AI coding agents. It acts as a **memory engine** for your repository, performing autonomous **knowledge curation** to ensure you **never re-explain your project** to an AI agent.
