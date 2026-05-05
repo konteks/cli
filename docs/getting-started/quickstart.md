@@ -50,4 +50,4 @@ If the status reports that your memory is **fresh**, the memory engine is ready.
 
 ---
 
-**Next: Learn the [Session Lifecycle](lifecycle.md)** to see how to use this memory with your AI agent.
+**Next: Learn the [Bootstrap -> Work -> Save lifecycle](lifecycle.md)** to see how to use this memory with your AI agent.

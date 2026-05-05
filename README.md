@@ -27,7 +27,7 @@ Memory artifacts are stored directly inside your repository, exposing compact, t
 For a deep dive into the philosophy, architecture, and usage, see the [Full Documentation](docs/README.md).
 
 * [Overview](docs/getting-started/overview.md): Vision, Philosophy, and the "Why."
-* [The Session Lifecycle](docs/getting-started/lifecycle.md): How to work with Konteks (Bootstrap -> AI-Assisted Development -> Save).
+* [Session Lifecycle](docs/getting-started/lifecycle.md): How to work with Konteks (Bootstrap -> Work -> Save).
 * [Architecture Overview](docs/core-concepts/overview.md): How the memory engine works under the hood.
 
 ## 🛠 Supported Languages
@@ -77,7 +77,7 @@ Add this to your MCP client configuration (e.g., Claude Desktop):
 }
 ```
 
-**Next: Learn how to use this memory in the [Session Lifecycle](docs/getting-started/lifecycle.md).**
+**Next: Learn how to use this memory with the [Bootstrap -> Work -> Save lifecycle](docs/getting-started/lifecycle.md).**
 
 ## 📂 Local Storage
 

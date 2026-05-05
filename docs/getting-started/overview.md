@@ -37,7 +37,7 @@ We believe that setup should not be a barrier. Konteks is designed to be used th
 Konteks is built from the ground up for the **Model Context Protocol (MCP)**.
 
 * It doesn't just return "search results"; it provides **Recall**—a ranked, token-efficient package of context tailored for LLM consumption.
-* It follows a structured [Session Lifecycle](lifecycle.md) (Bootstrap -> AI-Assisted Development -> Save) to keep the agent-human collaboration seamless.
+* It follows a structured [Session Lifecycle](lifecycle.md) (Bootstrap -> Work -> Save) to keep the agent-human collaboration focused.
 
 ### 4. High Signal, Low Noise
 

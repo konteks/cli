@@ -46,7 +46,7 @@ The journey of a single piece of knowledge follows a formal analytic pipeline, e
 The **Knowledge Transformation Pipeline** below maps the evolution of raw source artifacts into synthesized recall and reinforced insights.
 
 ```mermaid
-graph LR
+graph TD
     subgraph Ingestion
     Code[(Source Code)] -- "Static Analysis" --> Extractor(Semantic Extractor)
     end

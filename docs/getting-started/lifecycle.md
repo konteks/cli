@@ -1,63 +1,65 @@
-# The Session Lifecycle
+# Session Lifecycle
 
-Konteks is designed around a structured **3-Phase Session** model. Following this rhythm ensures your AI agent remains efficient and context-aware.
+Konteks is designed around a structured **Bootstrap -> Work -> Save** model. Following this rhythm keeps your AI agent context-aware without carrying unrelated task baggage.
 
 ```mermaid
 graph TD
-    Start((Start Session)) --> P1[Phase 1: Bootstrap]
-    P1 --> P2[Phase 2: AI-Assisted Development]
-    P2 --> P3[Phase 3: Save Session]
-    P3 --> End((End Session))
+    Start((Fresh Agent Session)) --> P1[Phase 1: Bootstrap]
+    P1 --> P2[Phase 2: Work]
+    P2 --> P3[Phase 3: Save]
+    P3 --> End((Session Memory Saved))
     
-    End -.->|New Task Flow| Start
+    End -.->|New Unrelated Task| Start
 
     style P2 fill:#f9f,stroke:#333,stroke-width:2px
 ```
 
-## Phase 1: Start Session (Bootstrap)
+## Phase 1: Bootstrap
 
-When you open your AI agent for the first time in a project, start by giving it the "big picture."
+When you open a fresh AI agent session in a project, start by giving it the project-level picture.
 
-* **Action**: Tell the agent to use the `konteks_bootstrap` tool.
-* **Goal**: Ensure the agent is "familiar" with the project without you typing a single word of explanation.
+- **Action**: Tell the agent to use the `konteks_bootstrap` tool.
+- **Goal**: Ensure the agent is familiar with the project without you manually explaining architecture, constraints, and durable decisions.
 
-> **Resuming a Session**: If you close your agent before finishing a task and later resume the same session, you can skip this phase as the agent already has the project briefing in its context.
+> **Resuming a Session**: If you close your agent before finishing a task and later resume the same session, you can skip Bootstrap because the agent already has the project briefing in context.
 
-## Phase 2: AI-Assisted Development
+## Phase 2: Work
 
-This is where the actual work happens. Because your agent is "familiar" with the project, you can move faster with less friction. The flow depends on your goal.
+This is where development happens. Because the agent already has project context, the work phase depends on whether you are changing something existing or starting something new.
 
-### A. Improving Existing Features (The Recall Pre-phase)
+### Existing Work: Recall First
 
-If you are modifying existing code, **Recall is a mandatory pre-phase**.
+If you are modifying existing code, **Recall is mandatory before implementation**.
 
-* **Step**: Tell the agent to "recall" the specific feature, module, or symbol (e.g., "Recall how our auth feature works").
-* **Why**: You can only collaborate with AI effectively if the agent knows the rules. Recalling ensures it understands current constraints *before* it suggests changes.
+- **Action**: Tell the agent to recall the specific feature, module, file, or symbol, for example: "Recall how our auth feature works."
+- **Goal**: Make sure the agent understands current constraints before it suggests changes.
 
-### B. Developing New Features
+### New Work: Direct Start
 
 If you are starting work on a completely new feature that Konteks hasn't seen before:
 
-* **Step**: Prompt the task directly.
-* **Logic**: Recall is **optional** here. Since the feature is new, you provide the initial direction, and the agent will record its findings for the first time during Phase 3.
+- **Action**: Prompt the task directly.
+- **Goal**: Let the agent discover new context during implementation and record durable findings during Save.
 
-## Phase 3: End Session (Save Session)
+Recall is optional for genuinely new work. Use it only when the new feature touches known modules, constraints, or prior decisions.
 
-Once your goal is achieved or you've made significant progress, you must save the agent's work back to Konteks.
+## Phase 3: Save
 
-* **Action**: Tell the agent to "save the current session to Konteks" using the `konteks_save` tool.
-* **Goal**: Record progress, decisions, and task state so the next agent can pick up where you left off.
+Once the goal is achieved or meaningful progress should be preserved, save the agent's work back to Konteks.
 
-> **Recommendation**: Only "End" the session once the current task is completed. If the task is partial, simply pause and resume later (Phase 2).
+- **Action**: Tell the agent to save the current session to Konteks using the `konteks_save` tool.
+- **Goal**: Record durable progress, decisions, and task state so future sessions do not repeat the same discovery work.
 
-## The New Task Flow (Repetition)
+> **Recommendation**: Prefer saving when the current task is complete. If the task is partial, pause and resume the same agent session when possible.
+
+## New Task Flow
 
 To maintain high-fidelity context, **Konteks sessions should be atomic.**
 
 When you move to a new, unrelated task:
 
-1. **End** the current session (Save).
-2. **Start** a fresh agent session.
+1. **Save** the current session.
+2. **Start** a fresh agent session for the unrelated task.
 3. **Bootstrap** again to orient the agent to the project (not the previous task).
 
-This "fresh start" prevents context pollution and ensures the agent isn't carrying over baggage or decisions from unrelated work.
+This fresh start prevents context pollution and keeps unrelated work from leaking into the next task.
