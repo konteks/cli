@@ -1,6 +1,10 @@
 import { contentHash } from '../storage/content.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 
+export const maxChunkContentChars = 3000
+export const maxEmbeddingTextChars = 2500
+export const maxFtsTextChars = 6000
+
 type RetrievalDocumentInput = {
     anchor?: string
     embeddingText: string
@@ -73,13 +77,13 @@ export function buildChunkRetrievalTexts(input: {
     ]
         .filter(Boolean)
         .join('\n')
-    const contentExcerpt = input.content.slice(0, 3000)
+    const contentExcerpt = input.content.slice(0, maxChunkContentChars)
 
     return {
         embeddingText: `${metadata}\ncontent:\n${contentExcerpt}`.slice(
             0,
-            2500,
+            maxEmbeddingTextChars,
         ),
-        ftsText: `${metadata}\n${input.content}`.slice(0, 6000),
+        ftsText: `${metadata}\n${input.content}`.slice(0, maxFtsTextChars),
     }
 }
