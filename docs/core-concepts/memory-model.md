@@ -28,8 +28,8 @@ Semantic memory captures the "meaning" within your project. It stores atomic uni
 
 ### Concepts
 
-* **Atomic Knowledge Units**: Small, semantic chunks of code or documentation.
-* **Observations**: Facts or insights captured during mining or agent sessions (e.g., "The user prefers Bun over npm").
+* **Atomic Knowledge Units**: Small, semantic sections of code or documentation.
+* **Observations**: Facts or insights captured during extraction or agent sessions (e.g., "The user prefers Bun over npm").
 
 ### Technical Specification: Indexing Substrate
 
@@ -37,7 +37,7 @@ Semantic units are indexed for both lexical and semantic search.
 
 | Table | Purpose | Key Fields |
 | :--- | :--- | :--- |
-| `chunks` | Atomic units of code/text | `content_hash`, `summary`, `token_count`, `payload_ref` |
+| `chunks` | Atomic sections of code/text | `content_hash`, `summary`, `token_count`, `payload_ref` |
 | `observations` | Durable facts and insights | `text`, `kind`, `confidence`, `source_id` |
 
 ## 3. Temporal Memory
@@ -74,4 +74,4 @@ Taxonomic memory provides the "where." It organizes knowledge into project-speci
 
 ---
 
-**How is this knowledge acquired?** Read about [Semantic Extraction & Mining](mining.md).
+**How is this knowledge acquired?** Read about [Semantic Extraction](extraction.md).

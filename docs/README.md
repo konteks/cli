@@ -20,7 +20,7 @@ Konteks is a **memory engine** that builds a project-local context graph through
 * [Overview](core-concepts/overview.md)
 * [Memory Model](core-concepts/memory-model.md)
 * [Storage & Persistence](core-concepts/storage.md)
-* [Mining & Chunking](core-concepts/mining.md)
+* [Extraction & Sectioning](core-concepts/extraction.md)
 * [Recall & Retrieval](core-concepts/recall.md)
 
 ## Reference

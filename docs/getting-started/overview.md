@@ -6,7 +6,7 @@
 
 Traditional Retrieval-Augmented Generation (RAG) often fails in coding because it treats code as plain text. It searches for keywords but misses the *structure*.
 
-Konteks is built specifically for code. It uses language-aware mining (via Tree-sitter) and a hybrid graph-search model to understand the *meaning* and *relationships* within your project. By using Konteks, you move from "reading files" to "sharing a brain" with your AI agent.
+Konteks is built specifically for code. It uses language-aware extraction (via Tree-sitter) and a hybrid graph-search model to understand the *meaning* and *relationships* within your project. By using Konteks, you move from "reading files" to "sharing a brain" with your AI agent.
 
 ## The Vision
 
@@ -37,7 +37,7 @@ We believe that setup should not be a barrier. Konteks is designed to be used th
 Konteks is built from the ground up for the **Model Context Protocol (MCP)**.
 
 * It doesn't just return "search results"; it provides **Recall**—a ranked, token-efficient package of context tailored for LLM consumption.
-* It follows a structured [Session Lifecycle](lifecycle.md) (Bootstrap -> Work -> Save) to keep the agent-human collaboration focused.
+* It follows a structured [Session Lifecycle](lifecycle.md) (Warm Up -> Build -> Save) to keep the agent-human collaboration focused.
 
 ### 4. High Signal, Low Noise
 

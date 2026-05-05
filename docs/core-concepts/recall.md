@@ -18,7 +18,7 @@ When an agent requests `recall(task)`, Konteks executes a multi-stage pipeline t
 The system performs a multi-modal search across [Semantic Memory](memory-model.md#2-semantic-memory).
 
 * **Lexical Search**: Matching exact keywords in code and notes via SQLite FTS.
-* **Semantic Search**: Matching the "intent" of the task against chunk summaries.
+* **Semantic Search**: Matching the "intent" of the task against section summaries.
 
 ### Phase 2: Relational Expansion
 
@@ -43,7 +43,7 @@ $$Score = Relevance + Importance + Recency - Complexity$$
 * **Relevance**: How well it matches the specific task.
 * **Importance**: High-level architectural decisions are boosted.
 * **Recency**: New knowledge is preferred.
-* **Complexity**: Very large chunks are penalized to respect the token budget.
+* **Complexity**: Very large sections are penalized to respect the token budget.
 
 ## 4. Context Assembly
 
@@ -52,7 +52,7 @@ The final step is the construction of the **Recall Package**.
 ### Concepts
 
 * **Token Budgeting**: Konteks respects a strict token limit (e.g., 2000 tokens) to ensure the agent has room to think.
-* **Dehydration**: Large code chunks are often returned as "summaries" first, with full bodies loaded only if the agent requests them.
+* **Dehydration**: Large code sections are often returned as "summaries" first, with full bodies loaded only if the agent requests them.
 
 ### Technical Specification: The Recall Package
 

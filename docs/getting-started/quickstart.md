@@ -1,53 +1,86 @@
 # Quickstart
 
-Follow these steps to set up Konteks and prepare your project for AI-assisted development.
+Set up Konteks once, then use the same session flow whenever you open your coding agent.
 
-## Step 1: Initialize Project Memory
+## Prerequisite: Project Setup
 
-Konteks is designed to be "Zero-Install." You can initialize your project using your preferred JavaScript package manager.
+### 1. Initialize Memory
 
-### Using npx
+Run one command from your project root:
 
 ```bash
 npx -y @konteks/cli init
-```
 
-### Using bunx
-
-```bash
+# or your preferred package manager:
 bunx @konteks/cli init
+pnpm dlx @konteks/cli init
+yarn dlx @konteks/cli init
 ```
 
 **What happens?**
 
 * Creates a `.konteks/` directory for local memory storage.
 * Initializes the `memory.sqlite` substrate.
-* **Automatically adds `.konteks/` to your `.gitignore`**.
+* Adds `.konteks/` to your `.gitignore`.
+* Extracts and indexes the current project state.
 
-## Step 2: Extract Project Knowledge (Mining)
+### 2. Set Up MCP
 
-Once initialized, you must populate the memory engine with your project's current state.
+Add Konteks to your MCP-compatible coding agent configuration before opening the agent:
 
-```bash
-npx @konteks/cli mine
+> [!NOTE]
+> MCP servers can be registered locally per project or globally for all projects. Global registration is recommended so you do not need to repeat this setup later.
+
+```json
+{
+  "mcpServers": {
+    "konteks": {
+      "command": "npx",
+      "args": ["-y", "@konteks/cli", "mcp"]
+    }
+  }
+}
 ```
 
-**What happens?**
+## From This Point On
 
-* Performs language-aware static analysis using Tree-sitter.
-* Constructs the initial semantic and structural indexes.
-* Populates the knowledge graph with your project's features and modules.
+Use this flow whenever you open a fresh coding-agent session in the project.
+For the full model behind this loop, read the [Warm Up -> Build -> Save lifecycle](lifecycle.md).
 
-## Step 3: Verify Memory Health
+### 3. Open Your Agent
 
-Ensure your project memory is fresh and ready for an AI agent.
+Open your coding agent in this repository after the MCP server is configured.
 
-```bash
-npx @konteks/cli status
+### 4. Warm Up
+
+Run the Warm Up prompt at the start of a fresh agent session:
+
+```text
+/warm-up
 ```
 
-If the status reports that your memory is **fresh**, the memory engine is ready.
+### 5. Build
+
+For an existing feature, module, or file:
+
+```text
+/work-on-existing improve auth session and reduce token refresh race conditions.
+```
+
+For a new task:
+
+```text
+/work-on-new design and implement a lightweight notification center for failed background jobs.
+```
+
+### 6. Save
+
+When the task is complete or worth preserving:
+
+```text
+/save-session
+```
 
 ---
 
-**Next: Learn the [Bootstrap -> Work -> Save lifecycle](lifecycle.md)** to see how to use this memory with your AI agent.
+**Next: Learn the [Warm Up -> Build -> Save lifecycle](lifecycle.md)** to see how to use this memory with your AI agent.

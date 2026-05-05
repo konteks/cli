@@ -20,7 +20,7 @@ The core of the storage layer is a single-file SQLite database (`memory.sqlite`)
 
 ## 2. The Object Substrate (TOON)
 
-Larger payloads, such as full session summaries or mined code bodies, are offloaded to the **TOON (Tagged Object Oriented Notation)** object store.
+Larger payloads, such as full session summaries or extracted code bodies, are offloaded to the **TOON (Tagged Object Oriented Notation)** object store.
 
 ### Concepts
 
@@ -43,4 +43,4 @@ The storage substrate is designed to be as portable as the code itself.
 
 ---
 
-**How does information enter this substrate?** Read about [Semantic Extraction & Mining](mining.md).
+**How does information enter this substrate?** Read about [Semantic Extraction](extraction.md).

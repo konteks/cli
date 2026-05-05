@@ -6,8 +6,8 @@ The following chart illustrates the high-level system interactions between the U
 
 ```mermaid
 graph TD
-    User([User]) -- "CLI (init, mine, status)" --> Engine[Konteks Memory Engine]
-    Agent([AI Agent]) -- "MCP (bootstrap, recall)" --> Engine
+    User([User]) -- "CLI (init)" --> Engine[Konteks Memory Engine]
+    Agent([AI Agent]) -- "MCP (warm up, recall)" --> Engine
     Engine -- "read/write" --> Substrate[(Storage Substrate)]
     Agent -- "save" --> Engine
 ```
@@ -24,7 +24,7 @@ To facilitate the journey of knowledge, Konteks provides a multi-layered environ
 
 ### 1. Interface Modalities
 
-Knowledge enters and exits the system through two primary modalities. The **Administrative Interface (CLI)** serves as the orchestrator for mining and system management, while the **Service Interface (MCP)** provides the bridge for AI agents to interact with the project's memory during a session.
+Knowledge enters and exits the system through two primary modalities. The **Administrative Interface (CLI)** serves as the orchestrator for extraction and system management, while the **Service Interface (MCP)** provides the bridge for AI agents to interact with the project's memory during a session.
 
 ### 2. The Cognitive Framework
 
@@ -67,7 +67,7 @@ graph TD
 
 ### 1. Emergence: Semantic Extraction
 
-The journey begins with [Mining](mining.md). Konteks performs language-aware static analysis of your source artifacts. It doesn't just "read" code; it decomposes it into **Atomic Knowledge Units**. Using advanced parsing, the system identifies the boundaries of functions, the intent of components, and the hidden links between files.
+The journey begins with [Extraction](extraction.md). Konteks performs language-aware static analysis of your source artifacts. It doesn't just "read" code; it decomposes it into **Atomic Knowledge Units**. Using advanced parsing, the system identifies the boundaries of functions, the intent of components, and the hidden links between files.
 
 ### 2. Consolidation: Formal Indexing
 

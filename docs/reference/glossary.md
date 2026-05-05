@@ -6,9 +6,9 @@ Short definitions for Konteks product terms.
 
 An AI coding assistant connected to the project through an MCP client.
 
-## Bootstrap
+## Warm Up
 
-The first lifecycle phase. Bootstrap gives a fresh agent session stable project context using `konteks_bootstrap`.
+The first lifecycle phase. Warm Up gives a fresh agent session stable project context using `konteks_warm_up`.
 
 ## Context
 
@@ -16,7 +16,7 @@ Relevant project knowledge given to an agent so it can work without rediscoverin
 
 ## Diary
 
-A chronological activity record saved by an agent. Diary entries help future sessions avoid repeated work, but they are not part of default Bootstrap context.
+A chronological activity record saved by an agent. Diary entries help future sessions avoid repeated work, but they are not part of default Warm Up context.
 
 ## Knowledge Curation
 
@@ -32,19 +32,19 @@ Model Context Protocol. The protocol Konteks uses to expose memory tools and wor
 
 ## MCP Prompt
 
-A user-invoked workflow template exposed through MCP. Konteks prompts guide agents through Bootstrap, Work, and Save flows.
+A user-invoked workflow template exposed through MCP. Konteks prompts guide agents through Warm Up, Build, and Save flows.
 
 ## MCP Tool
 
-A callable operation exposed to an agent through MCP, such as `konteks_bootstrap`, `konteks_recall`, or `konteks_save`.
+A callable operation exposed to an agent through MCP, such as `konteks_warm_up`, `konteks_recall`, or `konteks_save`.
 
 ## Memory Engine
 
-The Konteks system that mines, stores, retrieves, and updates project memory.
+The Konteks system that extracts, stores, retrieves, and updates project memory.
 
-## Mine
+## Repair
 
-The CLI process that scans project files, extracts structure, builds retrieval documents, and prepares local memory.
+The CLI command that repairs project memory artifacts by rebuilding them from scratch for recovery or maintenance.
 
 ## Recall
 
@@ -52,7 +52,7 @@ Task-specific retrieval. Recall gives the agent compact, relevant context before
 
 ## Retrieval Document
 
-A derived search surface built from chunks, modules, memories, or diary entries. Retrieval documents provide bounded text for FTS and embeddings.
+A derived search surface built from sections, modules, memories, or diary entries. Retrieval documents provide bounded text for FTS and embeddings.
 
 ## Save
 
@@ -66,6 +66,6 @@ The local persistence layer for Konteks memory, currently based on WASM SQLite a
 
 A compact text format used for agent-readable stored summaries and payloads.
 
-## Work
+## Build
 
-The second lifecycle phase. Existing work should use Recall first; genuinely new work may start directly.
+The second lifecycle phase. Existing tasks should use Recall first; genuinely new tasks may start directly.
