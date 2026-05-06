@@ -39,61 +39,31 @@ describe('MCP input parsing', () => {
         )
     })
 
-    it('accepts durable memory save input', () => {
+    it('accepts chat transcript save input', () => {
         expect(
+            parseSaveInput({
+                chat: 'User: We should save the whole session chat.\nAssistant: I implemented chat extraction.',
+            }),
+        ).toEqual({
+            chat: 'User: We should save the whole session chat.\nAssistant: I implemented chat extraction.',
+            type: 'chat',
+        })
+    })
+
+    it('rejects repeated manual save shapes at the MCP boundary', () => {
+        expect(() =>
             parseSaveInput({
                 content: 'Use WASM SQLite by default.',
                 kind: 'decision',
                 type: 'memory',
             }),
-        ).toEqual({
-            content: 'Use WASM SQLite by default.',
-            entities: undefined,
-            importance: undefined,
-            kind: 'decision',
-            source: undefined,
-            tags: undefined,
-            type: 'memory',
-        })
-    })
-
-    it('accepts diary save input', () => {
-        expect(
+        ).toThrow('chat is required')
+        expect(() =>
             parseSaveInput({
-                subject: 'MCP prompt rollout',
                 summary: 'Renamed prompts to konteks-* and verified listing.',
-                tags: ['mcp', 'prompts'],
                 type: 'diary',
             }),
-        ).toEqual({
-            subject: 'MCP prompt rollout',
-            summary: 'Renamed prompts to konteks-* and verified listing.',
-            tags: ['mcp', 'prompts'],
-            type: 'diary',
-        })
-    })
-
-    it('accepts legacy session handoff save input', () => {
-        expect(
-            parseSaveInput({
-                status: 'partial',
-                summary: 'Scaffolded the MCP server.',
-                task: 'implement MVP spine',
-                type: 'session',
-            }),
-        ).toEqual({
-            blockers: undefined,
-            decisions: undefined,
-            entities: undefined,
-            filesTouched: undefined,
-            nextSteps: undefined,
-            openQuestions: undefined,
-            status: 'partial',
-            summary: 'Scaffolded the MCP server.',
-            task: 'implement MVP spine',
-            testsRun: undefined,
-            type: 'session',
-        })
+        ).toThrow('chat is required')
     })
 
     it('requires id or query for forget input', () => {
@@ -105,23 +75,9 @@ describe('MCP input parsing', () => {
         )
     })
 
-    it('exposes discoverable save schema branches for memory and diary', () => {
-        const branches =
-            (saveInputSchema as { oneOf?: readonly unknown[] }).oneOf ?? []
-        const memoryBranch = branches.find(
-            item =>
-                typeof item === 'object' &&
-                item !== null &&
-                JSON.stringify(item).includes('"const":"memory"'),
-        )
-        const diaryBranch = branches.find(
-            item =>
-                typeof item === 'object' &&
-                item !== null &&
-                JSON.stringify(item).includes('"const":"diary"'),
-        )
-
-        expect(memoryBranch).toBeDefined()
-        expect(diaryBranch).toBeDefined()
+    it('exposes discoverable save schema for full chat ingestion', () => {
+        expect(JSON.stringify(saveInputSchema)).toContain('"chat"')
+        expect(JSON.stringify(saveInputSchema)).not.toContain('"memory"')
+        expect(JSON.stringify(saveInputSchema)).not.toContain('"diary"')
     })
 })

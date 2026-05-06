@@ -167,6 +167,37 @@ describe('save and search stores', () => {
         await adapter.close()
     })
 
+    it('extracts chat into durable memories and one diary entry', async () => {
+        const context = await makeTempContext()
+        const adapter = await openProjectDatabase(context)
+
+        const saved = await saveKonteksInput(adapter, context, {
+            chat: [
+                'User: We should save the full chat transcript in one call.',
+                'Assistant: Implemented chat extraction for high quality memory storage.',
+                'User: Prefer one diary entry per coherent session.',
+            ].join('\n'),
+            type: 'chat',
+        })
+        const memoryResults = await searchMemory(adapter, {
+            limit: 5,
+            query: 'full chat transcript',
+        })
+        const diaryResults = await searchMemory(adapter, {
+            limit: 5,
+            query: 'high quality memory storage',
+        })
+
+        expect(saved.id).toStartWith('diary_')
+        expect(saved.diaryId).toBe(saved.id)
+        expect(saved.memoryIds?.length).toBeGreaterThan(0)
+        expect(memoryResults.some(result => result.type === 'memory')).toBe(
+            true,
+        )
+        expect(diaryResults.some(result => result.type === 'diary')).toBe(true)
+        await adapter.close()
+    })
+
     it('indexes saved memory and diary into retrieval documents', async () => {
         const context = await makeTempContext()
         const adapter = await openProjectDatabase(context)

@@ -22,7 +22,7 @@ Prompts are user-invoked workflow templates. They guide the agent through the [S
 | `konteks-recall` | Build | Supplement a task with context from known modules, constraints, or decisions. |
 | `konteks-work-on-existing` | Build | Change known code; add recall context when needed. |
 | `konteks-work-on-new` | Build | Start a genuinely new feature. |
-| `konteks-save` | Save | Persist the current session diary and durable findings. |
+| `konteks-save` | Save | Persist the current session from one full chat transcript. |
 
 ## Tools
 
@@ -32,7 +32,7 @@ Tools are lower-level callable operations used by agents and debugging workflows
 | :--- | :--- | :--- |
 | `konteks_warm_up` | Warm Up | Start a fresh agent session with stable project context. |
 | `konteks_recall` | Recall | Continue an existing task on known code, modules, features, or decisions. |
-| `konteks_save` | Save | Preserve session progress, decisions, or durable findings. |
+| `konteks_save` | Save | Derive durable memories and one diary entry from one full chat transcript. |
 | `konteks_search` | Search | Inspect memory directly with a query. |
 | `konteks_status` | Status | Check memory health and freshness. |
 | `konteks_forget` | Forget | Remove or suppress wrong, stale, or sensitive memory. |

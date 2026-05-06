@@ -14,7 +14,10 @@ import {
 } from '@modelcontextprotocol/sdk/types.js'
 import { forgetMemory } from '../memory/forget-store.js'
 import { GraphStore } from '../memory/graph-store.js'
-import { saveKonteksInput } from '../memory/save-store.js'
+import {
+    type SaveProjectUpdate,
+    saveKonteksInput,
+} from '../memory/save-store.js'
 import {
     type MemorySearchResult,
     searchMemory,
@@ -158,8 +161,11 @@ const searchOutputSchema: Tool['outputSchema'] = {
 const saveOutputSchema: Tool['outputSchema'] = {
     properties: {
         accepted: { type: 'boolean' },
+        diaryId: { type: 'string' },
         duplicateOf: { type: 'string' },
         id: { type: 'string' },
+        memoryIds: { items: { type: 'string' }, type: 'array' },
+        skippedMemories: { type: 'number' },
         type: { type: 'string' },
     },
     required: ['accepted', 'id', 'type'],
@@ -190,7 +196,7 @@ export async function startMcpServer(
                 tools: {},
             },
             instructions:
-                'Use prompts for the Warm Up -> Build -> Save flow. Use konteks_warm_up at session start, konteks_recall as supplemental Build context, and konteks_save to persist session diary entries and durable memories.',
+                'Use prompts for the Warm Up -> Build -> Save flow. Use konteks_warm_up at session start, konteks_recall as supplemental Build context, and call konteks_save once with the full chat transcript to persist the session diary and durable memories.',
         },
     )
     const tools = new Map<string, ToolRegistration>()
@@ -437,17 +443,19 @@ function registerKonteksTools(
                 openWorldHint: false,
                 readOnlyHint: false,
             },
-            description: 'Save durable memory or a structured diary entry.',
+            description:
+                'Derive durable memories and one diary entry from the full session chat.',
             inputSchema: saveInputSchema,
             outputSchema: saveOutputSchema,
         },
         async input => {
             const parsed = parseSaveInput(input)
             const context = await loadProjectContext(options.project)
+            const projectUpdate =
+                await updateChangedProjectMemorySilently(context)
             const saved = await withProjectDatabaseContext(context, adapter =>
-                saveKonteksInput(adapter, context, parsed),
+                saveKonteksInput(adapter, context, parsed, { projectUpdate }),
             )
-            await updateChangedProjectMemorySilently(context)
             return textResult(saved)
         },
     )
@@ -618,7 +626,7 @@ function promptText(name: string, task: string | undefined): string {
         case 'konteks-work-on-new':
             return `Build this new task: ${task ?? '<task>'}. Discover relevant code during implementation; call konteks_recall only if known modules, constraints, or prior decisions may affect the task. Keep durable findings ready for save.`
         case 'konteks-save':
-            return 'Save the current Konteks session. Call konteks_save with type "diary" for the session outcome across all tasks handled, including status, tests, pending items, and next steps. Also call konteks_save with type "memory" for durable decisions, constraints, preferences, blockers, or facts that future sessions should remember.'
+            return 'Save the current Konteks session. Call konteks_save once with the full chat transcript in the "chat" argument. Do not call konteks_save repeatedly for individual memories; Konteks will derive durable memories, make them searchable, and write one diary entry from the high-signal stored memory.'
         default:
             return ''
     }
@@ -744,12 +752,16 @@ async function withProjectDatabaseContext<T>(
 
 async function updateChangedProjectMemorySilently(
     context: Awaited<ReturnType<typeof loadProjectContext>>,
-): Promise<void> {
+): Promise<SaveProjectUpdate | undefined> {
     if (!context.configExists || !(await readMineManifest(context.memoryDir))) {
-        return
+        return undefined
     }
 
-    await mineProject(context, 'changed')
+    const result = await mineProject(context, 'changed')
+    return {
+        deletedFilePaths: result.deletedFilePaths,
+        updatedFilePaths: result.updatedFilePaths,
+    }
 }
 
 function applyTokenBudget(

@@ -53,96 +53,17 @@ export const searchInputSchema = {
 } satisfies ObjectSchema
 
 export const saveInputSchema = {
-    oneOf: [
-        {
-            additionalProperties: false,
-            properties: {
-                content: { type: 'string' },
-                entities: {
-                    items: { type: 'string' },
-                    type: 'array',
-                },
-                importance: { maximum: 5, minimum: 1, type: 'integer' },
-                kind: {
-                    enum: [
-                        'blocker',
-                        'code_insight',
-                        'decision',
-                        'fact',
-                        'note',
-                        'preference',
-                    ],
-                    type: 'string',
-                },
-                source: { type: 'string' },
-                tags: {
-                    items: { type: 'string' },
-                    type: 'array',
-                },
-                type: { const: 'memory', type: 'string' },
-            },
-            required: ['type', 'kind', 'content'],
-            type: 'object',
+    additionalProperties: false,
+    properties: {
+        chat: {
+            description:
+                'The full agent session transcript to derive durable memories and a diary entry.',
+            type: 'string' as const,
         },
-        {
-            additionalProperties: false,
-            properties: {
-                subject: { type: 'string' },
-                summary: { type: 'string' },
-                tags: {
-                    items: { type: 'string' },
-                    type: 'array',
-                },
-                type: { const: 'diary', type: 'string' },
-            },
-            required: ['type', 'summary'],
-            type: 'object',
-        },
-        {
-            additionalProperties: false,
-            properties: {
-                blockers: {
-                    items: { type: 'string' },
-                    type: 'array',
-                },
-                decisions: {
-                    items: { type: 'string' },
-                    type: 'array',
-                },
-                entities: {
-                    items: { type: 'string' },
-                    type: 'array',
-                },
-                filesTouched: {
-                    items: { type: 'string' },
-                    type: 'array',
-                },
-                nextSteps: {
-                    items: { type: 'string' },
-                    type: 'array',
-                },
-                openQuestions: {
-                    items: { type: 'string' },
-                    type: 'array',
-                },
-                status: {
-                    enum: ['blocked', 'done', 'partial'],
-                    type: 'string',
-                },
-                summary: { type: 'string' },
-                task: { type: 'string' },
-                testsRun: {
-                    items: { type: 'string' },
-                    type: 'array',
-                },
-                type: { const: 'session', type: 'string' },
-            },
-            required: ['type', 'task', 'status', 'summary'],
-            type: 'object',
-        },
-    ],
-    type: 'object',
-} as const
+    },
+    required: ['chat'] as string[],
+    type: 'object' as const,
+}
 
 export const forgetInputSchema = {
     additionalProperties: false,
@@ -187,6 +108,10 @@ export type RecallInput = {
 }
 
 export type SaveInput =
+    | {
+          chat: string
+          type: 'chat'
+      }
     | {
           content: string
           entities?: string[]
@@ -262,52 +187,10 @@ export function parseSearchInput(input: unknown): SearchInput {
 
 export function parseSaveInput(input: unknown): SaveInput {
     const record = asRecord(input)
-    const type = requiredString(record.type, 'type')
-
-    if (type === 'memory') {
-        return {
-            content: requiredString(record.content, 'content'),
-            entities: optionalStringArray(record.entities, 'entities'),
-            importance: optionalImportance(record.importance),
-            kind: parseMemoryKind(record.kind),
-            source: optionalString(record.source, 'source'),
-            tags: optionalStringArray(record.tags, 'tags'),
-            type,
-        }
+    return {
+        chat: requiredString(record.chat, 'chat'),
+        type: 'chat',
     }
-
-    if (type === 'diary') {
-        return {
-            subject: optionalString(record.subject, 'subject'),
-            summary: requiredString(record.summary, 'summary'),
-            tags: optionalStringArray(record.tags, 'tags'),
-            type,
-        }
-    }
-
-    if (type === 'session') {
-        return {
-            blockers: optionalStringArray(record.blockers, 'blockers'),
-            decisions: optionalStringArray(record.decisions, 'decisions'),
-            entities: optionalStringArray(record.entities, 'entities'),
-            filesTouched: optionalStringArray(
-                record.filesTouched,
-                'filesTouched',
-            ),
-            nextSteps: optionalStringArray(record.nextSteps, 'nextSteps'),
-            openQuestions: optionalStringArray(
-                record.openQuestions,
-                'openQuestions',
-            ),
-            status: parseSessionStatus(record.status),
-            summary: requiredString(record.summary, 'summary'),
-            task: requiredString(record.task, 'task'),
-            testsRun: optionalStringArray(record.testsRun, 'testsRun'),
-            type,
-        }
-    }
-
-    throw new Error('type must be "memory", "diary", or "session"')
 }
 
 export function parseForgetInput(input: unknown): ForgetInput {
@@ -381,63 +264,6 @@ function optionalPositiveInteger(
     }
 
     return value
-}
-
-function optionalStringArray(
-    value: unknown,
-    field: string,
-): string[] | undefined {
-    if (value === undefined) {
-        return undefined
-    }
-
-    if (
-        !Array.isArray(value) ||
-        value.some(item => typeof item !== 'string' || item.trim() === '')
-    ) {
-        throw new Error(`${field} must be an array of non-empty strings`)
-    }
-
-    return value
-}
-
-function optionalImportance(value: unknown): 1 | 2 | 3 | 4 | 5 | undefined {
-    if (value === undefined) {
-        return undefined
-    }
-
-    if ([1, 2, 3, 4, 5].includes(value as number)) {
-        return value as 1 | 2 | 3 | 4 | 5
-    }
-
-    throw new Error('importance must be an integer from 1 to 5')
-}
-
-function parseMemoryKind(value: unknown): MemoryKind {
-    const kind = requiredString(value, 'kind')
-    if (
-        [
-            'blocker',
-            'code_insight',
-            'decision',
-            'fact',
-            'note',
-            'preference',
-        ].includes(kind)
-    ) {
-        return kind as MemoryKind
-    }
-
-    throw new Error('kind is not supported')
-}
-
-function parseSessionStatus(value: unknown): 'blocked' | 'done' | 'partial' {
-    const status = requiredString(value, 'status')
-    if (['blocked', 'done', 'partial'].includes(status)) {
-        return status as 'blocked' | 'done' | 'partial'
-    }
-
-    throw new Error('status must be "done", "partial", or "blocked"')
 }
 
 function parseForgetMode(

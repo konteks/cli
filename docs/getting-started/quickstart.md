@@ -80,3 +80,5 @@ When the session is complete or worth preserving:
 ```text
 /konteks-save
 ```
+
+The prompt tells your agent to call `konteks_save` once with the full chat transcript. You do not manually split the session into separate memory or diary saves.

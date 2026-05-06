@@ -14,7 +14,7 @@ import type { MineProgressReporter } from './progress.js'
 import { formatProjectSummaryToon } from './toon-summary.js'
 import type { TreeSitterEngine } from './tree-sitter-engine.js'
 
-type MineProjectResult = {
+export type MineProjectResult = {
     ok: true
     mode: MineMode
     projectRoot: string
@@ -25,6 +25,8 @@ type MineProjectResult = {
     embeddedCount: number
     embeddingReusedCount: number
     technologies: string[]
+    updatedFilePaths: string[]
+    deletedFilePaths: string[]
 }
 
 export async function mineProject(
@@ -180,6 +182,7 @@ export async function mineProject(
 
     return {
         chunkCount: totalChunkCount,
+        deletedFilePaths: deletedPaths,
         embeddedCount: embeddingRun.embeddedCount,
         embeddingReusedCount: embeddingRun.reusedCount,
         fileCount: files.length,
@@ -189,6 +192,7 @@ export async function mineProject(
         projectRoot: context.projectRoot,
         summaryRef: summary.ref,
         technologies: metadata.technologies,
+        updatedFilePaths: filesToMine.map(file => file.path),
     }
 }
 

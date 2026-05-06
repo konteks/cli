@@ -39,10 +39,10 @@ describe('MCP prompts', () => {
         const warmUp = promptText('konteks-warm-up')
 
         expect(savePrompt?.arguments).toBeUndefined()
-        expect(save).toContain('type "diary"')
-        expect(save).toContain('type "memory"')
+        expect(save).toContain('"chat" argument')
+        expect(save).toContain('Call konteks_save once')
+        expect(save).toContain('Do not call konteks_save repeatedly')
         expect(save).toContain('current Konteks session')
-        expect(save).toContain('across all tasks handled')
         expect(save).not.toContain('current Konteks task')
         expect(save).not.toContain('focus on')
         expect(`${save}\n${warmUp}`).not.toMatch(

@@ -77,7 +77,7 @@ describe('retrieval quality evals', () => {
             callMcpTool({ project: projectRoot }, 'konteks_save', {
                 type: 'diary',
             }),
-        ).rejects.toThrow('summary is required')
+        ).rejects.toThrow('chat is required')
     })
 
     it('updates changed project memory after saving context', async () => {
@@ -105,21 +105,33 @@ describe('retrieval quality evals', () => {
             { project: projectRoot },
             'konteks_save',
             {
-                content:
-                    'The save tool refreshes changed project memory after persistence.',
-                kind: 'fact',
-                type: 'memory',
+                chat: [
+                    'User: We should extract from the whole session chat in one save call.',
+                    'Assistant: Implemented chat extraction and durable memory storage.',
+                    'User: The save tool should refresh changed project memory after persistence.',
+                ].join('\n'),
             },
         )
         const text = result.content.find(
             item => item.type === 'text' && 'text' in item,
         )?.text
         const manifest = await readMineManifest(context.memoryDir)
+        const adapter = await openProjectDatabase(context)
+        const diaryRows = await adapter.query<{ summary: string }>(
+            `
+select summary
+from diary_entries
+order by created_at desc
+limit 1
+`,
+        )
+        await adapter.close()
 
         expect(manifest?.mode).toBe('changed')
         expect(manifest?.files.map(file => file.path)).toContain(
             'src/saved-change.ts',
         )
+        expect(diaryRows[0]?.summary).toContain('src/saved-change.ts')
         expect(text).not.toContain('src/saved-change.ts')
         expect(text).not.toContain('mode')
         expect(text).not.toContain('Extraction complete')
