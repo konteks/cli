@@ -55,12 +55,59 @@ describe('status command', () => {
             log.mockRestore()
         }
 
-        expect(output).toContain('Konteks Ready')
-        expect(output).toContain('Memory Stats')
+        expect(output).toContain('Konteks Memory')
+        expect(output).toContain('Session update')
+        expect(output).toContain('No file changes since last extraction')
+        expect(output).toContain('Knowledge')
+        expect(output).toContain('Session Memory')
+        expect(output).toContain('Retrieval')
         expect(output).toContain('Sections')
         expect(output).toContain('Memories')
         expect(output).toContain('Diary entries')
+        expect(output).not.toContain('Needs Attention')
+        expect(output).not.toContain('Config')
+        expect(output).not.toContain('Database')
+        expect(output).not.toContain('State')
+        expect(output).not.toContain('Reason')
+        expect(output).not.toContain('Next step')
         expect(output).not.toContain('"freshness"')
+    })
+
+    it('shows changed file count since the last extraction', async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-status-'))
+        tempDirs.push(projectRoot)
+        await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await writeFile(
+            join(projectRoot, 'package.json'),
+            JSON.stringify({ name: 'status-fixture' }, null, 2),
+        )
+        await writeFile(
+            join(projectRoot, 'src', 'index.ts'),
+            'export const statusFixture = true\n',
+        )
+
+        const context = await loadProjectContext(projectRoot)
+        await mineProject(context, 'full')
+        await writeFile(
+            join(projectRoot, 'src', 'index.ts'),
+            'export const statusFixture = false\n',
+        )
+        await writeFile(
+            join(projectRoot, 'src', 'new-feature.ts'),
+            'export const newFeature = true\n',
+        )
+
+        const log = spyOn(console, 'log').mockImplementation(() => {})
+        let output = ''
+        try {
+            await statusCommand({ project: projectRoot })
+            output = String(log.mock.calls[0]?.[0] ?? '')
+        } finally {
+            log.mockRestore()
+        }
+
+        expect(output).toContain('Session update')
+        expect(output).toContain('2 files changed since then')
     })
 
     it('supports colorized formatting for terminal output', () => {
@@ -70,6 +117,7 @@ describe('status command', () => {
                 databaseExists: true,
                 databasePath: '/tmp/project/.konteks/memory.sqlite',
                 freshness: {
+                    changedFileCount: 1,
                     reason: 'Project extraction is current for 3 files.',
                     status: 'fresh',
                 },
@@ -89,16 +137,13 @@ describe('status command', () => {
             {
                 color: {
                     accent: value => `<accent>${value}</accent>`,
-                    danger: value => `<danger>${value}</danger>`,
                     dim: value => `<dim>${value}</dim>`,
-                    success: value => `<success>${value}</success>`,
-                    warning: value => `<warning>${value}</warning>`,
                 },
             },
         )
 
-        expect(output).toContain('<accent>Konteks</accent>')
-        expect(output).toContain('<success>Ready</success>')
-        expect(output).toContain('<success>fresh</success>')
+        expect(output).toContain('<accent>Konteks Memory</accent>')
+        expect(output).toContain('<dim>────────────────')
+        expect(output).toContain('1 file changed since then')
     })
 })

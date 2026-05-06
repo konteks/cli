@@ -54,6 +54,7 @@ describe('project context', () => {
         const status = await getProjectStatus(projectRoot)
 
         expect(status.freshness).toEqual({
+            changedFileCount: 0,
             reason: 'Konteks project memory is not initialized.',
             recommendedCommand: 'konteks init',
             status: 'missing',

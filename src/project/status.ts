@@ -24,6 +24,7 @@ type ProjectStatus = {
     freshness: {
         status: 'missing' | 'fresh' | 'stale'
         reason: string
+        changedFileCount: number
         lastExtractedAt?: string
         recommendedCommand?: string
     }
@@ -45,6 +46,7 @@ export async function getProjectStatus(
         freshness: initialized
             ? await getMiningFreshness(context)
             : {
+                  changedFileCount: 0,
                   reason: 'Konteks project memory is not initialized.',
                   recommendedCommand: 'konteks init',
                   status: 'missing',

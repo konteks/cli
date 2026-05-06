@@ -15,10 +15,7 @@ export async function statusCommand(options: GlobalCliOptions): Promise<void> {
 type ProjectStatus = Awaited<ReturnType<typeof getProjectStatus>>
 type StatusColorPalette = {
     accent(value: string): string
-    danger(value: string): string
     dim(value: string): string
-    success(value: string): string
-    warning(value: string): string
 }
 
 export function formatStatus(
@@ -26,17 +23,11 @@ export function formatStatus(
     options: { color?: StatusColorPalette } = {},
 ): string {
     const color = options.color ?? createColorPalette(false)
-    const freshness = status.freshness.status
     const separator = color.dim('─'.repeat(48))
-    const title =
-        freshness === 'fresh'
-            ? color.success('Konteks Status')
-            : freshness === 'stale'
-              ? color.warning('Konteks Status')
-              : color.danger('Konteks Status')
+    const changedFiles = status.freshness.changedFileCount
     const lines = [
         '',
-        title,
+        color.accent('Konteks Memory'),
         separator,
         row('Project', status.projectRoot),
         row('Memory', status.memoryDir),
@@ -48,16 +39,28 @@ export function formatStatus(
                   ),
               ]
             : []),
+        row(
+            'Session update',
+            changedFiles > 0
+                ? `${formatCount(changedFiles, 'file')} changed since then`
+                : 'No file changes since last extraction',
+        ),
         '',
-        color.accent('Memory Stats'),
+        color.accent('Knowledge'),
         separator,
         statRow('Sections', status.memoryStats.sections),
         statRow('Modules', status.memoryStats.modules),
+        '',
+        color.accent('Session Memory'),
+        separator,
         statRow('Memories', status.memoryStats.memories),
         statRow('Diary entries', status.memoryStats.diaryEntries),
+        statRow('Events', status.memoryStats.events),
+        '',
+        color.accent('Retrieval'),
+        separator,
         statRow('Retrieval docs', status.memoryStats.retrievalDocuments),
         statRow('Embeddings', status.memoryStats.embeddings),
-        statRow('Events', status.memoryStats.events),
         '',
     ]
 
@@ -70,6 +73,10 @@ function row(label: string, value: string): string {
 
 function statRow(label: string, value: number): string {
     return row(label, value.toLocaleString('en-US'))
+}
+
+function formatCount(value: number, singular: string): string {
+    return `${value.toLocaleString('en-US')} ${singular}${value === 1 ? '' : 's'}`
 }
 
 function formatDate(value: string): string {
@@ -86,9 +93,6 @@ function createColorPalette(enabled: boolean): StatusColorPalette {
 
     return {
         accent: value => wrap(36, value),
-        danger: value => wrap(31, value),
         dim: value => wrap(90, value),
-        success: value => wrap(32, value),
-        warning: value => wrap(33, value),
     }
 }

@@ -36,6 +36,7 @@ type MineDiagnostics = ScanDiagnostics & {
 type MiningFreshness = {
     status: 'missing' | 'fresh' | 'stale'
     reason: string
+    changedFileCount: number
     recommendedCommand?: string
     lastExtractedAt?: string
 }
@@ -71,6 +72,7 @@ export async function getMiningFreshness(
     const manifest = await readMineManifest(context.memoryDir)
     if (!manifest) {
         return {
+            changedFileCount: 0,
             reason: 'No extraction manifest exists yet.',
             recommendedCommand: 'konteks repair',
             status: 'missing',
@@ -82,6 +84,7 @@ export async function getMiningFreshness(
 
     if (staleReason) {
         return {
+            changedFileCount: countChangedFiles(manifest.files, currentFiles),
             lastExtractedAt: manifest.minedAt,
             reason: staleReason,
             recommendedCommand: 'konteks repair',
@@ -90,6 +93,7 @@ export async function getMiningFreshness(
     }
 
     return {
+        changedFileCount: 0,
         lastExtractedAt: manifest.minedAt,
         reason: `Project extraction is current for ${manifest.fileCount} files.`,
         status: 'fresh',
@@ -128,4 +132,28 @@ function hasFileChanged(previous: ScannedFile, current: ScannedFile): boolean {
         previous.sizeBytes !== current.sizeBytes ||
         previous.mtimeMs !== current.mtimeMs
     )
+}
+
+function countChangedFiles(
+    previousFiles: ScannedFile[],
+    currentFiles: ScannedFile[],
+): number {
+    const previousByPath = new Map(previousFiles.map(file => [file.path, file]))
+    const currentByPath = new Map(currentFiles.map(file => [file.path, file]))
+    let count = 0
+
+    for (const current of currentFiles) {
+        const previous = previousByPath.get(current.path)
+        if (!previous || hasFileChanged(previous, current)) {
+            count += 1
+        }
+    }
+
+    for (const previous of previousFiles) {
+        if (!currentByPath.has(previous.path)) {
+            count += 1
+        }
+    }
+
+    return count
 }
