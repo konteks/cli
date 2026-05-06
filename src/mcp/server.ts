@@ -305,7 +305,7 @@ function createPromptDefinitions(): Prompt[] {
     return [
         {
             description: 'Open a fresh Konteks session with project context.',
-            name: 'warm-up',
+            name: 'konteks-warm-up',
             title: 'Warm Up',
         },
         {
@@ -319,7 +319,7 @@ function createPromptDefinitions(): Prompt[] {
             ],
             description:
                 'Supplement a Build task with context from known project memory.',
-            name: 'recall',
+            name: 'konteks-recall',
             title: 'Recall',
         },
         {
@@ -332,7 +332,7 @@ function createPromptDefinitions(): Prompt[] {
                 },
             ],
             description: 'Continue an existing task in the Build phase.',
-            name: 'work-on-existing',
+            name: 'konteks-work-on-existing',
             title: 'Work On Existing',
         },
         {
@@ -344,7 +344,7 @@ function createPromptDefinitions(): Prompt[] {
                 },
             ],
             description: 'Start a new task in the Build phase.',
-            name: 'work-on-new',
+            name: 'konteks-work-on-new',
             title: 'Work On New',
         },
         {
@@ -357,8 +357,8 @@ function createPromptDefinitions(): Prompt[] {
                 },
             ],
             description: 'Persist durable progress at the end of a task.',
-            name: 'save-session',
-            title: 'Save Session',
+            name: 'konteks-save',
+            title: 'Save',
         },
     ]
 }
@@ -384,15 +384,15 @@ function getPromptResult(
 
 function promptText(name: string, task: string | undefined): string {
     switch (name) {
-        case 'warm-up':
+        case 'konteks-warm-up':
             return 'Warm up this Konteks session. Call konteks_warm_up and summarize the project architecture, active constraints, and durable decisions.'
-        case 'recall':
+        case 'konteks-recall':
             return `Recall relevant Konteks context for this task: ${task ?? '<task>'}. Call konteks_recall before answering.`
-        case 'work-on-existing':
+        case 'konteks-work-on-existing':
             return `Build on this existing code or behavior: ${task ?? '<task>'}. Use Konteks context as needed, then propose and implement the change.`
-        case 'work-on-new':
-            return `Build this new task: ${task ?? '<task>'}. Discover relevant code during implementation and keep durable findings ready for save-session.`
-        case 'save-session':
+        case 'konteks-work-on-new':
+            return `Build this new task: ${task ?? '<task>'}. Discover relevant code during implementation and keep durable findings ready for save.`
+        case 'konteks-save':
             return `Save this Konteks session. Call konteks_save with completed work, pending items, tradeoffs, tests run, and exact next steps${task ? ` for: ${task}` : ''}.`
         default:
             return ''
