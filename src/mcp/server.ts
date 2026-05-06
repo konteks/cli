@@ -19,10 +19,12 @@ import {
     type MemorySearchResult,
     searchMemory,
 } from '../memory/search-store.js'
+import { readMineManifest } from '../mining/manifest.js'
 import { loadProjectContext } from '../project/context.js'
 import { getProjectStatus } from '../project/status.js'
 import { openProjectDatabase } from '../storage/database.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
+import { createToonStore } from '../storage/toon-store.js'
 import {
     emptyInputSchema,
     forgetInputSchema,
@@ -45,6 +47,7 @@ type StartMcpServerOptions = {
 type FlexibleRegisterTool = (
     name: string,
     config: {
+        annotations?: Tool['annotations']
         description: string
         inputSchema: Tool['inputSchema']
     },
@@ -98,6 +101,7 @@ export async function startMcpServer(
     const tools = new Map<string, ToolRegistration>()
     const registerTool: FlexibleRegisterTool = (name, config, callback) => {
         tools.set(name, {
+            annotations: config.annotations,
             callback,
             description: config.description,
             inputSchema: config.inputSchema,
@@ -127,6 +131,7 @@ export async function startMcpServer(
 
     server.setRequestHandler(ListToolsRequestSchema, async () => ({
         tools: [...tools.values()].map(tool => ({
+            annotations: tool.annotations,
             description: tool.description,
             inputSchema: tool.inputSchema,
             name: tool.name,
@@ -157,6 +162,7 @@ export async function startMcpServer(
 }
 
 type ToolRegistration = {
+    annotations?: Tool['annotations']
     callback: (input: unknown) => CallToolResult | Promise<CallToolResult>
     description: string
     inputSchema: Tool['inputSchema']
@@ -170,6 +176,12 @@ function registerKonteksTools(
     registerTool(
         'konteks_status',
         {
+            annotations: {
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false,
+                readOnlyHint: true,
+            },
             description:
                 'Inspect Konteks project memory status, storage path, counts, capabilities, and setup health.',
             inputSchema: emptyInputSchema,
@@ -180,6 +192,12 @@ function registerKonteksTools(
     registerTool(
         'konteks_warm_up',
         {
+            annotations: {
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false,
+                readOnlyHint: true,
+            },
             description:
                 'Load the stable project-wide briefing for the current repo and report whether memory is missing, fresh, or stale.',
             inputSchema: warmUpInputSchema,
@@ -187,15 +205,22 @@ function registerKonteksTools(
         async input => {
             const parsed = parseWarmUpInput(input)
             const status = await getProjectStatus(options.project)
+            const context = await loadProjectContext(options.project)
+            const warmUp = await assembleWarmUpContext(
+                context,
+                parsed.maxTokens,
+            )
             return textResult({
+                architecture: warmUp.architecture,
                 commonCommands: [
                     'konteks status',
                     'konteks repair',
                     'konteks mcp',
                 ],
-                constraints: ['Use repair only for recovery rebuilds.'],
+                constraints: warmUp.constraints,
+                durableDecisions: warmUp.durableDecisions,
                 freshness: status.freshness,
-                keyFiles: [],
+                keyFiles: warmUp.keyFiles,
                 project: {
                     memoryDir: status.memoryDir,
                     name: status.projectRoot.split('/').at(-1) ?? 'project',
@@ -214,12 +239,9 @@ function registerKonteksTools(
                 suggestedNext:
                     status.freshness.recommendedCommand ??
                     `Call konteks_recall with a task-specific prompt. Requested budget: ${parsed.maxTokens ?? 2000} tokens.`,
-                summary:
-                    status.freshness.status === 'missing'
-                        ? 'Konteks memory is not initialized yet.'
-                        : 'Konteks warm-up summaries are not implemented yet.',
-                taxonomy: [],
-                technologies: [],
+                summary: warmUp.summary,
+                taxonomy: warmUp.taxonomy,
+                technologies: warmUp.technologies,
             })
         },
     )
@@ -227,6 +249,12 @@ function registerKonteksTools(
     registerTool(
         'konteks_recall',
         {
+            annotations: {
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false,
+                readOnlyHint: true,
+            },
             description:
                 'Recall compact, task-relevant project context before answering or working.',
             inputSchema: recallInputSchema,
@@ -257,6 +285,12 @@ function registerKonteksTools(
     registerTool(
         'konteks_search',
         {
+            annotations: {
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false,
+                readOnlyHint: true,
+            },
             description:
                 'Search stored memory directly and return matching records with IDs, sources, scores, and excerpts.',
             inputSchema: searchInputSchema,
@@ -277,7 +311,13 @@ function registerKonteksTools(
     registerTool(
         'konteks_save',
         {
-            description: 'Save durable memory or a structured session handoff.',
+            annotations: {
+                destructiveHint: false,
+                idempotentHint: false,
+                openWorldHint: false,
+                readOnlyHint: false,
+            },
+            description: 'Save durable memory or a structured diary entry.',
             inputSchema: saveInputSchema,
         },
         async input => {
@@ -294,6 +334,12 @@ function registerKonteksTools(
     registerTool(
         'konteks_forget',
         {
+            annotations: {
+                destructiveHint: true,
+                idempotentHint: false,
+                openWorldHint: false,
+                readOnlyHint: false,
+            },
             description:
                 'Delete, invalidate, or suppress stored memory that is wrong, stale, sensitive, or no longer useful.',
             inputSchema: forgetInputSchema,
@@ -351,6 +397,7 @@ function createToolRegistrations(
     const tools = new Map<string, ToolRegistration>()
     const registerTool: FlexibleRegisterTool = (name, config, callback) => {
         tools.set(name, {
+            annotations: config.annotations,
             callback,
             description: config.description,
             inputSchema: config.inputSchema,
@@ -587,4 +634,93 @@ function applyTokenBudget(
     }
 
     return selected
+}
+
+type WarmUpContext = {
+    architecture: string[]
+    constraints: string[]
+    durableDecisions: string[]
+    keyFiles: string[]
+    summary: string
+    taxonomy: string[]
+    technologies: string[]
+}
+
+async function assembleWarmUpContext(
+    context: Awaited<ReturnType<typeof loadProjectContext>>,
+    maxTokens: number | undefined,
+): Promise<WarmUpContext> {
+    const manifest = await readMineManifest(context.memoryDir)
+    if (!manifest) {
+        return {
+            architecture: [],
+            constraints: ['Run `konteks init` to initialize project memory.'],
+            durableDecisions: [],
+            keyFiles: [],
+            summary: 'Konteks memory is not initialized yet.',
+            taxonomy: [],
+            technologies: [],
+        }
+    }
+
+    const summaryText = await createToonStore(context.memoryDir)
+        .read(manifest.summaryRef)
+        .catch(() => '')
+    const adapter = await openProjectDatabase(context)
+    try {
+        const modules = await adapter.query<{ path: string; summary: string }>(
+            `
+select path, summary
+from modules
+order by chunk_count desc, file_count desc
+limit 8
+`,
+        )
+        const decisions = await adapter.query<{ text_inline: string | null }>(
+            `
+select text_inline
+from observations
+where kind in ('decision', 'constraint', 'preference', 'fact')
+  and deleted_at is null
+  and suppressed_at is null
+order by created_at desc
+limit 12
+`,
+        )
+
+        const summary = clipText(summaryText, Math.min(maxTokens ?? 800, 2200))
+        return {
+            architecture: modules.map(
+                module => `${module.path}: ${module.summary}`,
+            ),
+            constraints: decisions
+                .map(item => item.text_inline ?? '')
+                .filter(Boolean)
+                .slice(0, 8),
+            durableDecisions: decisions
+                .map(item => item.text_inline ?? '')
+                .filter(Boolean)
+                .slice(0, 8),
+            keyFiles: manifest.files.slice(0, 12).map(file => file.path),
+            summary:
+                summary ||
+                `Project extraction is available for ${manifest.fileCount} files.`,
+            taxonomy: [],
+            technologies: manifest.metadata.technologies,
+        }
+    } finally {
+        await adapter.close()
+    }
+}
+
+function clipText(text: string, maxTokens: number): string {
+    if (!text.trim()) {
+        return ''
+    }
+    const words = text.trim().split(/\s+/u)
+    const budget = Math.max(80, Math.min(maxTokens, 4000))
+    if (words.length <= budget) {
+        return text.trim()
+    }
+    return `${words.slice(0, budget).join(' ')}...`
 }

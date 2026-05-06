@@ -5,7 +5,7 @@ import { hasSearchIndex } from './search-index.js'
 
 export type MemorySearchResult = {
     id: string
-    type: 'chunk' | 'memory' | 'module' | 'session'
+    type: 'chunk' | 'diary' | 'memory' | 'module' | 'session'
     kind?: string
     anchor?: string
     embeddingDimensions?: number
@@ -50,9 +50,17 @@ type HandoffRow = {
     created_at: string
 }
 
+type DiaryRow = {
+    id: string
+    subject: string | null
+    summary: string
+    tags_json: string | null
+    created_at: string
+}
+
 type FtsRow = {
     id: string
-    type: 'chunk' | 'memory' | 'session'
+    type: 'chunk' | 'diary' | 'memory' | 'session'
     kind: string | null
     task: string | null
     content: string
@@ -138,9 +146,30 @@ limit ?
 `,
         [...terms.flatMap(term => [`%${term}%`, `%${term}%`]), limit * 2],
     )
+    const diaries = await adapter.query<DiaryRow>(
+        `
+select id, subject, summary, tags_json, created_at
+from diary_entries
+where (${terms
+            .map(
+                () =>
+                    "(lower(summary) like ? or lower(coalesce(subject, '')) like ? or lower(coalesce(tags_json, '')) like ?)",
+            )
+            .join(' or ')})
+  and deleted_at is null
+  and suppressed_at is null
+order by created_at desc
+limit ?
+`,
+        [
+            ...terms.flatMap(term => [`%${term}%`, `%${term}%`, `%${term}%`]),
+            limit * 2,
+        ],
+    )
 
     return [
         ...observations.map(row => observationToResult(row, terms)),
+        ...diaries.map(row => diaryToResult(row, terms)),
         ...handoffs.map(row => handoffToResult(row, terms)),
     ]
         .sort(compareSearchResults)
@@ -320,6 +349,38 @@ function handoffToResult(row: HandoffRow, terms: string[]): MemorySearchResult {
         textForScoring: text,
         type: 'session',
     })
+}
+
+function diaryToResult(row: DiaryRow, terms: string[]): MemorySearchResult {
+    const tags = safeParseTags(row.tags_json)
+    const text = [row.subject, row.summary, tags.join(' ')]
+        .filter(Boolean)
+        .join('\n')
+    return makeSearchResult({
+        confidence: 1,
+        content: row.summary,
+        createdAt: row.created_at,
+        id: row.id,
+        kind: 'diary',
+        terms,
+        textForScoring: text,
+        type: 'diary',
+    })
+}
+
+function safeParseTags(raw: string | null): string[] {
+    if (!raw) {
+        return []
+    }
+    try {
+        const parsed = JSON.parse(raw) as unknown
+        if (!Array.isArray(parsed)) {
+            return []
+        }
+        return parsed.filter(value => typeof value === 'string')
+    } catch {
+        return []
+    }
 }
 
 function retrievalDocumentToResult(

@@ -56,7 +56,7 @@ export const saveInputSchema = {
     additionalProperties: true,
     properties: {
         type: {
-            enum: ['memory', 'session'],
+            enum: ['memory', 'diary', 'session'],
             type: 'string',
         },
     },
@@ -115,6 +115,12 @@ export type SaveInput =
           source?: string
           tags?: string[]
           type: 'memory'
+      }
+    | {
+          subject?: string
+          summary: string
+          tags?: string[]
+          type: 'diary'
       }
     | {
           blockers?: string[]
@@ -190,6 +196,15 @@ export function parseSaveInput(input: unknown): SaveInput {
         }
     }
 
+    if (type === 'diary') {
+        return {
+            subject: optionalString(record.subject, 'subject'),
+            summary: requiredString(record.summary, 'summary'),
+            tags: optionalStringArray(record.tags, 'tags'),
+            type,
+        }
+    }
+
     if (type === 'session') {
         return {
             blockers: optionalStringArray(record.blockers, 'blockers'),
@@ -212,7 +227,7 @@ export function parseSaveInput(input: unknown): SaveInput {
         }
     }
 
-    throw new Error('type must be "memory" or "session"')
+    throw new Error('type must be "memory", "diary", or "session"')
 }
 
 export function parseForgetInput(input: unknown): ForgetInput {

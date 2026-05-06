@@ -9,6 +9,7 @@ describe('migrations', () => {
             '002_memory_hygiene',
             '003_mining_artifact_contract',
             '004_retrieval_fts_and_mining_suppressions',
+            '005_diary_entries',
         ])
     })
 
@@ -35,6 +36,13 @@ describe('migrations', () => {
 
         expect(sql).toContain('retrieval_documents_fts')
         expect(sql).toContain('create table if not exists mined_suppressions')
+    })
+
+    it('adds diary entries storage', () => {
+        const sql = migrations[4]?.sql ?? ''
+
+        expect(sql).toContain('create table if not exists diary_entries')
+        expect(sql).toContain('diary_entries_deleted_idx')
     })
 
     it('creates the core memory tables', () => {

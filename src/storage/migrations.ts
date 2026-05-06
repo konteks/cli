@@ -283,6 +283,25 @@ create table if not exists mined_suppressions (
 create index if not exists mined_suppressions_path_idx on mined_suppressions(path);
 `,
     },
+    {
+        id: '005_diary_entries',
+        sql: `
+create table if not exists diary_entries (
+    id text primary key,
+    subject text,
+    summary text not null,
+    tags_json text,
+    payload_ref text,
+    content_hash text,
+    deleted_at text,
+    suppressed_at text,
+    forget_reason text,
+    created_at text not null
+);
+
+create index if not exists diary_entries_deleted_idx on diary_entries(deleted_at, suppressed_at);
+`,
+    },
 ]
 
 export async function runMigrations(adapter: SqliteAdapter): Promise<void> {

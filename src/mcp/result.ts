@@ -1,4 +1,9 @@
 export function textResult(value: unknown) {
+    const structuredContent =
+        typeof value === 'object' && value !== null && !Array.isArray(value)
+            ? (value as Record<string, unknown>)
+            : undefined
+
     return {
         content: [
             {
@@ -9,5 +14,6 @@ export function textResult(value: unknown) {
                 type: 'text' as const,
             },
         ],
+        structuredContent,
     }
 }

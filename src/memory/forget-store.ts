@@ -11,7 +11,12 @@ type ForgetResult = {
     affectedIds: string[]
 }
 
-type TargetKind = 'chunk' | 'observation' | 'relation' | 'session_handoff'
+type TargetKind =
+    | 'chunk'
+    | 'diary_entry'
+    | 'observation'
+    | 'relation'
+    | 'session_handoff'
 
 type ForgetTarget = {
     id: string
@@ -183,6 +188,9 @@ function inferKind(id: string): TargetKind {
     if (id.startsWith('handoff_')) {
         return 'session_handoff'
     }
+    if (id.startsWith('diary_')) {
+        return 'diary_entry'
+    }
     if (id.startsWith('rel_')) {
         return 'relation'
     }
@@ -199,6 +207,9 @@ function tableForKind(kind: TargetKind): string | undefined {
     }
     if (kind === 'session_handoff') {
         return 'session_handoffs'
+    }
+    if (kind === 'diary_entry') {
+        return 'diary_entries'
     }
 
     return undefined

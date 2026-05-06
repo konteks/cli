@@ -141,28 +141,26 @@ describe('save and search stores', () => {
         await adapter.close()
     })
 
-    it('persists session handoffs and searches task summaries', async () => {
+    it('persists diary entries and searches summaries', async () => {
         const context = await makeTempContext()
         const adapter = await openProjectDatabase(context)
 
         const saved = await saveKonteksInput(adapter, context, {
-            decisions: ['Use official sqlite wasm package.'],
-            nextSteps: ['Implement recall ranking.'],
-            status: 'partial',
+            subject: 'local memory storage',
             summary: 'SQLite adapter is implemented and search remains next.',
-            task: 'Build local memory storage',
-            type: 'session',
+            tags: ['sqlite', 'storage'],
+            type: 'diary',
         })
         const results = await searchMemory(adapter, {
             limit: 5,
             query: 'sqlite storage',
         })
 
-        expect(saved.id).toStartWith('handoff_')
+        expect(saved.id).toStartWith('diary_')
         expect(results[0]).toMatchObject({
             id: saved.id,
-            status: 'partial',
-            type: 'session',
+            kind: 'diary',
+            type: 'diary',
         })
         await adapter.close()
     })

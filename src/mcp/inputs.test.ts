@@ -56,7 +56,23 @@ describe('MCP input parsing', () => {
         })
     })
 
-    it('accepts session handoff save input', () => {
+    it('accepts diary save input', () => {
+        expect(
+            parseSaveInput({
+                subject: 'MCP prompt rollout',
+                summary: 'Renamed prompts to konteks-* and verified listing.',
+                tags: ['mcp', 'prompts'],
+                type: 'diary',
+            }),
+        ).toEqual({
+            subject: 'MCP prompt rollout',
+            summary: 'Renamed prompts to konteks-* and verified listing.',
+            tags: ['mcp', 'prompts'],
+            type: 'diary',
+        })
+    })
+
+    it('accepts legacy session handoff save input', () => {
         expect(
             parseSaveInput({
                 status: 'partial',

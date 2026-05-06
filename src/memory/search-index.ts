@@ -2,7 +2,7 @@ import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 
 type SearchDocument = {
     id: string
-    type: 'chunk' | 'memory' | 'session'
+    type: 'chunk' | 'diary' | 'memory' | 'session'
     kind?: string
     task?: string
     content: string
@@ -116,6 +116,24 @@ left join memory_fts_indexed i on i.id = h.id
 where i.id is null
   and h.deleted_at is null
   and h.suppressed_at is null;
+`)
+    await adapter.execute(`
+insert into memory_fts (id, type, kind, task, content, created_at)
+select d.id, 'diary', 'diary', d.subject, d.summary, d.created_at
+from diary_entries d
+left join memory_fts_indexed i on i.id = d.id
+where i.id is null
+  and d.deleted_at is null
+  and d.suppressed_at is null;
+`)
+    await adapter.execute(`
+insert into memory_fts_indexed (id, indexed_at)
+select d.id, datetime('now')
+from diary_entries d
+left join memory_fts_indexed i on i.id = d.id
+where i.id is null
+  and d.deleted_at is null
+  and d.suppressed_at is null;
 `)
 }
 

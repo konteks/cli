@@ -24,6 +24,10 @@ export async function saveKonteksInput(
         return saveMemory(adapter, context, input)
     }
 
+    if (input.type === 'diary') {
+        return saveDiary(adapter, context, input)
+    }
+
     return saveSession(adapter, context, input)
 }
 
@@ -155,6 +159,69 @@ insert into session_handoffs (
             kind: input.status,
             task: input.task,
             type: 'session',
+        })
+    })
+
+    return {
+        accepted: true,
+        id,
+        type: input.type,
+    }
+}
+
+async function saveDiary(
+    adapter: SqliteAdapter,
+    context: LoadedProjectContext,
+    input: Extract<SaveInput, { type: 'diary' }>,
+): Promise<SaveResult> {
+    validateSessionQuality(input.summary)
+    const id = `diary_${randomUUID()}`
+    const tags = input.tags?.length ? input.tags.join(', ') : ''
+    const text = [input.subject, input.summary, tags].filter(Boolean).join('\n')
+    const stored = await storePayload(text, {
+        inlineMaxBytes: context.config.storage.inlinePayloadMaxBytes,
+        toonStore: createToonStore(context.memoryDir),
+    })
+    const createdAt = new Date().toISOString()
+
+    await adapter.transaction(async () => {
+        await adapter.execute(
+            `
+insert into diary_entries (
+    id,
+    subject,
+    summary,
+    tags_json,
+    payload_ref,
+    content_hash,
+    created_at
+) values (?, ?, ?, ?, ?, ?, ?)
+`,
+            [
+                id,
+                input.subject ?? null,
+                input.summary,
+                JSON.stringify(input.tags ?? []),
+                stored.payloadRef ?? null,
+                stored.contentHash,
+                createdAt,
+            ],
+        )
+        await appendMemoryEvent(adapter, {
+            actor: 'mcp',
+            eventType: 'diary_entry_saved',
+            id: `event_${randomUUID()}`,
+            payloadRef: stored.payloadRef,
+            subjectId: id,
+            subjectType: 'diary_entry',
+            summary: input.summary,
+        })
+        await indexSearchDocument(adapter, {
+            content: text,
+            createdAt,
+            id,
+            kind: 'diary',
+            type: 'diary',
         })
     })
 
