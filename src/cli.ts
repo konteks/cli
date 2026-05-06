@@ -82,7 +82,7 @@ mcp.command('prompt')
 
 mcp.command('call')
     .description('Call one MCP tool for debugging.')
-    .argument('<tool>', 'MCP tool name, such as konteks_status')
+    .argument('<tool>', 'MCP tool name, such as konteks_warm_up')
     .argument('[json]', 'Optional JSON tool input')
     .action(async (name: string, jsonInput?: string) => {
         await mcpCallCommand(program.opts(), name, jsonInput)

@@ -24,12 +24,13 @@ import {
 } from '../memory/search-store.js'
 import { readMineManifest } from '../mining/manifest.js'
 import { mineProject } from '../mining/mine-project.js'
-import { loadProjectContext } from '../project/context.js'
-import { getProjectStatus } from '../project/status.js'
-import { openProjectDatabase } from '../storage/database.js'
+import { loadProjectContext, pathExists } from '../project/context.js'
+import {
+    openProjectDatabase,
+    projectDatabasePath,
+} from '../storage/database.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 import {
-    emptyInputSchema,
     forgetInputSchema,
     parseForgetInput,
     parseRecallInput,
@@ -88,28 +89,6 @@ type RecallHistoryItem = {
     validFrom?: string
     validTo?: string
     reason: string
-}
-
-const statusOutputSchema: Tool['outputSchema'] = {
-    properties: {
-        configExists: { type: 'boolean' },
-        databaseExists: { type: 'boolean' },
-        databasePath: { type: 'string' },
-        freshness: { type: 'object' },
-        memoryDir: { type: 'string' },
-        memoryDirExists: { type: 'boolean' },
-        projectRoot: { type: 'string' },
-    },
-    required: [
-        'projectRoot',
-        'memoryDir',
-        'memoryDirExists',
-        'configExists',
-        'databasePath',
-        'databaseExists',
-        'freshness',
-    ],
-    type: 'object',
 }
 
 const warmUpOutputSchema: Tool['outputSchema'] = {
@@ -278,23 +257,6 @@ function registerKonteksTools(
     registerTool: FlexibleRegisterTool,
 ): void {
     registerTool(
-        'konteks_status',
-        {
-            annotations: {
-                destructiveHint: false,
-                idempotentHint: true,
-                openWorldHint: false,
-                readOnlyHint: true,
-            },
-            description:
-                'Inspect Konteks project memory status, storage path, counts, capabilities, and setup health.',
-            inputSchema: emptyInputSchema,
-            outputSchema: statusOutputSchema,
-        },
-        async () => textResult(await getProjectStatus(options.project)),
-    )
-
-    registerTool(
         'konteks_warm_up',
         {
             annotations: {
@@ -311,6 +273,7 @@ function registerKonteksTools(
         async input => {
             parseWarmUpInput(input)
             const context = await loadProjectContext(options.project)
+            await validateMcpProjectHealth(context)
             await updateChangedProjectMemorySilently(context)
             const warmUp = await assembleWarmUpContext(context)
             const payload = {
@@ -357,6 +320,9 @@ function registerKonteksTools(
         },
         async input => {
             const parsed = parseRecallInput(input)
+            await validateMcpProjectHealth(
+                await loadProjectContext(options.project),
+            )
             const recall = await withProjectDatabase(
                 options,
                 async adapter => ({
@@ -415,6 +381,9 @@ function registerKonteksTools(
         },
         async input => {
             const parsed = parseSearchInput(input)
+            await validateMcpProjectHealth(
+                await loadProjectContext(options.project),
+            )
             const results = await withProjectDatabase(options, adapter =>
                 searchMemory(adapter, parsed),
             )
@@ -451,6 +420,7 @@ function registerKonteksTools(
         async input => {
             const parsed = parseSaveInput(input)
             const context = await loadProjectContext(options.project)
+            await validateMcpProjectHealth(context)
             const projectUpdate =
                 await updateChangedProjectMemorySilently(context)
             const saved = await withProjectDatabaseContext(context, adapter =>
@@ -476,6 +446,9 @@ function registerKonteksTools(
         },
         async input => {
             const parsed = parseForgetInput(input)
+            await validateMcpProjectHealth(
+                await loadProjectContext(options.project),
+            )
             const result = await withProjectDatabase(options, adapter =>
                 forgetMemory(adapter, parsed),
             )
@@ -747,6 +720,26 @@ async function withProjectDatabaseContext<T>(
         return await operation(adapter)
     } finally {
         await adapter.close()
+    }
+}
+
+async function validateMcpProjectHealth(
+    context: Awaited<ReturnType<typeof loadProjectContext>>,
+): Promise<void> {
+    if (!context.configExists) {
+        throw new Error(
+            'Konteks memory is not initialized. Run `konteks init`.',
+        )
+    }
+    if (!(await readMineManifest(context.memoryDir))) {
+        throw new Error(
+            'Konteks memory is missing extraction artifacts. Run `konteks repair`.',
+        )
+    }
+    if (!(await pathExists(projectDatabasePath(context)))) {
+        throw new Error(
+            'Konteks memory database is missing. Run `konteks repair`.',
+        )
     }
 }
 

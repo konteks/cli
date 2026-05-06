@@ -34,10 +34,9 @@ Tools are lower-level callable operations used by agents and debugging workflows
 | `konteks_recall` | Recall | Continue an existing task on known code, modules, features, or decisions. |
 | `konteks_save` | Save | Derive durable memories and one diary entry from one full chat transcript. |
 | `konteks_search` | Search | Inspect memory directly with a query. |
-| `konteks_status` | Status | Check memory health and freshness. |
 | `konteks_forget` | Forget | Remove or suppress wrong, stale, or sensitive memory. |
 
-CLI debug commands may provide short aliases such as `search` or `status`. Agent clients should use the canonical names.
+MCP tools validate project health silently before doing work. If memory is not initialized or repair is required, the tool fails with a short actionable error instead of returning status context.
 
 ## Resources
 

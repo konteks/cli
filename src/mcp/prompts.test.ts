@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { getMcpPrompt, listMcpPrompts } from './server.js'
+import { getMcpPrompt, listMcpPrompts, listMcpTools } from './server.js'
 
 function promptText(name: string, args: Record<string, string> = {}): string {
     const result = getMcpPrompt(name, args)
@@ -8,6 +8,12 @@ function promptText(name: string, args: Record<string, string> = {}): string {
 }
 
 describe('MCP prompts', () => {
+    it('does not expose a status tool', () => {
+        expect(listMcpTools({}).map(tool => tool.name)).not.toContain(
+            'konteks_status',
+        )
+    })
+
     it('exposes lifecycle prompts with Konteks-prefixed names', () => {
         expect(listMcpPrompts().map(prompt => prompt.name)).toEqual([
             'konteks-warm-up',

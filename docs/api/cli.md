@@ -33,7 +33,6 @@ Examples:
 konteks mcp tools
 konteks mcp prompts
 konteks mcp prompt konteks-recall '{"task":"auth session refresh"}'
-konteks mcp call konteks_status
 konteks mcp call konteks_warm_up '{"maxTokens":500}'
 konteks mcp call konteks_search '{"query":"memory","limit":3}'
 ```
