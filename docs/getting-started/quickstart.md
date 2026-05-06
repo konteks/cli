@@ -56,7 +56,7 @@ Open your coding agent in this repository after the MCP server is configured.
 Run the Warm Up prompt at the start of a fresh agent session:
 
 ```text
-/warm-up
+/konteks-warm-up
 ```
 
 ### 5. Build
@@ -64,13 +64,13 @@ Run the Warm Up prompt at the start of a fresh agent session:
 For an existing feature, module, or file:
 
 ```text
-/work-on-existing improve auth session and reduce token refresh race conditions.
+/konteks-work-on-existing improve auth session and reduce token refresh race conditions.
 ```
 
 For a new task:
 
 ```text
-/work-on-new design and implement a lightweight notification center for failed background jobs.
+/konteks-work-on-new design and implement a lightweight notification center for failed background jobs.
 ```
 
 ### 6. Save
@@ -78,5 +78,5 @@ For a new task:
 When the task is complete or worth preserving:
 
 ```text
-/save-session
+/konteks-save
 ```

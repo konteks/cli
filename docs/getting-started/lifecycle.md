@@ -18,7 +18,7 @@ graph TD
 
 When you open a fresh AI agent session in a project, start by giving it the project-level picture.
 
-Use the `/warm-up` prompt to start this phase. This ensures the agent is familiar with the project without you manually explaining architecture, constraints, and durable decisions.
+Use the `/konteks-warm-up` prompt to start this phase. This ensures the agent is familiar with the project without you manually explaining architecture, constraints, and durable decisions.
 
 > [!NOTE]
 > Resuming a Session: If you close your agent before finishing a task and later resume the same session, you can skip Warm Up because the agent already has the project briefing in context.
@@ -32,29 +32,29 @@ This is where development happens. Because the agent already has project context
 If you are modifying existing code, start with the existing-task workflow.
 
 ```text
-/work-on-existing improve auth session and propose a safe refactor to reduce token refresh race conditions.
+/konteks-work-on-existing improve auth session and propose a safe refactor to reduce token refresh race conditions.
 ```
 
-The `/work-on-existing` prompt helps the agent understand current constraints before it suggests changes.
+The `/konteks-work-on-existing` prompt helps the agent understand current constraints before it suggests changes.
 
 ### Working on New Feature
 
 If you are starting a completely new task that Konteks hasn't seen before:
 
 ```text
-/work-on-new design and implement a lightweight notification center for failed background jobs.
+/konteks-work-on-new design and implement a lightweight notification center for failed background jobs.
 ```
 
-The `/work-on-new` prompt helps the agent discover new context during implementation and record durable findings during Save.
+The `/konteks-work-on-new` prompt helps the agent discover new context during implementation and record durable findings during Save.
 
 > [!TIP]
-> Recall is a supplement during Build. If an existing or new feature touches known modules, constraints, or prior decisions, run `/recall` first to pull relevant context.
+> Recall is a supplement during Build. If an existing or new feature touches known modules, constraints, or prior decisions, run `/konteks-recall` first to pull relevant context.
 
 ## Phase 3: Save
 
 Once the goal is achieved or meaningful progress should be preserved, save the agent's work back to Konteks.
 
-Use the `/save-session` prompt to persist the outcome of the current task. This records durable progress, decisions, and task state so future sessions do not repeat the same discovery work.
+Use the `/konteks-save` prompt to persist the outcome of the current task. This records durable progress, decisions, and task state so future sessions do not repeat the same discovery work.
 
 > [!TIP]
 > Recommendation: Prefer saving when the current task is complete. If the task is partial, pause and resume the same agent session when possible.

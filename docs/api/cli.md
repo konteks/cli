@@ -28,21 +28,12 @@ Examples:
 
 ```bash
 konteks mcp tools
-konteks mcp call status
-konteks mcp call warm_up '{"maxTokens":500}'
-konteks mcp call search '{"query":"memory","limit":3}'
+konteks mcp call konteks_status
+konteks mcp call konteks_warm_up '{"maxTokens":500}'
+konteks mcp call konteks_search '{"query":"memory","limit":3}'
 ```
 
-CLI debug aliases:
-
-| Alias | MCP Tool |
-| :--- | :--- |
-| `status` | `konteks_status` |
-| `warm_up` | `konteks_warm_up` |
-| `recall` | `konteks_recall` |
-| `search` | `konteks_search` |
-| `save` | `konteks_save` |
-| `forget` | `konteks_forget` |
+Use canonical `konteks_*` tool names in documentation and scripts. Short debug aliases may exist for convenience, but they should not be treated as the public naming pattern.
 
 ## Global Options
 
