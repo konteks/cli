@@ -139,7 +139,7 @@ export function createMineProgressReporter(): {
                 const compact = compactMessage(event)
                 const output = formatInlineProgress(event, spinnerIndex, color)
                 if (
-                    event.stage === 'download' &&
+                    event.phase === 'preparation' &&
                     compact === lastCompactMessage &&
                     event.downloadPercent === undefined
                 ) {
@@ -216,22 +216,26 @@ function formatFinalLine(
 function compactMessage(event: MineProgressEvent): string {
     const message = event.message ?? phaseTitle(event.phase)
 
-    if (event.phase === 'embeddings') {
-        if (event.stage === 'download') {
-            if (event.downloadPercent !== undefined) {
-                return 'Downloading model'
-            }
-            if (/^Embedding model ready:/u.test(message)) {
-                return 'Model ready'
-            }
-            if (/^Loading embedding model/u.test(message)) {
-                return 'Loading downloaded model'
-            }
-            if (/^Preparing /u.test(message)) {
-                return 'Preparing model'
-            }
-            return message
+    if (event.phase === 'preparation') {
+        if (event.downloadPercent !== undefined) {
+            return 'Loading model files'
         }
+        if (/^Embedding model ready:/u.test(message)) {
+            return 'Model ready'
+        }
+        if (/^Loading embedding model/u.test(message)) {
+            return 'Loading model'
+        }
+        if (/^Preparing /u.test(message)) {
+            return 'Preparing model'
+        }
+        if (/^Loading /u.test(message)) {
+            return 'Loading model files'
+        }
+        return message
+    }
+
+    if (event.phase === 'embeddings') {
         if (
             /^Embedded chunk:/u.test(message) ||
             /^Embedding chunk:/u.test(message)
@@ -249,12 +253,6 @@ function compactMessage(event: MineProgressEvent): string {
         }
         if (/^Reused embedding for module:/u.test(message)) {
             return 'Reusing module embedding'
-        }
-        if (/^Loading embedding model and embedding chunk:/u.test(message)) {
-            return 'Loading model, embedding section'
-        }
-        if (/^Loading embedding model and embedding module:/u.test(message)) {
-            return 'Loading model, embedding module'
         }
     }
 
@@ -311,6 +309,7 @@ function phaseTitle(phase: MineProgressEvent['phase']): string {
         manifest: 'Manifest',
         metadata: 'Metadata',
         modules: 'Modules',
+        preparation: 'Preparation',
         scan: 'Scan',
         select: 'Selection',
         start: 'Konteks extraction',
@@ -321,10 +320,12 @@ function phaseTitle(phase: MineProgressEvent['phase']): string {
 }
 
 function stepTitle(event: MineProgressEvent): string {
+    if (event.phase === 'preparation') {
+        return 'Preparation: Model Load'
+    }
+
     if (event.phase === 'embeddings') {
-        return event.stage === 'download'
-            ? 'Embeddings: Model Download'
-            : 'Embeddings: Vector Generation'
+        return 'Embeddings: Vector Generation'
     }
 
     return phaseTitle(event.phase)

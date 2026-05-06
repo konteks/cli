@@ -15,6 +15,12 @@ type ExistingEmbeddingRow = {
     embedding_hash: string
 }
 
+type EmbeddingWorkItem = {
+    embeddingHash: string
+    existing: boolean
+    row: RetrievalDocumentRow
+}
+
 export type EmbeddingRunResult = {
     embeddedCount: number
     reusedCount: number
@@ -45,16 +51,9 @@ where target_type in (${placeholders})
 
     let embeddedCount = 0
     let reusedCount = 0
-    options.onProgress?.({
-        current: 0,
-        message: `Embedding ${rows.length} retrieval documents`,
-        phase: 'embeddings',
-        stage: 'embed',
-        status: 'start',
-        total: rows.length,
-    })
+    const workItems: EmbeddingWorkItem[] = []
 
-    for (const [index, row] of rows.entries()) {
+    for (const row of rows) {
         const existing = await adapter.query<ExistingEmbeddingRow>(
             `
 select embedding_hash
@@ -77,7 +76,30 @@ limit 1
             `${provider.model}:${row.embedding_text}`,
         )
 
-        if (existing[0]?.embedding_hash === embeddingHash) {
+        workItems.push({
+            embeddingHash,
+            existing: existing[0]?.embedding_hash === embeddingHash,
+            row,
+        })
+    }
+
+    if (workItems.some(item => !item.existing)) {
+        await provider.prepare?.()
+    }
+
+    options.onProgress?.({
+        current: 0,
+        message: `Embedding ${rows.length} retrieval documents`,
+        phase: 'embeddings',
+        stage: 'embed',
+        status: 'start',
+        total: rows.length,
+    })
+
+    for (const [index, item] of workItems.entries()) {
+        const { embeddingHash, row } = item
+
+        if (item.existing) {
             reusedCount += 1
             options.onProgress?.({
                 current: index + 1,
@@ -95,10 +117,7 @@ limit 1
         options.onProgress?.({
             current: index + 1,
             embeddedCount,
-            message:
-                index === 0
-                    ? `Loading embedding model and embedding ${row.target_type}:${row.target_id}`
-                    : `Embedding ${row.target_type}:${row.target_id}`,
+            message: `Embedding ${row.target_type}:${row.target_id}`,
             phase: 'embeddings',
             reusedCount,
             stage: 'embed',

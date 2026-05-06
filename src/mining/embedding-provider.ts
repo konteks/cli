@@ -8,6 +8,7 @@ export interface EmbeddingProvider {
     model: string
     dimensions: number
     embed(texts: string[]): Promise<Float32Array[]>
+    prepare?(): Promise<void>
 }
 
 export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
@@ -43,6 +44,10 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
         return vectors
     }
 
+    async prepare(): Promise<void> {
+        await this.getExtractor()
+    }
+
     private async getExtractor(): Promise<
         (text: string, options: Record<string, unknown>) => Promise<unknown>
     > {
@@ -56,8 +61,8 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
 
         this.onProgress?.({
             message: `Loading embedding model ${this.model}`,
-            phase: 'embeddings',
-            stage: 'download',
+            phase: 'preparation',
+            stage: 'prepare',
             status: 'progress',
         })
         this.extractor = (await pipeline('feature-extraction', this.model, {
@@ -84,8 +89,8 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
         if (progress.status === 'ready') {
             this.onProgress({
                 message: `Embedding model ready: ${progress.model}`,
-                phase: 'embeddings',
-                stage: 'download',
+                phase: 'preparation',
+                stage: 'prepare',
                 status: 'progress',
             })
             return
@@ -96,9 +101,9 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
                 downloadLoadedBytes: progress.loaded,
                 downloadPercent: progress.progress,
                 downloadTotalBytes: progress.total,
-                message: `Downloading embedding model ${formatPercent(progress.progress)} (${formatBytes(progress.loaded)}/${formatBytes(progress.total)})`,
-                phase: 'embeddings',
-                stage: 'download',
+                message: `Loading embedding model files ${formatPercent(progress.progress)} (${formatBytes(progress.loaded)}/${formatBytes(progress.total)})`,
+                phase: 'preparation',
+                stage: 'prepare',
                 status: 'progress',
             })
             return
@@ -110,9 +115,9 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
                 downloadLoadedBytes: progress.loaded,
                 downloadPercent: progress.progress,
                 downloadTotalBytes: progress.total,
-                message: `Downloading ${progress.file} ${formatPercent(progress.progress)} (${formatBytes(progress.loaded)}/${formatBytes(progress.total)})`,
-                phase: 'embeddings',
-                stage: 'download',
+                message: `Loading ${progress.file} ${formatPercent(progress.progress)} (${formatBytes(progress.loaded)}/${formatBytes(progress.total)})`,
+                phase: 'preparation',
+                stage: 'prepare',
                 status: 'progress',
             })
             return
@@ -121,9 +126,9 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
         if (progress.status === 'download') {
             this.onProgress({
                 downloadFile: progress.file,
-                message: `Downloading ${progress.file}`,
-                phase: 'embeddings',
-                stage: 'download',
+                message: `Loading ${progress.file}`,
+                phase: 'preparation',
+                stage: 'prepare',
                 status: 'progress',
             })
             return
@@ -133,8 +138,8 @@ export class HuggingFaceEmbeddingProvider implements EmbeddingProvider {
             this.onProgress({
                 downloadFile: progress.file,
                 message: `Preparing ${progress.file}`,
-                phase: 'embeddings',
-                stage: 'download',
+                phase: 'preparation',
+                stage: 'prepare',
                 status: 'progress',
             })
         }

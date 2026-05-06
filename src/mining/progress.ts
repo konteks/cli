@@ -6,6 +6,7 @@ export type MineProgressPhase =
     | 'manifest'
     | 'metadata'
     | 'modules'
+    | 'preparation'
     | 'scan'
     | 'select'
     | 'start'
@@ -24,7 +25,7 @@ export type MineProgressEvent = {
     message?: string
     path?: string
     phase: MineProgressPhase
-    stage?: 'download' | 'embed'
+    stage?: 'embed' | 'prepare'
     reusedCount?: number
     status: MineProgressStatus
     total?: number
