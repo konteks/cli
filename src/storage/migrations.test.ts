@@ -10,6 +10,7 @@ describe('migrations', () => {
             '003_mining_artifact_contract',
             '004_retrieval_fts_and_mining_suppressions',
             '005_diary_entries',
+            '006_migrate_session_handoffs_to_diary',
         ])
     })
 
@@ -43,6 +44,14 @@ describe('migrations', () => {
 
         expect(sql).toContain('create table if not exists diary_entries')
         expect(sql).toContain('diary_entries_deleted_idx')
+    })
+
+    it('migrates session handoffs into diary entries', () => {
+        const sql = migrations[5]?.sql ?? ''
+
+        expect(sql).toContain('insert into diary_entries')
+        expect(sql).toContain("replace(h.id, 'handoff_', 'diary_')")
+        expect(sql).toContain('from session_handoffs h')
     })
 
     it('creates the core memory tables', () => {

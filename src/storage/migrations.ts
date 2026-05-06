@@ -302,6 +302,40 @@ create table if not exists diary_entries (
 create index if not exists diary_entries_deleted_idx on diary_entries(deleted_at, suppressed_at);
 `,
     },
+    {
+        id: '006_migrate_session_handoffs_to_diary',
+        sql: `
+insert into diary_entries (
+    id,
+    subject,
+    summary,
+    tags_json,
+    payload_ref,
+    content_hash,
+    deleted_at,
+    suppressed_at,
+    forget_reason,
+    created_at
+)
+select
+    replace(h.id, 'handoff_', 'diary_') as id,
+    h.task as subject,
+    h.summary,
+    json('[]') as tags_json,
+    h.payload_ref,
+    h.content_hash,
+    h.deleted_at,
+    h.suppressed_at,
+    h.forget_reason,
+    h.created_at
+from session_handoffs h
+where not exists (
+    select 1
+    from diary_entries d
+    where d.id = replace(h.id, 'handoff_', 'diary_')
+);
+`,
+    },
 ]
 
 export async function runMigrations(adapter: SqliteAdapter): Promise<void> {
