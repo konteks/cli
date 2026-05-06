@@ -1,4 +1,5 @@
 import type { RecallInput, SearchInput } from '../mcp/inputs.js'
+import { classifySourceRole } from '../mining/classification.js'
 import type { EmbeddingProvider } from '../mining/embedding-provider.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 import { hasSearchIndex } from './search-index.js'
@@ -421,6 +422,7 @@ function retrievalDocumentToResult(
         queryVector?: Float32Array
     },
 ): MemorySearchResult {
+    const sourceRole = resolveSourceRole(row.source_role, row.path)
     const location = row.path
         ? row.anchor
             ? `${row.path}#${row.anchor}`
@@ -441,10 +443,10 @@ function retrievalDocumentToResult(
         embeddingDimensions: row.embedding_dimensions ?? undefined,
         embeddingModel: row.embedding_model ?? undefined,
         id: row.target_id,
-        kind: row.source_role ?? undefined,
+        kind: sourceRole,
         path: row.path ?? undefined,
         sourceId: row.source_id ?? undefined,
-        sourceRole: row.source_role ?? undefined,
+        sourceRole,
         targetType: row.target_type,
         terms,
         tokenCost:
@@ -452,6 +454,19 @@ function retrievalDocumentToResult(
         type,
         vectorScore,
     })
+}
+
+function resolveSourceRole(
+    sourceRole: string | null,
+    path: string | null,
+): string | undefined {
+    if (sourceRole) {
+        return sourceRole
+    }
+    if (!path) {
+        return undefined
+    }
+    return classifySourceRole(path)
 }
 
 function makeSearchResult(input: {
