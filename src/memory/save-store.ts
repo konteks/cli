@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto'
-import type { SaveInput } from '../mcp/inputs.js'
 import { upsertRetrievalDocument } from '../mining/retrieval-documents.js'
 import type { LoadedProjectContext } from '../project/context.js'
 import { contentHash } from '../storage/content.js'
@@ -16,8 +15,50 @@ type SaveResult = {
     id: string
     memoryIds?: string[]
     skippedMemories?: number
-    type: SaveInput['type']
+    type: SaveStoreInput['type']
 }
+
+type MemoryKind =
+    | 'blocker'
+    | 'code_insight'
+    | 'decision'
+    | 'fact'
+    | 'note'
+    | 'preference'
+
+export type SaveStoreInput =
+    | {
+          chat: string
+          type: 'chat'
+      }
+    | {
+          content: string
+          entities?: string[]
+          importance?: 1 | 2 | 3 | 4 | 5
+          kind: MemoryKind
+          source?: string
+          tags?: string[]
+          type: 'memory'
+      }
+    | {
+          subject?: string
+          summary: string
+          tags?: string[]
+          type: 'diary'
+      }
+    | {
+          blockers?: string[]
+          decisions?: string[]
+          entities?: string[]
+          filesTouched?: string[]
+          nextSteps?: string[]
+          openQuestions?: string[]
+          status: 'blocked' | 'done' | 'partial'
+          summary: string
+          task: string
+          testsRun?: string[]
+          type: 'session'
+      }
 
 export type SaveProjectUpdate = {
     deletedFilePaths: string[]
@@ -27,7 +68,7 @@ export type SaveProjectUpdate = {
 export async function saveKonteksInput(
     adapter: SqliteAdapter,
     context: LoadedProjectContext,
-    input: SaveInput,
+    input: SaveStoreInput,
     options: { projectUpdate?: SaveProjectUpdate } = {},
 ): Promise<SaveResult> {
     if (input.type === 'chat') {
@@ -48,47 +89,49 @@ export async function saveKonteksInput(
 async function saveChat(
     adapter: SqliteAdapter,
     context: LoadedProjectContext,
-    input: Extract<SaveInput, { type: 'chat' }>,
+    input: Extract<SaveStoreInput, { type: 'chat' }>,
     projectUpdate: SaveProjectUpdate | undefined,
 ): Promise<SaveResult> {
     validateChatQuality(input.chat)
     const candidates = extractMemoriesFromChat(input.chat)
-    const memoryIds: string[] = []
-    let skippedMemories = 0
+    return adapter.transaction(async () => {
+        const memoryIds: string[] = []
+        let skippedMemories = 0
 
-    for (const candidate of candidates) {
-        try {
-            const saved = await saveMemory(adapter, context, candidate)
-            memoryIds.push(saved.id)
-        } catch (error) {
-            if (!isSkippableMemoryError(error)) {
-                throw error
+        for (const candidate of candidates) {
+            try {
+                const saved = await saveMemory(adapter, context, candidate)
+                memoryIds.push(saved.id)
+            } catch (error) {
+                if (!isSkippableMemoryError(error)) {
+                    throw error
+                }
+                skippedMemories += 1
             }
-            skippedMemories += 1
         }
-    }
 
-    const diary = await saveDiary(adapter, context, {
-        subject: inferDiarySubject(input.chat, candidates),
-        summary: summarizeDiary(input.chat, candidates, projectUpdate),
-        tags: inferDiaryTags(candidates, projectUpdate),
-        type: 'diary',
+        const diary = await saveDiary(adapter, context, {
+            subject: inferDiarySubject(input.chat, candidates),
+            summary: summarizeDiary(input.chat, candidates, projectUpdate),
+            tags: inferDiaryTags(candidates, projectUpdate),
+            type: 'diary',
+        })
+
+        return {
+            accepted: true,
+            diaryId: diary.id,
+            id: diary.id,
+            memoryIds: [...new Set(memoryIds)],
+            skippedMemories,
+            type: input.type,
+        }
     })
-
-    return {
-        accepted: true,
-        diaryId: diary.id,
-        id: diary.id,
-        memoryIds: [...new Set(memoryIds)],
-        skippedMemories,
-        type: input.type,
-    }
 }
 
 async function saveMemory(
     adapter: SqliteAdapter,
     context: LoadedProjectContext,
-    input: Extract<SaveInput, { type: 'memory' }>,
+    input: Extract<SaveStoreInput, { type: 'memory' }>,
 ): Promise<SaveResult> {
     validateMemoryQuality(input.content)
     const hash = contentHash(input.content)
@@ -172,7 +215,7 @@ insert into observations (
 async function saveSession(
     adapter: SqliteAdapter,
     context: LoadedProjectContext,
-    input: Extract<SaveInput, { type: 'session' }>,
+    input: Extract<SaveStoreInput, { type: 'session' }>,
 ): Promise<SaveResult> {
     validateSessionQuality(input.summary)
     const id = `handoff_${randomUUID()}`
@@ -237,7 +280,7 @@ insert into session_handoffs (
 async function saveDiary(
     adapter: SqliteAdapter,
     context: LoadedProjectContext,
-    input: Extract<SaveInput, { type: 'diary' }>,
+    input: Extract<SaveStoreInput, { type: 'diary' }>,
 ): Promise<SaveResult> {
     validateSessionQuality(input.summary)
     const id = `diary_${randomUUID()}`
@@ -355,6 +398,10 @@ function validateSessionQuality(summary: string): void {
 }
 
 function validateChatQuality(chat: string): void {
+    const normalized = chat.trim()
+    if (looksSensitive(normalized)) {
+        throw new Error('chat transcript appears to contain a secret')
+    }
     if (chat.trim().split(/\s+/u).filter(Boolean).length < 8) {
         throw new Error('chat transcript is too short to save')
     }
@@ -370,12 +417,12 @@ function isSkippableMemoryError(error: unknown): boolean {
 
 function extractMemoriesFromChat(
     chat: string,
-): Array<Extract<SaveInput, { type: 'memory' }>> {
+): Array<Extract<SaveStoreInput, { type: 'memory' }>> {
     const seen = new Set<string>()
-    const candidates: Array<Extract<SaveInput, { type: 'memory' }>> = []
+    const candidates: Array<Extract<SaveStoreInput, { type: 'memory' }>> = []
 
-    for (const sentence of splitChatSentences(chat)) {
-        const memory = classifyChatSentence(sentence)
+    for (const line of splitChatLines(chat)) {
+        const memory = classifyChatLine(line)
         if (!memory || looksSensitive(memory.content)) {
             continue
         }
@@ -395,62 +442,102 @@ function extractMemoriesFromChat(
     return candidates
 }
 
-function splitChatSentences(chat: string): string[] {
-    return chat
-        .split(/\r?\n|(?<=[.!?])\s+/u)
-        .map(line =>
-            line
-                .replace(
-                    /^(user|assistant|agent|system|developer)\s*:\s*/iu,
-                    '',
-                )
-                .trim(),
-        )
-        .filter(line => line.split(/\s+/u).length >= 4)
+type ChatLine = {
+    role: 'assistant' | 'developer' | 'system' | 'unknown' | 'user'
+    text: string
 }
 
-function classifyChatSentence(
-    sentence: string,
-): Extract<SaveInput, { type: 'memory' }> | undefined {
-    const normalized = sentence.replaceAll(/\s+/gu, ' ').trim()
+function splitChatLines(chat: string): ChatLine[] {
+    return chat
+        .split(/\r?\n|(?<=[.!?])\s+/u)
+        .map(parseChatLine)
+        .filter(line => line.text.split(/\s+/u).length >= 4)
+}
+
+function parseChatLine(line: string): ChatLine {
+    const match = /^(user|assistant|agent|system|developer)\s*:\s*(.*)$/iu.exec(
+        line.trim(),
+    )
+    const role = normalizeChatRole(match?.[1])
+    return {
+        role,
+        text: (match?.[2] ?? line).trim(),
+    }
+}
+
+function normalizeChatRole(value: string | undefined): ChatLine['role'] {
+    const normalized = value?.toLowerCase()
+    if (normalized === 'agent') {
+        return 'assistant'
+    }
+    if (
+        normalized === 'assistant' ||
+        normalized === 'developer' ||
+        normalized === 'system' ||
+        normalized === 'user'
+    ) {
+        return normalized
+    }
+    return 'unknown'
+}
+
+function classifyChatLine(
+    line: ChatLine,
+): Extract<SaveStoreInput, { type: 'memory' }> | undefined {
+    const normalized = line.text.replaceAll(/\s+/gu, ' ').trim()
     const lower = normalized.toLowerCase()
 
+    if (line.role === 'system' || line.role === 'developer') {
+        return undefined
+    }
+
     if (
-        /\b(blocked|blocker|cannot|can't|failed|failing|error)\b/iu.test(lower)
+        /\b(blocked|blocker|cannot|can't|failed|failing|error)\b/iu.test(
+            lower,
+        ) &&
+        /\b(because|due to|on|in|when|after|while|during|from)\b/iu.test(lower)
     ) {
         return memoryCandidate('blocker', normalized, 4)
     }
+
     if (
-        /\b(i prefer|prefer|preference|use .* instead of|avoid)\b/iu.test(lower)
+        line.role === 'user' &&
+        /\b(i prefer|i want|i don't want|do not|don't|prefer|avoid)\b/iu.test(
+            lower,
+        )
     ) {
         return memoryCandidate('preference', normalized, 5)
     }
+
     if (
-        /\b(decided|decision|accepted|we should|should|need to|must)\b/iu.test(
+        line.role === 'user' &&
+        /\b(accepted|we agreed|we decided|decision:|final decision|must|shouldn't|should not)\b/iu.test(
             lower,
         )
     ) {
         return memoryCandidate('decision', normalized, 5)
     }
+
     if (
-        /\b(implemented|patched|changed|updated|renamed|removed|added)\b/iu.test(
+        line.role === 'assistant' &&
+        /\b(implemented|patched|changed|updated|renamed|removed|added|verified)\b/iu.test(
+            lower,
+        ) &&
+        /\b(done|implemented|patched|changed|updated|renamed|removed|added|verified|passed)\b/iu.test(
             lower,
         )
     ) {
         return memoryCandidate('code_insight', normalized, 4)
-    }
-    if (/\b(is|are|uses|stores|runs|requires|supports)\b/iu.test(lower)) {
-        return memoryCandidate('fact', normalized, 3)
     }
 
     return undefined
 }
 
 function memoryCandidate(
-    kind: Extract<SaveInput, { type: 'memory' }>['kind'],
+    kind: Extract<SaveStoreInput, { type: 'memory' }>['kind'],
     content: string,
     importance: 1 | 2 | 3 | 4 | 5,
-): Extract<SaveInput, { type: 'memory' }> {
+): Extract<SaveStoreInput, { type: 'memory' }> {
     return {
         content,
         importance,
@@ -463,10 +550,11 @@ function memoryCandidate(
 
 function inferDiarySubject(
     chat: string,
-    candidates: Array<Extract<SaveInput, { type: 'memory' }>>,
+    candidates: Array<Extract<SaveStoreInput, { type: 'memory' }>>,
 ): string {
     const firstDecision = candidates.find(item => item.kind === 'decision')
-    const source = firstDecision?.content ?? splitChatSentences(chat)[0] ?? chat
+    const source =
+        firstDecision?.content ?? splitChatLines(chat)[0]?.text ?? chat
     return summarizeText(source)
         .replace(/[.?!]$/u, '')
         .slice(0, 80)
@@ -474,7 +562,7 @@ function inferDiarySubject(
 
 function summarizeDiary(
     chat: string,
-    candidates: Array<Extract<SaveInput, { type: 'memory' }>>,
+    candidates: Array<Extract<SaveStoreInput, { type: 'memory' }>>,
     projectUpdate: SaveProjectUpdate | undefined,
 ): string {
     const memorySummary = candidates
@@ -497,7 +585,7 @@ function summarizeDiary(
 }
 
 function inferDiaryTags(
-    candidates: Array<Extract<SaveInput, { type: 'memory' }>>,
+    candidates: Array<Extract<SaveStoreInput, { type: 'memory' }>>,
     projectUpdate: SaveProjectUpdate | undefined,
 ): string[] {
     const tags = new Set(['session'])

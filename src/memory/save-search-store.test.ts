@@ -198,6 +198,48 @@ describe('save and search stores', () => {
         await adapter.close()
     })
 
+    it('does not store full chat when the transcript contains a secret', async () => {
+        const context = await makeTempContext()
+        const adapter = await openProjectDatabase(context)
+
+        await expect(
+            saveKonteksInput(adapter, context, {
+                chat: [
+                    'User: We should save this session later.',
+                    'User: api_key = abcdefghijklmnopqrstuvwxyz',
+                ].join('\n'),
+                type: 'chat',
+            }),
+        ).rejects.toThrow('chat transcript appears to contain a secret')
+
+        const rows = await adapter.query<{ count: number }>(
+            'select count(*) as count from diary_entries',
+        )
+        expect(rows[0]?.count).toBe(0)
+        await adapter.close()
+    })
+
+    it('does not turn tentative assistant suggestions into durable memories', async () => {
+        const context = await makeTempContext()
+        const adapter = await openProjectDatabase(context)
+
+        const saved = await saveKonteksInput(adapter, context, {
+            chat: [
+                'User: Can you think about whether we might change storage later?',
+                'Assistant: We should maybe use Redis someday if scaling becomes a problem.',
+            ].join('\n'),
+            type: 'chat',
+        })
+        const results = await searchMemory(adapter, {
+            limit: 5,
+            query: 'redis scaling',
+        })
+
+        expect(saved.memoryIds).toEqual([])
+        expect(results.some(result => result.type === 'memory')).toBe(false)
+        await adapter.close()
+    })
+
     it('indexes saved memory and diary into retrieval documents', async () => {
         const context = await makeTempContext()
         const adapter = await openProjectDatabase(context)

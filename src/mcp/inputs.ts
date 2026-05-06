@@ -79,14 +79,6 @@ export const forgetInputSchema = {
     type: 'object',
 } satisfies ObjectSchema
 
-type MemoryKind =
-    | 'blocker'
-    | 'code_insight'
-    | 'decision'
-    | 'fact'
-    | 'note'
-    | 'preference'
-
 type WarmUpInput = {
     includeCommands?: boolean
     includeOpenTasks?: boolean
@@ -107,39 +99,10 @@ export type RecallInput = {
     task: string
 }
 
-export type SaveInput =
-    | {
-          chat: string
-          type: 'chat'
-      }
-    | {
-          content: string
-          entities?: string[]
-          importance?: 1 | 2 | 3 | 4 | 5
-          kind: MemoryKind
-          source?: string
-          tags?: string[]
-          type: 'memory'
-      }
-    | {
-          subject?: string
-          summary: string
-          tags?: string[]
-          type: 'diary'
-      }
-    | {
-          blockers?: string[]
-          decisions?: string[]
-          entities?: string[]
-          filesTouched?: string[]
-          nextSteps?: string[]
-          openQuestions?: string[]
-          status: 'blocked' | 'done' | 'partial'
-          summary: string
-          task: string
-          testsRun?: string[]
-          type: 'session'
-      }
+export type SaveInput = {
+    chat: string
+    type: 'chat'
+}
 
 export type SearchInput = {
     limit?: number
@@ -187,8 +150,11 @@ export function parseSearchInput(input: unknown): SearchInput {
 
 export function parseSaveInput(input: unknown): SaveInput {
     const record = asRecord(input)
+    const chat = requiredString(record.chat, 'chat')
+    validateSaveChat(chat)
+
     return {
-        chat: requiredString(record.chat, 'chat'),
+        chat,
         type: 'chat',
     }
 }
@@ -223,6 +189,21 @@ function requiredString(value: unknown, field: string): string {
     }
 
     return value
+}
+
+function validateSaveChat(chat: string): void {
+    if (chat.trim().split(/\s+/u).filter(Boolean).length < 8) {
+        throw new Error('chat transcript is too short to save')
+    }
+    if (looksSensitive(chat)) {
+        throw new Error('chat transcript appears to contain a secret')
+    }
+}
+
+function looksSensitive(content: string): boolean {
+    return /(api[_-]?key|secret|password|token)\s*[:=]\s*['"]?[A-Za-z0-9_./+=-]{12,}/iu.test(
+        content,
+    )
 }
 
 function optionalString(value: unknown, field: string): string | undefined {

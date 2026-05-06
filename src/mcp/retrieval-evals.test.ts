@@ -80,6 +80,42 @@ describe('retrieval quality evals', () => {
         ).rejects.toThrow('chat is required')
     })
 
+    it('rejects invalid save chat before refreshing project memory', async () => {
+        const projectRoot = await mkdtemp(
+            join(tmpdir(), 'konteks-eval-save-invalid-'),
+        )
+        tempDirs.push(projectRoot)
+        await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await writeFile(
+            join(projectRoot, 'package.json'),
+            JSON.stringify({ name: 'invalid-save-refresh' }, null, 2),
+        )
+        await writeFile(
+            join(projectRoot, 'src', 'index.ts'),
+            'export const first = true\n',
+        )
+        const context = await loadProjectContext(projectRoot)
+        await mineProject(context, 'full', {
+            embeddingProvider: new FakeEmbeddingProvider(),
+        })
+        await writeFile(
+            join(projectRoot, 'src', 'should-not-refresh.ts'),
+            'export const shouldNotRefresh = true\n',
+        )
+
+        await expect(
+            callMcpTool({ project: projectRoot }, 'konteks_save', {
+                chat: 'too short',
+            }),
+        ).rejects.toThrow('chat transcript is too short')
+        const manifest = await readMineManifest(context.memoryDir)
+
+        expect(manifest?.mode).toBe('full')
+        expect(manifest?.files.map(file => file.path)).not.toContain(
+            'src/should-not-refresh.ts',
+        )
+    })
+
     it('updates changed project memory after saving context', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-eval-save-'))
         tempDirs.push(projectRoot)
