@@ -5,6 +5,7 @@ import {
     parseSaveInput,
     parseSearchInput,
     parseWarmUpInput,
+    saveInputSchema,
 } from './inputs.js'
 
 describe('MCP input parsing', () => {
@@ -102,5 +103,25 @@ describe('MCP input parsing', () => {
         expect(() => parseForgetInput({ mode: 'soft_delete' })).toThrow(
             'Either id or query is required.',
         )
+    })
+
+    it('exposes discoverable save schema branches for memory and diary', () => {
+        const branches =
+            (saveInputSchema as { oneOf?: readonly unknown[] }).oneOf ?? []
+        const memoryBranch = branches.find(
+            item =>
+                typeof item === 'object' &&
+                item !== null &&
+                JSON.stringify(item).includes('"const":"memory"'),
+        )
+        const diaryBranch = branches.find(
+            item =>
+                typeof item === 'object' &&
+                item !== null &&
+                JSON.stringify(item).includes('"const":"diary"'),
+        )
+
+        expect(memoryBranch).toBeDefined()
+        expect(diaryBranch).toBeDefined()
     })
 })

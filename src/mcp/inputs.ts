@@ -53,16 +53,96 @@ export const searchInputSchema = {
 } satisfies ObjectSchema
 
 export const saveInputSchema = {
-    additionalProperties: true,
-    properties: {
-        type: {
-            enum: ['memory', 'diary', 'session'],
-            type: 'string',
+    oneOf: [
+        {
+            additionalProperties: false,
+            properties: {
+                content: { type: 'string' },
+                entities: {
+                    items: { type: 'string' },
+                    type: 'array',
+                },
+                importance: { maximum: 5, minimum: 1, type: 'integer' },
+                kind: {
+                    enum: [
+                        'blocker',
+                        'code_insight',
+                        'decision',
+                        'fact',
+                        'note',
+                        'preference',
+                    ],
+                    type: 'string',
+                },
+                source: { type: 'string' },
+                tags: {
+                    items: { type: 'string' },
+                    type: 'array',
+                },
+                type: { const: 'memory', type: 'string' },
+            },
+            required: ['type', 'kind', 'content'],
+            type: 'object',
         },
-    },
-    required: ['type'],
+        {
+            additionalProperties: false,
+            properties: {
+                subject: { type: 'string' },
+                summary: { type: 'string' },
+                tags: {
+                    items: { type: 'string' },
+                    type: 'array',
+                },
+                type: { const: 'diary', type: 'string' },
+            },
+            required: ['type', 'summary'],
+            type: 'object',
+        },
+        {
+            additionalProperties: false,
+            properties: {
+                blockers: {
+                    items: { type: 'string' },
+                    type: 'array',
+                },
+                decisions: {
+                    items: { type: 'string' },
+                    type: 'array',
+                },
+                entities: {
+                    items: { type: 'string' },
+                    type: 'array',
+                },
+                filesTouched: {
+                    items: { type: 'string' },
+                    type: 'array',
+                },
+                nextSteps: {
+                    items: { type: 'string' },
+                    type: 'array',
+                },
+                openQuestions: {
+                    items: { type: 'string' },
+                    type: 'array',
+                },
+                status: {
+                    enum: ['blocked', 'done', 'partial'],
+                    type: 'string',
+                },
+                summary: { type: 'string' },
+                task: { type: 'string' },
+                testsRun: {
+                    items: { type: 'string' },
+                    type: 'array',
+                },
+                type: { const: 'session', type: 'string' },
+            },
+            required: ['type', 'task', 'status', 'summary'],
+            type: 'object',
+        },
+    ],
     type: 'object',
-} satisfies ObjectSchema
+} as const
 
 export const forgetInputSchema = {
     additionalProperties: false,
