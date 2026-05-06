@@ -55,6 +55,7 @@ type FlexibleRegisterTool = (
         annotations?: Tool['annotations']
         description: string
         inputSchema: Tool['inputSchema']
+        outputSchema?: Tool['outputSchema']
     },
     callback: (input: unknown) => CallToolResult | Promise<CallToolResult>,
 ) => unknown
@@ -86,6 +87,95 @@ type RecallHistoryItem = {
     reason: string
 }
 
+const statusOutputSchema: Tool['outputSchema'] = {
+    properties: {
+        configExists: { type: 'boolean' },
+        databaseExists: { type: 'boolean' },
+        databasePath: { type: 'string' },
+        freshness: { type: 'object' },
+        memoryDir: { type: 'string' },
+        memoryDirExists: { type: 'boolean' },
+        projectRoot: { type: 'string' },
+    },
+    required: [
+        'projectRoot',
+        'memoryDir',
+        'memoryDirExists',
+        'configExists',
+        'databasePath',
+        'databaseExists',
+        'freshness',
+    ],
+    type: 'object',
+}
+
+const warmUpOutputSchema: Tool['outputSchema'] = {
+    properties: {
+        architecture: { items: { type: 'string' }, type: 'array' },
+        constraints: { items: { type: 'string' }, type: 'array' },
+        durableDecisions: { items: { type: 'string' }, type: 'array' },
+        keyFiles: { items: { type: 'string' }, type: 'array' },
+        project: { type: 'object' },
+        summary: { type: 'string' },
+        taxonomy: { items: { type: 'string' }, type: 'array' },
+        technologies: { items: { type: 'string' }, type: 'array' },
+    },
+    required: [
+        'summary',
+        'technologies',
+        'keyFiles',
+        'architecture',
+        'durableDecisions',
+        'constraints',
+        'taxonomy',
+        'project',
+    ],
+    type: 'object',
+}
+
+const recallOutputSchema: Tool['outputSchema'] = {
+    properties: {
+        graph: { items: { type: 'object' }, type: 'array' },
+        history: { items: { type: 'object' }, type: 'array' },
+        memories: { items: { type: 'object' }, type: 'array' },
+        task: { type: 'string' },
+        tokenBudget: { type: 'number' },
+    },
+    required: ['task', 'tokenBudget', 'graph', 'history', 'memories'],
+    type: 'object',
+}
+
+const searchOutputSchema: Tool['outputSchema'] = {
+    properties: {
+        limit: { type: 'number' },
+        query: { type: 'string' },
+        results: { items: { type: 'object' }, type: 'array' },
+    },
+    required: ['query', 'limit', 'results'],
+    type: 'object',
+}
+
+const saveOutputSchema: Tool['outputSchema'] = {
+    properties: {
+        accepted: { type: 'boolean' },
+        duplicateOf: { type: 'string' },
+        id: { type: 'string' },
+        type: { type: 'string' },
+    },
+    required: ['accepted', 'id', 'type'],
+    type: 'object',
+}
+
+const forgetOutputSchema: Tool['outputSchema'] = {
+    properties: {
+        accepted: { type: 'boolean' },
+        affectedIds: { items: { type: 'string' }, type: 'array' },
+        mode: { type: 'string' },
+    },
+    required: ['accepted', 'mode', 'affectedIds'],
+    type: 'object',
+}
+
 export async function startMcpServer(
     options: StartMcpServerOptions,
 ): Promise<void> {
@@ -111,6 +201,7 @@ export async function startMcpServer(
             description: config.description,
             inputSchema: config.inputSchema,
             name,
+            outputSchema: config.outputSchema,
         })
     }
 
@@ -140,6 +231,7 @@ export async function startMcpServer(
             description: tool.description,
             inputSchema: tool.inputSchema,
             name: tool.name,
+            outputSchema: tool.outputSchema,
         })),
     }))
 
@@ -172,6 +264,7 @@ type ToolRegistration = {
     description: string
     inputSchema: Tool['inputSchema']
     name: string
+    outputSchema?: Tool['outputSchema']
 }
 
 function registerKonteksTools(
@@ -190,6 +283,7 @@ function registerKonteksTools(
             description:
                 'Inspect Konteks project memory status, storage path, counts, capabilities, and setup health.',
             inputSchema: emptyInputSchema,
+            outputSchema: statusOutputSchema,
         },
         async () => textResult(await getProjectStatus(options.project)),
     )
@@ -206,10 +300,10 @@ function registerKonteksTools(
             description:
                 'Load the stable project-wide briefing for the current repo and report whether memory is missing, fresh, or stale.',
             inputSchema: warmUpInputSchema,
+            outputSchema: warmUpOutputSchema,
         },
         async input => {
             const parsed = parseWarmUpInput(input)
-            const status = await getProjectStatus(options.project)
             const context = await loadProjectContext(options.project)
             const warmUp = await assembleWarmUpContext(
                 context,
@@ -217,33 +311,14 @@ function registerKonteksTools(
             )
             const payload = {
                 architecture: warmUp.architecture,
-                commonCommands: [
-                    'konteks status',
-                    'konteks repair',
-                    'konteks mcp',
-                ],
                 constraints: warmUp.constraints,
                 durableDecisions: warmUp.durableDecisions,
-                freshness: status.freshness,
                 keyFiles: warmUp.keyFiles,
                 project: {
-                    memoryDir: status.memoryDir,
-                    name: status.projectRoot.split('/').at(-1) ?? 'project',
-                    root: status.projectRoot,
+                    memoryDir: context.memoryDir,
+                    name: context.projectRoot.split('/').at(-1) ?? 'project',
+                    root: context.projectRoot,
                 },
-                recentChanges: [],
-                recentHandoffs: [],
-                staleMemory: {
-                    detected: status.freshness.status === 'stale',
-                    reason:
-                        status.freshness.status === 'stale'
-                            ? status.freshness.reason
-                            : undefined,
-                    recommendedCommand: status.freshness.recommendedCommand,
-                },
-                suggestedNext:
-                    status.freshness.recommendedCommand ??
-                    `Call konteks_recall with a task-specific prompt. Requested budget: ${parsed.maxTokens ?? 2000} tokens.`,
                 summary: warmUp.summary,
                 taxonomy: warmUp.taxonomy,
                 technologies: warmUp.technologies,
@@ -274,6 +349,7 @@ function registerKonteksTools(
             description:
                 'Recall compact, task-relevant project context before answering or working.',
             inputSchema: recallInputSchema,
+            outputSchema: recallOutputSchema,
         },
         async input => {
             const parsed = parseRecallInput(input)
@@ -331,6 +407,7 @@ function registerKonteksTools(
             description:
                 'Search stored memory directly and return matching records with IDs, sources, scores, and excerpts.',
             inputSchema: searchInputSchema,
+            outputSchema: searchOutputSchema,
         },
         async input => {
             const parsed = parseSearchInput(input)
@@ -364,6 +441,7 @@ function registerKonteksTools(
             },
             description: 'Save durable memory or a structured diary entry.',
             inputSchema: saveInputSchema,
+            outputSchema: saveOutputSchema,
         },
         async input => {
             const parsed = parseSaveInput(input)
@@ -388,6 +466,7 @@ function registerKonteksTools(
             description:
                 'Delete, invalidate, or suppress stored memory that is wrong, stale, sensitive, or no longer useful.',
             inputSchema: forgetInputSchema,
+            outputSchema: forgetOutputSchema,
         },
         async input => {
             const parsed = parseForgetInput(input)
@@ -420,6 +499,7 @@ export function listMcpTools(options: StartMcpServerOptions): Tool[] {
         description: tool.description,
         inputSchema: tool.inputSchema,
         name: tool.name,
+        outputSchema: tool.outputSchema,
     }))
 }
 
@@ -447,6 +527,7 @@ function createToolRegistrations(
             description: config.description,
             inputSchema: config.inputSchema,
             name,
+            outputSchema: config.outputSchema,
         })
     }
 

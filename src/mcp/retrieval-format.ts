@@ -64,7 +64,7 @@ export function formatSearchText(input: {
 function formatMemory(item: MemorySearchResult, indent: number): string {
     const pad = ' '.repeat(indent)
     const summary = item.excerpt.replaceAll(/\s+/gu, ' ').trim()
-    return `${pad}- [${item.type}] ${item.id} score=${item.score} path=${item.path ?? '-'} role=${item.sourceRole ?? item.kind ?? '-'} :: ${inline(summary)}`
+    return `${pad}- [${item.type}] path=${item.path ?? '-'} role=${item.sourceRole ?? item.kind ?? '-'} :: ${inline(summary)}`
 }
 
 function list(values: string[]): string {
