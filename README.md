@@ -1,4 +1,4 @@
-<img width="1774" height="887" alt="Konteks Illustration" src="https://github.com/user-attachments/assets/d2959067-5c4a-47ec-b46a-4710748b1aa7" />
+<img width="1536" height="1024" alt="Banner" src="https://github.com/user-attachments/assets/37e29d10-ed23-409d-92b2-2c6fab854f72" />
 
 # Konteks
 
