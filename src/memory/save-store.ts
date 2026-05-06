@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { SaveInput } from '../mcp/inputs.js'
+import { upsertRetrievalDocument } from '../mining/retrieval-documents.js'
 import type { LoadedProjectContext } from '../project/context.js'
 import { contentHash } from '../storage/content.js'
 import { appendMemoryEvent } from '../storage/event-log.js'
@@ -94,6 +95,17 @@ insert into observations (
             id,
             kind: input.kind,
             type: 'memory',
+        })
+        await upsertRetrievalDocument(adapter, {
+            anchor: input.source ?? id,
+            embeddingText: stored.contentInline ?? input.content,
+            ftsText: stored.contentInline ?? input.content,
+            path: input.source ?? 'memory',
+            sourceRole: 'unknown',
+            summary,
+            targetId: id,
+            targetType: 'memory',
+            updatedAt: createdAt,
         })
     })
 
@@ -222,6 +234,17 @@ insert into diary_entries (
             id,
             kind: 'diary',
             type: 'diary',
+        })
+        await upsertRetrievalDocument(adapter, {
+            anchor: input.subject ?? id,
+            embeddingText: text,
+            ftsText: text,
+            path: 'diary',
+            sourceRole: 'unknown',
+            summary: input.summary,
+            targetId: id,
+            targetType: 'diary',
+            updatedAt: createdAt,
         })
     })
 

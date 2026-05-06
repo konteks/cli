@@ -26,7 +26,7 @@ export type MemorySearchResult = {
         tokenCostPenalty: number
         vector?: number
     }
-    targetType?: 'chunk' | 'module'
+    targetType?: 'chunk' | 'diary' | 'memory' | 'module'
     vectorScore?: number
     createdAt: string
 }
@@ -86,7 +86,7 @@ type RetrievalDocumentRow = {
     source_id: string | null
     source_role: string | null
     target_id: string
-    target_type: 'chunk' | 'module'
+    target_type: 'chunk' | 'diary' | 'memory' | 'module'
     summary: string | null
     fts_text: string
     updated_at: string
@@ -234,13 +234,25 @@ left join target_embeddings te
    and te.target_type = rd.target_type
    and te.model = ?
    and te.dimensions = ?
-where rd.target_type in ('chunk', 'module')
+where rd.target_type in ('chunk', 'module', 'memory', 'diary')
   and retrieval_documents_fts match ?
   and not exists (
       select 1 from chunks dc
       where dc.id = rd.target_id
         and rd.target_type = 'chunk'
         and (dc.deleted_at is not null or dc.suppressed_at is not null)
+  )
+  and not exists (
+      select 1 from observations mo
+      where mo.id = rd.target_id
+        and rd.target_type = 'memory'
+        and (mo.deleted_at is not null or mo.suppressed_at is not null)
+  )
+  and not exists (
+      select 1 from diary_entries dd
+      where dd.id = rd.target_id
+        and rd.target_type = 'diary'
+        and (dd.deleted_at is not null or dd.suppressed_at is not null)
   )
 order by rank
 limit ?
@@ -482,7 +494,7 @@ function makeSearchResult(input: {
     sourceId?: string
     sourceRole?: string
     status?: string
-    targetType?: 'chunk' | 'module'
+    targetType?: 'chunk' | 'diary' | 'memory' | 'module'
     task?: string
     terms: string[]
     textForScoring?: string

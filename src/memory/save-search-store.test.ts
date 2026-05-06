@@ -45,7 +45,8 @@ describe('save and search stores', () => {
         expect(results).toHaveLength(1)
         expect(results[0]).toMatchObject({
             id: saved.id,
-            kind: 'preference',
+            sourceRole: 'unknown',
+            targetType: 'memory',
             type: 'memory',
         })
         expect(results[0]?.excerpt).toContain('Bun test')
@@ -159,9 +160,43 @@ describe('save and search stores', () => {
         expect(saved.id).toStartWith('diary_')
         expect(results[0]).toMatchObject({
             id: saved.id,
-            kind: 'diary',
+            sourceRole: 'unknown',
+            targetType: 'diary',
             type: 'diary',
         })
+        await adapter.close()
+    })
+
+    it('indexes saved memory and diary into retrieval documents', async () => {
+        const context = await makeTempContext()
+        const adapter = await openProjectDatabase(context)
+
+        const savedMemory = await saveKonteksInput(adapter, context, {
+            content: 'Use retrieval_documents as primary retrieval substrate.',
+            kind: 'decision',
+            type: 'memory',
+        })
+        const savedDiary = await saveKonteksInput(adapter, context, {
+            summary: 'Tried lexical ranking tweak for retrieval documents.',
+            tags: ['retrieval'],
+            type: 'diary',
+        })
+
+        const memoryResults = await searchMemory(adapter, {
+            limit: 5,
+            query: 'primary retrieval substrate',
+        })
+        const diaryResults = await searchMemory(adapter, {
+            limit: 5,
+            query: 'lexical ranking tweak retrieval',
+        })
+
+        expect(memoryResults.some(result => result.id === savedMemory.id)).toBe(
+            true,
+        )
+        expect(diaryResults.some(result => result.id === savedDiary.id)).toBe(
+            true,
+        )
         await adapter.close()
     })
 })
