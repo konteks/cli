@@ -39,6 +39,11 @@ import {
     warmUpInputSchema,
 } from './inputs.js'
 import { textResult } from './result.js'
+import {
+    formatRecallText,
+    formatSearchText,
+    formatWarmUpText,
+} from './retrieval-format.js'
 
 type StartMcpServerOptions = {
     project?: string
@@ -210,7 +215,7 @@ function registerKonteksTools(
                 context,
                 parsed.maxTokens,
             )
-            return textResult({
+            const payload = {
                 architecture: warmUp.architecture,
                 commonCommands: [
                     'konteks status',
@@ -242,7 +247,18 @@ function registerKonteksTools(
                 summary: warmUp.summary,
                 taxonomy: warmUp.taxonomy,
                 technologies: warmUp.technologies,
-            })
+            }
+            return textResult(
+                payload,
+                formatWarmUpText({
+                    architecture: payload.architecture,
+                    constraints: payload.constraints,
+                    durableDecisions: payload.durableDecisions,
+                    keyFiles: payload.keyFiles,
+                    summary: payload.summary,
+                    technologies: payload.technologies,
+                }),
+            )
         },
     )
 
@@ -269,7 +285,7 @@ function registerKonteksTools(
                     memories: await searchMemory(adapter, parsed),
                 }),
             )
-            return textResult({
+            const payload = {
                 graph: recall.graph,
                 history: recall.history,
                 memories: applyTokenBudget(
@@ -278,7 +294,16 @@ function registerKonteksTools(
                 ),
                 task: parsed.task,
                 tokenBudget: parsed.maxTokens ?? 2000,
-            })
+            }
+            return textResult(
+                payload,
+                formatRecallText({
+                    graphCount: payload.graph.length,
+                    historyCount: payload.history.length,
+                    memories: payload.memories,
+                    task: payload.task,
+                }),
+            )
         },
     )
 
@@ -300,11 +325,19 @@ function registerKonteksTools(
             const results = await withProjectDatabase(options, adapter =>
                 searchMemory(adapter, parsed),
             )
-            return textResult({
+            const payload = {
                 limit: parsed.limit ?? 10,
                 query: parsed.query,
                 results,
-            })
+            }
+            return textResult(
+                payload,
+                formatSearchText({
+                    limit: payload.limit,
+                    query: payload.query,
+                    results: payload.results,
+                }),
+            )
         },
     )
 

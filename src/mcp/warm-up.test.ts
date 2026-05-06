@@ -49,10 +49,10 @@ describe('konteks_warm_up', () => {
             'konteks_warm_up',
             { maxTokens: 500 },
         )
-        const text =
-            result.content.find(item => item.type === 'text' && 'text' in item)
-                ?.text ?? '{}'
-        const payload = JSON.parse(text) as Record<string, unknown>
+        const payload = (result.structuredContent ?? {}) as Record<
+            string,
+            unknown
+        >
 
         expect(payload.summary).toEqual(expect.any(String))
         expect(payload.technologies).toEqual(
