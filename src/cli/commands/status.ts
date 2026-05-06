@@ -26,44 +26,27 @@ export function formatStatus(
     options: { color?: StatusColorPalette } = {},
 ): string {
     const color = options.color ?? createColorPalette(false)
-    const ready =
-        status.configExists &&
-        status.databaseExists &&
-        status.freshness.status === 'fresh'
+    const freshness = status.freshness.status
     const separator = color.dim('─'.repeat(48))
+    const title =
+        freshness === 'fresh'
+            ? color.success('Konteks Status')
+            : freshness === 'stale'
+              ? color.warning('Konteks Status')
+              : color.danger('Konteks Status')
     const lines = [
         '',
-        `${color.accent('Konteks')} ${ready ? color.success('Ready') : color.warning('Needs Attention')}`,
+        title,
         separator,
         row('Project', status.projectRoot),
         row('Memory', status.memoryDir),
-        row(
-            'Config',
-            status.configExists
-                ? color.success('present')
-                : color.danger('missing'),
-        ),
-        row(
-            'Database',
-            status.databaseExists
-                ? color.success('present')
-                : color.danger('missing'),
-        ),
-        '',
-        color.accent('Project Memory'),
-        separator,
-        row('State', formatFreshness(status.freshness.status, color)),
-        row('Reason', status.freshness.reason),
         ...(status.freshness.lastExtractedAt
             ? [
                   row(
-                      'Last updated',
+                      'Last extracted',
                       formatDate(status.freshness.lastExtractedAt),
                   ),
               ]
-            : []),
-        ...(status.freshness.recommendedCommand
-            ? [row('Next step', status.freshness.recommendedCommand)]
             : []),
         '',
         color.accent('Memory Stats'),
@@ -87,19 +70,6 @@ function row(label: string, value: string): string {
 
 function statRow(label: string, value: number): string {
     return row(label, value.toLocaleString('en-US'))
-}
-
-function formatFreshness(
-    status: ProjectStatus['freshness']['status'],
-    color: StatusColorPalette,
-): string {
-    if (status === 'fresh') {
-        return color.success('fresh')
-    }
-    if (status === 'stale') {
-        return color.warning('stale')
-    }
-    return color.danger('missing')
 }
 
 function formatDate(value: string): string {
