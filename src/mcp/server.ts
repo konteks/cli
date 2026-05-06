@@ -299,7 +299,19 @@ function registerKonteksTools(
                 payload,
                 formatRecallText({
                     graphCount: payload.graph.length,
+                    graphEvidence: payload.graph
+                        .slice(0, 6)
+                        .map(
+                            item =>
+                                `${item.entityName} ${item.predicate} ${item.relatedEntityName} (depth=${item.depth})`,
+                        ),
                     historyCount: payload.history.length,
+                    historyEvidence: payload.history
+                        .slice(0, 6)
+                        .map(
+                            item =>
+                                `${item.subjectEntityName} ${item.predicate} ${item.objectEntityName} [${item.status}]`,
+                        ),
                     memories: payload.memories,
                     task: payload.task,
                 }),

@@ -28,12 +28,18 @@ export function formatRecallText(input: {
     memories: MemorySearchResult[]
     graphCount: number
     historyCount: number
+    graphEvidence: string[]
+    historyEvidence: string[]
 }): string {
     return [
         'recall:',
         `  task: ${inline(input.task)}`,
         `  graph_items: ${input.graphCount}`,
         `  history_items: ${input.historyCount}`,
+        '  graph_evidence:',
+        ...toBullets(input.graphEvidence, 4),
+        '  history_evidence:',
+        ...toBullets(input.historyEvidence, 4),
         '  memories:',
         ...input.memories.slice(0, 8).map(memory => formatMemory(memory, 4)),
     ].join('\n')

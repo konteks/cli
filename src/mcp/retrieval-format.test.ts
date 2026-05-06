@@ -42,7 +42,9 @@ describe('retrieval formatter', () => {
 
         const recall = formatRecallText({
             graphCount: 2,
+            graphEvidence: ['Konteks stores_in .konteks (depth=1)'],
             historyCount: 1,
+            historyEvidence: ['Konteks stores_in global-memory [superseded]'],
             memories,
             task: 'continue auth refresh fix',
         })
@@ -54,6 +56,8 @@ describe('retrieval formatter', () => {
 
         expect(recall).toContain('recall:')
         expect(recall).toContain('task: continue auth refresh fix')
+        expect(recall).toContain('graph_evidence:')
+        expect(recall).toContain('history_evidence:')
         expect(search).toContain('search:')
         expect(search).toContain('query: auth refresh')
     })
