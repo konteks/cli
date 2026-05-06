@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { FakeEmbeddingProvider } from '../mining/embedding-provider.js'
+import { readMineManifest } from '../mining/manifest.js'
 import { mineProject } from '../mining/mine-project.js'
 import { loadProjectContext } from '../project/context.js'
 import { openProjectDatabase } from '../storage/database.js'
@@ -77,6 +78,51 @@ describe('retrieval quality evals', () => {
                 type: 'diary',
             }),
         ).rejects.toThrow('summary is required')
+    })
+
+    it('updates changed project memory after saving context', async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-eval-save-'))
+        tempDirs.push(projectRoot)
+        await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await writeFile(
+            join(projectRoot, 'package.json'),
+            JSON.stringify({ name: 'save-refresh' }, null, 2),
+        )
+        await writeFile(
+            join(projectRoot, 'src', 'index.ts'),
+            'export const first = true\n',
+        )
+        const context = await loadProjectContext(projectRoot)
+        await mineProject(context, 'full', {
+            embeddingProvider: new FakeEmbeddingProvider(),
+        })
+        await writeFile(
+            join(projectRoot, 'src', 'saved-change.ts'),
+            'export const savedChange = true\n',
+        )
+
+        const result = await callMcpTool(
+            { project: projectRoot },
+            'konteks_save',
+            {
+                content:
+                    'The save tool refreshes changed project memory after persistence.',
+                kind: 'fact',
+                type: 'memory',
+            },
+        )
+        const text = result.content.find(
+            item => item.type === 'text' && 'text' in item,
+        )?.text
+        const manifest = await readMineManifest(context.memoryDir)
+
+        expect(manifest?.mode).toBe('changed')
+        expect(manifest?.files.map(file => file.path)).toContain(
+            'src/saved-change.ts',
+        )
+        expect(text).not.toContain('src/saved-change.ts')
+        expect(text).not.toContain('mode')
+        expect(text).not.toContain('Extraction complete')
     })
 
     it('includes module artifacts in warm up architecture context', async () => {

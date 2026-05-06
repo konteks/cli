@@ -20,11 +20,11 @@ import {
     searchMemory,
 } from '../memory/search-store.js'
 import { readMineManifest } from '../mining/manifest.js'
+import { mineProject } from '../mining/mine-project.js'
 import { loadProjectContext } from '../project/context.js'
 import { getProjectStatus } from '../project/status.js'
 import { openProjectDatabase } from '../storage/database.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
-import { createToonStore } from '../storage/toon-store.js'
 import {
     emptyInputSchema,
     forgetInputSchema,
@@ -293,22 +293,20 @@ function registerKonteksTools(
         {
             annotations: {
                 destructiveHint: false,
-                idempotentHint: true,
+                idempotentHint: false,
                 openWorldHint: false,
-                readOnlyHint: true,
+                readOnlyHint: false,
             },
             description:
-                'Load the stable project-wide briefing for the current repo and report whether memory is missing, fresh, or stale.',
+                'Load the stable project-wide briefing for the current repo.',
             inputSchema: warmUpInputSchema,
             outputSchema: warmUpOutputSchema,
         },
         async input => {
-            const parsed = parseWarmUpInput(input)
+            parseWarmUpInput(input)
             const context = await loadProjectContext(options.project)
-            const warmUp = await assembleWarmUpContext(
-                context,
-                parsed.maxTokens,
-            )
+            await updateChangedProjectMemorySilently(context)
+            const warmUp = await assembleWarmUpContext(context)
             const payload = {
                 architecture: warmUp.architecture,
                 constraints: warmUp.constraints,
@@ -445,11 +443,11 @@ function registerKonteksTools(
         },
         async input => {
             const parsed = parseSaveInput(input)
-            const saved = await withProjectDatabase(
-                options,
-                (adapter, context) =>
-                    saveKonteksInput(adapter, context, parsed),
+            const context = await loadProjectContext(options.project)
+            const saved = await withProjectDatabaseContext(context, adapter =>
+                saveKonteksInput(adapter, context, parsed),
             )
+            await updateChangedProjectMemorySilently(context)
             return textResult(saved)
         },
     )
@@ -733,13 +731,32 @@ async function withProjectDatabase<T>(
     ) => Promise<T>,
 ): Promise<T> {
     const context = await loadProjectContext(options.project)
+    return withProjectDatabaseContext(context, adapter =>
+        operation(adapter, context),
+    )
+}
+
+async function withProjectDatabaseContext<T>(
+    context: Awaited<ReturnType<typeof loadProjectContext>>,
+    operation: (adapter: SqliteAdapter) => Promise<T>,
+): Promise<T> {
     const adapter = await openProjectDatabase(context)
 
     try {
-        return await operation(adapter, context)
+        return await operation(adapter)
     } finally {
         await adapter.close()
     }
+}
+
+async function updateChangedProjectMemorySilently(
+    context: Awaited<ReturnType<typeof loadProjectContext>>,
+): Promise<void> {
+    if (!context.configExists || !(await readMineManifest(context.memoryDir))) {
+        return
+    }
+
+    await mineProject(context, 'changed')
 }
 
 function applyTokenBudget(
@@ -774,7 +791,6 @@ type WarmUpContext = {
 
 async function assembleWarmUpContext(
     context: Awaited<ReturnType<typeof loadProjectContext>>,
-    maxTokens: number | undefined,
 ): Promise<WarmUpContext> {
     const manifest = await readMineManifest(context.memoryDir)
     if (!manifest) {
@@ -789,9 +805,6 @@ async function assembleWarmUpContext(
         }
     }
 
-    const summaryText = await createToonStore(context.memoryDir)
-        .read(manifest.summaryRef)
-        .catch(() => '')
     const adapter = await openProjectDatabase(context)
     try {
         const modules = await adapter.query<{ path: string; summary: string }>(
@@ -814,7 +827,6 @@ limit 12
 `,
         )
 
-        const summary = clipText(summaryText, Math.min(maxTokens ?? 800, 2200))
         return {
             architecture: modules.map(
                 module => `${module.path}: ${module.summary}`,
@@ -828,9 +840,7 @@ limit 12
                 .filter(Boolean)
                 .slice(0, 8),
             keyFiles: manifest.files.slice(0, 12).map(file => file.path),
-            summary:
-                summary ||
-                `Project extraction is available for ${manifest.fileCount} files.`,
+            summary: stableProjectSummary(manifest),
             taxonomy: [],
             technologies: manifest.metadata.technologies,
         }
@@ -839,14 +849,17 @@ limit 12
     }
 }
 
-function clipText(text: string, maxTokens: number): string {
-    if (!text.trim()) {
-        return ''
-    }
-    const words = text.trim().split(/\s+/u)
-    const budget = Math.max(80, Math.min(maxTokens, 4000))
-    if (words.length <= budget) {
-        return text.trim()
-    }
-    return `${words.slice(0, budget).join(' ')}...`
+function stableProjectSummary(
+    manifest: NonNullable<Awaited<ReturnType<typeof readMineManifest>>>,
+): string {
+    const name = manifest.metadata.name ?? 'This project'
+    const technologies = manifest.metadata.technologies.slice(0, 6).join(', ')
+    const packageManager = manifest.metadata.packageManager
+    const details = [
+        `${name} has ${manifest.fileCount} indexed files`,
+        technologies ? `uses ${technologies}` : '',
+        packageManager ? `uses ${packageManager}` : '',
+    ].filter(Boolean)
+
+    return `${details.join(', ')}.`
 }
