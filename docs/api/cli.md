@@ -21,6 +21,9 @@ These commands inspect MCP behavior from the terminal without registering an age
 | Command | Shows |
 | :--- | :--- |
 | `konteks mcp tools` | MCP tool names, descriptions, and schemas. |
+| `konteks mcp prompts` | MCP prompt names, descriptions, and arguments. |
+| `konteks mcp prompt <prompt>` | Render one MCP prompt for debugging. |
+| `konteks mcp prompt <prompt> '<json>'` | Render one MCP prompt with arguments. |
 | `konteks mcp call <tool>` | Raw MCP result for one tool call. |
 | `konteks mcp call <tool> '<json>'` | Raw MCP result for one tool call with input. |
 
@@ -28,6 +31,8 @@ Examples:
 
 ```bash
 konteks mcp tools
+konteks mcp prompts
+konteks mcp prompt konteks-recall '{"task":"auth session refresh"}'
 konteks mcp call konteks_status
 konteks mcp call konteks_warm_up '{"maxTokens":500}'
 konteks mcp call konteks_search '{"query":"memory","limit":3}'

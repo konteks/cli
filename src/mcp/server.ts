@@ -105,6 +105,68 @@ export async function startMcpServer(
         })
     }
 
+    registerKonteksTools(options, registerTool)
+
+    const prompts = createPromptDefinitions()
+
+    server.setRequestHandler(ListPromptsRequestSchema, async () => ({
+        prompts,
+    }))
+
+    server.setRequestHandler(GetPromptRequestSchema, async request => {
+        const prompt = prompts.find(item => item.name === request.params.name)
+        if (!prompt) {
+            throw new McpError(
+                ErrorCode.MethodNotFound,
+                `Unknown Konteks prompt: ${request.params.name}`,
+            )
+        }
+
+        return getPromptResult(prompt, request.params.arguments ?? {})
+    })
+
+    server.setRequestHandler(ListToolsRequestSchema, async () => ({
+        tools: [...tools.values()].map(tool => ({
+            description: tool.description,
+            inputSchema: tool.inputSchema,
+            name: tool.name,
+        })),
+    }))
+
+    server.setRequestHandler(CallToolRequestSchema, async request => {
+        const tool = tools.get(request.params.name)
+
+        if (!tool) {
+            throw new McpError(
+                ErrorCode.MethodNotFound,
+                `Unknown Konteks tool: ${request.params.name}`,
+            )
+        }
+
+        try {
+            return await tool.callback(request.params.arguments ?? {})
+        } catch (error) {
+            throw new McpError(
+                ErrorCode.InvalidParams,
+                error instanceof Error ? error.message : String(error),
+            )
+        }
+    })
+
+    await server.connect(new StdioServerTransport())
+}
+
+type ToolRegistration = {
+    callback: (input: unknown) => CallToolResult | Promise<CallToolResult>
+    description: string
+    inputSchema: Tool['inputSchema']
+    name: string
+}
+
+function registerKonteksTools(
+    options: StartMcpServerOptions,
+    registerTool: FlexibleRegisterTool,
+): void {
     registerTool(
         'konteks_status',
         {
@@ -244,61 +306,60 @@ export async function startMcpServer(
             return textResult(result)
         },
     )
-
-    const prompts = createPromptDefinitions()
-
-    server.setRequestHandler(ListPromptsRequestSchema, async () => ({
-        prompts,
-    }))
-
-    server.setRequestHandler(GetPromptRequestSchema, async request => {
-        const prompt = prompts.find(item => item.name === request.params.name)
-        if (!prompt) {
-            throw new McpError(
-                ErrorCode.MethodNotFound,
-                `Unknown Konteks prompt: ${request.params.name}`,
-            )
-        }
-
-        return getPromptResult(prompt, request.params.arguments ?? {})
-    })
-
-    server.setRequestHandler(ListToolsRequestSchema, async () => ({
-        tools: [...tools.values()].map(tool => ({
-            description: tool.description,
-            inputSchema: tool.inputSchema,
-            name: tool.name,
-        })),
-    }))
-
-    server.setRequestHandler(CallToolRequestSchema, async request => {
-        const tool = tools.get(request.params.name)
-
-        if (!tool) {
-            throw new McpError(
-                ErrorCode.MethodNotFound,
-                `Unknown Konteks tool: ${request.params.name}`,
-            )
-        }
-
-        try {
-            return await tool.callback(request.params.arguments ?? {})
-        } catch (error) {
-            throw new McpError(
-                ErrorCode.InvalidParams,
-                error instanceof Error ? error.message : String(error),
-            )
-        }
-    })
-
-    await server.connect(new StdioServerTransport())
 }
 
-type ToolRegistration = {
-    callback: (input: unknown) => CallToolResult | Promise<CallToolResult>
-    description: string
-    inputSchema: Tool['inputSchema']
-    name: string
+export function listMcpPrompts(): Prompt[] {
+    return createPromptDefinitions()
+}
+
+export function getMcpPrompt(
+    name: string,
+    args: Record<string, string> = {},
+): GetPromptResult {
+    const prompt = createPromptDefinitions().find(item => item.name === name)
+    if (!prompt) {
+        throw new Error(`Unknown Konteks prompt: ${name}`)
+    }
+
+    return getPromptResult(prompt, args)
+}
+
+export function listMcpTools(options: StartMcpServerOptions): Tool[] {
+    return [...createToolRegistrations(options).values()].map(tool => ({
+        description: tool.description,
+        inputSchema: tool.inputSchema,
+        name: tool.name,
+    }))
+}
+
+export async function callMcpTool(
+    options: StartMcpServerOptions,
+    name: string,
+    input: unknown = {},
+): Promise<CallToolResult> {
+    const tool = createToolRegistrations(options).get(name)
+    if (!tool) {
+        throw new Error(`Unknown Konteks tool: ${name}`)
+    }
+
+    return await tool.callback(input)
+}
+
+function createToolRegistrations(
+    options: StartMcpServerOptions,
+): Map<string, ToolRegistration> {
+    const tools = new Map<string, ToolRegistration>()
+    const registerTool: FlexibleRegisterTool = (name, config, callback) => {
+        tools.set(name, {
+            callback,
+            description: config.description,
+            inputSchema: config.inputSchema,
+            name,
+        })
+    }
+
+    registerKonteksTools(options, registerTool)
+    return tools
 }
 
 function createPromptDefinitions(): Prompt[] {
