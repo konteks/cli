@@ -33,6 +33,11 @@ export type MemorySearchResult = {
 type SearchMemoryOptions = {
     embeddingProvider?: EmbeddingProvider
 }
+type SearchMode = 'recall' | 'search'
+type SearchIntent = {
+    allowsDiary: boolean
+    prefersAgentReference: boolean
+}
 
 type ObservationRow = {
     id: string
@@ -95,9 +100,11 @@ export async function searchMemory(
     input: SearchInput | RecallInput,
     options: SearchMemoryOptions = {},
 ): Promise<MemorySearchResult[]> {
+    const mode: SearchMode = 'query' in input ? 'search' : 'recall'
     const limit = 'limit' in input ? (input.limit ?? 10) : 10
     const query = 'query' in input ? input.query : input.task
     const terms = tokenize(query)
+    const intent = detectIntent(query)
 
     if (terms.length === 0) {
         return []
@@ -107,6 +114,8 @@ export async function searchMemory(
         adapter,
         terms,
         limit,
+        mode,
+        intent,
         options,
     )
     if (retrievalResults.length > 0) {
@@ -114,7 +123,7 @@ export async function searchMemory(
     }
 
     if (await hasSearchIndex(adapter)) {
-        const ftsResults = await searchFts(adapter, terms, limit)
+        const ftsResults = await searchFts(adapter, terms, limit, mode, intent)
         if (ftsResults.length > 0) {
             return ftsResults
         }
@@ -167,11 +176,17 @@ limit ?
         ],
     )
 
-    return [
-        ...observations.map(row => observationToResult(row, terms)),
-        ...diaries.map(row => diaryToResult(row, terms)),
-        ...handoffs.map(row => handoffToResult(row, terms)),
-    ]
+    return applyGroupAwarePruning(
+        [
+            ...observations.map(row => observationToResult(row, terms)),
+            ...diaries.map(row => diaryToResult(row, terms)),
+            ...handoffs.map(row => handoffToResult(row, terms)),
+        ],
+        mode,
+        intent,
+        limit,
+    )
+        .filter(result => allowResult(result, mode, intent))
         .sort(compareSearchResults)
         .slice(0, limit)
 }
@@ -180,6 +195,8 @@ async function searchRetrievalDocuments(
     adapter: SqliteAdapter,
     terms: string[],
     limit: number,
+    mode: SearchMode,
+    intent: SearchIntent,
     options: SearchMemoryOptions,
 ): Promise<MemorySearchResult[]> {
     const ftsQuery = toFtsQuery(terms)
@@ -235,13 +252,19 @@ limit ?
         ],
     )
 
-    return rows
-        .map(row =>
+    return applyGroupAwarePruning(
+        rows.map(row =>
             retrievalDocumentToResult(row, terms, {
                 provider: options.embeddingProvider,
                 queryVector,
             }),
-        )
+        ),
+        mode,
+        intent,
+        limit,
+    )
+        .filter(result => allowResult(result, mode, intent))
+        .map(result => applyRolePolicy(result, mode, intent))
         .sort(compareSearchResults)
         .slice(0, limit)
 }
@@ -250,6 +273,8 @@ async function searchFts(
     adapter: SqliteAdapter,
     terms: string[],
     limit: number,
+    mode: SearchMode,
+    intent: SearchIntent,
 ): Promise<MemorySearchResult[]> {
     const ftsQuery = toFtsQuery(terms)
     if (!ftsQuery) {
@@ -295,8 +320,8 @@ limit ?
         [ftsQuery, limit],
     )
 
-    return rows
-        .map(row =>
+    return applyGroupAwarePruning(
+        rows.map(row =>
             makeSearchResult({
                 confidence: row.confidence ?? 1,
                 content: row.content,
@@ -316,7 +341,12 @@ limit ?
                 tokenCost: row.token_count ?? estimateTokens(row.content),
                 type: row.type,
             }),
-        )
+        ),
+        mode,
+        intent,
+        limit,
+    )
+        .filter(result => allowResult(result, mode, intent))
         .sort(compareSearchResults)
 }
 
@@ -621,4 +651,93 @@ function compareSearchResults(
     }
 
     return right.createdAt.localeCompare(left.createdAt)
+}
+
+function detectIntent(query: string): SearchIntent {
+    const normalized = query.toLowerCase()
+    return {
+        allowsDiary:
+            /\b(continue|resume|history|previous|last time|already tried|debug|blocked|why failed|follow up)\b/iu.test(
+                normalized,
+            ),
+        prefersAgentReference:
+            /\b(agent|skill|prompt|mcp|reference|docs?)\b/iu.test(normalized),
+    }
+}
+
+function allowResult(
+    result: MemorySearchResult,
+    mode: SearchMode,
+    intent: SearchIntent,
+): boolean {
+    if (mode === 'search') {
+        return true
+    }
+    if (
+        (result.type === 'diary' || result.type === 'session') &&
+        !intent.allowsDiary
+    ) {
+        return false
+    }
+    return true
+}
+
+function applyRolePolicy(
+    result: MemorySearchResult,
+    mode: SearchMode,
+    intent: SearchIntent,
+): MemorySearchResult {
+    const role = result.sourceRole ?? result.kind
+    let scoreDelta = 0
+    if (mode === 'recall') {
+        if (
+            role === 'agent_reference' ||
+            role === 'generated' ||
+            role === 'agent_config'
+        ) {
+            scoreDelta += intent.prefersAgentReference ? 20 : -60
+        }
+        if (
+            role === 'app_code' ||
+            role === 'product_doc' ||
+            role === 'package_config'
+        ) {
+            scoreDelta += 15
+        }
+    }
+
+    if (scoreDelta === 0) {
+        return result
+    }
+    return {
+        ...result,
+        score: result.score + scoreDelta,
+    }
+}
+
+function applyGroupAwarePruning(
+    results: MemorySearchResult[],
+    mode: SearchMode,
+    _intent: SearchIntent,
+    limit: number,
+): MemorySearchResult[] {
+    const maxPerType = mode === 'recall' ? 4 : 6
+    const perType = new Map<string, number>()
+    const selected: MemorySearchResult[] = []
+    const sorted = [...results].sort(compareSearchResults)
+
+    for (const item of sorted) {
+        const key = item.type
+        const count = perType.get(key) ?? 0
+        if (count >= maxPerType) {
+            continue
+        }
+        selected.push(item)
+        perType.set(key, count + 1)
+        if (selected.length >= limit * 2) {
+            break
+        }
+    }
+
+    return selected
 }
