@@ -54,7 +54,7 @@ Temporal memory tracks the "when." It provides the chronological context require
 | Table | Purpose | Key Fields |
 | :--- | :--- | :--- |
 | `memory_events` | The master chronological log | `event_type`, `subject_id`, `summary`, `created_at` |
-| `sessions` | Groups of related task events | `task`, `status`, `started_at`, `ended_at` |
+| `diary_entries` | Saved summaries of agent sessions | `subject`, `summary`, `tags_json`, `created_at` |
 
 ## 4. Taxonomic Memory
 

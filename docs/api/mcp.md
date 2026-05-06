@@ -14,7 +14,7 @@ For terms, see the [Glossary](../reference/glossary.md).
 
 ## Prompts
 
-Prompts are user-invoked workflow templates. They guide the agent through the [Session Lifecycle](../getting-started/lifecycle.md).
+Prompts are user-invoked workflow templates. They guide the agent through the [Session Lifecycle](../getting-started/lifecycle.md), where a [session](../reference/glossary.md#session) is one continuous agent conversation in a project.
 
 | Prompt | Lifecycle Phase | Use When |
 | :--- | :--- | :--- |
@@ -22,7 +22,7 @@ Prompts are user-invoked workflow templates. They guide the agent through the [S
 | `konteks-recall` | Build | Supplement a task with context from known modules, constraints, or decisions. |
 | `konteks-work-on-existing` | Build | Change known code; add recall context when needed. |
 | `konteks-work-on-new` | Build | Start a genuinely new feature. |
-| `konteks-save` | Save | Persist the outcome of the current task. |
+| `konteks-save` | Save | Persist the current session diary and durable findings. |
 
 ## Tools
 
@@ -32,7 +32,7 @@ Tools are lower-level callable operations used by agents and debugging workflows
 | :--- | :--- | :--- |
 | `konteks_warm_up` | Warm Up | Start a fresh agent session with stable project context. |
 | `konteks_recall` | Recall | Continue an existing task on known code, modules, features, or decisions. |
-| `konteks_save` | Save | Preserve completed work, decisions, or durable findings. |
+| `konteks_save` | Save | Preserve session progress, decisions, or durable findings. |
 | `konteks_search` | Search | Inspect memory directly with a query. |
 | `konteks_status` | Status | Check memory health and freshness. |
 | `konteks_forget` | Forget | Remove or suppress wrong, stale, or sensitive memory. |

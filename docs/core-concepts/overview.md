@@ -8,7 +8,7 @@ The following chart illustrates the high-level system interactions between the U
 
 ## Overview: The Mission of Context
 
-At the heart of every software project lies a vast amount of latent knowledge: decisions made in commits, relationships between modules, and the chronological evolution of features. Typically, this knowledge is "forgotten" between AI sessions, forcing agents into a cycle of constant rediscovery.
+At the heart of every software project lies a vast amount of latent knowledge: decisions made in commits, relationships between modules, and the chronological evolution of features. Typically, this knowledge is "forgotten" between AI [sessions](../reference/glossary.md#session), forcing agents into a cycle of constant rediscovery.
 
 Konteks acts as a **memory engine**. Its architecture is built to systematically capture this latent knowledge through **knowledge curation** and consolidate it into a durable, project-local memory. By grounding agentic work in this memory, we enable a development experience where the agent is already "familiar" with the project's soul.
 
@@ -18,7 +18,7 @@ To facilitate the journey of knowledge, Konteks provides a multi-layered environ
 
 ### 1. Interface Modalities
 
-Knowledge enters and exits the system through two primary modalities. The **Administrative Interface (CLI)** serves as the orchestrator for extraction and system management, while the **Service Interface (MCP)** provides the bridge for AI agents to interact with the project's memory during a session.
+Knowledge enters and exits the system through two primary modalities. The **Administrative Interface (CLI)** serves as the orchestrator for extraction and system management, while the **Service Interface (MCP)** provides the bridge for AI agents to interact with the project's memory during a [session](../reference/glossary.md#session).
 
 ### 2. The Cognitive Framework
 
@@ -73,7 +73,7 @@ When an agent begins a task, it initiates [Recall](recall.md). The system perfor
 
 ### 4. Reinforcement: Knowledge Consolidation
 
-The journey doesn't end with recall. As the agent works, its new findings and decisions are saved back into the substrate. This ensures that the project memory is self-reinforcing, growing stronger with every session.
+The journey doesn't end with recall. As the agent works, its new findings and decisions are saved back into the substrate. This ensures that the project memory is self-reinforcing, growing stronger with every [session](../reference/glossary.md#session).
 
 ---
 

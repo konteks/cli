@@ -2,14 +2,16 @@
 
 Konteks is designed around a structured **Warm Up -> Build -> Save** model. Following this rhythm keeps your AI agent context-aware without carrying unrelated task baggage.
 
+A **[session](../reference/glossary.md#session)** is one continuous agent conversation in a project. It can contain one task or several related tasks. The boundary is not "one prompt" or "one task"; the boundary is whether the work still shares the same goal, files, constraints, or decision chain.
+
 ```mermaid
 graph TD
     Start((Fresh Agent Session)) --> P1[Phase 1: Warm Up]
     P1 --> P2[Phase 2: Build]
     P2 --> P3[Phase 3: Save]
-    P3 --> End((Session Memory Saved))
+    P3 --> End((Session Diary Saved))
     
-    End -.->|New Task| Start
+    End -.->|New Session| Start
 
     style P2 fill:#0165fc,stroke:#333,stroke-width:2px
 ```
@@ -22,6 +24,8 @@ Use the `/konteks-warm-up` prompt to start this phase. This ensures the agent is
 
 > [!NOTE]
 > Resuming a Session: If you close your agent before finishing a task and later resume the same session, you can skip Warm Up because the agent already has the project briefing in context.
+
+Start a fresh session when the next work is unrelated, needs a different project briefing, or would make the current agent context noisy. See [Session Boundary](../reference/glossary.md#session-boundary) for the short definition.
 
 ## Phase 2: Build
 
@@ -52,15 +56,21 @@ The `/konteks-work-on-new` prompt helps the agent discover new context during im
 
 ## Phase 3: Save
 
-Once the goal is achieved or meaningful progress should be preserved, save the agent's work back to Konteks.
+When the session is ending or meaningful progress should be preserved, save the agent's work back to Konteks.
 
-Use the `/konteks-save` prompt to persist the outcome of the current task. This records durable progress, decisions, and task state so future sessions do not repeat the same discovery work.
+Use the `/konteks-save` prompt to persist the outcome of the current agent session. A single session can contain one task or several related tasks. Save records the session diary plus durable decisions, constraints, preferences, blockers, and facts so future sessions do not repeat the same discovery work.
 
 > [!TIP]
-> Recommendation: Prefer saving when the current task is complete. If the task is partial, pause and resume the same agent session when possible.
+> Recommendation: Prefer saving when the session is complete or about to be closed. If progress is partial, the session diary should include pending items and exact next steps.
 
 ## Repeat the Cycle
 
-To maintain high-fidelity context, **Konteks sessions should be atomic.**
+To maintain high-fidelity context, **Konteks sessions should stay coherent.**
 
-Once you have completed a task, you can repeat the cycle to work on a new task. The fresh agent session helps the agent orient itself to the new task and prevent context pollution.
+Once you finish a session, you can repeat the cycle in a fresh agent session. Keeping unrelated work in separate sessions helps the agent orient itself and reduces context pollution.
+
+Use this boundary in practice:
+
+* Same session: fix a bug, update tests, and save a follow-up decision for the same feature.
+* Same session: implement a feature and adjust nearby modules discovered during that implementation.
+* Fresh session: switch from authentication work to packaging, UI copy, or unrelated infrastructure cleanup.

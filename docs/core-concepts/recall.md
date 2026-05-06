@@ -31,7 +31,7 @@ Konteks uses its [Structural Memory](memory-model.md#1-structural-memory) to fin
 
 Using [Temporal Memory](memory-model.md#3-temporal-memory), the system filters the candidates.
 
-* **Recency Bias**: Newer decisions and session notes are prioritized over stale ones.
+* **Recency Bias**: Newer decisions and diary entries are prioritized over stale ones.
 * **Validity Check**: Superseded relations or invalidated observations are pruned from the result set.
 
 ## 3. Scoring & Ranking

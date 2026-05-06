@@ -1,6 +1,6 @@
 # Quickstart
 
-Set up Konteks once, then use the same session flow whenever you open your coding agent.
+Set up Konteks once, then use the same [session](../reference/glossary.md#session) flow whenever you open your coding agent.
 
 ## Prerequisite: Project Setup
 
@@ -75,7 +75,7 @@ For a new task:
 
 ### 6. Save
 
-When the task is complete or worth preserving:
+When the session is complete or worth preserving:
 
 ```text
 /konteks-save

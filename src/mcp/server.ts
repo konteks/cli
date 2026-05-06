@@ -190,7 +190,7 @@ export async function startMcpServer(
                 tools: {},
             },
             instructions:
-                'Use prompts for the Warm Up -> Build -> Save flow. Use konteks_warm_up at session start, konteks_recall as supplemental Build context, and konteks_save to persist durable decisions or session handoffs.',
+                'Use prompts for the Warm Up -> Build -> Save flow. Use konteks_warm_up at session start, konteks_recall as supplemental Build context, and konteks_save to persist session diary entries and durable memories.',
         },
     )
     const tools = new Map<string, ToolRegistration>()
@@ -565,7 +565,7 @@ function createPromptDefinitions(): Prompt[] {
             ],
             description: 'Continue an existing task in the Build phase.',
             name: 'konteks-work-on-existing',
-            title: 'Work On Existing',
+            title: 'Build Existing',
         },
         {
             arguments: [
@@ -577,18 +577,11 @@ function createPromptDefinitions(): Prompt[] {
             ],
             description: 'Start a new task in the Build phase.',
             name: 'konteks-work-on-new',
-            title: 'Work On New',
+            title: 'Build New',
         },
         {
-            arguments: [
-                {
-                    description:
-                        'Optional extra save instructions for the current task.',
-                    name: 'task',
-                    required: false,
-                },
-            ],
-            description: 'Persist durable progress at the end of a task.',
+            description:
+                'Persist the current session outcome and durable findings.',
             name: 'konteks-save',
             title: 'Save',
         },
@@ -617,15 +610,15 @@ function getPromptResult(
 function promptText(name: string, task: string | undefined): string {
     switch (name) {
         case 'konteks-warm-up':
-            return 'Warm up this Konteks session. Call konteks_warm_up and summarize the project architecture, active constraints, and durable decisions.'
+            return 'Warm up this Konteks session. Call konteks_warm_up once, then summarize only the returned project architecture, constraints, technologies, and durable decisions.'
         case 'konteks-recall':
-            return `Recall relevant Konteks context for this task: ${task ?? '<task>'}. Call konteks_recall before answering.`
+            return `Recall relevant Konteks context for this task: ${task ?? '<task>'}. Call konteks_recall, then use the returned context as supporting evidence for the task.`
         case 'konteks-work-on-existing':
-            return `Build on this existing code or behavior: ${task ?? '<task>'}. Use Konteks context as needed, then propose and implement the change.`
+            return `Build on this existing code or behavior: ${task ?? '<task>'}. If known modules, constraints, or prior decisions may affect the task, call konteks_recall first; otherwise inspect the code directly, then implement the change.`
         case 'konteks-work-on-new':
-            return `Build this new task: ${task ?? '<task>'}. Discover relevant code during implementation and keep durable findings ready for save.`
+            return `Build this new task: ${task ?? '<task>'}. Discover relevant code during implementation; call konteks_recall only if known modules, constraints, or prior decisions may affect the task. Keep durable findings ready for save.`
         case 'konteks-save':
-            return `Save this Konteks session. Call konteks_save with completed work, pending items, tradeoffs, tests run, and exact next steps${task ? ` for: ${task}` : ''}.`
+            return 'Save the current Konteks session. Call konteks_save with type "diary" for the session outcome across all tasks handled, including status, tests, pending items, and next steps. Also call konteks_save with type "memory" for durable decisions, constraints, preferences, blockers, or facts that future sessions should remember.'
         default:
             return ''
     }

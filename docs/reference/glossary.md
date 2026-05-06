@@ -60,11 +60,23 @@ A derived search surface built from sections, modules, memories, or diary entrie
 
 ## Save
 
-The final lifecycle phase. Save records completed work, decisions, and durable task state back to Konteks.
+The final lifecycle phase. Save records the current session diary and durable memories back to Konteks.
+
+## Session
+
+One continuous agent conversation inside a project. A session starts when you open or resume the coding agent and ends when you close it, intentionally reset context, or switch to unrelated work. A session can contain one task or several related tasks.
+
+## Session Boundary
+
+The practical line that decides what belongs in one saved diary entry. Keep work in the same session when it shares the same goal, files, constraints, or decision chain. Start a fresh session when the next work is unrelated, needs a different project briefing, or would pollute the agent's current context.
 
 ## Storage Substrate
 
 The local persistence layer for Konteks memory, currently based on WASM SQLite and a content-addressed object store.
+
+## Task
+
+A concrete unit of work inside a session, such as fixing a bug, adding a feature, or refactoring a module. Tasks are smaller than sessions: one session may include multiple related tasks.
 
 ## TOON
 

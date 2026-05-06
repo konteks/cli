@@ -12,7 +12,7 @@ Konteks is built specifically for code. It uses language-aware extraction (via T
 
 ## The Vision
 
-In a typical agentic workflow, every new session is a "blank slate." The agent has to rediscover your architecture, your decisions, and your progress from scratch. This "context amnesia" leads to wasted tokens, redundant questions, and architectural drift.
+In a typical agentic workflow, every new [session](../reference/glossary.md#session) is a "blank slate." The agent has to rediscover your architecture, your decisions, and your progress from scratch. This "context amnesia" leads to wasted tokens, redundant questions, and architectural drift.
 
 Our vision is a world where project context is durable and portable. Konteks provides a queryable memory that lives directly inside your repository, bridging the gap between raw file reading and human-level project understanding.
 
@@ -47,7 +47,7 @@ Konteks focuses on **curated context**. Instead of logging every raw conversatio
 
 * **Durable Decisions**: Why you chose X over Y.
 * **Structural Relationships**: How modules actually connect beyond simple imports.
-* **Task State**: What was attempted, what failed, and what's next.
+* **Session Progress**: What was attempted, what failed, and what's next.
 
 ---
 
