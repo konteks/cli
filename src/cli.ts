@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { Command } from 'commander'
 import { doctorCommand } from './cli/commands/doctor.js'
 import { initCommand } from './cli/commands/init.js'
@@ -14,8 +11,7 @@ import {
 } from './cli/commands/mcp.js'
 import { repairCommand } from './cli/commands/mine.js'
 import { statusCommand } from './cli/commands/status.js'
-
-const VERSION = readPackageVersion()
+import { VERSION } from './cli/version.js'
 
 const program = new Command()
     .name('konteks')
@@ -89,26 +85,3 @@ mcp.command('call')
     })
 
 await program.parseAsync(process.argv)
-
-function readPackageVersion(): string {
-    try {
-        const cliDir = dirname(fileURLToPath(import.meta.url))
-        const candidates = [
-            join(cliDir, '..', 'package.json'),
-            join(cliDir, '..', '..', 'package.json'),
-        ]
-
-        for (const path of candidates) {
-            const parsed = JSON.parse(readFileSync(path, 'utf8')) as {
-                version?: unknown
-            }
-            if (typeof parsed.version === 'string') {
-                return parsed.version
-            }
-        }
-    } catch {
-        // Keep --version usable even if package metadata is unavailable.
-    }
-
-    return '0.0.0'
-}

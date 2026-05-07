@@ -1,5 +1,6 @@
 import { getProjectStatus } from '../../project/status.js'
 import type { GlobalCliOptions } from '../options.js'
+import { VERSION } from '../version.js'
 
 export async function statusCommand(options: GlobalCliOptions): Promise<void> {
     const status = await getProjectStatus(options.project)
@@ -8,6 +9,7 @@ export async function statusCommand(options: GlobalCliOptions): Promise<void> {
             color: createColorPalette(
                 Boolean(process.stdout.isTTY && !process.env.NO_COLOR),
             ),
+            version: VERSION,
         }),
     )
 }
@@ -16,51 +18,56 @@ type ProjectStatus = Awaited<ReturnType<typeof getProjectStatus>>
 type StatusColorPalette = {
     accent(value: string): string
     dim(value: string): string
+    success(value: string): string
 }
 
 export function formatStatus(
     status: ProjectStatus,
-    options: { color?: StatusColorPalette } = {},
+    options: { color?: StatusColorPalette; version?: string } = {},
 ): string {
     const color = options.color ?? createColorPalette(false)
-    const separator = color.dim('─'.repeat(48))
     const changedFiles = status.freshness.changedFileCount
+    const version = options.version ?? VERSION
     const lines = [
         '',
-        color.accent('Konteks Memory'),
-        separator,
+        `${color.accent('Konteks Memory')} ${color.dim(`v${version}`)}`,
+        color.dim('─'.repeat(48)),
         row('Project', status.projectRoot),
         row('Memory', status.memoryDir),
-        ...(status.freshness.lastExtractedAt
-            ? [
-                  row(
-                      'Last extracted',
-                      formatDate(status.freshness.lastExtractedAt),
-                  ),
-              ]
-            : []),
-        row(
-            'Session update',
-            changedFiles > 0
-                ? `${formatCount(changedFiles, 'file')} changed since then`
-                : 'No file changes since last extraction',
+        row('Freshness', formatFreshness(status, changedFiles)),
+        '',
+        anchoredStat(
+            color,
+            'Knowledge',
+            [
+                compactStat('sections', status.memoryStats.sections, color),
+                compactStat('modules', status.memoryStats.modules, color),
+            ].join(', '),
         ),
-        '',
-        color.accent('Knowledge'),
-        separator,
-        statRow('Sections', status.memoryStats.sections),
-        statRow('Modules', status.memoryStats.modules),
-        '',
-        color.accent('Session Memory'),
-        separator,
-        statRow('Memories', status.memoryStats.memories),
-        statRow('Diary entries', status.memoryStats.diaryEntries),
-        statRow('Events', status.memoryStats.events),
-        '',
-        color.accent('Retrieval'),
-        separator,
-        statRow('Retrieval docs', status.memoryStats.retrievalDocuments),
-        statRow('Embeddings', status.memoryStats.embeddings),
+        anchoredStat(
+            color,
+            'Session Memory',
+            [
+                compactStat('memories', status.memoryStats.memories, color),
+                compactStat(
+                    'diary entries',
+                    status.memoryStats.diaryEntries,
+                    color,
+                ),
+            ].join(', '),
+        ),
+        anchoredStat(
+            color,
+            'Retrieval',
+            [
+                compactStat(
+                    'documents',
+                    status.memoryStats.retrievalDocuments,
+                    color,
+                ),
+                compactStat('vectors', status.memoryStats.embeddings, color),
+            ].join(', '),
+        ),
         '',
     ]
 
@@ -68,15 +75,39 @@ export function formatStatus(
 }
 
 function row(label: string, value: string): string {
-    return `${label.padEnd(14)} ${value}`
+    return `${label.padEnd(10)} ${value}`
 }
 
-function statRow(label: string, value: number): string {
-    return row(label, value.toLocaleString('en-US'))
+function anchoredStat(
+    color: StatusColorPalette,
+    label: string,
+    value: string,
+): string {
+    return `${color.accent(label.padEnd(14))} ${value}`
+}
+
+function compactStat(
+    label: string,
+    value: number,
+    color: StatusColorPalette,
+): string {
+    return `${color.success(value.toLocaleString('en-US'))} ${label}`
 }
 
 function formatCount(value: number, singular: string): string {
     return `${value.toLocaleString('en-US')} ${singular}${value === 1 ? '' : 's'}`
+}
+
+function formatFreshness(status: ProjectStatus, changedFiles: number): string {
+    const lastExtracted = status.freshness.lastExtractedAt
+        ? formatDate(status.freshness.lastExtractedAt)
+        : 'Not extracted yet'
+
+    if (changedFiles > 0) {
+        return `${lastExtracted}; ${formatCount(changedFiles, 'file')} changed; indexed during warm up/save`
+    }
+
+    return `${lastExtracted}; no file changes`
 }
 
 function formatDate(value: string): string {
@@ -94,5 +125,6 @@ function createColorPalette(enabled: boolean): StatusColorPalette {
     return {
         accent: value => wrap(36, value),
         dim: value => wrap(90, value),
+        success: value => wrap(32, value),
     }
 }

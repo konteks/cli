@@ -56,14 +56,20 @@ describe('status command', () => {
         }
 
         expect(output).toContain('Konteks Memory')
-        expect(output).toContain('Session update')
-        expect(output).toContain('No file changes since last extraction')
+        expect(output).toContain('v0.0.1')
+        expect(output).toContain('Freshness')
+        expect(output).toContain('no file changes')
         expect(output).toContain('Knowledge')
         expect(output).toContain('Session Memory')
         expect(output).toContain('Retrieval')
-        expect(output).toContain('Sections')
-        expect(output).toContain('Memories')
-        expect(output).toContain('Diary entries')
+        expect(output).toContain('sections')
+        expect(output).toContain('memories')
+        expect(output).toContain('diary entries')
+        expect(output).toContain('documents')
+        expect(output).toContain('vectors')
+        expect(output).not.toContain('Events')
+        expect(output).not.toContain('Retrieval docs')
+        expect(output).not.toContain('Embeddings')
         expect(output).not.toContain('Needs Attention')
         expect(output).not.toContain('Config')
         expect(output).not.toContain('Database')
@@ -106,8 +112,8 @@ describe('status command', () => {
             log.mockRestore()
         }
 
-        expect(output).toContain('Session update')
-        expect(output).toContain('2 files changed since then')
+        expect(output).toContain('Freshness')
+        expect(output).toContain('2 files changed; indexed during warm up/save')
     })
 
     it('supports colorized formatting for terminal output', () => {
@@ -138,12 +144,17 @@ describe('status command', () => {
                 color: {
                     accent: value => `<accent>${value}</accent>`,
                     dim: value => `<dim>${value}</dim>`,
+                    success: value => `<success>${value}</success>`,
                 },
             },
         )
 
-        expect(output).toContain('<accent>Konteks Memory</accent>')
+        expect(output).toContain(
+            '<accent>Konteks Memory</accent> <dim>v0.0.1</dim>',
+        )
         expect(output).toContain('<dim>────────────────')
-        expect(output).toContain('1 file changed since then')
+        expect(output).toContain('1 file changed; indexed during warm up/save')
+        expect(output).toContain('<accent>Knowledge')
+        expect(output).toContain('<success>3</success> sections')
     })
 })
