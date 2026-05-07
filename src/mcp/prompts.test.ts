@@ -80,12 +80,22 @@ describe('MCP prompts', () => {
         const warmUp = promptText('konteks-warm-up')
 
         expect(savePrompt?.arguments).toBeUndefined()
-        expect(save).toContain('Only use this prompt when the user explicitly')
+        expect(save).toContain(
+            'Use `konteks_save` only for these explicit user intents',
+        )
         expect(save).toContain(
             'Do not call `konteks_save` automatically at the end of other workflows.',
         )
+        expect(save).toContain('Lightweight remember')
+        expect(save).toContain(
+            'Save only durable memory entries with `type: "memory"` or `type: "memories"`.',
+        )
+        expect(save).toContain('Do not write a diary for lightweight remember.')
+        expect(save).toContain('After lightweight remember succeeds')
         expect(save).toContain('Do not pass the full raw chat transcript')
-        expect(save).toContain('Call `konteks_save` in two phases')
+        expect(save).toContain(
+            'For a full session save, call `konteks_save` in two phases',
+        )
         expect(save).toContain('type: "memories"')
         expect(save).toContain('type: "diary"')
         expect(save).toContain('If the memory payload is too large')
