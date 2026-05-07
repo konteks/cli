@@ -41,7 +41,7 @@ describe('MCP prompts', () => {
 
         expect(existing).toContain('If known modules')
         expect(existing).toContain('call `konteks_recall` first')
-        expect(next).toContain('call `konteks_recall` only if')
+        expect(next).toContain('Call `konteks_recall` only if')
     })
 
     it('guides save toward diary plus durable memory without refresh noise', () => {
@@ -55,7 +55,8 @@ describe('MCP prompts', () => {
         expect(save).toContain('`chat` argument')
         expect(save).toContain('Call `konteks_save` once')
         expect(save).toContain('Do not call `konteks_save` repeatedly')
-        expect(save).toContain('current Konteks session')
+        expect(save).toContain('make them searchable')
+        expect(save).toContain('write one diary entry')
         expect(save).not.toContain('current Konteks task')
         expect(save).not.toContain('focus on')
         expect(`${save}\n${warmUp}`).not.toMatch(

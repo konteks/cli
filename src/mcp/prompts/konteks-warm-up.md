@@ -4,4 +4,4 @@ title: Konteks Warm Up
 description: Open a fresh Konteks session with project context.
 ---
 
-Warm up this Konteks session. Call `konteks_warm_up` once, then summarize only the returned project architecture, constraints, technologies, and durable decisions.
+Warm up this session by calling `konteks_warm_up`. Summarize the project elevator pitch, entry points, architecture (functional roles), stack, and any durable conventions or decisions to establish the current project state.

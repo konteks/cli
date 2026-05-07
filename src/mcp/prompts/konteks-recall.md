@@ -6,4 +6,4 @@ argument.task.description: The module, feature, file, decision, or constraint to
 argument.task.required: true
 ---
 
-Recall relevant Konteks context for this task: {{task}}. Call `konteks_recall`, then use the returned context as supporting evidence for the task.
+Gather relevant project context for: {{task}}. Call `konteks_recall` and use the returned memories, graph relations, and history as primary supporting evidence for the task.

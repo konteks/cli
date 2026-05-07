@@ -6,4 +6,4 @@ argument.task.description: The existing feature, module, file, or behavior to ch
 argument.task.required: true
 ---
 
-Build on this existing code or behavior: {{task}}. If known modules, constraints, or prior decisions may affect the task, call `konteks_recall` first; otherwise inspect the code directly, then implement the change.
+Develop or improve existing behavior: {{task}}. If known modules, constraints, or prior decisions might affect the implementation, call `konteks_recall` first to align with project memory; otherwise, proceed with the implementation.

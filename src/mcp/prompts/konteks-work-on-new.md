@@ -6,4 +6,4 @@ argument.task.description: The new task or feature to build.
 argument.task.required: true
 ---
 
-Build this new task: {{task}}. Discover relevant code during implementation; call `konteks_recall` only if known modules, constraints, or prior decisions may affect the task. Keep durable findings ready for save.
+Implement a new task or feature: {{task}}. Discover relevant modules during the implementation phase. Call `konteks_recall` only if known architectural boundaries or durable constraints are likely to impact the design. Prepare durable findings for the Save phase.

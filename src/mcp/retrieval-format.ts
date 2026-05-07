@@ -74,6 +74,27 @@ export function formatSearchText(input: {
     ].join('\n')
 }
 
+export function formatSaveText(input: {
+    diaryId?: string
+    memoryIds?: string[]
+    skippedMemories?: number
+}): string {
+    const memoryCount = input.memoryIds?.length ?? 0
+    const parts = ['konteks: session saved']
+
+    if (input.diaryId) {
+        parts.push('1 diary entry')
+    }
+    if (memoryCount > 0) {
+        parts.push(`${memoryCount} durable memories`)
+    }
+    if (input.skippedMemories && input.skippedMemories > 0) {
+        parts.push(`${input.skippedMemories} redundant items skipped`)
+    }
+
+    return `${parts.join(', ')}.`
+}
+
 function formatMemory(item: MemorySearchResult, indent: number): string {
     const pad = ' '.repeat(indent)
     const summary = item.excerpt.replaceAll(/\s+/gu, ' ').trim()

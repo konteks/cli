@@ -46,6 +46,7 @@ import { listPromptDefinitions, renderPromptText } from './prompt-library.js'
 import { textResult } from './result.js'
 import {
     formatRecallText,
+    formatSaveText,
     formatSearchText,
     formatWarmUpText,
 } from './retrieval-format.js'
@@ -438,7 +439,14 @@ function registerKonteksTools(
             const saved = await withProjectDatabaseContext(context, adapter =>
                 saveKonteksInput(adapter, context, parsed, { projectUpdate }),
             )
-            return textResult(saved)
+            return textResult(
+                saved,
+                formatSaveText({
+                    diaryId: saved.diaryId,
+                    memoryIds: saved.memoryIds,
+                    skippedMemories: saved.skippedMemories,
+                }),
+            )
         },
     )
 
