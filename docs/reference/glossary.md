@@ -22,6 +22,10 @@ A chronological activity record saved by an agent. Diary entries help future ses
 
 A section, module, memory, or diary entry that Konteks has prepared for search and recall.
 
+## Knowledge
+
+Project-derived context mined from source files, docs, config, and other local artifacts. In `konteks status`, Knowledge counts sections and modules.
+
 ## Knowledge Curation
 
 The process of turning raw project artifacts and agent findings into durable, retrievable memory.
@@ -29,6 +33,10 @@ The process of turning raw project artifacts and agent findings into durable, re
 ## Local-First
 
 Konteks stores memory in the project directory and does not require a cloud service or account.
+
+## Memory
+
+A durable saved fact, decision, constraint, preference, blocker, or code insight. Memories are different from diary entries: they are compact facts intended to help future sessions.
 
 ## MCP
 
@@ -46,6 +54,10 @@ A callable operation exposed to an agent through MCP, such as `konteks_warm_up`,
 
 The Konteks system that extracts, stores, retrieves, and updates project memory.
 
+## Module
+
+A higher-level project area identified from mined files. Modules give Warm Up and Recall architecture-level context instead of only individual sections.
+
 ## Repair
 
 The CLI command that repairs project memory artifacts by rebuilding them from scratch for recovery or maintenance.
@@ -58,6 +70,10 @@ Task-specific retrieval. Recall gives the agent compact, relevant context before
 
 A derived search surface built from sections, modules, memories, or diary entries. Retrieval documents provide bounded text for FTS and embeddings.
 
+## Section
+
+A bounded content block mined from a project artifact, such as a source file, doc, or config file. Sections are the fine-grained project knowledge counted by `konteks status`.
+
 ## Save
 
 The final lifecycle phase. Save persists compact structured durable memories, makes them searchable, and records one session diary back to Konteks.
@@ -69,6 +85,14 @@ One continuous agent conversation inside a project. A session starts when you op
 ## Session Boundary
 
 The practical line that decides what belongs in one saved diary entry. Keep work in the same session when it shares the same goal, files, constraints, or decision chain. Start a fresh session when the next work is unrelated, needs a different project briefing, or would pollute the agent's current context.
+
+## Session Memory
+
+User- or agent-saved memory from prior work. In `konteks status`, Session Memory counts durable memories and diary entries.
+
+## Status
+
+The `konteks status` command summarizes project memory health and stored context counts: Knowledge, Session Memory, and Retrieval.
 
 ## Storage Substrate
 
@@ -85,6 +109,10 @@ A compact text format used for agent-readable stored summaries and payloads.
 ## Unchanged
 
 An item whose indexed content has not changed since the previous extraction, so Konteks can keep its existing search data.
+
+## Vector
+
+A numeric embedding used for semantic search. In `konteks status`, vectors count retrieval documents that have semantic-search embeddings available.
 
 ## Build
 
