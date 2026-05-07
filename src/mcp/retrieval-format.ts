@@ -2,25 +2,38 @@ import type { MemorySearchResult } from '../memory/search-store.js'
 
 export function formatWarmUpText(input: {
     summary: string
+    description?: string
     technologies: string[]
+    entryPoints: string[]
     keyFiles: string[]
     architecture: string[]
     durableDecisions: string[]
     constraints: string[]
+    conventions: string[]
 }): string {
     return [
         'warm_up:',
         `  summary: ${inline(input.summary)}`,
-        `  technologies: ${list(input.technologies)}`,
+        input.description
+            ? `  description: ${inline(input.description)}`
+            : null,
+        `  stack: ${list(input.technologies)}`,
+        input.entryPoints.length > 0
+            ? `  entry: ${list(input.entryPoints)}`
+            : null,
         '  key_files:',
         ...toBullets(input.keyFiles, 4),
-        '  architecture:',
+        '  arch:',
         ...toBullets(input.architecture, 4),
-        '  durable_decisions:',
+        '  decisions:',
         ...toBullets(input.durableDecisions, 4),
         '  constraints:',
         ...toBullets(input.constraints, 4),
-    ].join('\n')
+        '  conventions:',
+        ...toBullets(input.conventions, 4),
+    ]
+        .filter((line): line is string => line !== null)
+        .join('\n')
 }
 
 export function formatRecallText(input: {

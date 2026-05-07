@@ -5,6 +5,8 @@ import type { ScannedFile } from './file-scan.js'
 
 export type ProjectMetadata = {
     name?: string
+    description?: string
+    entryPoints: string[]
     packageManager?: string
     workspaceManager?: string
     workspaceGlobs: string[]
@@ -20,6 +22,10 @@ export type ProjectMetadata = {
 
 type PackageJson = {
     name?: unknown
+    description?: unknown
+    main?: unknown
+    bin?: unknown
+    exports?: unknown
     packageManager?: unknown
     scripts?: unknown
     dependencies?: unknown
@@ -44,13 +50,21 @@ export async function extractProjectMetadata(
         .map(file => file.path)
         .filter(path => /^readme(\..+)?$/i.test(path.split('/').at(-1) ?? ''))
 
+    const name =
+        typeof packageJson?.name === 'string' ? packageJson.name : undefined
+    const description = await inferDescription(
+        projectRoot,
+        packageJson,
+        readmeFiles,
+    )
+    const entryPoints = inferEntryPoints(packageJson)
+
     return {
         dependencies,
+        description,
         devDependencies,
-        name:
-            typeof packageJson?.name === 'string'
-                ? packageJson.name
-                : undefined,
+        entryPoints,
+        name,
         optionalDependencies,
         packageManager:
             typeof packageJson?.packageManager === 'string'
@@ -64,6 +78,82 @@ export async function extractProjectMetadata(
         workspaceGlobs,
         workspaceManager: detectWorkspaceManager(files, workspaceGlobs),
     }
+}
+
+async function inferDescription(
+    projectRoot: string,
+    packageJson: PackageJson | undefined,
+    readmeFiles: string[],
+): Promise<string | undefined> {
+    if (typeof packageJson?.description === 'string') {
+        return packageJson.description
+    }
+
+    if (readmeFiles.length > 0) {
+        try {
+            const readmePath = join(projectRoot, readmeFiles[0])
+            const content = await readFile(readmePath, 'utf8')
+            const lines = content.split('\n')
+            // Find first paragraph after the title
+            let foundTitle = false
+            for (const line of lines) {
+                const trimmed = line.trim()
+                if (!trimmed) {
+                    continue
+                }
+                if (trimmed.startsWith('#')) {
+                    foundTitle = true
+                    continue
+                }
+                if (foundTitle && !trimmed.startsWith('![')) {
+                    // Extract first sentence or two
+                    return `${trimmed.split(/[.!?](?:\s|$)/u)[0]}.`
+                }
+            }
+        } catch {
+            return undefined
+        }
+    }
+
+    return undefined
+}
+
+function inferEntryPoints(packageJson: PackageJson | undefined): string[] {
+    const entries = new Set<string>()
+
+    if (typeof packageJson?.main === 'string') {
+        entries.add(packageJson.main)
+    }
+
+    if (packageJson?.bin) {
+        if (typeof packageJson.bin === 'string') {
+            entries.add(packageJson.bin)
+        } else if (typeof packageJson.bin === 'object') {
+            for (const value of Object.values(packageJson.bin)) {
+                if (typeof value === 'string') {
+                    entries.add(value)
+                }
+            }
+        }
+    }
+
+    if (packageJson?.exports) {
+        const visit = (value: unknown): void => {
+            if (typeof value === 'string') {
+                entries.add(value)
+            } else if (value && typeof value === 'object') {
+                for (const child of Object.values(value)) {
+                    visit(child)
+                }
+            }
+        }
+        visit(packageJson.exports)
+    }
+
+    return [...entries]
+        .map(p => p.replace(/^\.\//, ''))
+        .filter(Boolean)
+        .sort()
 }
 
 async function readPackageJson(

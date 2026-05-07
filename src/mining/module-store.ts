@@ -107,9 +107,7 @@ insert into modules (
 }
 
 function summarizeModule(row: ModuleSummaryRow): string {
-    const path =
-        row.module_path === '.' ? 'Project root' : `Module ${row.module_path}`
-    return `${path} contains ${row.file_count} files and ${row.chunk_count} extracted sections.`
+    return `${row.file_count} files, ${row.chunk_count} sections`
 }
 
 function moduleTopics(path: string): string[] {
@@ -133,7 +131,7 @@ async function insertPackageModule(
     ].slice(0, 80)
     const modulePath = metadata.packagePath
     const moduleId = `module_${contentHash(`package:${modulePath}:${metadata.name ?? ''}`).slice(0, 32)}`
-    const summary = `Package ${metadata.name ?? 'project'} uses ${metadata.packageManager ?? 'unknown package manager'} with ${dependencyNames.length} tracked dependencies.`
+    const summary = `${metadata.packageManager ?? 'npm'}, ${dependencyNames.length} deps`
     const topics = [
         'package',
         metadata.name,

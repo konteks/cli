@@ -63,6 +63,8 @@ describe('konteks_warm_up', () => {
             expect.arrayContaining(['package.json']),
         )
         expect(payload.architecture).toEqual(expect.any(Array))
+        expect(payload.entryPoints).toEqual(expect.any(Array))
+        expect(payload.conventions).toEqual(expect.any(Array))
         expect(payload.freshness).toBeUndefined()
         expect(payload.recentChanges).toBeUndefined()
         expect(payload.recentHandoffs).toBeUndefined()

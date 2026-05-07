@@ -95,7 +95,10 @@ const warmUpOutputSchema: Tool['outputSchema'] = {
     properties: {
         architecture: { items: { type: 'string' }, type: 'array' },
         constraints: { items: { type: 'string' }, type: 'array' },
+        conventions: { items: { type: 'string' }, type: 'array' },
+        description: { type: 'string' },
         durableDecisions: { items: { type: 'string' }, type: 'array' },
+        entryPoints: { items: { type: 'string' }, type: 'array' },
         keyFiles: { items: { type: 'string' }, type: 'array' },
         project: { type: 'object' },
         summary: { type: 'string' },
@@ -109,6 +112,8 @@ const warmUpOutputSchema: Tool['outputSchema'] = {
         'architecture',
         'durableDecisions',
         'constraints',
+        'conventions',
+        'entryPoints',
         'taxonomy',
         'project',
     ],
@@ -279,7 +284,10 @@ function registerKonteksTools(
             const payload = {
                 architecture: warmUp.architecture,
                 constraints: warmUp.constraints,
+                conventions: warmUp.conventions,
+                description: warmUp.description,
                 durableDecisions: warmUp.durableDecisions,
+                entryPoints: warmUp.entryPoints,
                 keyFiles: warmUp.keyFiles,
                 project: {
                     memoryDir: context.memoryDir,
@@ -295,7 +303,10 @@ function registerKonteksTools(
                 formatWarmUpText({
                     architecture: payload.architecture,
                     constraints: payload.constraints,
+                    conventions: payload.conventions,
+                    description: payload.description,
                     durableDecisions: payload.durableDecisions,
+                    entryPoints: payload.entryPoints,
                     keyFiles: payload.keyFiles,
                     summary: payload.summary,
                     technologies: payload.technologies,
@@ -780,7 +791,10 @@ function applyTokenBudget(
 type WarmUpContext = {
     architecture: string[]
     constraints: string[]
+    conventions: string[]
+    description?: string
     durableDecisions: string[]
+    entryPoints: string[]
     keyFiles: string[]
     summary: string
     taxonomy: string[]
@@ -795,7 +809,10 @@ async function assembleWarmUpContext(
         return {
             architecture: [],
             constraints: ['Run `konteks init` to initialize project memory.'],
+            conventions: [],
+            description: 'Konteks memory is not initialized yet.',
             durableDecisions: [],
+            entryPoints: [],
             keyFiles: [],
             summary: 'Konteks memory is not initialized yet.',
             taxonomy: [],
@@ -805,38 +822,49 @@ async function assembleWarmUpContext(
 
     const adapter = await openProjectDatabase(context)
     try {
-        const modules = await adapter.query<{ path: string; summary: string }>(
+        const modules = await adapter.query<{
+            path: string
+            source_role: string | null
+            summary: string
+        }>(
             `
-select path, summary
+select path, source_role, summary
 from modules
 order by chunk_count desc, file_count desc
-limit 8
-`,
-        )
-        const decisions = await adapter.query<{ text_inline: string | null }>(
-            `
-select text_inline
-from observations
-where kind in ('decision', 'constraint', 'preference', 'fact')
-  and deleted_at is null
-  and suppressed_at is null
-order by created_at desc
 limit 12
 `,
         )
+        const observations = await adapter.query<{
+            kind: string
+            text_inline: string | null
+        }>(
+            `
+select kind, text_inline
+from observations
+where deleted_at is null
+  and suppressed_at is null
+order by created_at desc
+limit 40
+`,
+        )
+
+        const filterKind = (kind: string): string[] =>
+            observations
+                .filter(item => item.kind === kind)
+                .map(item => item.text_inline ?? '')
+                .filter(Boolean)
+                .slice(0, 10)
 
         return {
             architecture: modules.map(
-                module => `${module.path}: ${module.summary}`,
+                module =>
+                    `${module.path}${module.source_role ? ` (${module.source_role})` : ''} :: ${module.summary}`,
             ),
-            constraints: decisions
-                .map(item => item.text_inline ?? '')
-                .filter(Boolean)
-                .slice(0, 8),
-            durableDecisions: decisions
-                .map(item => item.text_inline ?? '')
-                .filter(Boolean)
-                .slice(0, 8),
+            constraints: filterKind('constraint'),
+            conventions: filterKind('preference'),
+            description: manifest.metadata.description,
+            durableDecisions: filterKind('decision'),
+            entryPoints: manifest.metadata.entryPoints,
             keyFiles: manifest.files.slice(0, 12).map(file => file.path),
             summary: stableProjectSummary(manifest),
             taxonomy: [],
@@ -851,8 +879,14 @@ function stableProjectSummary(
     manifest: NonNullable<Awaited<ReturnType<typeof readMineManifest>>>,
 ): string {
     const name = manifest.metadata.name ?? 'This project'
+    const description = manifest.metadata.description
     const technologies = manifest.metadata.technologies.slice(0, 6).join(', ')
     const packageManager = manifest.metadata.packageManager
+
+    if (description) {
+        return `${name}: ${description}`
+    }
+
     const details = [
         `${name} has ${manifest.fileCount} indexed files`,
         technologies ? `uses ${technologies}` : '',

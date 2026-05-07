@@ -11,15 +11,24 @@ describe('retrieval formatter', () => {
         const text = formatWarmUpText({
             architecture: ['src/mcp: protocol layer'],
             constraints: ['Prefer repair only for recovery'],
+            conventions: ['Use functional patterns'],
+            description: 'Konteks stores project memory locally.',
             durableDecisions: ['Use WASM SQLite'],
+            entryPoints: ['src/index.ts'],
             keyFiles: ['package.json'],
-            summary: 'Konteks stores project memory locally.',
+            summary: 'warm-up-fixture',
             technologies: ['typescript', 'mcp'],
         })
 
         expect(text).toContain('warm_up:')
-        expect(text).toContain('technologies: typescript, mcp')
+        expect(text).toContain('stack: typescript, mcp')
+        expect(text).toContain('entry: src/index.ts')
+        expect(text).toContain(
+            'description: Konteks stores project memory locally.',
+        )
         expect(text).toContain('- src/mcp: protocol layer')
+        expect(text).toContain('conventions:')
+        expect(text).toContain('- Use functional patterns')
     })
 
     it('formats recall and search text', () => {
