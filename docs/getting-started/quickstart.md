@@ -62,6 +62,12 @@ Run the Warm Up prompt at the start of a fresh agent session:
 /konteks-warm-up
 ```
 
+You can also append an additional topic(s) to bring relevant memories during Warm Up:
+
+```text
+/konteks-warm-up auth security
+```
+
 ### 5. Build
 
 For an existing feature, module, or file:

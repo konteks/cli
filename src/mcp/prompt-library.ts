@@ -1,4 +1,4 @@
-import type { Prompt } from '@modelcontextprotocol/sdk/types.js'
+import type { Prompt, PromptArgument } from '@modelcontextprotocol/sdk/types.js'
 import { promptFiles } from './prompt-assets.js'
 
 type PromptTemplate = {
@@ -41,7 +41,7 @@ export function renderPromptText(
 
     return template.body.replaceAll(
         /\{\{\s*([a-zA-Z0-9_-]+)\s*\}\}/g,
-        (_, key: string) => args[key]?.trim() || `<${key}>`,
+        (_, key: string) => renderArgumentValue(template.prompt, args, key),
     )
 }
 
@@ -75,15 +75,9 @@ function readPromptMarkdown(raw: string, fileName: string): PromptTemplate {
         name,
         title,
     }
-    const taskDescription = frontmatter['argument.task.description']
-    if (taskDescription) {
-        prompt.arguments = [
-            {
-                description: taskDescription,
-                name: 'task',
-                required: frontmatter['argument.task.required'] === 'true',
-            },
-        ]
+    const args = readPromptArguments(frontmatter)
+    if (args.length > 0) {
+        prompt.arguments = args
     }
 
     return {
@@ -92,6 +86,38 @@ function readPromptMarkdown(raw: string, fileName: string): PromptTemplate {
         prompt,
         raw,
     }
+}
+
+function readPromptArguments(
+    frontmatter: Record<string, string>,
+): PromptArgument[] {
+    const names = new Set<string>()
+    for (const key of Object.keys(frontmatter)) {
+        const match = /^argument\.([a-zA-Z0-9_-]+)\.description$/u.exec(key)
+        if (match?.[1]) {
+            names.add(match[1])
+        }
+    }
+
+    return [...names].sort().map(name => ({
+        description: frontmatter[`argument.${name}.description`] ?? '',
+        name,
+        required: frontmatter[`argument.${name}.required`] === 'true',
+    }))
+}
+
+function renderArgumentValue(
+    prompt: Prompt,
+    args: Record<string, string>,
+    key: string,
+): string {
+    const value = args[key]?.trim()
+    if (value) {
+        return value
+    }
+
+    const argument = prompt.arguments?.find(item => item.name === key)
+    return argument?.required === false ? '' : `<${key}>`
 }
 
 function parseFrontmatter(value: string): Record<string, string> {

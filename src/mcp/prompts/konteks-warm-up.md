@@ -2,6 +2,14 @@
 name: konteks-warm-up
 title: Konteks Warm Up
 description: Open a fresh Konteks session with project context.
+argument.topic.description: Optional free-form topic, module, file, behavior, decision, or memory focus for targeted recall after warm up.
+argument.topic.required: false
 ---
 
-Warm up this session by calling `konteks_warm_up`. Summarize the project elevator pitch, entry points, architecture (functional roles), stack, and any durable conventions or decisions to establish the current project state.
+Warm up this session by calling `konteks_warm_up`.
+
+Optional free-form focus: {{topic}}
+
+If the free-form focus is non-empty, also call `konteks_recall` for that focus after warm up and use the returned context as focused supplemental memory for the next task.
+
+After context is loaded, do not summarize or re-explain what you found unless the user explicitly asks. Reply only: `Konteks is warmed up and ready for the task.`

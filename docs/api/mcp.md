@@ -21,7 +21,7 @@ Prompts are user-invoked workflow templates. They guide the agent through the [S
 
 | Prompt | Lifecycle Phase | Use When |
 | :--- | :--- | :--- |
-| `konteks-warm-up` | Warm Up | Open a fresh agent session in a project. |
+| `konteks-warm-up` | Warm Up | Open a fresh agent session in a project; optionally append a free-form focus for recall after warm up. |
 | `konteks-recall` | Build | Supplement a task with context from known modules, constraints, or decisions. |
 | `konteks-work-on-existing` | Build | Change known code; add recall context when needed. |
 | `konteks-work-on-new` | Build | Start a genuinely new feature. |

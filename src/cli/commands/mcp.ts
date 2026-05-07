@@ -27,9 +27,9 @@ export async function mcpPromptsCommand(): Promise<void> {
 
 export async function mcpPromptCommand(
     name: string,
-    jsonInput?: string,
+    input?: string,
 ): Promise<void> {
-    printJson(getMcpPrompt(name, parsePromptArguments(jsonInput)))
+    printJson(getMcpPrompt(name, parsePromptArguments(name, input)))
 }
 
 export async function mcpCallCommand(
@@ -145,8 +145,20 @@ function extractMcpText(result: unknown): string | undefined {
     return texts.length > 0 ? texts.join('\n') : undefined
 }
 
-function parsePromptArguments(jsonInput?: string): Record<string, string> {
-    const parsed = parseJsonInput(jsonInput)
+function parsePromptArguments(
+    name: string,
+    input?: string,
+): Record<string, string> {
+    const trimmed = input?.trim()
+    if (!trimmed) {
+        return {}
+    }
+
+    if (name === 'konteks-warm-up' && !looksLikeJson(trimmed)) {
+        return { topic: trimmed }
+    }
+
+    const parsed = parseJsonInput(trimmed)
     if (!isRecord(parsed)) {
         throw new Error('Prompt arguments must be a JSON object.')
     }
@@ -160,6 +172,10 @@ function parsePromptArguments(jsonInput?: string): Record<string, string> {
     }
 
     return args
+}
+
+function looksLikeJson(value: string): boolean {
+    return value.startsWith('{') || value.startsWith('[')
 }
 
 function parseJsonInput(jsonInput?: string): unknown {

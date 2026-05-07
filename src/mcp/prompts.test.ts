@@ -44,6 +44,34 @@ describe('MCP prompts', () => {
         expect(next).toContain('Call `konteks_recall` only if')
     })
 
+    it('supports an optional warm-up focus topic', () => {
+        const warmUpPrompt = listMcpPrompts().find(
+            prompt => prompt.name === 'konteks-warm-up',
+        )
+        const unfocused = promptText('konteks-warm-up')
+        const focused = promptText('konteks-warm-up', {
+            topic: 'cli status command',
+        })
+
+        expect(warmUpPrompt?.arguments).toEqual([
+            {
+                description:
+                    'Optional free-form topic, module, file, behavior, decision, or memory focus for targeted recall after warm up.',
+                name: 'topic',
+                required: false,
+            },
+        ])
+        expect(unfocused).toContain('Optional free-form focus: \n')
+        expect(unfocused).not.toContain('<topic>')
+        expect(focused).toContain(
+            'Optional free-form focus: cli status command',
+        )
+        expect(focused).toContain('also call `konteks_recall`')
+        expect(focused).toContain(
+            'Konteks is warmed up and ready for the task.',
+        )
+    })
+
     it('guides save toward diary plus durable memory without refresh noise', () => {
         const savePrompt = listMcpPrompts().find(
             prompt => prompt.name === 'konteks-save',

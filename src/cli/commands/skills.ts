@@ -48,7 +48,13 @@ function promptFileToSkill(
     const name = requiredField(frontmatter, 'name', fileName)
     const title = requiredField(frontmatter, 'title', fileName)
     const description = requiredField(frontmatter, 'description', fileName)
-    const body = match.groups.body.trim().replaceAll('{{task}}', 'the task')
+    const body = match.groups.body
+        .trim()
+        .replaceAll('{{task}}', 'the task')
+        .replaceAll(
+            '{{topic}}',
+            'any free-form text provided after `$konteks-warm-up`, if any',
+        )
 
     return {
         content: `---\nname: ${name}\ndescription: Use when working with Konteks MCP memory. ${description}\n---\n\n# ${title}\n\n${body}`,

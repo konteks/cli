@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { mineProject } from '../../mining/mine-project.js'
 import { loadProjectContext } from '../../project/context.js'
 import { openProjectDatabase } from '../../storage/database.js'
-import { mcpCallCommand } from './mcp.js'
+import { mcpCallCommand, mcpPromptCommand } from './mcp.js'
 
 const tempDirs: string[] = []
 
@@ -105,5 +105,43 @@ describe('MCP call command', () => {
         } finally {
             log.mockRestore()
         }
+    })
+})
+
+describe('MCP prompt command', () => {
+    it('accepts free-form warm-up focus text', async () => {
+        const log = spyOn(console, 'log').mockImplementation(() => {})
+        let output = ''
+
+        try {
+            await mcpPromptCommand(
+                'konteks-warm-up',
+                'cli status command memory',
+            )
+            output = String(log.mock.calls[0]?.[0])
+        } finally {
+            log.mockRestore()
+        }
+
+        expect(output).toContain('Optional free-form focus')
+        expect(output).toContain('cli status command memory')
+        expect(output).toContain('konteks_recall')
+    })
+
+    it('still accepts JSON prompt arguments', async () => {
+        const log = spyOn(console, 'log').mockImplementation(() => {})
+        let output = ''
+
+        try {
+            await mcpPromptCommand(
+                'konteks-recall',
+                '{"task":"auth session refresh"}',
+            )
+            output = String(log.mock.calls[0]?.[0])
+        } finally {
+            log.mockRestore()
+        }
+
+        expect(output).toContain('auth session refresh')
     })
 })

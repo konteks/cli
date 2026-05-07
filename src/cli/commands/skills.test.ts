@@ -30,18 +30,20 @@ describe('skills install command', () => {
             'konteks-work-on-existing',
             'konteks-work-on-new',
         ])
-        await expect(
-            readFile(
-                join(
-                    projectRoot,
-                    '.agents',
-                    'skills',
-                    'konteks-warm-up',
-                    'SKILL.md',
-                ),
-                'utf8',
+        const warmUp = await readFile(
+            join(
+                projectRoot,
+                '.agents',
+                'skills',
+                'konteks-warm-up',
+                'SKILL.md',
             ),
-        ).resolves.toContain('name: konteks-warm-up')
+            'utf8',
+        )
+
+        expect(warmUp).toContain('name: konteks-warm-up')
+        expect(warmUp).toContain('any free-form text provided')
+        expect(warmUp).not.toContain('{{topic}}')
     })
 
     it('installs Konteks skills globally', async () => {

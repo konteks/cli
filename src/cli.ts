@@ -72,9 +72,12 @@ mcp.command('prompts')
 mcp.command('prompt')
     .description('Render one MCP prompt for debugging.')
     .argument('<name>', 'MCP prompt name, such as konteks-warm-up')
-    .argument('[json]', 'Optional JSON prompt arguments')
-    .action(async (name: string, jsonInput?: string) => {
-        await mcpPromptCommand(name, jsonInput)
+    .argument(
+        '[input...]',
+        'Optional JSON prompt arguments or free-form warm-up topic',
+    )
+    .action(async (name: string, input?: string[]) => {
+        await mcpPromptCommand(name, input?.join(' '))
     })
 
 mcp.command('call')
