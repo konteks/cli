@@ -52,11 +52,11 @@ describe('MCP prompts', () => {
         const warmUp = promptText('konteks-warm-up')
 
         expect(savePrompt?.arguments).toBeUndefined()
-        expect(save).toContain('`chat` argument')
-        expect(save).toContain('Call `konteks_save` once')
-        expect(save).toContain('Do not call `konteks_save` repeatedly')
-        expect(save).toContain('make them searchable')
-        expect(save).toContain('write one diary entry')
+        expect(save).toContain('Do not pass the full raw chat transcript')
+        expect(save).toContain('Call `konteks_save` in two phases')
+        expect(save).toContain('type: "memories"')
+        expect(save).toContain('type: "diary"')
+        expect(save).toContain('If the memory payload is too large')
         expect(save).not.toContain('current Konteks task')
         expect(save).not.toContain('focus on')
         expect(`${save}\n${warmUp}`).not.toMatch(

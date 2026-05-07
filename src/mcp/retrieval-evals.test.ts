@@ -77,7 +77,7 @@ describe('retrieval quality evals', () => {
             callMcpTool({ project: projectRoot }, 'konteks_save', {
                 type: 'diary',
             }),
-        ).rejects.toThrow('chat is required')
+        ).rejects.toThrow('summary is required')
     })
 
     it('rejects invalid save chat before refreshing project memory', async () => {
@@ -105,9 +105,11 @@ describe('retrieval quality evals', () => {
 
         await expect(
             callMcpTool({ project: projectRoot }, 'konteks_save', {
-                chat: 'too short',
+                content: 'too short',
+                kind: 'note',
+                type: 'memory',
             }),
-        ).rejects.toThrow('chat transcript is too short')
+        ).rejects.toThrow('memory content is too short')
         const manifest = await readMineManifest(context.memoryDir)
 
         expect(manifest?.mode).toBe('full')
@@ -141,11 +143,9 @@ describe('retrieval quality evals', () => {
             { project: projectRoot },
             'konteks_save',
             {
-                chat: [
-                    'User: We should extract from the whole session chat in one save call.',
-                    'Assistant: Implemented chat extraction and durable memory storage.',
-                    'User: The save tool should refresh changed project memory after persistence.',
-                ].join('\n'),
+                summary:
+                    'Saved structured diary context after refreshing changed project memory.',
+                type: 'diary',
             },
         )
         const text = result.content.find(

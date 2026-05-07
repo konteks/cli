@@ -21,24 +21,27 @@ type SaveResult = {
 type MemoryKind =
     | 'blocker'
     | 'code_insight'
+    | 'constraint'
     | 'decision'
     | 'fact'
     | 'note'
     | 'preference'
 
+type SaveMemoryInput = {
+    content: string
+    entities?: string[]
+    importance?: 1 | 2 | 3 | 4 | 5
+    kind: MemoryKind
+    source?: string
+    tags?: string[]
+    type: 'memory'
+}
+
 export type SaveStoreInput =
+    | SaveMemoryInput
     | {
-          chat: string
-          type: 'chat'
-      }
-    | {
-          content: string
-          entities?: string[]
-          importance?: 1 | 2 | 3 | 4 | 5
-          kind: MemoryKind
-          source?: string
-          tags?: string[]
-          type: 'memory'
+          memories: SaveMemoryInput[]
+          type: 'memories'
       }
     | {
           subject?: string
@@ -71,36 +74,38 @@ export async function saveKonteksInput(
     input: SaveStoreInput,
     options: { projectUpdate?: SaveProjectUpdate } = {},
 ): Promise<SaveResult> {
-    if (input.type === 'chat') {
-        return saveChat(adapter, context, input, options.projectUpdate)
-    }
-
     if (input.type === 'memory') {
         return saveMemory(adapter, context, input)
     }
 
+    if (input.type === 'memories') {
+        return saveMemories(adapter, context, input)
+    }
+
     if (input.type === 'diary') {
-        return saveDiary(adapter, context, input)
+        return saveDiary(
+            adapter,
+            context,
+            withProjectUpdateSummary(input, options.projectUpdate),
+        )
     }
 
     return saveSession(adapter, context, input)
 }
 
-async function saveChat(
+async function saveMemories(
     adapter: SqliteAdapter,
     context: LoadedProjectContext,
-    input: Extract<SaveStoreInput, { type: 'chat' }>,
-    projectUpdate: SaveProjectUpdate | undefined,
+    input: Extract<SaveStoreInput, { type: 'memories' }>,
 ): Promise<SaveResult> {
-    validateChatQuality(input.chat)
-    const candidates = extractMemoriesFromChat(input.chat)
-    return adapter.transaction(async () => {
-        const memoryIds: string[] = []
-        let skippedMemories = 0
+    const batchId = `memory_batch_${randomUUID()}`
+    const memoryIds: string[] = []
+    let skippedMemories = 0
 
-        for (const candidate of candidates) {
+    await adapter.transaction(async () => {
+        for (const memory of input.memories) {
             try {
-                const saved = await saveMemory(adapter, context, candidate)
+                const saved = await saveMemory(adapter, context, memory)
                 memoryIds.push(saved.id)
             } catch (error) {
                 if (!isSkippableMemoryError(error)) {
@@ -109,23 +114,15 @@ async function saveChat(
                 skippedMemories += 1
             }
         }
-
-        const diary = await saveDiary(adapter, context, {
-            subject: inferDiarySubject(input.chat, candidates),
-            summary: summarizeDiary(input.chat, candidates, projectUpdate),
-            tags: inferDiaryTags(candidates, projectUpdate),
-            type: 'diary',
-        })
-
-        return {
-            accepted: true,
-            diaryId: diary.id,
-            id: diary.id,
-            memoryIds: [...new Set(memoryIds)],
-            skippedMemories,
-            type: input.type,
-        }
     })
+
+    return {
+        accepted: true,
+        id: memoryIds[0] ?? batchId,
+        memoryIds: [...new Set(memoryIds)],
+        skippedMemories,
+        type: input.type,
+    }
 }
 
 async function saveMemory(
@@ -141,6 +138,7 @@ async function saveMemory(
             accepted: true,
             duplicateOf: duplicate.id,
             id: duplicate.id,
+            memoryIds: [duplicate.id],
             type: input.type,
         }
     }
@@ -208,6 +206,7 @@ insert into observations (
     return {
         accepted: true,
         id,
+        memoryIds: [id],
         type: input.type,
     }
 }
@@ -397,208 +396,19 @@ function validateSessionQuality(summary: string): void {
     }
 }
 
-function validateChatQuality(chat: string): void {
-    const normalized = chat.trim()
-    if (looksSensitive(normalized)) {
-        throw new Error('chat transcript appears to contain a secret')
-    }
-    if (chat.trim().split(/\s+/u).filter(Boolean).length < 8) {
-        throw new Error('chat transcript is too short to save')
-    }
-}
-
-function isSkippableMemoryError(error: unknown): boolean {
-    return (
-        error instanceof Error &&
-        (error.message.includes('too short') ||
-            error.message.includes('secret'))
-    )
-}
-
-function extractMemoriesFromChat(
-    chat: string,
-): Array<Extract<SaveStoreInput, { type: 'memory' }>> {
-    const seen = new Set<string>()
-    const candidates: Array<Extract<SaveStoreInput, { type: 'memory' }>> = []
-
-    for (const line of splitChatLines(chat)) {
-        const memory = classifyChatLine(line)
-        if (!memory || looksSensitive(memory.content)) {
-            continue
-        }
-
-        const key = `${memory.kind}:${memory.content.toLowerCase()}`
-        if (seen.has(key)) {
-            continue
-        }
-
-        seen.add(key)
-        candidates.push(memory)
-        if (candidates.length >= 12) {
-            break
-        }
-    }
-
-    return candidates
-}
-
-type ChatLine = {
-    role: 'assistant' | 'developer' | 'system' | 'unknown' | 'user'
-    text: string
-}
-
-function splitChatLines(chat: string): ChatLine[] {
-    return chat
-        .split(/\r?\n|(?<=[.!?])\s+/u)
-        .map(parseChatLine)
-        .filter(line => line.text.split(/\s+/u).length >= 4)
-}
-
-function parseChatLine(line: string): ChatLine {
-    const match = /^(user|assistant|agent|system|developer)\s*:\s*(.*)$/iu.exec(
-        line.trim(),
-    )
-    const role = normalizeChatRole(match?.[1])
-    return {
-        role,
-        text: (match?.[2] ?? line).trim(),
-    }
-}
-
-function normalizeChatRole(value: string | undefined): ChatLine['role'] {
-    const normalized = value?.toLowerCase()
-    if (normalized === 'agent') {
-        return 'assistant'
-    }
-    if (
-        normalized === 'assistant' ||
-        normalized === 'developer' ||
-        normalized === 'system' ||
-        normalized === 'user'
-    ) {
-        return normalized
-    }
-    return 'unknown'
-}
-
-function classifyChatLine(
-    line: ChatLine,
-): Extract<SaveStoreInput, { type: 'memory' }> | undefined {
-    const normalized = line.text.replaceAll(/\s+/gu, ' ').trim()
-    const lower = normalized.toLowerCase()
-
-    if (line.role === 'system' || line.role === 'developer') {
-        return undefined
-    }
-
-    if (
-        /\b(blocked|blocker|cannot|can't|failed|failing|error)\b/iu.test(
-            lower,
-        ) &&
-        /\b(because|due to|on|in|when|after|while|during|from)\b/iu.test(lower)
-    ) {
-        return memoryCandidate('blocker', normalized, 4)
-    }
-
-    if (
-        line.role === 'user' &&
-        /\b(i prefer|i want|i don't want|do not|don't|prefer|avoid)\b/iu.test(
-            lower,
-        )
-    ) {
-        return memoryCandidate('preference', normalized, 5)
-    }
-
-    if (
-        line.role === 'user' &&
-        /\b(accepted|we agreed|we decided|decision:|final decision|must|shouldn't|should not)\b/iu.test(
-            lower,
-        )
-    ) {
-        return memoryCandidate('decision', normalized, 5)
-    }
-
-    if (
-        line.role === 'assistant' &&
-        /\b(implemented|patched|changed|updated|renamed|removed|added|verified)\b/iu.test(
-            lower,
-        ) &&
-        /\b(done|implemented|patched|changed|updated|renamed|removed|added|verified|passed)\b/iu.test(
-            lower,
-        )
-    ) {
-        return memoryCandidate('code_insight', normalized, 4)
-    }
-
-    return undefined
-}
-
-function memoryCandidate(
-    kind: Extract<SaveStoreInput, { type: 'memory' }>['kind'],
-    content: string,
-    importance: 1 | 2 | 3 | 4 | 5,
-): Extract<SaveStoreInput, { type: 'memory' }> {
-    return {
-        content,
-        importance,
-        kind,
-        source: 'session_chat',
-        tags: ['session'],
-        type: 'memory',
-    }
-}
-
-function inferDiarySubject(
-    chat: string,
-    candidates: Array<Extract<SaveStoreInput, { type: 'memory' }>>,
-): string {
-    const firstDecision = candidates.find(item => item.kind === 'decision')
-    const source =
-        firstDecision?.content ?? splitChatLines(chat)[0]?.text ?? chat
-    return summarizeText(source)
-        .replace(/[.?!]$/u, '')
-        .slice(0, 80)
-}
-
-function summarizeDiary(
-    chat: string,
-    candidates: Array<Extract<SaveStoreInput, { type: 'memory' }>>,
+function withProjectUpdateSummary(
+    input: Extract<SaveStoreInput, { type: 'diary' }>,
     projectUpdate: SaveProjectUpdate | undefined,
-): string {
-    const memorySummary = candidates
-        .slice(0, 6)
-        .map(item => `- ${item.content}`)
-        .join('\n')
+): Extract<SaveStoreInput, { type: 'diary' }> {
     const projectSummary = summarizeProjectUpdate(projectUpdate)
-
-    const parts = ['Session saved from chat transcript.']
-    if (memorySummary) {
-        parts.push(`High-signal memories extracted:\n${memorySummary}`)
-    } else {
-        parts.push(`Summary: ${summarizeText(chat)}`)
-    }
-    if (projectSummary) {
-        parts.push(projectSummary)
+    if (!projectSummary) {
+        return input
     }
 
-    return parts.join('\n')
-}
-
-function inferDiaryTags(
-    candidates: Array<Extract<SaveStoreInput, { type: 'memory' }>>,
-    projectUpdate: SaveProjectUpdate | undefined,
-): string[] {
-    const tags = new Set(['session'])
-    for (const candidate of candidates) {
-        tags.add(candidate.kind)
+    return {
+        ...input,
+        summary: `${input.summary}\n${projectSummary}`,
     }
-    if (
-        (projectUpdate?.updatedFilePaths.length ?? 0) > 0 ||
-        (projectUpdate?.deletedFilePaths.length ?? 0) > 0
-    ) {
-        tags.add('project_update')
-    }
-    return [...tags].slice(0, 8)
 }
 
 function summarizeProjectUpdate(
@@ -620,6 +430,14 @@ function summarizeProjectUpdate(
     }
 
     return lines.join('\n')
+}
+
+function isSkippableMemoryError(error: unknown): boolean {
+    return (
+        error instanceof Error &&
+        (error.message.includes('too short') ||
+            error.message.includes('secret'))
+    )
 }
 
 function looksSensitive(content: string): boolean {

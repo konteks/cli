@@ -184,7 +184,7 @@ export async function startMcpServer(
                 tools: {},
             },
             instructions:
-                'Use prompts for the Warm Up -> Build -> Save flow. Use konteks_warm_up at session start, konteks_recall as supplemental Build context, and call konteks_save once with the full chat transcript to persist the session diary and durable memories.',
+                'Use prompts for the Warm Up -> Build -> Save flow. Use konteks_warm_up at session start, konteks_recall as supplemental Build context, and call konteks_save with structured durable memories plus one diary entry during Save.',
         },
     )
     const tools = new Map<string, ToolRegistration>()
@@ -424,7 +424,7 @@ function registerKonteksTools(
                 readOnlyHint: false,
             },
             description:
-                'Derive durable memories and one diary entry from the full session chat.',
+                'Persist structured durable memories or one session diary entry.',
             inputSchema: saveInputSchema,
             outputSchema: saveOutputSchema,
         },

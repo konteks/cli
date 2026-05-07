@@ -31,11 +31,14 @@ describe('MCP call command', () => {
                 { project: projectRoot },
                 'konteks_save',
                 JSON.stringify({
-                    chat: [
-                        'User: The MCP debug call should return real tool output.',
-                        'Assistant: Implemented dry-run memory execution for mutating tools.',
-                        'User: Keep dry-run from persisting any session memory.',
-                    ].join('\n'),
+                    memories: [
+                        {
+                            content:
+                                'Keep MCP debug dry-run from persisting session memory.',
+                            kind: 'constraint',
+                        },
+                    ],
+                    type: 'memories',
                 }),
             )
 
@@ -43,13 +46,11 @@ describe('MCP call command', () => {
         } finally {
             log.mockRestore()
         }
-        expect(output).toBe(
-            'konteks: session saved, 1 diary entry, 1 durable memories.',
-        )
+        expect(output).toBe('konteks: session saved, 1 durable memories.')
 
         const adapter = await openProjectDatabase(context)
         const rows = await adapter.query<{ count: number }>(
-            'select count(*) as count from diary_entries',
+            'select count(*) as count from observations',
         )
         await adapter.close()
         expect(rows[0]?.count).toBe(0)
@@ -68,11 +69,9 @@ describe('MCP call command', () => {
                 { project: projectRoot },
                 'konteks_save',
                 JSON.stringify({
-                    chat: [
-                        'User: The MCP debug call can print JSON when needed.',
-                        'Assistant: Added a JSON flag for the raw MCP envelope.',
-                        'User: Keep text output as the default CLI behavior.',
-                    ].join('\n'),
+                    summary:
+                        'Added a JSON flag for the raw MCP envelope output.',
+                    type: 'diary',
                 }),
                 { json: true },
             )
@@ -83,7 +82,7 @@ describe('MCP call command', () => {
         }
 
         expect(output.content).toEqual(expect.any(Array))
-        expect(JSON.stringify(output)).toContain('diaryId')
+        expect(JSON.stringify(output)).toContain('diary_')
     })
 
     it('executes mutating tools with apply', async () => {
@@ -98,10 +97,10 @@ describe('MCP call command', () => {
                 mcpCallCommand(
                     { project: projectRoot },
                     'konteks_save',
-                    '{"chat":"Implemented status output."}',
+                    '{"content":"too short","kind":"note","type":"memory"}',
                     { apply: true },
                 ),
-            ).rejects.toThrow('chat transcript is too short to save')
+            ).rejects.toThrow('memory content is too short to save')
             expect(log).not.toHaveBeenCalled()
         } finally {
             log.mockRestore()

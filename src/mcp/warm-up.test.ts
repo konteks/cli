@@ -44,6 +44,23 @@ describe('konteks_warm_up', () => {
         await mineProject(context, 'full', {
             embeddingProvider: new FakeEmbeddingProvider(),
         })
+        await callMcpTool({ project: projectRoot }, 'konteks_save', {
+            memories: [
+                {
+                    content: 'Use Bun test for project verification.',
+                    kind: 'preference',
+                },
+                {
+                    content: 'Konteks save must preserve explicit constraints.',
+                    kind: 'constraint',
+                },
+                {
+                    content: 'Use structured save payloads for session memory.',
+                    kind: 'decision',
+                },
+            ],
+            type: 'memories',
+        })
 
         const result = await callMcpTool(
             { project: projectRoot },
@@ -64,7 +81,19 @@ describe('konteks_warm_up', () => {
         )
         expect(payload.architecture).toEqual(expect.any(Array))
         expect(payload.entryPoints).toEqual(expect.any(Array))
-        expect(payload.conventions).toEqual(expect.any(Array))
+        expect(payload.conventions).toEqual(
+            expect.arrayContaining(['Use Bun test for project verification.']),
+        )
+        expect(payload.constraints).toEqual(
+            expect.arrayContaining([
+                'Konteks save must preserve explicit constraints.',
+            ]),
+        )
+        expect(payload.durableDecisions).toEqual(
+            expect.arrayContaining([
+                'Use structured save payloads for session memory.',
+            ]),
+        )
         expect(payload.freshness).toBeUndefined()
         expect(payload.recentChanges).toBeUndefined()
         expect(payload.recentHandoffs).toBeUndefined()

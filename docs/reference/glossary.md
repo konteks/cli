@@ -60,7 +60,7 @@ A derived search surface built from sections, modules, memories, or diary entrie
 
 ## Save
 
-The final lifecycle phase. Save takes one full session chat transcript, derives durable memories, makes them searchable, and records one session diary back to Konteks.
+The final lifecycle phase. Save persists compact structured durable memories, makes them searchable, and records one session diary back to Konteks.
 
 ## Session
 

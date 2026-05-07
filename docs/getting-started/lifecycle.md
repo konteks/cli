@@ -58,7 +58,7 @@ The `/konteks-work-on-new` prompt helps the agent discover new context during im
 
 When the session is ending or meaningful progress should be preserved, save the agent's work back to Konteks.
 
-Use the `/konteks-save` prompt to persist the outcome of the current agent session. A single session can contain one task or several related tasks. The agent passes the full chat transcript once; Konteks derives durable memories, makes them searchable, and writes one session diary from the high-signal stored memory.
+Use the `/konteks-save` prompt to persist the outcome of the current agent session. A single session can contain one task or several related tasks. The agent saves compact structured durable memories first, then writes one session diary summarizing the outcome.
 
 > [!TIP]
 > Recommendation: Prefer saving when the session is complete or about to be closed. If progress is partial, the session diary should include pending items and exact next steps.

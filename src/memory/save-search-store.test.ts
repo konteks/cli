@@ -167,30 +167,44 @@ describe('save and search stores', () => {
         await adapter.close()
     })
 
-    it('extracts chat into durable memories and one diary entry', async () => {
+    it('persists structured memory batches and one diary entry', async () => {
         const context = await makeTempContext()
         const adapter = await openProjectDatabase(context)
 
-        const saved = await saveKonteksInput(adapter, context, {
-            chat: [
-                'User: We should save the full chat transcript in one call.',
-                'Assistant: Implemented chat extraction for high quality memory storage.',
-                'User: Prefer one diary entry per coherent session.',
-            ].join('\n'),
-            type: 'chat',
+        const savedMemories = await saveKonteksInput(adapter, context, {
+            memories: [
+                {
+                    content:
+                        'Save uses structured payloads instead of raw chat transcripts.',
+                    kind: 'decision',
+                    type: 'memory',
+                },
+                {
+                    content:
+                        'Konteks save must include one diary entry per coherent session.',
+                    kind: 'constraint',
+                    type: 'memory',
+                },
+            ],
+            type: 'memories',
+        })
+        const savedDiary = await saveKonteksInput(adapter, context, {
+            summary:
+                'Implemented structured memory batch saves and a diary save phase.',
+            tags: ['save'],
+            type: 'diary',
         })
         const memoryResults = await searchMemory(adapter, {
             limit: 5,
-            query: 'full chat transcript',
+            query: 'structured payloads raw chat',
         })
         const diaryResults = await searchMemory(adapter, {
             limit: 5,
-            query: 'high quality memory storage',
+            query: 'structured memory batch saves',
         })
 
-        expect(saved.id).toStartWith('diary_')
-        expect(saved.diaryId).toBe(saved.id)
-        expect(saved.memoryIds?.length).toBeGreaterThan(0)
+        expect(savedMemories.memoryIds?.length).toBe(2)
+        expect(savedDiary.id).toStartWith('diary_')
         expect(memoryResults.some(result => result.type === 'memory')).toBe(
             true,
         )
@@ -198,45 +212,53 @@ describe('save and search stores', () => {
         await adapter.close()
     })
 
-    it('does not store full chat when the transcript contains a secret', async () => {
+    it('does not store structured memory when it contains a secret', async () => {
         const context = await makeTempContext()
         const adapter = await openProjectDatabase(context)
 
         await expect(
             saveKonteksInput(adapter, context, {
-                chat: [
-                    'User: We should save this session later.',
-                    'User: api_key = abcdefghijklmnopqrstuvwxyz',
-                ].join('\n'),
-                type: 'chat',
+                content: 'api_key = abcdefghijklmnopqrstuvwxyz',
+                kind: 'note',
+                type: 'memory',
             }),
-        ).rejects.toThrow('chat transcript appears to contain a secret')
+        ).rejects.toThrow('memory content appears to contain a secret')
 
         const rows = await adapter.query<{ count: number }>(
-            'select count(*) as count from diary_entries',
+            'select count(*) as count from observations',
         )
         expect(rows[0]?.count).toBe(0)
         await adapter.close()
     })
 
-    it('does not turn tentative assistant suggestions into durable memories', async () => {
+    it('skips invalid structured memories in a batch', async () => {
         const context = await makeTempContext()
         const adapter = await openProjectDatabase(context)
 
         const saved = await saveKonteksInput(adapter, context, {
-            chat: [
-                'User: Can you think about whether we might change storage later?',
-                'Assistant: We should maybe use Redis someday if scaling becomes a problem.',
-            ].join('\n'),
-            type: 'chat',
+            memories: [
+                {
+                    content: 'too short',
+                    kind: 'note',
+                    type: 'memory',
+                },
+                {
+                    content:
+                        'Use structured save calls for durable memory persistence.',
+                    kind: 'decision',
+                    type: 'memory',
+                },
+            ],
+            type: 'memories',
         })
         const results = await searchMemory(adapter, {
             limit: 5,
-            query: 'redis scaling',
+            query: 'structured save calls',
         })
 
-        expect(saved.memoryIds).toEqual([])
-        expect(results.some(result => result.type === 'memory')).toBe(false)
+        expect(saved.memoryIds?.length).toBe(1)
+        expect(saved.skippedMemories).toBe(1)
+        expect(results.some(result => result.type === 'memory')).toBe(true)
         await adapter.close()
     })
 

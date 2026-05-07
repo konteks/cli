@@ -39,31 +39,87 @@ describe('MCP input parsing', () => {
         )
     })
 
-    it('accepts chat transcript save input', () => {
+    it('accepts structured memory save input', () => {
         expect(
             parseSaveInput({
-                chat: 'User: We should save the whole session chat.\nAssistant: I implemented chat extraction.',
+                content:
+                    'Use structured save payloads instead of raw chat transcripts.',
+                importance: 5,
+                kind: 'decision',
+                tags: ['save'],
+                type: 'memory',
             }),
         ).toEqual({
-            chat: 'User: We should save the whole session chat.\nAssistant: I implemented chat extraction.',
-            type: 'chat',
+            content:
+                'Use structured save payloads instead of raw chat transcripts.',
+            importance: 5,
+            kind: 'decision',
+            source: undefined,
+            tags: ['save'],
+            type: 'memory',
         })
     })
 
-    it('rejects repeated manual save shapes at the MCP boundary', () => {
-        expect(() =>
+    it('accepts structured memory batches and diary save input', () => {
+        expect(
             parseSaveInput({
-                content: 'Use WASM SQLite by default.',
-                kind: 'decision',
-                type: 'memory',
+                memories: [
+                    {
+                        content: 'Konteks save must not pass raw full chat.',
+                        kind: 'constraint',
+                    },
+                    {
+                        content: 'Prefer one final diary per coherent session.',
+                        kind: 'preference',
+                    },
+                ],
+                type: 'memories',
             }),
-        ).toThrow('chat is required')
-        expect(() =>
+        ).toEqual({
+            memories: [
+                {
+                    content: 'Konteks save must not pass raw full chat.',
+                    importance: undefined,
+                    kind: 'constraint',
+                    source: undefined,
+                    tags: undefined,
+                    type: 'memory',
+                },
+                {
+                    content: 'Prefer one final diary per coherent session.',
+                    importance: undefined,
+                    kind: 'preference',
+                    source: undefined,
+                    tags: undefined,
+                    type: 'memory',
+                },
+            ],
+            type: 'memories',
+        })
+
+        expect(
             parseSaveInput({
-                summary: 'Renamed prompts to konteks-* and verified listing.',
+                subject: 'structured save',
+                summary:
+                    'Implemented structured save payloads and updated prompts.',
+                tags: ['save'],
                 type: 'diary',
             }),
-        ).toThrow('chat is required')
+        ).toEqual({
+            subject: 'structured save',
+            summary:
+                'Implemented structured save payloads and updated prompts.',
+            tags: ['save'],
+            type: 'diary',
+        })
+    })
+
+    it('rejects raw chat transcript save input', () => {
+        expect(() =>
+            parseSaveInput({
+                chat: 'User: save the whole transcript.',
+            }),
+        ).toThrow('type is required')
     })
 
     it('requires id or query for forget input', () => {
@@ -75,9 +131,13 @@ describe('MCP input parsing', () => {
         )
     })
 
-    it('exposes discoverable save schema for full chat ingestion', () => {
-        expect(JSON.stringify(saveInputSchema)).toContain('"chat"')
-        expect(JSON.stringify(saveInputSchema)).not.toContain('"memory"')
-        expect(JSON.stringify(saveInputSchema)).not.toContain('"diary"')
+    it('exposes discoverable save schema for structured saves', () => {
+        expect(JSON.stringify(saveInputSchema)).not.toContain('"chat"')
+        expect(JSON.stringify(saveInputSchema)).toContain('"memories"')
+        expect(JSON.stringify(saveInputSchema)).toContain('"constraint"')
+        expect(JSON.stringify(saveInputSchema)).toContain('"diary"')
+        expect(JSON.stringify(saveInputSchema)).not.toContain(
+            'full session chat',
+        )
     })
 })
