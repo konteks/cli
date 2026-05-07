@@ -6,6 +6,8 @@ description: Persist the current session outcome and durable findings.
 
 Save the current Konteks session. Do not pass the full raw chat transcript, tool logs, or exhaustive turn-by-turn notes.
 
+Only use this prompt when the user explicitly invokes `konteks-save`, `$konteks-save`, or directly asks to save or persist the session. Do not call `konteks_save` automatically at the end of other workflows.
+
 Call `konteks_save` in two phases:
 
 1. Save durable memories with `type: "memories"`. Include only confirmed, future-useful information. Each memory must include `kind` and `content`. If there are no durable memories, skip this phase.
