@@ -95,6 +95,17 @@ type RecallHistoryItem = {
     reason: string
 }
 
+type RecallPackage = {
+    brief: string[]
+    graph: RecallGraphItem[]
+    history: RecallHistoryItem[]
+    memories: MemorySearchResult[]
+    primaryTargets: string[]
+    sourceCount: number
+    task: string
+    tokenBudget: number
+}
+
 const warmUpOutputSchema: Tool['outputSchema'] = {
     properties: {
         architecture: { items: { type: 'string' }, type: 'array' },
@@ -126,13 +137,25 @@ const warmUpOutputSchema: Tool['outputSchema'] = {
 
 const recallOutputSchema: Tool['outputSchema'] = {
     properties: {
+        brief: { items: { type: 'string' }, type: 'array' },
         graph: { items: { type: 'object' }, type: 'array' },
         history: { items: { type: 'object' }, type: 'array' },
         memories: { items: { type: 'object' }, type: 'array' },
+        primaryTargets: { items: { type: 'string' }, type: 'array' },
+        sourceCount: { type: 'number' },
         task: { type: 'string' },
         tokenBudget: { type: 'number' },
     },
-    required: ['task', 'tokenBudget', 'graph', 'history', 'memories'],
+    required: [
+        'task',
+        'tokenBudget',
+        'brief',
+        'primaryTargets',
+        'sourceCount',
+        'graph',
+        'history',
+        'memories',
+    ],
     type: 'object',
 }
 
@@ -344,19 +367,18 @@ function registerKonteksTools(
                     memories: await searchMemory(adapter, parsed),
                 }),
             )
-            const payload = {
+            const payload = assembleRecallPackage({
                 graph: recall.graph,
                 history: recall.history,
-                memories: applyTokenBudget(
-                    recall.memories,
-                    parsed.maxTokens ?? 2000,
-                ),
+                includeSources: parsed.includeSources ?? false,
+                maxTokens: parsed.maxTokens ?? 2000,
+                memories: recall.memories,
                 task: parsed.task,
-                tokenBudget: parsed.maxTokens ?? 2000,
-            }
+            })
             return textResult(
                 payload,
                 formatRecallText({
+                    brief: payload.brief,
                     graphCount: payload.graph.length,
                     graphEvidence: payload.graph
                         .slice(0, 6)
@@ -371,7 +393,9 @@ function registerKonteksTools(
                             item =>
                                 `${item.subjectEntityName} ${item.predicate} ${item.objectEntityName} [${item.status}]`,
                         ),
+                    includeSources: parsed.includeSources ?? false,
                     memories: payload.memories,
+                    primaryTargets: payload.primaryTargets,
                     task: payload.task,
                 }),
             )
@@ -736,6 +760,141 @@ function applyTokenBudget(
     }
 
     return selected
+}
+
+function assembleRecallPackage(input: {
+    graph: RecallGraphItem[]
+    history: RecallHistoryItem[]
+    includeSources: boolean
+    maxTokens: number
+    memories: MemorySearchResult[]
+    task: string
+}): RecallPackage {
+    const memories = applyTokenBudget(input.memories, input.maxTokens).map(
+        memory => (input.includeSources ? memory : compactMemory(memory)),
+    )
+    const primaryTargets = primaryRecallTargets(memories)
+    return {
+        brief: recallBrief({
+            graphCount: input.graph.length,
+            historyCount: input.history.length,
+            memories,
+            primaryTargets,
+        }),
+        graph: input.includeSources ? input.graph : input.graph.slice(0, 6),
+        history: input.includeSources
+            ? input.history
+            : input.history.slice(0, 4),
+        memories,
+        primaryTargets,
+        sourceCount: input.memories.length,
+        task: input.task,
+        tokenBudget: input.maxTokens,
+    }
+}
+
+function compactMemory(memory: MemorySearchResult): MemorySearchResult {
+    return {
+        anchor: memory.anchor,
+        createdAt: memory.createdAt,
+        excerpt: memory.excerpt,
+        id: memory.id,
+        kind: memory.kind,
+        path: memory.path,
+        score: memory.score,
+        scoreDetails: memory.scoreDetails,
+        sourceRole: memory.sourceRole,
+        status: memory.status,
+        task: memory.task,
+        tokenCost: memory.tokenCost,
+        type: memory.type,
+    }
+}
+
+function primaryRecallTargets(memories: MemorySearchResult[]): string[] {
+    const targets: string[] = []
+    const seen = new Set<string>()
+    const ordered = [...memories].sort(comparePrimaryTargetMemory)
+    for (const memory of ordered) {
+        const target = memory.path ?? memory.task ?? memory.id
+        if (!target || seen.has(target)) {
+            continue
+        }
+        seen.add(target)
+        targets.push(target)
+        if (targets.length >= 5) {
+            break
+        }
+    }
+    return targets
+}
+
+function comparePrimaryTargetMemory(
+    left: MemorySearchResult,
+    right: MemorySearchResult,
+): number {
+    const priorityDelta = targetPriority(right) - targetPriority(left)
+    if (priorityDelta !== 0) {
+        return priorityDelta
+    }
+    return right.score - left.score
+}
+
+function targetPriority(memory: MemorySearchResult): number {
+    const role = memory.sourceRole ?? memory.kind
+    if (role === 'app_code') {
+        return 5
+    }
+    if (role === 'package_config') {
+        return 4
+    }
+    if (role === 'test_code') {
+        return 3
+    }
+    if (memory.type === 'memory') {
+        return 2
+    }
+    if (role === 'product_doc') {
+        return 1
+    }
+    return 0
+}
+
+function recallBrief(input: {
+    graphCount: number
+    historyCount: number
+    memories: MemorySearchResult[]
+    primaryTargets: string[]
+}): string[] {
+    const lines: string[] = []
+    if (input.primaryTargets.length > 0) {
+        lines.push(
+            `Inspect first: ${input.primaryTargets.slice(0, 3).join(', ')}`,
+        )
+    }
+    const typeCounts = countBy(input.memories, memory => memory.type)
+    const evidence = Object.entries(typeCounts)
+        .map(([type, count]) => `${count} ${type}`)
+        .join(', ')
+    lines.push(evidence ? `Evidence: ${evidence}.` : 'Evidence: none found.')
+    if (input.graphCount > 0 || input.historyCount > 0) {
+        lines.push(
+            `Relations: ${input.graphCount} active, ${input.historyCount} historical.`,
+        )
+    }
+    return lines.slice(0, 3)
+}
+
+function countBy<T>(
+    items: T[],
+    keyFor: (item: T) => string,
+): Record<string, number> {
+    const counts: Record<string, number> = {}
+    for (const item of items) {
+        const key = keyFor(item)
+        counts[key] = (counts[key] ?? 0) + 1
+    }
+    return counts
 }
 
 type WarmUpContext = {

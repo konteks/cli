@@ -240,6 +240,60 @@ limit 1
         expect((text ?? '').length).toBeLessThan(structured.length)
     })
 
+    it('prioritizes implementation files for implementation recall tasks', async () => {
+        const projectRoot = await mkdtemp(
+            join(tmpdir(), 'konteks-eval-recall-shape-'),
+        )
+        tempDirs.push(projectRoot)
+        await mkdir(join(projectRoot, 'src', 'mcp'), { recursive: true })
+        await mkdir(join(projectRoot, 'docs', 'getting-started'), {
+            recursive: true,
+        })
+        await writeFile(
+            join(projectRoot, 'package.json'),
+            JSON.stringify({ name: 'recall-shape-fixture' }, null, 2),
+        )
+        await writeFile(
+            join(projectRoot, 'src', 'mcp', 'server.ts'),
+            'export const konteks_recall = () => "return shape"\n',
+        )
+        await writeFile(
+            join(projectRoot, 'src', 'mcp', 'retrieval-format.ts'),
+            'export const formatRecallText = () => "recall return shape"\n',
+        )
+        await writeFile(
+            join(projectRoot, 'docs', 'getting-started', 'lifecycle.md'),
+            '# Build\nUse recall during the build phase.\n',
+        )
+        const context = await loadProjectContext(projectRoot)
+        await mineProject(context, 'full', {
+            embeddingProvider: new FakeEmbeddingProvider(),
+        })
+
+        const recall = await callMcpTool(
+            { project: projectRoot },
+            'konteks_recall',
+            { task: 'improve konteks_recall return shape' },
+        )
+        const payload = (recall.structuredContent ?? {}) as Record<
+            string,
+            unknown
+        >
+        const primaryTargets = (payload.primaryTargets ?? []) as string[]
+        const brief = (payload.brief ?? []) as string[]
+        const text = recall.content.find(
+            item => item.type === 'text' && 'text' in item,
+        )?.text
+
+        expect(brief.length).toBeGreaterThan(0)
+        expect(primaryTargets.slice(0, 2).join('\n')).toContain('src/mcp')
+        expect(primaryTargets[0]?.startsWith('docs/')).toBe(false)
+        expect(payload.sourceCount).toEqual(expect.any(Number))
+        expect(text).toContain('brief:')
+        expect(text).toContain('primary_targets:')
+        expect(text).not.toContain('- -')
+    })
+
     it('uses SQLite WASM local storage context for retrieval', async () => {
         const projectRoot = await mkdtemp(
             join(tmpdir(), 'konteks-eval-sqlite-'),

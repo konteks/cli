@@ -56,12 +56,14 @@ The final step is the construction of the **Recall Package**.
 
 ### Technical Specification: The Recall Package
 
-The package is a structured JSON object containing:
+The package is a compact structured object containing:
 
-1. **Project Briefing**: The stable high-level context.
-2. **Top Entities**: The most relevant files and symbols.
-3. **Active Decisions**: Relevant chronological insights.
-4. **Semantic Chunks**: The most important code/doc fragments.
+1. **Brief**: A short task-oriented summary of the returned evidence.
+2. **Primary Targets**: The files, modules, tasks, or memory records the agent should inspect first.
+3. **Memories**: The highest-scoring content blocks, modules, durable memories, and diary entries within the token budget.
+4. **Graph and History Evidence**: Active and historical relations when they add context.
+
+By default, recall favors concise output. Set `includeSources` when the agent needs record IDs, embeddings, source IDs, or other debugging metadata.
 
 ---
 

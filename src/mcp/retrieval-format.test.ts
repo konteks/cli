@@ -50,11 +50,13 @@ describe('retrieval formatter', () => {
         ]
 
         const recall = formatRecallText({
+            brief: ['Inspect first: src/auth.ts'],
             graphCount: 2,
             graphEvidence: ['Konteks stores_in .konteks (depth=1)'],
             historyCount: 1,
             historyEvidence: ['Konteks stores_in global-memory [superseded]'],
             memories,
+            primaryTargets: ['src/auth.ts'],
             task: 'continue auth refresh fix',
         })
         const search = formatSearchText({
@@ -65,9 +67,31 @@ describe('retrieval formatter', () => {
 
         expect(recall).toContain('recall:')
         expect(recall).toContain('task: continue auth refresh fix')
+        expect(recall).toContain('primary_targets:')
+        expect(recall).toContain('score=140')
         expect(recall).toContain('graph_evidence:')
         expect(recall).toContain('history_evidence:')
         expect(search).toContain('search:')
         expect(search).toContain('query: auth refresh')
+    })
+
+    it('omits empty recall evidence sections', () => {
+        const recall = formatRecallText({
+            brief: ['Evidence: none found.'],
+            graphCount: 0,
+            graphEvidence: [],
+            historyCount: 0,
+            historyEvidence: [],
+            memories: [],
+            primaryTargets: [],
+            task: 'unknown task',
+        })
+
+        expect(recall).toContain(
+            'evidence_counts: memories=0, graph=0, history=0',
+        )
+        expect(recall).not.toContain('graph_evidence:')
+        expect(recall).not.toContain('history_evidence:')
+        expect(recall).not.toContain('- -')
     })
 })

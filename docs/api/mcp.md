@@ -34,7 +34,7 @@ Tools are lower-level callable operations used by agents and debugging workflows
 | Tool | Capability | Use When |
 | :--- | :--- | :--- |
 | `konteks_warm_up` | Warm Up | Start a fresh agent session with stable project context. |
-| `konteks_recall` | Recall | Continue an existing task on known code, modules, features, or decisions. |
+| `konteks_recall` | Recall | Continue an existing task with a compact brief, primary targets, and relevant memory evidence. |
 | `konteks_save` | Save | Persist structured durable memories or one diary entry. |
 | `konteks_search` | Search | Inspect memory directly with a query. |
 | `konteks_forget` | Forget | Remove or suppress wrong, stale, or sensitive memory. |

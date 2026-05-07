@@ -37,6 +37,7 @@ type SearchMemoryOptions = {
 type SearchMode = 'recall' | 'search'
 type SearchIntent = {
     allowsDiary: boolean
+    implementationTask: boolean
     prefersAgentReference: boolean
 }
 
@@ -687,6 +688,10 @@ function detectIntent(query: string): SearchIntent {
             /\b(continue|resume|history|previous|last time|already tried|debug|blocked|why failed|follow up)\b/iu.test(
                 normalized,
             ),
+        implementationTask:
+            /\b(add|build|change|fix|implement|improve|patch|refactor|test|update)\b/iu.test(
+                normalized,
+            ),
         prefersAgentReference:
             /\b(agent|skill|prompt|mcp|reference|docs?)\b/iu.test(normalized),
     }
@@ -726,10 +731,19 @@ function applyRolePolicy(
         }
         if (
             role === 'app_code' ||
-            role === 'product_doc' ||
+            role === 'test_code' ||
             role === 'package_config'
         ) {
             scoreDelta += 15
+        }
+        if (role === 'product_doc') {
+            scoreDelta += intent.implementationTask ? -10 : 10
+        }
+        if (intent.implementationTask && result.path?.startsWith('src/')) {
+            scoreDelta += 25
+        }
+        if (intent.implementationTask && result.path?.endsWith('.test.ts')) {
+            scoreDelta += 10
         }
     }
 

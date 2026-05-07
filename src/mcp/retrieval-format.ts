@@ -37,25 +37,35 @@ export function formatWarmUpText(input: {
 }
 
 export function formatRecallText(input: {
+    brief: string[]
     task: string
     memories: MemorySearchResult[]
+    primaryTargets: string[]
     graphCount: number
     historyCount: number
     graphEvidence: string[]
     historyEvidence: string[]
+    includeSources?: boolean
 }): string {
     return [
         'recall:',
         `  task: ${inline(input.task)}`,
-        `  graph_items: ${input.graphCount}`,
-        `  history_items: ${input.historyCount}`,
-        '  graph_evidence:',
-        ...toBullets(input.graphEvidence, 4),
-        '  history_evidence:',
-        ...toBullets(input.historyEvidence, 4),
+        '  brief:',
+        ...toBullets(input.brief, 4),
+        input.primaryTargets.length > 0 ? '  primary_targets:' : null,
+        ...toBullets(input.primaryTargets, 4, { empty: false }),
+        `  evidence_counts: memories=${input.memories.length}, graph=${input.graphCount}, history=${input.historyCount}`,
+        input.graphEvidence.length > 0 ? '  graph_evidence:' : null,
+        ...toBullets(input.graphEvidence, 4, { empty: false }),
+        input.historyEvidence.length > 0 ? '  history_evidence:' : null,
+        ...toBullets(input.historyEvidence, 4, { empty: false }),
         '  memories:',
-        ...input.memories.slice(0, 8).map(memory => formatMemory(memory, 4)),
-    ].join('\n')
+        ...input.memories
+            .slice(0, 8)
+            .map(memory => formatMemory(memory, 4, input.includeSources)),
+    ]
+        .filter((line): line is string => line !== null)
+        .join('\n')
 }
 
 export function formatSearchText(input: {
@@ -95,20 +105,36 @@ export function formatSaveText(input: {
     return `${parts.join(', ')}.`
 }
 
-function formatMemory(item: MemorySearchResult, indent: number): string {
+function formatMemory(
+    item: MemorySearchResult,
+    indent: number,
+    includeSources = false,
+): string {
     const pad = ' '.repeat(indent)
     const summary = item.excerpt.replaceAll(/\s+/gu, ' ').trim()
-    return `${pad}- [${item.type}] path=${item.path ?? '-'} role=${item.sourceRole ?? item.kind ?? '-'} :: ${inline(summary)}`
+    const location = item.anchor
+        ? `${item.path ?? item.id}#${item.anchor}`
+        : (item.path ?? item.id)
+    const role = item.sourceRole ?? item.kind ?? '-'
+    const base = `${pad}- [${item.type}] score=${item.score} ${location} role=${role} :: ${inline(summary)}`
+    if (!includeSources) {
+        return base
+    }
+    return `${base} id=${item.id} tokens=${item.tokenCost}`
 }
 
 function list(values: string[]): string {
     return values.length > 0 ? values.join(', ') : '-'
 }
 
-function toBullets(values: string[], indent: number): string[] {
+function toBullets(
+    values: string[],
+    indent: number,
+    options: { empty?: boolean } = {},
+): string[] {
     const pad = ' '.repeat(indent)
     if (values.length === 0) {
-        return [`${pad}- -`]
+        return options.empty === false ? [] : [`${pad}- none`]
     }
     return values.slice(0, 10).map(value => `${pad}- ${inline(value)}`)
 }
