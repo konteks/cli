@@ -16,6 +16,8 @@ For terms, see the [Glossary](../reference/glossary.md).
 
 Prompts are user-invoked workflow templates. They guide the agent through the [Session Lifecycle](../getting-started/lifecycle.md), where a [session](../reference/glossary.md#session) is one continuous agent conversation in a project.
 
+Agents that do not expose MCP prompts in slash autocomplete can use native skills instead. Run `konteks install-skills` to install five Konteks lifecycle skills into `.agents/skills`, or `konteks install-skills --global` to install them into `~/.agents/skills`.
+
 | Prompt | Lifecycle Phase | Use When |
 | :--- | :--- | :--- |
 | `konteks-warm-up` | Warm Up | Open a fresh agent session in a project. |

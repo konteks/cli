@@ -13,6 +13,7 @@ For terms, see the [Glossary](../reference/glossary.md).
 | `konteks status` | Status | Check memory health and freshness. |
 | `konteks doctor` | Diagnose | Inspect runtime and project setup problems. |
 | `konteks mcp` | Serve | Start the MCP server for an agent client. |
+| `konteks install-skills` | Skill Install | Install native Konteks skills for agents without MCP prompt autocomplete. |
 
 ## MCP Debugging
 
@@ -38,6 +39,30 @@ konteks mcp call konteks_search '{"query":"memory","limit":3}'
 ```
 
 Use canonical `konteks_*` tool names in documentation and scripts. Short debug aliases may exist for convenience, but they should not be treated as the public naming pattern.
+
+## Native Skill Install
+
+Some agents can call MCP tools but do not show MCP prompts in slash autocomplete. Install a native skill for those agents so they can invoke Konteks explicitly or implicitly.
+
+```bash
+konteks install-skills
+```
+
+By default this writes five Konteks lifecycle skills into `.agents/skills` in the current project:
+
+- `konteks-warm-up`
+- `konteks-recall`
+- `konteks-work-on-existing`
+- `konteks-work-on-new`
+- `konteks-save`
+
+Use `--global` to install it globally:
+
+```bash
+konteks install-skills --global
+```
+
+Global install writes the same five skills into `~/.agents/skills`.
 
 ## Global Options
 

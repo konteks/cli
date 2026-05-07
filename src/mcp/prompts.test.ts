@@ -22,6 +22,13 @@ describe('MCP prompts', () => {
             'konteks-work-on-new',
             'konteks-save',
         ])
+        expect(listMcpPrompts().map(prompt => prompt.title)).toEqual([
+            'Konteks Warm Up',
+            'Konteks Recall',
+            'Konteks Build Existing',
+            'Konteks Build New',
+            'Konteks Save',
+        ])
     })
 
     it('keeps recall supplemental during build prompts', () => {
@@ -33,8 +40,8 @@ describe('MCP prompts', () => {
         })
 
         expect(existing).toContain('If known modules')
-        expect(existing).toContain('call konteks_recall first')
-        expect(next).toContain('call konteks_recall only if')
+        expect(existing).toContain('call `konteks_recall` first')
+        expect(next).toContain('call `konteks_recall` only if')
     })
 
     it('guides save toward diary plus durable memory without refresh noise', () => {
@@ -45,9 +52,9 @@ describe('MCP prompts', () => {
         const warmUp = promptText('konteks-warm-up')
 
         expect(savePrompt?.arguments).toBeUndefined()
-        expect(save).toContain('"chat" argument')
-        expect(save).toContain('Call konteks_save once')
-        expect(save).toContain('Do not call konteks_save repeatedly')
+        expect(save).toContain('`chat` argument')
+        expect(save).toContain('Call `konteks_save` once')
+        expect(save).toContain('Do not call `konteks_save` repeatedly')
         expect(save).toContain('current Konteks session')
         expect(save).not.toContain('current Konteks task')
         expect(save).not.toContain('focus on')

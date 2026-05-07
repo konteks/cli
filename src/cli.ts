@@ -10,6 +10,7 @@ import {
     mcpToolsCommand,
 } from './cli/commands/mcp.js'
 import { repairCommand } from './cli/commands/mine.js'
+import { skillsInstallCommand } from './cli/commands/skills.js'
 import { statusCommand } from './cli/commands/status.js'
 import { VERSION } from './cli/version.js'
 
@@ -82,6 +83,17 @@ mcp.command('call')
     .argument('[json]', 'Optional JSON tool input')
     .action(async (name: string, jsonInput?: string) => {
         await mcpCallCommand(program.opts(), name, jsonInput)
+    })
+
+program
+    .command('install-skills')
+    .description('Install Konteks skills for agents without MCP prompts.')
+    .option('--global', 'Install into ~/.agents/skills')
+    .action(async (options: { global?: boolean }) => {
+        await skillsInstallCommand({
+            ...program.opts(),
+            ...options,
+        })
     })
 
 await program.parseAsync(process.argv)

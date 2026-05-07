@@ -42,6 +42,7 @@ import {
     searchInputSchema,
     warmUpInputSchema,
 } from './inputs.js'
+import { listPromptDefinitions, renderPromptText } from './prompt-library.js'
 import { textResult } from './result.js'
 import {
     formatRecallText,
@@ -197,7 +198,7 @@ export async function startMcpServer(
 
     registerKonteksTools(options, registerTool)
 
-    const prompts = createPromptDefinitions()
+    const prompts = listPromptDefinitions()
 
     server.setRequestHandler(ListPromptsRequestSchema, async () => ({
         prompts,
@@ -469,14 +470,14 @@ function registerKonteksTools(
 }
 
 export function listMcpPrompts(): Prompt[] {
-    return createPromptDefinitions()
+    return listPromptDefinitions()
 }
 
 export function getMcpPrompt(
     name: string,
     args: Record<string, string> = {},
 ): GetPromptResult {
-    const prompt = createPromptDefinitions().find(item => item.name === name)
+    const prompt = listPromptDefinitions().find(item => item.name === name)
     if (!prompt) {
         throw new Error(`Unknown Konteks prompt: ${name}`)
     }
@@ -525,94 +526,21 @@ function createToolRegistrations(
     return tools
 }
 
-function createPromptDefinitions(): Prompt[] {
-    return [
-        {
-            description: 'Open a fresh Konteks session with project context.',
-            name: 'konteks-warm-up',
-            title: 'Warm Up',
-        },
-        {
-            arguments: [
-                {
-                    description:
-                        'The module, feature, file, decision, or constraint to recall.',
-                    name: 'task',
-                    required: true,
-                },
-            ],
-            description:
-                'Supplement a Build task with context from known project memory.',
-            name: 'konteks-recall',
-            title: 'Recall',
-        },
-        {
-            arguments: [
-                {
-                    description:
-                        'The existing feature, module, file, or behavior to change.',
-                    name: 'task',
-                    required: true,
-                },
-            ],
-            description: 'Continue an existing task in the Build phase.',
-            name: 'konteks-work-on-existing',
-            title: 'Build Existing',
-        },
-        {
-            arguments: [
-                {
-                    description: 'The new task or feature to build.',
-                    name: 'task',
-                    required: true,
-                },
-            ],
-            description: 'Start a new task in the Build phase.',
-            name: 'konteks-work-on-new',
-            title: 'Build New',
-        },
-        {
-            description:
-                'Persist the current session outcome and durable findings.',
-            name: 'konteks-save',
-            title: 'Save',
-        },
-    ]
-}
-
 function getPromptResult(
     prompt: Prompt,
     args: Record<string, string>,
 ): GetPromptResult {
-    const task = args.task?.trim()
     return {
         description: prompt.description,
         messages: [
             {
                 content: {
-                    text: promptText(prompt.name, task),
+                    text: renderPromptText(prompt.name, args),
                     type: 'text',
                 },
                 role: 'user',
             },
         ],
-    }
-}
-
-function promptText(name: string, task: string | undefined): string {
-    switch (name) {
-        case 'konteks-warm-up':
-            return 'Warm up this Konteks session. Call konteks_warm_up once, then summarize only the returned project architecture, constraints, technologies, and durable decisions.'
-        case 'konteks-recall':
-            return `Recall relevant Konteks context for this task: ${task ?? '<task>'}. Call konteks_recall, then use the returned context as supporting evidence for the task.`
-        case 'konteks-work-on-existing':
-            return `Build on this existing code or behavior: ${task ?? '<task>'}. If known modules, constraints, or prior decisions may affect the task, call konteks_recall first; otherwise inspect the code directly, then implement the change.`
-        case 'konteks-work-on-new':
-            return `Build this new task: ${task ?? '<task>'}. Discover relevant code during implementation; call konteks_recall only if known modules, constraints, or prior decisions may affect the task. Keep durable findings ready for save.`
-        case 'konteks-save':
-            return 'Save the current Konteks session. Call konteks_save once with the full chat transcript in the "chat" argument. Do not call konteks_save repeatedly for individual memories; Konteks will derive durable memories, make them searchable, and write one diary entry from the high-signal stored memory.'
-        default:
-            return ''
     }
 }
 
