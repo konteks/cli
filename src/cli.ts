@@ -78,12 +78,20 @@ mcp.command('prompt')
     })
 
 mcp.command('call')
-    .description('Call one MCP tool for debugging.')
+    .description('Preview or call one MCP tool for debugging.')
+    .option('--apply', 'Actually execute mutating MCP tools.')
+    .option('--json', 'Print the raw MCP result envelope as JSON.')
     .argument('<tool>', 'MCP tool name, such as konteks_warm_up')
     .argument('[json]', 'Optional JSON tool input')
-    .action(async (name: string, jsonInput?: string) => {
-        await mcpCallCommand(program.opts(), name, jsonInput)
-    })
+    .action(
+        async (
+            name: string,
+            jsonInput?: string,
+            options?: { apply?: boolean; json?: boolean },
+        ) => {
+            await mcpCallCommand(program.opts(), name, jsonInput, options)
+        },
+    )
 
 program
     .command('install-skills')

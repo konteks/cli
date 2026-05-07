@@ -1,3 +1,6 @@
+import { cp, mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import {
     callMcpTool,
     getMcpPrompt,
@@ -5,6 +8,7 @@ import {
     listMcpTools,
     startMcpServer,
 } from '../../mcp/server.js'
+import { loadProjectContext, pathExists } from '../../project/context.js'
 import type { GlobalCliOptions } from '../options.js'
 
 export async function mcpCommand(options: GlobalCliOptions): Promise<void> {
@@ -32,14 +36,113 @@ export async function mcpCallCommand(
     options: GlobalCliOptions,
     name: string,
     jsonInput?: string,
+    callOptions: { apply?: boolean; json?: boolean } = {},
 ): Promise<void> {
-    printJson(
-        await callMcpTool(
-            { project: options.project },
-            name,
-            parseJsonInput(jsonInput),
-        ),
+    const input = parseJsonInput(jsonInput)
+    const tool = listMcpTools({ project: options.project }).find(
+        item => item.name === name,
     )
+
+    if (!tool) {
+        throw new Error(`Unknown Konteks tool: ${name}`)
+    }
+
+    const isReadOnly = tool.annotations?.readOnlyHint === true
+    if (!isReadOnly && !callOptions.apply) {
+        printMcpCallResult(await dryRunMcpTool(options, name, input), {
+            json: callOptions.json,
+        })
+        return
+    }
+
+    printMcpCallResult(
+        await callMcpTool({ project: options.project }, name, input),
+        {
+            json: callOptions.json,
+        },
+    )
+}
+
+async function dryRunMcpTool(
+    options: GlobalCliOptions,
+    name: string,
+    input: unknown,
+): Promise<unknown> {
+    const context = await loadProjectContext(options.project)
+    const tempRoot = await mkdtemp(join(tmpdir(), 'konteks-mcp-dry-run-'))
+    const tempMemoryDir = join(tempRoot, '.konteks')
+
+    try {
+        if (await pathExists(context.memoryDir)) {
+            await cp(context.memoryDir, tempMemoryDir, { recursive: true })
+        }
+
+        const result = await callMcpTool(
+            { memoryDir: tempMemoryDir, project: options.project },
+            name,
+            input,
+        )
+        return replaceStringDeep(result, tempMemoryDir, context.memoryDir)
+    } finally {
+        await rm(tempRoot, { force: true, recursive: true })
+    }
+}
+
+function replaceStringDeep(value: unknown, from: string, to: string): unknown {
+    if (typeof value === 'string') {
+        return value.split(from).join(to)
+    }
+
+    if (Array.isArray(value)) {
+        return value.map(item => replaceStringDeep(item, from, to))
+    }
+
+    if (isRecord(value)) {
+        return Object.fromEntries(
+            Object.entries(value).map(([key, item]) => [
+                key,
+                replaceStringDeep(item, from, to),
+            ]),
+        )
+    }
+
+    return value
+}
+
+function printMcpCallResult(
+    result: unknown,
+    options: { json?: boolean } = {},
+): void {
+    if (options.json) {
+        printJson(result)
+        return
+    }
+
+    const text = extractMcpText(result)
+    if (text) {
+        console.log(text)
+        return
+    }
+
+    printJson(result)
+}
+
+function extractMcpText(result: unknown): string | undefined {
+    if (!isRecord(result) || !Array.isArray(result.content)) {
+        return undefined
+    }
+
+    const texts = result.content
+        .map(item =>
+            isRecord(item) &&
+            item.type === 'text' &&
+            typeof item.text === 'string'
+                ? item.text
+                : undefined,
+        )
+        .filter((text): text is string => Boolean(text))
+
+    return texts.length > 0 ? texts.join('\n') : undefined
 }
 
 function parsePromptArguments(jsonInput?: string): Record<string, string> {

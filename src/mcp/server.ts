@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
@@ -52,6 +53,7 @@ import {
 } from './retrieval-format.js'
 
 type StartMcpServerOptions = {
+    memoryDir?: string
     project?: string
 }
 
@@ -279,7 +281,7 @@ function registerKonteksTools(
         },
         async input => {
             parseWarmUpInput(input)
-            const context = await loadProjectContext(options.project)
+            const context = await loadMcpProjectContext(options)
             await validateMcpProjectHealth(context)
             await updateChangedProjectMemorySilently(context)
             const warmUp = await assembleWarmUpContext(context)
@@ -333,9 +335,7 @@ function registerKonteksTools(
         },
         async input => {
             const parsed = parseRecallInput(input)
-            await validateMcpProjectHealth(
-                await loadProjectContext(options.project),
-            )
+            await validateMcpProjectHealth(await loadMcpProjectContext(options))
             const recall = await withProjectDatabase(
                 options,
                 async adapter => ({
@@ -394,9 +394,7 @@ function registerKonteksTools(
         },
         async input => {
             const parsed = parseSearchInput(input)
-            await validateMcpProjectHealth(
-                await loadProjectContext(options.project),
-            )
+            await validateMcpProjectHealth(await loadMcpProjectContext(options))
             const results = await withProjectDatabase(options, adapter =>
                 searchMemory(adapter, parsed),
             )
@@ -432,7 +430,7 @@ function registerKonteksTools(
         },
         async input => {
             const parsed = parseSaveInput(input)
-            const context = await loadProjectContext(options.project)
+            const context = await loadMcpProjectContext(options)
             await validateMcpProjectHealth(context)
             const projectUpdate =
                 await updateChangedProjectMemorySilently(context)
@@ -466,9 +464,7 @@ function registerKonteksTools(
         },
         async input => {
             const parsed = parseForgetInput(input)
-            await validateMcpProjectHealth(
-                await loadProjectContext(options.project),
-            )
+            await validateMcpProjectHealth(await loadMcpProjectContext(options))
             const result = await withProjectDatabase(options, adapter =>
                 forgetMemory(adapter, parsed),
             )
@@ -495,6 +491,7 @@ export function getMcpPrompt(
 
 export function listMcpTools(options: StartMcpServerOptions): Tool[] {
     return [...createToolRegistrations(options).values()].map(tool => ({
+        annotations: tool.annotations,
         description: tool.description,
         inputSchema: tool.inputSchema,
         name: tool.name,
@@ -651,10 +648,27 @@ async function withProjectDatabase<T>(
         context: Awaited<ReturnType<typeof loadProjectContext>>,
     ) => Promise<T>,
 ): Promise<T> {
-    const context = await loadProjectContext(options.project)
+    const context = await loadMcpProjectContext(options)
     return withProjectDatabaseContext(context, adapter =>
         operation(adapter, context),
     )
+}
+
+async function loadMcpProjectContext(
+    options: StartMcpServerOptions,
+): Promise<Awaited<ReturnType<typeof loadProjectContext>>> {
+    const context = await loadProjectContext(options.project)
+    if (!options.memoryDir) {
+        return context
+    }
+
+    const configPath = join(options.memoryDir, 'config.json')
+    return {
+        ...context,
+        configExists: await pathExists(configPath),
+        configPath,
+        memoryDir: options.memoryDir,
+    }
 }
 
 async function withProjectDatabaseContext<T>(

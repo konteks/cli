@@ -25,8 +25,13 @@ These commands inspect MCP behavior from the terminal without registering an age
 | `konteks mcp prompts` | MCP prompt names, descriptions, and arguments. |
 | `konteks mcp prompt <prompt>` | Render one MCP prompt for debugging. |
 | `konteks mcp prompt <prompt> '<json>'` | Render one MCP prompt with arguments. |
-| `konteks mcp call <tool>` | Raw MCP result for one tool call. |
-| `konteks mcp call <tool> '<json>'` | Raw MCP result for one tool call with input. |
+| `konteks mcp call <tool>` | Execute one tool in dry-run mode and print the tool text output without persisting writes. |
+| `konteks mcp call <tool> '<json>'` | Execute one tool with input in dry-run mode and print the tool text output without persisting writes. |
+| `konteks mcp call --json <tool> '<json>'` | Print the raw MCP result envelope as JSON. |
+| `konteks mcp call --apply <tool> '<json>'` | Actually execute a mutating MCP tool call and print the tool text output. |
+
+> [!IMPORTANT]
+> `konteks mcp call` is a debug command. Mutating tools such as `konteks_warm_up`, `konteks_save`, and `konteks_forget` run against a temporary copy of Konteks memory by default, so the command can show the real tool output without persisting memory changes. Use `--apply` when you need to keep the writes, and `--json` when you need the raw MCP envelope.
 
 ## Compatibility Skills
 
