@@ -54,7 +54,7 @@
         "url": "git+https://github.com/dominosaurs/konteks.git"
     },
     "scripts": {
-        "build": "tsup src/cli.ts --format esm --dts --clean --silent && rm -rf dist/prompts dist/skills && cp -R src/mcp/prompts dist/prompts && bun scripts/build-skills.ts",
+        "build": "tsup",
         "check": "bun --silent run lint && bun --silent run test && bun --silent run build",
         "dev": "bun src/cli.ts",
         "format": "biome check --write --reporter=github",

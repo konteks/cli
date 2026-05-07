@@ -1,6 +1,5 @@
-import { readdirSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import type { Prompt } from '@modelcontextprotocol/sdk/types.js'
+import { promptFiles } from './prompt-assets.js'
 
 type PromptTemplate = {
     body: string
@@ -51,14 +50,8 @@ function promptTemplates(): PromptTemplate[] {
 }
 
 function canonicalPromptTemplates(): PromptTemplate[] {
-    const promptsDir = join(import.meta.dirname, 'prompts')
-    const files = readdirSync(promptsDir).filter(f => f.endsWith('.md'))
-
-    return files
-        .map(fileName => {
-            const raw = readFileSync(join(promptsDir, fileName), 'utf8')
-            return readPromptMarkdown(raw, fileName)
-        })
+    return promptFiles
+        .map(file => readPromptMarkdown(file.raw, file.fileName))
         .sort(
             (left, right) =>
                 promptOrder.indexOf(left.prompt.name) -

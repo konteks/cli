@@ -1,15 +1,10 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'bun:test'
+import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { $ } from 'bun'
 import { skillsInstallCommand } from './skills.js'
 
 const tempDirs: string[] = []
-
-beforeAll(async () => {
-    await $`bun scripts/build-skills.ts`.quiet()
-})
 
 afterEach(async () => {
     await Promise.all(
@@ -17,13 +12,6 @@ afterEach(async () => {
             .splice(0)
             .map(path => rm(path, { force: true, recursive: true })),
     )
-})
-
-afterAll(async () => {
-    await rm(join(process.cwd(), 'dist', 'skills'), {
-        force: true,
-        recursive: true,
-    })
 })
 
 describe('skills install command', () => {

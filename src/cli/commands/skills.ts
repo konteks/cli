@@ -1,7 +1,7 @@
-import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
+import { listCanonicalPromptFiles } from '../../mcp/prompt-library.js'
 import { resolveProjectContext } from '../../project/context.js'
 
 type InstallSkillOptions = {
@@ -22,64 +22,62 @@ export async function skillsInstallCommand(
           )
     await mkdir(skillsDir, { recursive: true })
 
-    const skillSourceRoot = await resolveSkillSourceRoot()
-    const skillNames: string[] = []
-    const candidates = await readdir(skillSourceRoot)
-    for (const skillName of candidates) {
-        const sourceDir = join(skillSourceRoot, skillName)
-        if (!(await stat(sourceDir)).isDirectory()) {
+    const skills = listCanonicalPromptFiles().map(file =>
+        promptFileToSkill(file.content, file.fileName),
+    )
+    for (const skill of skills) {
+        const targetDir = join(skillsDir, skill.name)
+        await mkdir(targetDir, { recursive: true })
+        await writeFile(join(targetDir, 'SKILL.md'), `${skill.content}\n`)
+    }
+
+    console.log(`Installed ${skills.length} Konteks skills at ${skillsDir}`)
+}
+
+function promptFileToSkill(
+    source: string,
+    fileName: string,
+): { content: string; name: string } {
+    const match =
+        /^---\n(?<frontmatter>[\s\S]*?)\n---\n(?<body>[\s\S]*)$/u.exec(source)
+    if (!match?.groups) {
+        throw new Error(`Prompt file is missing frontmatter: ${fileName}`)
+    }
+
+    const frontmatter = parseFrontmatter(match.groups.frontmatter)
+    const name = requiredField(frontmatter, 'name', fileName)
+    const title = requiredField(frontmatter, 'title', fileName)
+    const description = requiredField(frontmatter, 'description', fileName)
+    const body = match.groups.body.trim().replaceAll('{{task}}', 'the task')
+
+    return {
+        content: `---\nname: ${name}\ndescription: Use when working with Konteks MCP memory. ${description}\n---\n\n# ${title}\n\n${body}`,
+        name,
+    }
+}
+
+function parseFrontmatter(value: string): Record<string, string> {
+    const fields: Record<string, string> = {}
+    for (const line of value.split('\n')) {
+        const separator = line.indexOf(':')
+        if (separator === -1) {
             continue
         }
-        if (!(await pathExists(join(sourceDir, 'SKILL.md')))) {
-            continue
-        }
-        skillNames.push(skillName)
-        await copySkillDirectory(sourceDir, join(skillsDir, skillName))
+        fields[line.slice(0, separator).trim()] = line
+            .slice(separator + 1)
+            .trim()
     }
-
-    console.log(`Installed ${skillNames.length} Konteks skills at ${skillsDir}`)
+    return fields
 }
 
-async function pathExists(path: string): Promise<boolean> {
-    try {
-        await stat(path)
-        return true
-    } catch {
-        return false
+function requiredField(
+    frontmatter: Record<string, string>,
+    key: string,
+    fileName: string,
+): string {
+    const value = frontmatter[key]
+    if (!value) {
+        throw new Error(`Prompt file is missing "${key}": ${fileName}`)
     }
-}
-
-async function copySkillDirectory(
-    sourceDir: string,
-    targetDir: string,
-): Promise<void> {
-    await mkdir(targetDir, { recursive: true })
-
-    const files = await readdir(sourceDir)
-    for (const fileName of files) {
-        const sourcePath = join(sourceDir, fileName)
-        const content = await readFile(sourcePath, 'utf8')
-        await writeFile(join(targetDir, fileName), content)
-    }
-}
-
-async function resolveSkillSourceRoot(): Promise<string> {
-    const currentDir = dirname(fileURLToPath(import.meta.url))
-    const candidates = [
-        join(currentDir, 'skills'),
-        join(currentDir, '..', 'skills'),
-        join(currentDir, '..', '..', '..', 'dist', 'skills'),
-    ]
-
-    for (const candidate of candidates) {
-        try {
-            if ((await stat(candidate)).isDirectory()) {
-                return candidate
-            }
-        } catch {
-            // Try the next runtime layout.
-        }
-    }
-
-    throw new Error('Konteks skills are missing from this build.')
+    return value
 }
