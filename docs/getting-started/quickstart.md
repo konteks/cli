@@ -26,10 +26,10 @@ yarn dlx @konteks/cli init
 
 ### 2. Set Up MCP
 
-Add Konteks to your MCP-compatible coding agent configuration before opening the agent:
+Add Konteks to your MCP-compatible coding agent configuration before opening the agent.
 
-> [!NOTE]
-> MCP servers can be registered locally per project or globally for all projects. Global registration is recommended so you do not need to repeat this setup later.
+> [!TIP]
+> **Global Registration**: Register Konteks globally in your agent's config so you don't have to repeat this setup for every project.
 
 ```json
 {
@@ -41,6 +41,9 @@ Add Konteks to your MCP-compatible coding agent configuration before opening the
   }
 }
 ```
+
+> [!IMPORTANT]
+> **Agent Support**: If your agent supports MCP Tools but does not show MCP Prompts in its autocomplete UI, run `konteks install-skills` once after initialization to use the lifecycle prompts as native skills. See [Compatibility](../api/cli.md#Compatibility-Skills).
 
 ## From This Point On
 
