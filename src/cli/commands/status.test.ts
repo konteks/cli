@@ -116,6 +116,24 @@ describe('status command', () => {
         expect(output).toContain('2 files changed; indexed during warm up/save')
     })
 
+    it('suggests init when project memory is not initialized', async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-status-'))
+        tempDirs.push(projectRoot)
+
+        const log = spyOn(console, 'log').mockImplementation(() => {})
+        let output = ''
+        try {
+            await statusCommand({ project: projectRoot })
+            output = String(log.mock.calls[0]?.[0] ?? '')
+        } finally {
+            log.mockRestore()
+        }
+
+        expect(output).toContain('Freshness')
+        expect(output).toContain('Konteks project memory is not initialized.')
+        expect(output).toContain('run konteks init')
+    })
+
     it('supports colorized formatting for terminal output', () => {
         const output = formatStatus(
             {

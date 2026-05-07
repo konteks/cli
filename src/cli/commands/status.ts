@@ -99,6 +99,13 @@ function formatCount(value: number, singular: string): string {
 }
 
 function formatFreshness(status: ProjectStatus, changedFiles: number): string {
+    if (status.freshness.status === 'missing') {
+        const recommendation = status.freshness.recommendedCommand
+            ? `; run ${status.freshness.recommendedCommand}`
+            : ''
+        return `${status.freshness.reason}${recommendation}`
+    }
+
     const lastExtracted = status.freshness.lastExtractedAt
         ? formatDate(status.freshness.lastExtractedAt)
         : 'Not extracted yet'
