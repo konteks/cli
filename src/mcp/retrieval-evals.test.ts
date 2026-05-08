@@ -173,7 +173,7 @@ limit 1
         expect(text).not.toContain('Extraction complete')
     })
 
-    it('includes module artifacts in warm up architecture context', async () => {
+    it('includes module artifacts in warm up highlights', async () => {
         const projectRoot = await mkdtemp(
             join(tmpdir(), 'konteks-eval-warm-up-'),
         )
@@ -201,9 +201,18 @@ limit 1
             string,
             unknown
         >
-        const architecture = (payload.architecture ?? []) as string[]
+        const highlights = (payload.highlights ?? []) as Array<{
+            path?: string
+            type?: string
+        }>
 
-        expect(architecture.some(line => line.includes('src'))).toBe(true)
+        expect(
+            highlights.some(
+                highlight =>
+                    highlight.type === 'module' &&
+                    highlight.path?.includes('src'),
+            ),
+        ).toBe(true)
     })
 
     it('keeps TOON output more compact than JSON-in-text for recall', async () => {

@@ -76,22 +76,32 @@ describe('konteks_warm_up', () => {
         expect(payload.technologies).toEqual(
             expect.arrayContaining(['javascript', 'typescript']),
         )
-        expect(payload.keyFiles).toEqual(
-            expect.arrayContaining(['package.json']),
-        )
-        expect(payload.architecture).toEqual(expect.any(Array))
+        expect(payload.keyFiles).toBeUndefined()
+        expect(payload.architecture).toBeUndefined()
+        expect(payload.constraints).toBeUndefined()
+        expect(payload.conventions).toBeUndefined()
+        expect(payload.durableDecisions).toBeUndefined()
+        expect(payload.highlights).toEqual(expect.any(Array))
+        expect(
+            (payload.highlights as Array<{ score?: number }>).some(
+                highlight => typeof highlight.score === 'number',
+            ),
+        ).toBe(true)
         expect(payload.entryPoints).toEqual(expect.any(Array))
-        expect(payload.conventions).toEqual(
-            expect.arrayContaining(['Use Bun test for project verification.']),
-        )
-        expect(payload.constraints).toEqual(
+        expect(payload.guidance).toEqual(
             expect.arrayContaining([
-                'Konteks save must preserve explicit constraints.',
-            ]),
-        )
-        expect(payload.durableDecisions).toEqual(
-            expect.arrayContaining([
-                'Use structured save payloads for session memory.',
+                expect.objectContaining({
+                    kind: 'convention',
+                    text: 'Use Bun test for project verification.',
+                }),
+                expect.objectContaining({
+                    kind: 'constraint',
+                    text: 'Konteks save must preserve explicit constraints.',
+                }),
+                expect.objectContaining({
+                    kind: 'decision',
+                    text: 'Use structured save payloads for session memory.',
+                }),
             ]),
         )
         expect(payload.freshness).toBeUndefined()

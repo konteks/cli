@@ -1,15 +1,13 @@
 import type { MemorySearchResult } from '../memory/search-store.js'
+import type { WarmUpGuidance, WarmUpHighlight } from './warm-up-context.js'
 
 export function formatWarmUpText(input: {
     summary: string
     description?: string
     technologies: string[]
     entryPoints: string[]
-    keyFiles: string[]
-    architecture: string[]
-    durableDecisions: string[]
-    constraints: string[]
-    conventions: string[]
+    highlights: WarmUpHighlight[]
+    guidance: WarmUpGuidance[]
     recall?: {
         brief: string[]
         task: string
@@ -29,16 +27,12 @@ export function formatWarmUpText(input: {
         input.entryPoints.length > 0
             ? `  entry: ${list(input.entryPoints)}`
             : null,
-        '  key_files:',
-        ...toBullets(input.keyFiles, 4),
-        '  arch:',
-        ...toBullets(input.architecture, 4),
-        '  decisions:',
-        ...toBullets(input.durableDecisions, 4),
-        '  constraints:',
-        ...toBullets(input.constraints, 4),
-        '  conventions:',
-        ...toBullets(input.conventions, 4),
+        '  highlights:',
+        ...input.highlights
+            .slice(0, 8)
+            .map(highlight => formatWarmUpHighlight(highlight, 4)),
+        '  guidance:',
+        ...input.guidance.slice(0, 10).map(item => formatGuidance(item, 4)),
     ]
 
     if (input.recall) {
@@ -150,6 +144,21 @@ function formatMemory(
         return base
     }
     return `${base} id=${item.id} tokens=${item.tokenCost}`
+}
+
+function formatWarmUpHighlight(item: WarmUpHighlight, indent: number): string {
+    const pad = ' '.repeat(indent)
+    const location = item.anchor
+        ? `${item.path ?? item.id}#${item.anchor}`
+        : (item.path ?? item.id)
+    const role = item.sourceRole ?? '-'
+    const summary = item.excerpt.replaceAll(/\s+/gu, ' ').trim()
+    return `${pad}- [${item.type}] score=${item.score} ${location} role=${role} :: ${inline(summary)}`
+}
+
+function formatGuidance(item: WarmUpGuidance, indent: number): string {
+    const pad = ' '.repeat(indent)
+    return `${pad}- [${item.kind}] ${inline(item.text)}`
 }
 
 function list(values: string[]): string {

@@ -9,13 +9,39 @@ import {
 describe('retrieval formatter', () => {
     it('formats warm up text', () => {
         const text = formatWarmUpText({
-            architecture: ['src/mcp: protocol layer'],
-            constraints: ['Prefer repair only for recovery'],
-            conventions: ['Use functional patterns'],
             description: 'Konteks stores project memory locally.',
-            durableDecisions: ['Use WASM SQLite'],
             entryPoints: ['src/index.ts'],
-            keyFiles: ['package.json'],
+            guidance: [
+                {
+                    kind: 'decision',
+                    text: 'Use WASM SQLite',
+                },
+                {
+                    kind: 'constraint',
+                    text: 'Prefer repair only for recovery',
+                },
+                {
+                    kind: 'convention',
+                    text: 'Use functional patterns',
+                },
+            ],
+            highlights: [
+                {
+                    excerpt: 'protocol layer',
+                    id: 'module_src_mcp',
+                    path: 'src/mcp',
+                    score: 124,
+                    scoreDetails: {
+                        importance: 80,
+                        recency: 10,
+                        role: 35,
+                        tokenCostPenalty: 1,
+                    },
+                    sourceRole: 'app_code',
+                    tokenCost: 20,
+                    type: 'module',
+                },
+            ],
             summary: 'warm-up-fixture',
             technologies: ['typescript', 'mcp'],
         })
@@ -26,9 +52,17 @@ describe('retrieval formatter', () => {
         expect(text).toContain(
             'description: Konteks stores project memory locally.',
         )
-        expect(text).toContain('- src/mcp: protocol layer')
-        expect(text).toContain('conventions:')
-        expect(text).toContain('- Use functional patterns')
+        expect(text).toContain('highlights:')
+        expect(text).toContain('[module] score=124 src/mcp role=app_code')
+        expect(text).not.toContain('key_files:')
+        expect(text).not.toContain('arch:')
+        expect(text).toContain('guidance:')
+        expect(text).toContain('- [decision] Use WASM SQLite')
+        expect(text).toContain('- [constraint] Prefer repair only for recovery')
+        expect(text).toContain('- [convention] Use functional patterns')
+        expect(text).not.toContain('decisions:')
+        expect(text).not.toContain('constraints:')
+        expect(text).not.toContain('conventions:')
     })
 
     it('formats recall and search text', () => {

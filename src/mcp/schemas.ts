@@ -2,13 +2,24 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js'
 
 export const warmUpOutputSchema: Tool['outputSchema'] = {
     properties: {
-        architecture: { items: { type: 'string' }, type: 'array' },
-        constraints: { items: { type: 'string' }, type: 'array' },
-        conventions: { items: { type: 'string' }, type: 'array' },
         description: { type: 'string' },
-        durableDecisions: { items: { type: 'string' }, type: 'array' },
         entryPoints: { items: { type: 'string' }, type: 'array' },
-        keyFiles: { items: { type: 'string' }, type: 'array' },
+        guidance: {
+            items: {
+                properties: {
+                    id: { type: 'string' },
+                    kind: {
+                        enum: ['constraint', 'convention', 'decision'],
+                        type: 'string',
+                    },
+                    text: { type: 'string' },
+                },
+                required: ['kind', 'text'],
+                type: 'object',
+            },
+            type: 'array',
+        },
+        highlights: { items: { type: 'object' }, type: 'array' },
         project: { type: 'object' },
         recall: {
             properties: {
@@ -31,12 +42,9 @@ export const warmUpOutputSchema: Tool['outputSchema'] = {
     required: [
         'summary',
         'technologies',
-        'keyFiles',
-        'architecture',
-        'durableDecisions',
-        'constraints',
-        'conventions',
+        'guidance',
         'entryPoints',
+        'highlights',
         'taxonomy',
         'project',
     ],

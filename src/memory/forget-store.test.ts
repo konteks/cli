@@ -81,6 +81,33 @@ describe('forgetMemory', () => {
         await adapter.close()
     })
 
+    it('query forget targets authored memory records', async () => {
+        const { adapter, context } = await makeAdapter()
+        const saved = await saveKonteksInput(adapter, context, {
+            content: 'Compatibility planning is out of scope for now.',
+            kind: 'decision',
+            type: 'memory',
+        })
+
+        const result = await forgetMemory(adapter, {
+            mode: 'invalidate',
+            query: 'compatibility planning',
+            reason: 'not relevant now',
+        })
+        const rows = await adapter.query<{
+            forget_reason: string | null
+            suppressed_at: string | null
+        }>(
+            'select suppressed_at, forget_reason from observations where id = ?',
+            [saved.id],
+        )
+
+        expect(result.affectedIds).toEqual([saved.id])
+        expect(rows[0]?.suppressed_at).toEqual(expect.any(String))
+        expect(rows[0]?.forget_reason).toBe('not relevant now')
+        await adapter.close()
+    })
+
     it('invalidates relations through the forget path', async () => {
         const { adapter } = await makeAdapter()
         const graph = new GraphStore(adapter)

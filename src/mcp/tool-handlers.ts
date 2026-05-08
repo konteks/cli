@@ -88,13 +88,10 @@ async function handleWarmUpTool(
         ? await focusedWarmUpRecall(options, parsed.topic, parsed.maxTokens)
         : undefined
     const payload = {
-        architecture: warmUp.architecture,
-        constraints: warmUp.constraints,
-        conventions: warmUp.conventions,
         description: warmUp.description,
-        durableDecisions: warmUp.durableDecisions,
         entryPoints: warmUp.entryPoints,
-        keyFiles: warmUp.keyFiles,
+        guidance: warmUp.guidance,
+        highlights: warmUp.highlights,
         project: projectDescriptor(context),
         recall,
         summary: warmUp.summary,
@@ -104,13 +101,10 @@ async function handleWarmUpTool(
     return textResult(
         payload,
         formatWarmUpText({
-            architecture: payload.architecture,
-            constraints: payload.constraints,
-            conventions: payload.conventions,
             description: payload.description,
-            durableDecisions: payload.durableDecisions,
             entryPoints: payload.entryPoints,
-            keyFiles: payload.keyFiles,
+            guidance: payload.guidance,
+            highlights: payload.highlights,
             recall: payload.recall,
             summary: payload.summary,
             technologies: payload.technologies,

@@ -3,7 +3,11 @@ import type { ForgetInput } from '../mcp/inputs.js'
 import { appendMemoryEvent } from '../storage/event-log.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 import { GraphStore } from './graph-store.js'
-import { searchMemory } from './search-store.js'
+import {
+    queryDiaries,
+    queryHandoffs,
+    queryObservations,
+} from './persistence-adapter.js'
 
 type ForgetResult = {
     accepted: boolean
@@ -75,15 +79,31 @@ async function resolveTargets(
         return []
     }
 
-    const matches = await searchMemory(adapter, {
-        limit: 10,
-        query: input.query,
-    })
+    const terms = tokenize(input.query)
+    if (terms.length === 0) {
+        return []
+    }
 
-    return matches.map(match => ({
-        id: match.id,
-        kind: inferKind(match.id),
-    }))
+    const [observations, diaries, handoffs] = await Promise.all([
+        queryObservations(adapter, terms, 10),
+        queryDiaries(adapter, terms, 10),
+        queryHandoffs(adapter, terms, 10),
+    ])
+
+    return [
+        ...observations.map(row => ({
+            id: row.id,
+            kind: 'observation' as const,
+        })),
+        ...diaries.map(row => ({
+            id: row.id,
+            kind: 'diary_entry' as const,
+        })),
+        ...handoffs.map(row => ({
+            id: row.id,
+            kind: 'session_handoff' as const,
+        })),
+    ].slice(0, 10)
 }
 
 async function applyForget(
@@ -213,4 +233,16 @@ function tableForKind(kind: TargetKind): string | undefined {
     }
 
     return undefined
+}
+
+function tokenize(query: string): string[] {
+    return [
+        ...new Set(
+            query
+                .toLowerCase()
+                .split(/[^a-z0-9_/-]+/u)
+                .map(term => term.trim())
+                .filter(term => term.length >= 2),
+        ),
+    ].slice(0, 8)
 }
