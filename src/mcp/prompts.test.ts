@@ -14,6 +14,16 @@ describe('MCP prompts', () => {
         )
     })
 
+    it('exposes tools in the documented MCP API order', () => {
+        expect(listMcpTools({}).map(tool => tool.name)).toEqual([
+            'konteks_warm_up',
+            'konteks_recall',
+            'konteks_save',
+            'konteks_search',
+            'konteks_forget',
+        ])
+    })
+
     it('exposes lifecycle prompts with Konteks-prefixed names', () => {
         expect(listMcpPrompts().map(prompt => prompt.name)).toEqual([
             'konteks-warm-up',
@@ -50,14 +60,14 @@ describe('MCP prompts', () => {
         )
         const unfocused = promptText('konteks-warm-up')
         const focused = promptText('konteks-warm-up', {
-            prompt: 'cli status command',
+            topic: 'cli status command',
         })
 
         expect(warmUpPrompt?.arguments).toEqual([
             {
                 description:
-                    'Optional free-form focus topic or task for targeted recall.',
-                name: 'prompt',
+                    'Optional free-form topic, module, file, behavior, decision, or memory focus for targeted recall after warm up.',
+                name: 'topic',
                 required: false,
             },
         ])
