@@ -103,6 +103,13 @@ describe('MCP prompts', () => {
         expect(save).toContain(
             'For a full session save, call `konteks_save` in two phases',
         )
+        expect(save).toContain('Save one compact session diary')
+        expect(save).toContain('80-160 words or 3-6 short bullets')
+        expect(save).toContain(
+            'Do not turn completed implementation steps, file-by-file changelogs, test pass lists, or generic progress narration into durable memories',
+        )
+        expect(save).toContain('write a handoff summary, not a transcript')
+        expect(save).toContain('Omit command logs, tool output, routine files')
         expect(save).toContain('type: "memories"')
         expect(save).toContain('type: "diary"')
         expect(save).toContain('If the memory payload is too large')
