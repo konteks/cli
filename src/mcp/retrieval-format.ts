@@ -15,6 +15,7 @@ export function formatWarmUpText(input: {
         task: string
         memories: MemorySearchResult[]
         primaryTargets: string[]
+        quality?: 'partial' | 'strong' | 'weak'
         sourceCount: number
     }
 }): string {
@@ -44,6 +45,9 @@ export function formatWarmUpText(input: {
         lines.push(
             '  recall:',
             `    task: ${inline(input.recall.task)}`,
+            input.recall.quality
+                ? `    quality: ${input.recall.quality}`
+                : null,
             '    brief:',
             ...toBullets(input.recall.brief, 6),
             input.recall.primaryTargets.length > 0

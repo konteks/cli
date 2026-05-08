@@ -101,6 +101,7 @@ type RecallPackage = {
     history: RecallHistoryItem[]
     memories: MemorySearchResult[]
     primaryTargets: string[]
+    quality: 'partial' | 'strong' | 'weak'
     sourceCount: number
     task: string
     tokenBudget: number
@@ -121,6 +122,10 @@ const warmUpOutputSchema: Tool['outputSchema'] = {
                 brief: { items: { type: 'string' }, type: 'array' },
                 memories: { items: { type: 'object' }, type: 'array' },
                 primaryTargets: { items: { type: 'string' }, type: 'array' },
+                quality: {
+                    enum: ['strong', 'partial', 'weak'],
+                    type: 'string',
+                },
                 sourceCount: { type: 'number' },
                 task: { type: 'string' },
             },
@@ -152,6 +157,7 @@ const recallOutputSchema: Tool['outputSchema'] = {
         history: { items: { type: 'object' }, type: 'array' },
         memories: { items: { type: 'object' }, type: 'array' },
         primaryTargets: { items: { type: 'string' }, type: 'array' },
+        quality: { enum: ['strong', 'partial', 'weak'], type: 'string' },
         sourceCount: { type: 'number' },
         task: { type: 'string' },
         tokenBudget: { type: 'number' },
@@ -161,6 +167,7 @@ const recallOutputSchema: Tool['outputSchema'] = {
         'tokenBudget',
         'brief',
         'primaryTargets',
+        'quality',
         'sourceCount',
         'graph',
         'history',
@@ -317,7 +324,10 @@ function registerKonteksTools(
             const context = await loadMcpProjectContext(options)
             await validateMcpProjectHealth(context)
             await updateChangedProjectMemorySilently(context)
-            const warmUp = await assembleWarmUpContext(context)
+            const warmUp = limitWarmUpContext(
+                await assembleWarmUpContext(context),
+                parsed.maxTokens ?? 2000,
+            )
 
             let recall: RecallPackage | undefined
             if (parsed.topic) {
@@ -352,6 +362,7 @@ function registerKonteksTools(
                           brief: recall.brief,
                           memories: recall.memories,
                           primaryTargets: recall.primaryTargets,
+                          quality: recall.quality,
                           sourceCount: recall.sourceCount,
                           task: recall.task,
                       }
@@ -806,16 +817,19 @@ function assembleRecallPackage(input: {
     memories: MemorySearchResult[]
     task: string
 }): RecallPackage {
-    const memories = applyTokenBudget(input.memories, input.maxTokens).map(
+    const dedupedMemories = dedupeRecallMemories(input.memories)
+    const memories = applyTokenBudget(dedupedMemories, input.maxTokens).map(
         memory => (input.includeSources ? memory : compactMemory(memory)),
     )
     const primaryTargets = primaryRecallTargets(memories)
+    const quality = recallQuality(memories)
     return {
         brief: recallBrief({
             graphCount: input.graph.length,
             historyCount: input.history.length,
             memories,
             primaryTargets,
+            quality,
         }),
         graph: input.includeSources ? input.graph : input.graph.slice(0, 6),
         history: input.includeSources
@@ -823,10 +837,52 @@ function assembleRecallPackage(input: {
             : input.history.slice(0, 4),
         memories,
         primaryTargets,
-        sourceCount: input.memories.length,
+        quality,
+        sourceCount: dedupedMemories.length,
         task: input.task,
         tokenBudget: input.maxTokens,
     }
+}
+
+function dedupeRecallMemories(
+    memories: MemorySearchResult[],
+): MemorySearchResult[] {
+    const deduped: MemorySearchResult[] = []
+    const seen = new Set<string>()
+    for (const memory of memories) {
+        const key = [
+            memory.type,
+            memory.path ?? '',
+            memory.anchor ?? '',
+            memory.task ?? '',
+            memory.excerpt.slice(0, 120),
+        ].join('\0')
+        if (seen.has(key)) {
+            continue
+        }
+        seen.add(key)
+        deduped.push(memory)
+    }
+    return deduped
+}
+
+function recallQuality(
+    memories: MemorySearchResult[],
+): RecallPackage['quality'] {
+    if (memories.length === 0) {
+        return 'weak'
+    }
+    const topScore = memories[0]?.score ?? 0
+    const distinctTargets = new Set(
+        memories.map(memory => memory.path ?? memory.task ?? memory.id),
+    ).size
+    if (topScore >= 200 && distinctTargets >= 2) {
+        return 'strong'
+    }
+    if (topScore >= 80) {
+        return 'partial'
+    }
+    return 'weak'
 }
 
 function compactMemory(memory: MemorySearchResult): MemorySearchResult {
@@ -901,8 +957,10 @@ function recallBrief(input: {
     historyCount: number
     memories: MemorySearchResult[]
     primaryTargets: string[]
+    quality: RecallPackage['quality']
 }): string[] {
     const lines: string[] = []
+    lines.push(`Quality: ${input.quality}.`)
     if (input.primaryTargets.length > 0) {
         lines.push(
             `Inspect first: ${input.primaryTargets.slice(0, 3).join(', ')}`,
@@ -918,7 +976,7 @@ function recallBrief(input: {
             `Relations: ${input.graphCount} active, ${input.historyCount} historical.`,
         )
     }
-    return lines.slice(0, 3)
+    return lines.slice(0, 4)
 }
 
 function countBy<T>(
@@ -944,6 +1002,49 @@ type WarmUpContext = {
     summary: string
     taxonomy: string[]
     technologies: string[]
+}
+
+function limitWarmUpContext(
+    context: WarmUpContext,
+    maxTokens: number,
+): WarmUpContext {
+    const budget = Math.max(80, maxTokens)
+    const baseCost = estimateTokens([
+        context.summary,
+        context.description ?? '',
+        ...context.technologies,
+        ...context.entryPoints,
+    ])
+    let remaining = Math.max(0, budget - baseCost)
+
+    const take = (items: string[], fallbackLimit: number): string[] => {
+        const kept: string[] = []
+        for (const item of items.slice(0, fallbackLimit)) {
+            const cost = estimateTokens([item])
+            if (kept.length > 0 && cost > remaining) {
+                break
+            }
+            kept.push(item)
+            remaining -= cost
+        }
+        return kept
+    }
+
+    return {
+        ...context,
+        architecture: take(context.architecture, 12),
+        constraints: take(context.constraints, 10),
+        conventions: take(context.conventions, 10),
+        durableDecisions: take(context.durableDecisions, 10),
+        keyFiles: take(context.keyFiles, 12),
+    }
+}
+
+function estimateTokens(values: string[]): number {
+    return values.reduce(
+        (total, value) => total + Math.max(1, Math.ceil(value.length / 4)),
+        0,
+    )
 }
 
 async function assembleWarmUpContext(

@@ -26,9 +26,6 @@ export const emptyInputSchema = {
 export const warmUpInputSchema = {
     additionalProperties: false,
     properties: {
-        includeCommands: { type: 'boolean' },
-        includeOpenTasks: { type: 'boolean' },
-        includeRecentSessions: { type: 'boolean' },
         maxTokens: { maximum: 8000, minimum: 1, type: 'integer' },
         topic: { type: 'string' },
     },
@@ -153,9 +150,6 @@ export const forgetInputSchema = {
 } satisfies ObjectSchema
 
 type WarmUpInput = {
-    includeCommands?: boolean
-    includeOpenTasks?: boolean
-    includeRecentSessions?: boolean
     maxTokens?: number
     topic?: string
 }
@@ -212,18 +206,6 @@ export type SearchInput = {
 export function parseWarmUpInput(input: unknown): WarmUpInput {
     const record = asRecord(input)
     return {
-        includeCommands: optionalBoolean(
-            record.includeCommands,
-            'includeCommands',
-        ),
-        includeOpenTasks: optionalBoolean(
-            record.includeOpenTasks,
-            'includeOpenTasks',
-        ),
-        includeRecentSessions: optionalBoolean(
-            record.includeRecentSessions,
-            'includeRecentSessions',
-        ),
         maxTokens: optionalPositiveInteger(record.maxTokens, 'maxTokens', 8000),
         topic: optionalString(record.topic, 'topic'),
     }

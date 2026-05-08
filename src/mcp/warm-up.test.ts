@@ -140,6 +140,56 @@ describe('konteks_warm_up', () => {
         expect(text).not.toContain('Extraction complete')
     })
 
+    it('returns quality-labeled focused recall without duplicate targets', async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
+        tempDirs.push(projectRoot)
+        await mkdir(join(projectRoot, 'src', 'mcp'), { recursive: true })
+        await writeFile(
+            join(projectRoot, 'package.json'),
+            JSON.stringify({ name: 'warm-up-focused' }, null, 2),
+        )
+        await writeFile(
+            join(projectRoot, 'src', 'mcp', 'server.ts'),
+            'export const warmUpServer = () => "focused recall"\n',
+        )
+        await writeFile(
+            join(projectRoot, 'src', 'mcp', 'retrieval-format.ts'),
+            'export const formatWarmUpText = () => "focused recall"\n',
+        )
+
+        const context = await loadProjectContext(projectRoot)
+        await mineProject(context, 'full', {
+            embeddingProvider: new FakeEmbeddingProvider(),
+        })
+
+        const result = await callMcpTool(
+            { project: projectRoot },
+            'konteks_warm_up',
+            { maxTokens: 500, topic: 'focused recall warm up' },
+        )
+        const payload = (result.structuredContent ?? {}) as Record<
+            string,
+            unknown
+        >
+        const recall = payload.recall as
+            | { primaryTargets: string[]; quality: string }
+            | undefined
+        const text = result.content.find(
+            item => item.type === 'text' && 'text' in item,
+        )?.text
+
+        expect(recall).toBeDefined()
+        if (!recall) {
+            throw new Error('expected focused recall')
+        }
+        expect(recall?.quality).toMatch(/^(strong|partial|weak)$/)
+        expect(recall.primaryTargets.length).toBeGreaterThan(0)
+        expect(new Set(recall.primaryTargets).size).toBe(
+            recall.primaryTargets.length,
+        )
+        expect(text).toContain('quality:')
+    })
+
     it('fails with a short health error when memory is not initialized', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
         tempDirs.push(projectRoot)

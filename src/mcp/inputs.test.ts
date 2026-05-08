@@ -6,21 +6,27 @@ import {
     parseSearchInput,
     parseWarmUpInput,
     saveInputSchema,
+    warmUpInputSchema,
 } from './inputs.js'
 
 describe('MCP input parsing', () => {
     it('accepts warm-up options', () => {
         expect(
             parseWarmUpInput({
-                includeCommands: true,
                 maxTokens: 2000,
+                topic: 'recall output',
             }),
         ).toEqual({
-            includeCommands: true,
-            includeOpenTasks: undefined,
-            includeRecentSessions: undefined,
             maxTokens: 2000,
+            topic: 'recall output',
         })
+    })
+
+    it('keeps warm-up schema limited to implemented options', () => {
+        expect(Object.keys(warmUpInputSchema.properties)).toEqual([
+            'maxTokens',
+            'topic',
+        ])
     })
 
     it('requires recall task text', () => {
