@@ -123,9 +123,8 @@ describe('MCP prompt command', () => {
             log.mockRestore()
         }
 
-        expect(output).toContain('Optional free-form focus')
-        expect(output).toContain('cli status command memory')
-        expect(output).toContain('konteks_recall')
+        expect(output).toContain('topic: \\"cli status command memory\\"')
+        expect(output).toContain('konteks_warm_up')
     })
 
     it('still accepts JSON prompt arguments', async () => {

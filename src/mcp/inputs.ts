@@ -30,6 +30,7 @@ export const warmUpInputSchema = {
         includeOpenTasks: { type: 'boolean' },
         includeRecentSessions: { type: 'boolean' },
         maxTokens: { maximum: 8000, minimum: 1, type: 'integer' },
+        topic: { type: 'string' },
     },
     type: 'object',
 } satisfies ObjectSchema
@@ -156,6 +157,7 @@ type WarmUpInput = {
     includeOpenTasks?: boolean
     includeRecentSessions?: boolean
     maxTokens?: number
+    topic?: string
 }
 
 export type ForgetInput = {
@@ -223,6 +225,7 @@ export function parseWarmUpInput(input: unknown): WarmUpInput {
             'includeRecentSessions',
         ),
         maxTokens: optionalPositiveInteger(record.maxTokens, 'maxTokens', 8000),
+        topic: optionalString(record.topic, 'topic'),
     }
 }
 

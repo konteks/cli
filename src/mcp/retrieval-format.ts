@@ -10,8 +10,15 @@ export function formatWarmUpText(input: {
     durableDecisions: string[]
     constraints: string[]
     conventions: string[]
+    recall?: {
+        brief: string[]
+        task: string
+        memories: MemorySearchResult[]
+        primaryTargets: string[]
+        sourceCount: number
+    }
 }): string {
-    return [
+    const lines = [
         'warm_up:',
         `  summary: ${inline(input.summary)}`,
         input.description
@@ -32,8 +39,26 @@ export function formatWarmUpText(input: {
         '  conventions:',
         ...toBullets(input.conventions, 4),
     ]
-        .filter((line): line is string => line !== null)
-        .join('\n')
+
+    if (input.recall) {
+        lines.push(
+            '  recall:',
+            `    task: ${inline(input.recall.task)}`,
+            '    brief:',
+            ...toBullets(input.recall.brief, 6),
+            input.recall.primaryTargets.length > 0
+                ? '    primary_targets:'
+                : null,
+            ...toBullets(input.recall.primaryTargets, 6, { empty: false }),
+            `    evidence_counts: memories=${input.recall.memories.length}, sources=${input.recall.sourceCount}`,
+            '    memories:',
+            ...input.recall.memories
+                .slice(0, 6)
+                .map(memory => formatMemory(memory, 6)),
+        )
+    }
+
+    return lines.filter((line): line is string => line !== null).join('\n')
 }
 
 export function formatRecallText(input: {

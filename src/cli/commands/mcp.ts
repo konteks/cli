@@ -155,7 +155,7 @@ function parsePromptArguments(
     }
 
     if (name === 'konteks-warm-up' && !looksLikeJson(trimmed)) {
-        return { topic: trimmed }
+        return { prompt: trimmed }
     }
 
     const parsed = parseJsonInput(trimmed)

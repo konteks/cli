@@ -116,6 +116,16 @@ const warmUpOutputSchema: Tool['outputSchema'] = {
         entryPoints: { items: { type: 'string' }, type: 'array' },
         keyFiles: { items: { type: 'string' }, type: 'array' },
         project: { type: 'object' },
+        recall: {
+            properties: {
+                brief: { items: { type: 'string' }, type: 'array' },
+                memories: { items: { type: 'object' }, type: 'array' },
+                primaryTargets: { items: { type: 'string' }, type: 'array' },
+                sourceCount: { type: 'number' },
+                task: { type: 'string' },
+            },
+            type: 'object',
+        },
         summary: { type: 'string' },
         taxonomy: { items: { type: 'string' }, type: 'array' },
         technologies: { items: { type: 'string' }, type: 'array' },
@@ -303,11 +313,27 @@ function registerKonteksTools(
             outputSchema: warmUpOutputSchema,
         },
         async input => {
-            parseWarmUpInput(input)
+            const parsed = parseWarmUpInput(input)
             const context = await loadMcpProjectContext(options)
             await validateMcpProjectHealth(context)
             await updateChangedProjectMemorySilently(context)
             const warmUp = await assembleWarmUpContext(context)
+
+            let recall: RecallPackage | undefined
+            if (parsed.topic) {
+                const memories = await withProjectDatabase(options, adapter =>
+                    searchMemory(adapter, { query: parsed.topic ?? '' }),
+                )
+                recall = assembleRecallPackage({
+                    graph: [], // Skip heavy graph for combined warm up
+                    history: [],
+                    includeSources: false,
+                    maxTokens: parsed.maxTokens ?? 2000,
+                    memories,
+                    task: parsed.topic,
+                })
+            }
+
             const payload = {
                 architecture: warmUp.architecture,
                 constraints: warmUp.constraints,
@@ -321,6 +347,15 @@ function registerKonteksTools(
                     name: context.projectRoot.split('/').at(-1) ?? 'project',
                     root: context.projectRoot,
                 },
+                recall: recall
+                    ? {
+                          brief: recall.brief,
+                          memories: recall.memories,
+                          primaryTargets: recall.primaryTargets,
+                          sourceCount: recall.sourceCount,
+                          task: recall.task,
+                      }
+                    : undefined,
                 summary: warmUp.summary,
                 taxonomy: warmUp.taxonomy,
                 technologies: warmUp.technologies,
@@ -335,6 +370,7 @@ function registerKonteksTools(
                     durableDecisions: payload.durableDecisions,
                     entryPoints: payload.entryPoints,
                     keyFiles: payload.keyFiles,
+                    recall: payload.recall,
                     summary: payload.summary,
                     technologies: payload.technologies,
                 }),
