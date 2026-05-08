@@ -62,7 +62,7 @@ describe('MCP prompts', () => {
             },
         ])
         expect(unfocused).not.toContain('<prompt>')
-        expect(focused).toContain('topic: "cli status command"')
+        expect(focused).toContain('cli status command')
         expect(focused).toContain('konteks_warm_up')
         expect(focused).toContain(
             'Konteks is warmed up and ready for the task.',

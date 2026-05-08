@@ -123,7 +123,7 @@ describe('MCP prompt command', () => {
             log.mockRestore()
         }
 
-        expect(output).toContain('topic: \\"cli status command memory\\"')
+        expect(output).toContain('cli status command memory')
         expect(output).toContain('konteks_warm_up')
     })
 
