@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { callMcpTool } from '../../mcp/server.js'
 import { loadProjectContext, pathExists } from '../../project/context.js'
+import { replaceStringDeep } from '../../utils/object.js'
 import type { GlobalCliOptions } from '../options.js'
-import { isRecord } from './json-output.js'
 
 export async function dryRunMcpTool(
     options: GlobalCliOptions,
@@ -29,25 +29,4 @@ export async function dryRunMcpTool(
     } finally {
         await rm(tempRoot, { force: true, recursive: true })
     }
-}
-
-function replaceStringDeep(value: unknown, from: string, to: string): unknown {
-    if (typeof value === 'string') {
-        return value.split(from).join(to)
-    }
-
-    if (Array.isArray(value)) {
-        return value.map(item => replaceStringDeep(item, from, to))
-    }
-
-    if (isRecord(value)) {
-        return Object.fromEntries(
-            Object.entries(value).map(([key, item]) => [
-                key,
-                replaceStringDeep(item, from, to),
-            ]),
-        )
-    }
-
-    return value
 }

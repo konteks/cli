@@ -1,4 +1,6 @@
 import { getProjectStatus } from '../../project/status.js'
+import { type ColorPalette, createColorPalette } from '../../shared/color.js'
+import { formatInteger } from '../../utils/format.js'
 import type { GlobalCliOptions } from '../options.js'
 import { VERSION } from '../version.js'
 
@@ -15,11 +17,7 @@ export async function statusCommand(options: GlobalCliOptions): Promise<void> {
 }
 
 type ProjectStatus = Awaited<ReturnType<typeof getProjectStatus>>
-type StatusColorPalette = {
-    accent(value: string): string
-    dim(value: string): string
-    success(value: string): string
-}
+type StatusColorPalette = Pick<ColorPalette, 'accent' | 'dim' | 'success'>
 
 export function formatStatus(
     status: ProjectStatus,
@@ -91,11 +89,11 @@ function compactStat(
     value: number,
     color: StatusColorPalette,
 ): string {
-    return `${color.success(value.toLocaleString('en-US'))} ${label}`
+    return `${color.success(formatInteger(value))} ${label}`
 }
 
 function formatCount(value: number, singular: string): string {
-    return `${value.toLocaleString('en-US')} ${singular}${value === 1 ? '' : 's'}`
+    return `${formatInteger(value)} ${singular}${value === 1 ? '' : 's'}`
 }
 
 function formatFreshness(status: ProjectStatus, changedFiles: number): string {
@@ -123,15 +121,4 @@ function formatDate(value: string): string {
         return value
     }
     return date.toLocaleString()
-}
-
-function createColorPalette(enabled: boolean): StatusColorPalette {
-    const wrap = (code: number, value: string) =>
-        enabled ? `\u001b[${code}m${value}\u001b[0m` : value
-
-    return {
-        accent: value => wrap(36, value),
-        dim: value => wrap(90, value),
-        success: value => wrap(32, value),
-    }
 }

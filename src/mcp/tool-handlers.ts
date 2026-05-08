@@ -2,6 +2,10 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { forgetMemory } from '../memory/forget-store.js'
 import { saveKonteksInput } from '../memory/save-store.js'
 import { searchMemory } from '../memory/search-store.js'
+import type {
+    FlexibleRegisterTool,
+    StartMcpServerOptions,
+} from '../types/mcp.js'
 import {
     parseForgetInput,
     parseRecallInput,
@@ -36,7 +40,6 @@ import {
     type KonteksToolName,
     toolRegistrationConfig,
 } from './tool-surface.js'
-import type { FlexibleRegisterTool, StartMcpServerOptions } from './types.js'
 import { assembleWarmUpContext, limitWarmUpContext } from './warm-up-context.js'
 
 type ToolHandlers = Record<

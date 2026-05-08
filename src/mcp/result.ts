@@ -1,3 +1,5 @@
+import { stringifyPretty } from '../utils/json.js'
+
 export function textResult(value: unknown, text?: string) {
     const structuredContent =
         typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -11,7 +13,7 @@ export function textResult(value: unknown, text?: string) {
                     text ??
                     (typeof value === 'string'
                         ? value
-                        : JSON.stringify(value, null, 2)),
+                        : stringifyPretty(value)),
                 type: 'text' as const,
             },
         ],

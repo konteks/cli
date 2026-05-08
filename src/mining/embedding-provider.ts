@@ -2,6 +2,7 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { env, pipeline } from '@huggingface/transformers'
+import { formatBytes } from '../utils/format.js'
 import type { MineProgressReporter } from './progress.js'
 
 export interface EmbeddingProvider {
@@ -248,22 +249,6 @@ async function estimateCacheSize(path: string): Promise<number> {
 
 function formatPercent(value: number): string {
     return `${Math.max(0, Math.min(100, value)).toFixed(1)}%`
-}
-
-function formatBytes(value: number): string {
-    if (!Number.isFinite(value) || value <= 0) {
-        return '0 B'
-    }
-
-    const units = ['B', 'KB', 'MB', 'GB']
-    let size = value
-    let unitIndex = 0
-    while (size >= 1024 && unitIndex < units.length - 1) {
-        size /= 1024
-        unitIndex += 1
-    }
-
-    return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
 }
 
 function toFloat32Array(value: unknown): Float32Array {

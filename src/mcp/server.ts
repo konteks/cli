@@ -12,15 +12,15 @@ import {
     type Prompt,
     type Tool,
 } from '@modelcontextprotocol/sdk/types.js'
-import { listPromptDefinitions, renderPromptText } from './prompt-library.js'
-import { recallGraph, recallHistory } from './recall-package.js'
-import { registerKonteksTools } from './tool-handlers.js'
-import { MCP_INSTRUCTIONS } from './tool-surface.js'
 import type {
     FlexibleRegisterTool,
     StartMcpServerOptions,
     ToolRegistration,
-} from './types.js'
+} from '../types/mcp.js'
+import { listPromptDefinitions, renderPromptText } from './prompt-library.js'
+import { recallGraph, recallHistory } from './recall-package.js'
+import { registerKonteksTools } from './tool-handlers.js'
+import { MCP_INSTRUCTIONS } from './tool-surface.js'
 
 export type { StartMcpServerOptions }
 export { recallGraph, recallHistory }

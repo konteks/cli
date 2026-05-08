@@ -1,4 +1,6 @@
 import type { MineProgressEvent } from '../../mining/progress.js'
+import { type ColorPalette, createColorPalette } from '../../shared/color.js'
+import { formatBytes } from '../../utils/format.js'
 
 export function createMineProgressReporter(): {
     done(): void
@@ -271,40 +273,4 @@ function visibleLength(value: string): number {
         'gu',
     )
     return value.replaceAll(ansiPattern, '').length
-}
-
-type ColorPalette = {
-    accent(value: string): string
-    dim(value: string): string
-    info(value: string): string
-    success(value: string): string
-}
-
-function createColorPalette(enabled: boolean): ColorPalette {
-    function wrap(code: number, value: string): string {
-        return enabled ? `\u001b[${code}m${value}\u001b[0m` : value
-    }
-
-    return {
-        accent: value => wrap(36, value),
-        dim: value => wrap(90, value),
-        info: value => wrap(34, value),
-        success: value => wrap(32, value),
-    }
-}
-
-function formatBytes(value: number): string {
-    if (!Number.isFinite(value) || value <= 0) {
-        return '0 B'
-    }
-
-    const units = ['B', 'KB', 'MB', 'GB']
-    let size = value
-    let unitIndex = 0
-    while (size >= 1024 && unitIndex < units.length - 1) {
-        size /= 1024
-        unitIndex += 1
-    }
-
-    return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
 }

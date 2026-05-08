@@ -1,6 +1,7 @@
 import { HuggingFaceEmbeddingProvider } from '../../mining/embedding-provider.js'
 import { mineProject } from '../../mining/mine-project.js'
 import { loadProjectContext } from '../../project/context.js'
+import { stringifyPretty } from '../../utils/json.js'
 import type { GlobalCliOptions } from '../options.js'
 import { confirmInteractive } from '../prompts.js'
 import { createMineProgressReporter } from './mine-progress.js'
@@ -69,7 +70,7 @@ async function confirmRepair(): Promise<boolean> {
 }
 
 function printMineResult(value: unknown): void {
-    console.log(JSON.stringify(value, null, 2))
+    console.log(stringifyPretty(value))
 }
 
 export { createMineProgressReporter }

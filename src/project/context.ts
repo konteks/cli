@@ -1,27 +1,12 @@
 import { access, readFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
+import type {
+    KonteksConfig,
+    LoadedProjectContext,
+    ProjectContext,
+} from '../types/project.js'
 
-type ProjectContext = {
-    projectRoot: string
-    memoryDir: string
-    configPath: string
-}
-
-type KonteksConfig = {
-    projectRoot: string
-    storage: {
-        inlinePayloadMaxBytes: number
-        memoryDir: string
-    }
-    recall: {
-        maxTokens: number
-    }
-}
-
-export type LoadedProjectContext = ProjectContext & {
-    config: KonteksConfig
-    configExists: boolean
-}
+export type { KonteksConfig, LoadedProjectContext, ProjectContext }
 
 export function createDefaultConfig(projectRoot: string): KonteksConfig {
     return {

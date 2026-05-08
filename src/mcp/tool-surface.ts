@@ -1,4 +1,5 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js'
+import type { FlexibleRegisterTool } from '../types/mcp.js'
 import {
     forgetInputSchema,
     recallInputSchema,
@@ -13,7 +14,6 @@ import {
     searchOutputSchema,
     warmUpOutputSchema,
 } from './schemas.js'
-import type { FlexibleRegisterTool } from './types.js'
 
 export const MCP_INSTRUCTIONS =
     'Use prompts for the Warm Up -> Build -> Save flow. Use konteks_warm_up at session start, konteks_recall as supplemental Build context, and call konteks_save with structured durable memories plus one diary entry during Save.'

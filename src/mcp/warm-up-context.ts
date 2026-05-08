@@ -1,6 +1,7 @@
 import { readMineManifest } from '../mining/manifest.js'
 import { openProjectDatabase } from '../storage/database.js'
-import type { ProjectContext } from './types.js'
+import type { ProjectContext } from '../types/mcp.js'
+import { estimateCharacterTokens } from '../utils/format.js'
 
 export type WarmUpContext = {
     architecture: string[]
@@ -25,7 +26,7 @@ export function limitWarmUpContext(
     maxTokens: number,
 ): WarmUpContext {
     const budget = Math.max(80, maxTokens)
-    const baseCost = estimateTokens([
+    const baseCost = estimateCharacterTokens([
         context.summary,
         context.description ?? '',
         ...context.technologies,
@@ -36,7 +37,7 @@ export function limitWarmUpContext(
     const take = (items: string[], fallbackLimit: number): string[] => {
         const kept: string[] = []
         for (const item of items.slice(0, fallbackLimit)) {
-            const cost = estimateTokens([item])
+            const cost = estimateCharacterTokens([item])
             if (kept.length > 0 && cost > remaining) {
                 break
             }
@@ -129,13 +130,6 @@ function observationsByKind(
         .map(item => item.text_inline ?? '')
         .filter(Boolean)
         .slice(0, 10)
-}
-
-function estimateTokens(values: string[]): number {
-    return values.reduce(
-        (total, value) => total + Math.max(1, Math.ceil(value.length / 4)),
-        0,
-    )
 }
 
 function stableProjectSummary(

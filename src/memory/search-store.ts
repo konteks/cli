@@ -2,6 +2,7 @@ import type { RecallInput, SearchInput } from '../mcp/inputs.js'
 import { classifySourceRole } from '../mining/classification.js'
 import type { EmbeddingProvider } from '../mining/embedding-provider.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
+import { estimateTextTokens } from '../utils/format.js'
 import { hasSearchIndex } from './search-index.js'
 
 export type MemorySearchResult = {
@@ -352,7 +353,7 @@ limit ?
                         : undefined,
                 task: row.task ?? undefined,
                 terms,
-                tokenCost: row.token_count ?? estimateTokens(row.content),
+                tokenCost: row.token_count ?? estimateTextTokens(row.content),
                 type: row.type,
             }),
         ),
@@ -463,7 +464,7 @@ function retrievalDocumentToResult(
         targetType: row.target_type,
         terms,
         tokenCost:
-            row.token_count ?? estimateTokens(row.summary ?? row.fts_text),
+            row.token_count ?? estimateTextTokens(row.summary ?? row.fts_text),
         type,
         vectorScore,
     })
@@ -503,7 +504,7 @@ function makeSearchResult(input: {
     type: MemorySearchResult['type']
     vectorScore?: number
 }): MemorySearchResult {
-    const tokenCost = input.tokenCost ?? estimateTokens(input.content)
+    const tokenCost = input.tokenCost ?? estimateTextTokens(input.content)
     const lexical = scoreText(
         input.textForScoring ?? input.content,
         input.terms,
@@ -653,10 +654,6 @@ function recencyBoost(createdAt: string): number {
 
     const ageDays = (Date.now() - timestamp) / 86_400_000
     return Math.max(0, 20 - Math.floor(ageDays))
-}
-
-function estimateTokens(text: string): number {
-    return Math.ceil(text.trim().split(/\s+/u).filter(Boolean).length * 1.33)
 }
 
 function trimToTokenBudget(text: string, maxTokens: number): string {

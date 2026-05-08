@@ -1,13 +1,13 @@
 import type { CallToolResult, Tool } from '@modelcontextprotocol/sdk/types.js'
 import type { MemorySearchResult } from '../memory/search-store.js'
-import type { loadProjectContext } from '../project/context.js'
+import type { LoadedProjectContext } from './project.js'
 
 export type StartMcpServerOptions = {
     memoryDir?: string
     project?: string
 }
 
-export type ProjectContext = Awaited<ReturnType<typeof loadProjectContext>>
+export type ProjectContext = LoadedProjectContext
 
 export type FlexibleRegisterTool = (
     name: string,

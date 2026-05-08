@@ -8,7 +8,7 @@ import {
     projectDatabasePath,
 } from '../storage/database.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
-import type { ProjectContext, StartMcpServerOptions } from './types.js'
+import type { ProjectContext, StartMcpServerOptions } from '../types/mcp.js'
 
 export async function withProjectDatabase<T>(
     options: StartMcpServerOptions,

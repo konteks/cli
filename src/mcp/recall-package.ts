@@ -5,7 +5,7 @@ import type {
     RecallGraphItem,
     RecallHistoryItem,
     RecallPackage,
-} from './types.js'
+} from '../types/mcp.js'
 
 export async function recallHistory(
     adapter: SqliteAdapter,
