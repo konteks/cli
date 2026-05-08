@@ -27,7 +27,6 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
 
     await mkdir(context.memoryDir, { recursive: true })
     await mkdir(join(context.memoryDir, 'objects'), { recursive: true })
-    await mkdir(join(context.memoryDir, 'chunks'), { recursive: true })
 
     await writeFile(
         context.configPath,
