@@ -58,6 +58,11 @@ describe('konteks_warm_up', () => {
                     content: 'Use structured save payloads for session memory.',
                     kind: 'decision',
                 },
+                {
+                    content:
+                        'Patched warm-up formatter to collapse old sections.',
+                    kind: 'decision',
+                },
             ],
             type: 'memories',
         })
@@ -101,6 +106,13 @@ describe('konteks_warm_up', () => {
                 expect.objectContaining({
                     kind: 'decision',
                     text: 'Use structured save payloads for session memory.',
+                }),
+            ]),
+        )
+        expect(payload.guidance).not.toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    text: 'Patched warm-up formatter to collapse old sections.',
                 }),
             ]),
         )
