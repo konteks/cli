@@ -6,49 +6,49 @@ Short definitions for Konteks product terms.
 
 An AI coding assistant connected to the project through an MCP client.
 
-## Warm Up
+## Build
 
-The first lifecycle phase. Warm Up gives a fresh agent session stable project context using `konteks_warm_up`.
+The second lifecycle phase. Use Build prompts to continue existing tasks or start new ones; Recall can supplement either path when related context is useful.
+
+## Content Block
+
+A logically bounded section of code or text mined from a project artifact (technically known as a *chunk*). Content Blocks are the fine-grained units of knowledge used for semantic search.
 
 ## Context
 
 Relevant project knowledge given to an agent so it can work without rediscovering the repository from scratch.
 
+## Derived Memory
+
+Knowledge automatically extracted (mined) from source code, documentation, and project structure. It is reproducible and can be rebuilt via a `repair` operation.
+
 ## Diary
 
-A chronological activity record saved by an agent. Diary entries help future sessions avoid repeated work, but they are not part of default Warm Up context.
+A chronological activity record saved by an agent. Diary entries help future sessions avoid repeated work.
 
-## Indexed
+## Durable Memory
 
-A section, module, memory, or diary entry that Konteks has prepared for search and recall.
+Intentional knowledge created by users or agents during sessions (e.g., observations, decisions, preferences). It is authoritative and preserved across system repairs.
 
-## Knowledge
+## Graph Expansion
 
-Project-derived context mined from source files, docs, config, and other local artifacts. In `konteks status`, Knowledge counts sections and modules.
+The process of navigating the [Semantic Graph](#semantic-graph) during recall to uncover hidden dependencies and related context.
 
 ## Knowledge Curation
 
 The process of turning raw project artifacts and agent findings into durable, retrievable memory.
 
+## Knowledge Journey
+
+The lifecycle of a context signal, evolving from raw source code (Extraction) to consolidated knowledge (Indexing) and finally to synthesized insight (Recall).
+
 ## Local-First
 
-Konteks stores memory in the project directory and does not require a cloud service or account.
+Konteks stores all memory in the project's local `.konteks` directory and does not require cloud services.
 
 ## Memory
 
-A durable saved fact, decision, constraint, preference, blocker, or code insight. Memories are different from diary entries: they are compact facts intended to help future sessions.
-
-## MCP
-
-Model Context Protocol. The protocol Konteks uses to expose memory tools and workflow prompts to AI agents.
-
-## MCP Prompt
-
-A user-invoked workflow template exposed through MCP. Konteks prompts guide agents through Warm Up, Build, and Save flows.
-
-## MCP Tool
-
-A callable operation exposed to an agent through MCP, such as `konteks_warm_up`, `konteks_recall`, or `konteks_save`.
+A durable saved fact, decision, constraint, preference, blocker, or code insight.
 
 ## Memory Engine
 
@@ -56,64 +56,48 @@ The Konteks system that extracts, stores, retrieves, and updates project memory.
 
 ## Module
 
-A higher-level project area identified from mined files. Modules give Warm Up and Recall architecture-level context instead of only individual sections.
+A high-level project area or architectural grouping identified from mined files.
 
-## Repair
+## Quality Label
 
-The CLI command that repairs project memory artifacts by rebuilding them from scratch for recovery or maintenance.
+A signal (`strong`, `partial`, or `weak`) returned during recall to help the agent understand the reliability and relevance of the retrieved context.
 
 ## Recall
 
-Task-specific retrieval. Recall gives the agent compact, relevant context before existing work begins.
+Task-specific retrieval. Recall synthesizes a compact [Recall Package](#recall-package) for the agent before work begins.
 
-## Retrieval Document
+## Recall Package
 
-A derived search surface built from sections, modules, memories, or diary entries. Retrieval documents provide bounded text for FTS and embeddings.
+A token-efficient bundle of context containing a brief, primary targets, relevant memories, and a [Quality Label](#quality-label).
 
-## Section
+## Repair
 
-A bounded content block mined from a project artifact, such as a source file, doc, or config file. Sections are the fine-grained project knowledge counted by `konteks status`.
+The CLI command that rebuilds all [Derived Memory](#derived-memory) artifacts from scratch for recovery or maintenance.
 
 ## Save
 
-The final lifecycle phase. Save persists compact structured durable memories, makes them searchable, and records one session diary back to Konteks.
+The final lifecycle phase. Save persists structured [Durable Memories](#durable-memory) and records one session diary back to Konteks.
+
+## Semantic Graph
+
+The multi-dimensional representation of a project where entities (nodes) are connected by typed relationships (edges).
 
 ## Session
 
-One continuous agent conversation inside a project. A session starts when you open or resume the coding agent and ends when you close it, intentionally reset context, or switch to unrelated work. A session can contain one task or several related tasks.
-
-## Session Boundary
-
-The practical line that decides what belongs in one saved diary entry. Keep work in the same session when it shares the same goal, files, constraints, or decision chain. Start a fresh session when the next work is unrelated, needs a different project briefing, or would pollute the agent's current context.
-
-## Session Memory
-
-User- or agent-saved memory from prior work. In `konteks status`, Session Memory counts durable memories and diary entries.
-
-## Status
-
-The `konteks status` command summarizes project memory health and stored context counts: Knowledge, Session Memory, and Retrieval.
+One continuous agent conversation inside a project. A session can contain one task or several related tasks.
 
 ## Storage Substrate
 
-The local persistence layer for Konteks memory, currently based on WASM SQLite and a content-addressed object store.
+The local persistence layer for Konteks memory, based on WASM SQLite (for metadata/graph) and a content-addressed object store (for full content).
 
-## Task
+## Taxonomy
 
-A concrete unit of work inside a session, such as fixing a bug, adding a feature, or refactoring a module. Tasks are smaller than sessions: one session may include multiple related tasks.
+The project-specific ontology used to organize knowledge into logical scopes (e.g., `api`, `ui`, `database`).
 
 ## TOON
 
-A compact text format used for agent-readable stored summaries and payloads.
+Tagged Object Oriented Notation. A compact, agent-readable text format used for stored summaries and payloads.
 
-## Unchanged
+## Warm Up
 
-An item whose indexed content has not changed since the previous extraction, so Konteks can keep its existing search data.
-
-## Vector
-
-A numeric embedding used for semantic search. In `konteks status`, vectors count retrieval documents that have semantic-search embeddings available.
-
-## Build
-
-The second lifecycle phase. Use Build prompts to continue existing tasks or start new ones; Recall can supplement either path when related context is useful.
+The first lifecycle phase. Warm Up gives a fresh agent session stable project context.

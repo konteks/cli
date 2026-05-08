@@ -40,28 +40,26 @@ The journey of a single piece of knowledge follows a formal analytic pipeline, e
 The **Knowledge Transformation Pipeline** below maps the evolution of raw source artifacts into synthesized recall and reinforced insights.
 
 ```mermaid
-graph TD
+graph LR
     subgraph Ingestion
-    Code[(Source Code)] -- "Static Analysis" --> Extractor(Semantic Extractor)
+    Source[Code/Docs] --> Extractor(Extractor)
     end
 
     subgraph Memory
-    Extractor -- "Atomic Units" --> Indexer(Indexing Service)
-    Indexer -- "Consolidation" --> Store[(Memory Store)]
+    Extractor -- "Content Blocks" --> Store[(Memory Store)]
     end
 
     subgraph Interaction
-    Store -- "Signals" --> Synthesizer(Contextual Synthesizer)
-    Agent([AI Agent]) -- "Task Request" --> Synthesizer
-    Synthesizer -- "Recall Package" --> Agent
-    Agent -- "New Insights" --> Consolidator(Knowledge Consolidator)
-    Consolidator -- "Update" --> Store
+    Store -- "Signals" --> Recall(Recall Engine)
+    Agent([Agent]) <--> Recall
+    Agent -- "Insights" --> Save(Save Engine)
+    Save --> Store
     end
 ```
 
 ### 1. Emergence: Semantic Extraction
 
-The journey begins with [Extraction](extraction.md). Konteks performs language-aware static analysis of your source artifacts. It doesn't just "read" code; it decomposes it into **Atomic Knowledge Units**. Using advanced parsing, the system identifies the boundaries of functions, the intent of components, and the hidden links between files.
+The journey begins with [Extraction](extraction.md). Konteks performs language-aware static analysis of your source artifacts. It doesn't just "read" code; it decomposes it into **Content Blocks** (technically known as *chunks*). Using advanced parsing, the system identifies the boundaries of functions, the intent of components, and the hidden links between files.
 
 ### 2. Consolidation: Formal Indexing
 

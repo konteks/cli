@@ -31,13 +31,13 @@ Prompts are user-invoked workflow templates. They guide the agent through the [S
 
 Tools are lower-level callable operations used by agents and debugging workflows. Canonical tool names use the `konteks_*` prefix so they stay clear when an agent has multiple MCP servers.
 
-| Tool | Capability | Use When |
-| :--- | :--- | :--- |
-| `konteks_warm_up` | Warm Up | Start a fresh agent session with stable project context. |
-| `konteks_recall` | Recall | Continue an existing task with a compact brief, primary targets, and relevant memory evidence. |
-| `konteks_save` | Save | Persist structured durable memories or one diary entry. |
-| `konteks_search` | Search | Inspect memory directly with a query. |
-| `konteks_forget` | Forget | Remove or suppress wrong, stale, or sensitive memory. |
+| Tool | Capability | Parameters | Use When |
+| :--- | :--- | :--- | :--- |
+| `konteks_warm_up` | Warm Up | | Start a fresh agent session with stable project context. |
+| `konteks_recall` | Recall | `task`, `includeSources`, `maxTokens` | Retrieve a compact brief, primary targets, and relevant memory evidence (includes a `quality` signal: `strong`, `partial`, or `weak`). |
+| `konteks_save` | Save | `type`, `memories`, `summary`, `task`, `status` | Persist structured durable memories or one diary entry. |
+| `konteks_search` | Search | `query`, `limit` | Inspect memory directly with a query. |
+| `konteks_forget` | Forget | `id`, `query`, `mode`, `reason` | Remove or suppress wrong, stale, or sensitive memory using `soft_delete`, `invalidate`, or `hard_delete`. |
 
 MCP tools validate project health silently before doing work. If memory is not initialized or repair is required, the tool fails with a short actionable error instead of returning status context.
 

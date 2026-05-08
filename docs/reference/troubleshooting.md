@@ -1,0 +1,54 @@
+# Troubleshooting Konteks
+
+This guide helps you resolve common issues encountered while setting up or using Konteks.
+
+## Common Issues & Solutions
+
+### 1. "Konteks memory is not initialized"
+**Symptoms**: Any command returns an error about missing initialization.
+**Cause**: The `.konteks` directory or `config.json` is missing in your project root.
+**Solution**: Run `konteks init` to initialize the project.
+
+### 2. Understanding Recall Quality Signals
+**Symptoms**: Recall returns a `weak` or `partial` quality label.
+**Cause**: Konteks provides an honest signal about the relevance of retrieved context.
+*   **Weak**: No direct implementation matches or authoritative facts were found.
+*   **Partial**: Some signals were found (e.g., related modules or historical diary entries), but no direct implementation hits.
+**Solution**:
+1.  **Refine your Task**: Be more specific in your recall request (e.g., mention a specific file or module).
+2.  **Update the Index**: Run `konteks init` again to scan for recent changes.
+3.  **Check Ignore Rules**: Ensure the files you expect are not being excluded by `.gitignore` or `.ignore`.
+4.  **Full Rebuild**: If you've made significant architectural changes, run `konteks repair` to rebuild the [Derived Memory](memory-model.md#durable-vs-derived-data).
+
+### 3. Durable memory is missing after a repair
+**Symptoms**: Your saved observations or diary entries are gone.
+**Cause**: `konteks repair` only rebuilds **derived** data (chunks, entities). **Durable** data (observations, diary) should be preserved.
+**Solution**: If durable data is truly missing, check if you are in the correct project root or if the `.konteks/memory.sqlite` file was manually deleted.
+
+### 4. "MCP Tool timeout or connection error"
+**Symptoms**: Your AI agent reports that it cannot connect to the Konteks server or the tool timed out.
+**Cause**: The MCP server process may have crashed or is taking too long to process a large project.
+**Solution**:
+1. Run `konteks doctor` to check the health of your installation and project memory.
+2. Ensure you are using a supported runtime (Bun 1.3+ or Node 22+).
+3. Check the logs of your AI agent/host for specific error messages.
+
+### 5. "Secrets or sensitive data in recall"
+**Symptoms**: Recall returns content containing API keys, passwords, or other sensitive information.
+**Cause**: Konteks indexed a file containing secrets that wasn't properly ignored.
+**Solution**:
+1. Immediately add the sensitive file to your `.gitignore` or `.ignore`.
+2. Run `konteks forget --query "the sensitive content"` to remove it from memory.
+3. Use `konteks repair` to ensure the stale index is cleared.
+
+## Health Check: `konteks doctor`
+
+The `doctor` command is your first line of defense. It performs a suite of checks:
+- Verifies the installation and version.
+- Checks the integrity of the SQLite database.
+- Validates the `.konteks` directory structure.
+- Confirms the presence of mining artifacts (manifests).
+
+```bash
+konteks doctor
+```
