@@ -3,11 +3,12 @@ import type { KnipConfig } from 'knip'
 const knipConfig: KnipConfig = {
     entry: ['src/**/*.test.ts'],
     ignoreDependencies: [
-        '@huggingface/transformers',
-        '@inquirer/prompts',
+        'tree-sitter-html',
         'tree-sitter-javascript',
+        'tree-sitter-jsdoc',
+        'tree-sitter-json',
+        'tree-sitter-php',
         'tree-sitter-typescript',
-        'web-tree-sitter',
     ],
     project: ['src/**/*.ts'],
 }
