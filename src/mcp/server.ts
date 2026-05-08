@@ -22,7 +22,6 @@ import { recallGraph, recallHistory } from './recall-package.js'
 import { registerKonteksTools } from './tool-handlers.js'
 import { MCP_INSTRUCTIONS } from './tool-surface.js'
 
-export type { StartMcpServerOptions }
 export { recallGraph, recallHistory }
 
 export async function startMcpServer(

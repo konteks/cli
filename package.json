@@ -58,7 +58,7 @@
         "check": "bun --silent run lint && bun --silent run test && bun --silent run build",
         "dev": "bun src/cli.ts",
         "format": "biome check --write --reporter=github",
-        "lint": "bun --silent run format && tsc --noEmit --pretty false",
+        "lint": "bun --silent run format && knip -n --reporter compact && tsc --noEmit --pretty false",
         "prepack": "bun run build",
         "test": "bun test --reporter=dots > /dev/null 2>&1 || bun test --only-failures"
     },

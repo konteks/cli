@@ -15,7 +15,7 @@ export async function repairCommand(options: GlobalCliOptions): Promise<void> {
     await mineCommand(options, { reindex: true })
 }
 
-export async function mineCommand(
+async function mineCommand(
     options: GlobalCliOptions,
     mineOptions: MineOptions,
 ): Promise<void> {

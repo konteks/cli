@@ -27,7 +27,7 @@ export type KonteksToolName =
 
 type ToolCapability = 'Forget' | 'Recall' | 'Save' | 'Search' | 'Warm Up'
 
-export type ToolSurface = {
+type ToolSurface = {
     annotations: Tool['annotations']
     capability: ToolCapability
     description: string

@@ -6,7 +6,7 @@ import type {
     ProjectContext,
 } from '../types/project.js'
 
-export type { KonteksConfig, LoadedProjectContext, ProjectContext }
+export type { LoadedProjectContext }
 
 export function createDefaultConfig(projectRoot: string): KonteksConfig {
     return {

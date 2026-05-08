@@ -56,15 +56,13 @@ export type RecallHistoryItem = {
     reason: string
 }
 
-export type RecallQuality = 'partial' | 'strong' | 'weak'
-
 export type RecallPackage = {
     brief: string[]
     graph: RecallGraphItem[]
     history: RecallHistoryItem[]
     memories: MemorySearchResult[]
     primaryTargets: string[]
-    quality: RecallQuality
+    quality: 'partial' | 'strong' | 'weak'
     sourceCount: number
     task: string
     tokenBudget: number

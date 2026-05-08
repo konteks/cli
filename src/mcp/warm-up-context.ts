@@ -3,7 +3,7 @@ import { openProjectDatabase } from '../storage/database.js'
 import type { ProjectContext } from '../types/mcp.js'
 import { estimateCharacterTokens } from '../utils/format.js'
 
-export type WarmUpContext = {
+type WarmUpContext = {
     architecture: string[]
     constraints: string[]
     conventions: string[]

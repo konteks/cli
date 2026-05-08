@@ -1,7 +1,7 @@
 import type { ScannedFile } from './file-scan.js'
 import type { CodeMetadata, TreeSitterEngine } from './tree-sitter-engine.js'
 
-export type MinedChunk = {
+type MinedChunk = {
     anchor: string
     anchorType: 'file' | 'heading' | 'json_path' | 'symbol'
     content: string

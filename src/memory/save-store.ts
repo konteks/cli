@@ -37,7 +37,7 @@ type SaveMemoryInput = {
     type: 'memory'
 }
 
-export type SaveStoreInput =
+type SaveStoreInput =
     | SaveMemoryInput
     | {
           memories: SaveMemoryInput[]

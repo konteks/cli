@@ -17,12 +17,6 @@ type ObjectSchema = {
     type: 'object'
 }
 
-export const emptyInputSchema = {
-    additionalProperties: false,
-    properties: {},
-    type: 'object',
-} satisfies ObjectSchema
-
 export const warmUpInputSchema = {
     additionalProperties: false,
     properties: {
@@ -185,7 +179,7 @@ type SaveMemoryInput = {
     type: 'memory'
 }
 
-export type SaveInput =
+type SaveInput =
     | SaveMemoryInput
     | {
           memories: SaveMemoryInput[]

@@ -21,7 +21,7 @@ type EmbeddingWorkItem = {
     row: RetrievalDocumentRow
 }
 
-export type EmbeddingRunResult = {
+type EmbeddingRunResult = {
     embeddedCount: number
     reusedCount: number
 }

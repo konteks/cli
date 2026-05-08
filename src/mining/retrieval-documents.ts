@@ -1,7 +1,7 @@
 import { contentHash } from '../storage/content.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 
-export const maxChunkContentChars = 3000
+const maxChunkContentChars = 3000
 export const maxEmbeddingTextChars = 2500
 export const maxFtsTextChars = 6000
 

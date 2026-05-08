@@ -1,4 +1,4 @@
-export type MineProgressPhase =
+type MineProgressPhase =
     | 'chunks'
     | 'database'
     | 'done'
@@ -12,7 +12,7 @@ export type MineProgressPhase =
     | 'start'
     | 'summary'
 
-export type MineProgressStatus = 'done' | 'progress' | 'start'
+type MineProgressStatus = 'done' | 'progress' | 'start'
 
 export type MineProgressEvent = {
     chunkCount?: number

@@ -14,7 +14,7 @@ import type { MineProgressReporter } from './progress.js'
 import { formatProjectSummaryToon } from './toon-summary.js'
 import type { TreeSitterEngine } from './tree-sitter-engine.js'
 
-export type MineProjectResult = {
+type MineProjectResult = {
     ok: true
     mode: MineMode
     projectRoot: string

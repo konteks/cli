@@ -10,7 +10,7 @@ export type TreeSitterLanguage =
     | 'tsx'
     | 'typescript'
 
-export type CodeSymbol = {
+type CodeSymbol = {
     name: string
     kind: string
     startLine: number
