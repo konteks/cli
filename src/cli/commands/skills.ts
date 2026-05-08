@@ -52,6 +52,10 @@ function promptFileToSkill(
         .trim()
         .replaceAll('{{task}}', 'the task')
         .replaceAll(
+            '{{topic}}',
+            'any free-form text provided after `$konteks-warm-up`, if any',
+        )
+        .replaceAll(
             '{{prompt}}',
             'any free-form text provided after `$konteks-warm-up`, if any',
         )
