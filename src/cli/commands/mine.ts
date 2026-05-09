@@ -2,8 +2,8 @@ import { HuggingFaceEmbeddingProvider } from '../../mining/embedding-provider.js
 import { mineProject } from '../../mining/mine-project.js'
 import { loadProjectContext } from '../../project/context.js'
 import { stringifyPretty } from '../../utils/json.js'
+import { confirmInteractive } from '../../utils/prompts.js'
 import type { GlobalCliOptions } from '../options.js'
-import { confirmInteractive } from '../prompts.js'
 import { createMineProgressReporter } from './mine-progress.js'
 
 type MineOptions = {
