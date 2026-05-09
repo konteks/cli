@@ -7,16 +7,19 @@ import {
     openProjectDatabase,
     projectDatabasePath,
 } from '../storage/database.js'
-import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
+import type { DatabaseService } from '../storage/db.js'
 import type { ProjectContext, StartMcpServerOptions } from '../types/mcp.js'
 
 export async function withProjectDatabase<T>(
     options: StartMcpServerOptions,
-    operation: (adapter: SqliteAdapter, context: ProjectContext) => Promise<T>,
+    operation: (
+        service: DatabaseService,
+        context: ProjectContext,
+    ) => Promise<T>,
 ): Promise<T> {
     const context = await loadMcpProjectContext(options)
-    return withProjectDatabaseContext(context, adapter =>
-        operation(adapter, context),
+    return withProjectDatabaseContext(context, service =>
+        operation(service, context),
     )
 }
 
@@ -39,14 +42,14 @@ export async function loadMcpProjectContext(
 
 export async function withProjectDatabaseContext<T>(
     context: ProjectContext,
-    operation: (adapter: SqliteAdapter) => Promise<T>,
+    operation: (service: DatabaseService) => Promise<T>,
 ): Promise<T> {
-    const adapter = await openProjectDatabase(context)
+    const service = await openProjectDatabase(context)
 
     try {
-        return await operation(adapter)
+        return await operation(service)
     } finally {
-        await adapter.close()
+        await service.close()
     }
 }
 

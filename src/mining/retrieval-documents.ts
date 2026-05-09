@@ -1,5 +1,5 @@
 import { contentHash } from '../storage/content.js'
-import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
+import type { DatabaseService } from '../storage/db.js'
 
 const maxChunkContentChars = 3000
 export const maxEmbeddingTextChars = 2500
@@ -19,9 +19,10 @@ type RetrievalDocumentInput = {
 }
 
 export async function upsertRetrievalDocument(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     input: RetrievalDocumentInput,
 ): Promise<void> {
+    const adapter = db.adapter
     await adapter.execute(
         `
 insert or replace into retrieval_documents (
@@ -84,10 +85,11 @@ insert into retrieval_documents_fts (
 }
 
 export async function deleteRetrievalDocuments(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     targetType: RetrievalDocumentInput['targetType'],
     targetIds?: string[],
 ): Promise<void> {
+    const adapter = db.adapter
     if (targetIds && targetIds.length === 0) {
         return
     }
@@ -124,8 +126,9 @@ where target_type = ?
 }
 
 export async function reindexRetrievalDocumentFts(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
 ): Promise<void> {
+    const adapter = db.adapter
     await adapter.execute('delete from retrieval_documents_fts')
     await adapter.execute(`
 insert into retrieval_documents_fts (

@@ -107,9 +107,9 @@ export async function assembleWarmUpContext(
         }
     }
 
-    const adapter = await openProjectDatabase(context)
+    const service = await openProjectDatabase(context)
     try {
-        const modules = await adapter.query<{
+        const modules = await service.adapter.query<{
             path: string
             source_role: string | null
             summary: string
@@ -121,8 +121,8 @@ order by chunk_count desc, file_count desc
 limit 12
 `,
         )
-        const highlights = await warmUpHighlights(adapter)
-        const observations = await adapter.query<ObservationRow>(
+        const highlights = await warmUpHighlights(service.adapter)
+        const observations = await service.adapter.query<ObservationRow>(
             `
 select id, kind, text_inline
 from observations
@@ -145,7 +145,7 @@ limit 120
             technologies: manifest.metadata.technologies,
         }
     } finally {
-        await adapter.close()
+        await service.close()
     }
 }
 

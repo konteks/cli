@@ -8,10 +8,12 @@
     "dependencies": {
         "@huggingface/transformers": "^4.2.0",
         "@inquirer/prompts": "^8.4.2",
+        "@libsql/client": "^0.17.3",
         "@modelcontextprotocol/sdk": "^1.29.0",
         "@sqlite.org/sqlite-wasm": "^3.53.0-build1",
         "@toon-format/toon": "^2.2.0",
         "commander": "^14.0.3",
+        "drizzle-orm": "^0.45.2",
         "tree-sitter-html": "^0.23.2",
         "tree-sitter-javascript": "^0.25.0",
         "tree-sitter-jsdoc": "^0.25.0",

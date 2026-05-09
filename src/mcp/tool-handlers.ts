@@ -30,11 +30,7 @@ import {
     withProjectDatabase,
     withProjectDatabaseContext,
 } from './project-runtime.js'
-import {
-    assembleRecallPackage,
-    recallGraph,
-    recallHistory,
-} from './recall-package.js'
+import { assembleRecallPackage, recallHistory } from './recall-package.js'
 import {
     formatRecallText,
     formatSaveText,
@@ -108,8 +104,8 @@ async function focusedWarmUpRecall(
     topic: string,
     maxTokens?: number,
 ): Promise<RecallPackage> {
-    const memories = await withProjectDatabase(options, adapter =>
-        searchMemory(adapter, { query: topic }),
+    const memories = await withProjectDatabase(options, service =>
+        searchMemory(service, { query: topic }),
     )
     return assembleRecallPackage({
         graph: [],
@@ -126,12 +122,11 @@ async function handleRecallTool(
     input: RecallInput,
 ) {
     await validateMcpProjectHealth(await loadMcpProjectContext(options))
-    const recall = await withProjectDatabase(options, async adapter => {
-        const memories = await searchMemory(adapter, input)
-        const graph = await recallGraph(adapter, input.task)
-        const history = await recallHistory(adapter, input.task)
+    const recall = await withProjectDatabase(options, async service => {
+        const memories = await searchMemory(service, input)
+        const history = await recallHistory(service, input.task)
         return assembleRecallPackage({
-            graph,
+            graph: [], // Placeholder
             history,
             includeSources: input.includeSources ?? false,
             maxTokens: input.maxTokens ?? 2000,
@@ -155,8 +150,8 @@ async function handleSaveTool(
     const context = await loadMcpProjectContext(options)
     await validateMcpProjectHealth(context)
     const projectUpdate = await updateChangedProjectMemorySilently(context)
-    const saved = await withProjectDatabaseContext(context, adapter =>
-        saveKonteksInput(adapter, context, input, { projectUpdate }),
+    const saved = await withProjectDatabaseContext(context, service =>
+        saveKonteksInput(service, context, input, { projectUpdate }),
     )
     return formatToTextResult(formatSaveText(saved))
 }
@@ -166,8 +161,8 @@ async function handleSearchTool(
     input: SearchInput,
 ) {
     await validateMcpProjectHealth(await loadMcpProjectContext(options))
-    const results = await withProjectDatabase(options, adapter =>
-        searchMemory(adapter, input),
+    const results = await withProjectDatabase(options, service =>
+        searchMemory(service, input),
     )
     return formatToTextResult(
         formatSearchText({
@@ -183,8 +178,8 @@ async function handleForgetTool(
     input: ForgetInput,
 ) {
     await validateMcpProjectHealth(await loadMcpProjectContext(options))
-    const result = await withProjectDatabase(options, adapter =>
-        forgetMemory(adapter, input),
+    const result = await withProjectDatabase(options, service =>
+        forgetMemory(service, input),
     )
     return formatToTextResult(result)
 }

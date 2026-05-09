@@ -1,5 +1,5 @@
 import { contentHash } from '../storage/content.js'
-import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
+import type { DatabaseService } from '../storage/db.js'
 import type { EmbeddingProvider } from './embedding-provider.js'
 import type { MineProgressReporter } from './progress.js'
 
@@ -27,7 +27,7 @@ type EmbeddingRunResult = {
 }
 
 export async function generateTargetEmbeddings(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     provider: EmbeddingProvider,
     targetTypes: TargetType[],
     createdAt: string,
@@ -35,6 +35,7 @@ export async function generateTargetEmbeddings(
         onProgress?: MineProgressReporter
     } = {},
 ): Promise<EmbeddingRunResult> {
+    const adapter = db.adapter
     if (targetTypes.length === 0) {
         return { embeddedCount: 0, reusedCount: 0 }
     }

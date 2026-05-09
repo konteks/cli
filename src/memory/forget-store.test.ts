@@ -72,7 +72,7 @@ describe('forgetMemory', () => {
             mode: 'hard_delete',
             reason: 'sensitive',
         })
-        const rows = await adapter.query<{ id: string }>(
+        const rows = await adapter.adapter.query<{ id: string }>(
             'select id from observations where id = ?',
             [saved.id],
         )
@@ -94,7 +94,7 @@ describe('forgetMemory', () => {
             query: 'compatibility planning',
             reason: 'not relevant now',
         })
-        const rows = await adapter.query<{
+        const rows = await adapter.adapter.query<{
             forget_reason: string | null
             suppressed_at: string | null
         }>(

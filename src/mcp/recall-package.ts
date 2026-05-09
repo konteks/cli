@@ -1,6 +1,7 @@
-import { GraphStore } from '../memory/graph-store.js'
+// import { GraphStore } from '../memory/graph-store.js'
 import type { MemorySearchResult } from '../memory/search-store.js'
-import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
+import type { DatabaseService } from '../storage/db.js'
+// import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 import type {
     RecallGraphItem,
     RecallHistoryItem,
@@ -8,14 +9,14 @@ import type {
 } from '../types/mcp.js'
 
 export async function recallHistory(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     task: string,
 ): Promise<RecallHistoryItem[]> {
     if (!needsHistory(task)) {
         return []
     }
 
-    const graph = new GraphStore(adapter)
+    const graph = db.graph
     const entities = await graph.searchEntities(task, { limit: 4 })
     const items: RecallHistoryItem[] = []
 
@@ -44,10 +45,10 @@ export async function recallHistory(
 }
 
 export async function recallGraph(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     task: string,
 ): Promise<RecallGraphItem[]> {
-    const graph = new GraphStore(adapter)
+    const graph = db.graph
     const entities = await graph.searchEntities(task, { limit: 4 })
     const items: RecallGraphItem[] = []
 

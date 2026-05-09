@@ -30,9 +30,9 @@ describe('generateTargetEmbeddings', () => {
     it('embeds retrieval documents and reuses by embedding hash', async () => {
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
-        const adapter = await openProjectDatabase(context)
+        const service = await openProjectDatabase(context)
 
-        await upsertRetrievalDocument(adapter, {
+        await upsertRetrievalDocument(service, {
             embeddingText: 'summary: first chunk',
             ftsText: 'summary: first chunk',
             path: 'src/a.ts',
@@ -46,7 +46,7 @@ describe('generateTargetEmbeddings', () => {
 
         const provider = new FakeEmbeddingProvider(8)
         const first = await generateTargetEmbeddings(
-            adapter,
+            service,
             provider,
             ['chunk'],
             new Date().toISOString(),
@@ -56,7 +56,7 @@ describe('generateTargetEmbeddings', () => {
         expect(first.reusedCount).toBe(0)
 
         const second = await generateTargetEmbeddings(
-            adapter,
+            service,
             provider,
             ['chunk'],
             new Date().toISOString(),
@@ -65,7 +65,7 @@ describe('generateTargetEmbeddings', () => {
         expect(second.embeddedCount).toBe(0)
         expect(second.reusedCount).toBe(1)
 
-        const rows = await adapter.query<{
+        const rows = await service.adapter.query<{
             dimensions: number
             model: string
             vector_blob: Uint8Array
@@ -73,7 +73,7 @@ describe('generateTargetEmbeddings', () => {
             'select model, dimensions, vector_blob from target_embeddings where target_id = ? and target_type = ?',
             ['chunk_a', 'chunk'],
         )
-        await adapter.close()
+        await service.close()
 
         expect(rows[0]?.model).toBe(provider.model)
         expect(rows[0]?.dimensions).toBe(8)

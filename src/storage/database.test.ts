@@ -21,11 +21,11 @@ describe('project database', () => {
         tempDirs.push(projectRoot)
         const context = await loadProjectContext(projectRoot)
 
-        const adapter = await openProjectDatabase(context)
-        const migrations = await adapter.query<{ id: string }>(
+        const service = await openProjectDatabase(context)
+        const migrations = await service.adapter.query<{ id: string }>(
             'select id from schema_migrations',
         )
-        await adapter.close()
+        await service.close()
 
         expect(JSON.parse(await readFile(context.configPath, 'utf8'))).toEqual(
             context.config,

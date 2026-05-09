@@ -149,7 +149,7 @@ describe('retrieval quality evals', () => {
         )?.text
         const manifest = await readMineManifest(context.memoryDir)
         const adapter = await openProjectDatabase(context)
-        const diaryRows = await adapter.query<{ summary: string }>(
+        const diaryRows = await adapter.adapter.query<{ summary: string }>(
             `
 select summary
 from diary_entries
@@ -296,7 +296,7 @@ limit 1
             embeddingProvider: new FakeEmbeddingProvider(),
         })
         const adapter = await openProjectDatabase(context)
-        const rows = await adapter.query<{ count: number }>(
+        const rows = await adapter.adapter.query<{ count: number }>(
             'select count(*) as count from retrieval_documents',
         )
         await adapter.close()

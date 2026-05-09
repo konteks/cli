@@ -15,11 +15,11 @@ async function makeTaxonomyStore(): Promise<{
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-tax-test-'))
     tempDirs.push(projectRoot)
     const context = await loadProjectContext(projectRoot)
-    const adapter = await openProjectDatabase(context)
+    const service = await openProjectDatabase(context)
 
     return {
-        close: () => adapter.close(),
-        store: new TaxonomyStore(adapter),
+        close: () => service.close(),
+        store: new TaxonomyStore(service.adapter),
     }
 }
 

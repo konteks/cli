@@ -1,6 +1,7 @@
 import type { RecallInput, SearchInput } from '../mcp/inputs.js'
 import { classifySourceRole } from '../mining/classification.js'
 import type { EmbeddingProvider } from '../mining/embedding-provider.js'
+import type { DatabaseService } from '../storage/db.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 import { estimateTextTokens } from '../utils/format.js'
 import {
@@ -53,7 +54,7 @@ type SearchIntent = {
 const maxExcerptTokens = 120
 
 export async function searchMemory(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     input: SearchInput | RecallInput,
     options: SearchMemoryOptions = {},
 ): Promise<MemorySearchResult[]> {
@@ -68,7 +69,7 @@ export async function searchMemory(
     }
 
     const retrievalResults = await searchRetrievalDocuments(
-        adapter,
+        db.adapter,
         terms,
         limit,
         mode,
@@ -79,15 +80,21 @@ export async function searchMemory(
         return retrievalResults
     }
 
-    if (await hasSearchIndex(adapter)) {
-        const ftsResults = await searchFts(adapter, terms, limit, mode, intent)
+    if (await hasSearchIndex(db.adapter)) {
+        const ftsResults = await searchFts(
+            db.adapter,
+            terms,
+            limit,
+            mode,
+            intent,
+        )
         if (ftsResults.length > 0) {
             return ftsResults
         }
     }
 
-    const observations = await queryObservations(adapter, terms, limit * 2)
-    const diaries = await queryDiaries(adapter, terms, limit * 2)
+    const observations = await queryObservations(db.adapter, terms, limit * 2)
+    const diaries = await queryDiaries(db.adapter, terms, limit * 2)
 
     return applyGroupAwarePruning(
         [

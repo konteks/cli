@@ -1,5 +1,8 @@
 import { randomUUID } from 'node:crypto'
-import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
+import type {
+    KonteksDatabase,
+    SqliteAdapter,
+} from '../storage/sqlite-adapter.js'
 
 type EntityInput = {
     type: string
@@ -109,7 +112,14 @@ type HistoricalRelationRow = {
 }
 
 export class GraphStore {
-    constructor(private readonly adapter: SqliteAdapter) {}
+    private readonly adapter: SqliteAdapter
+
+    constructor(
+        adapter: SqliteAdapter | { adapter: SqliteAdapter },
+        _db?: KonteksDatabase,
+    ) {
+        this.adapter = 'adapter' in adapter ? adapter.adapter : adapter
+    }
 
     async upsertEntity(input: EntityInput): Promise<EntityRecord> {
         const canonicalName = normalizeEntityName(input.name)
@@ -148,6 +158,7 @@ where id = ?
             summary: input.summary,
             type: input.type,
         }
+
         await this.adapter.transaction(async () => {
             await this.adapter.execute(
                 `
@@ -183,6 +194,7 @@ insert into entities (
         canonicalName: string,
     ): Promise<EntityRecord | undefined> {
         const normalized = normalizeEntityName(canonicalName)
+
         const rows = await this.adapter.query<EntityRow>(
             `
 select id, type, name, canonical_name, summary
@@ -257,7 +269,7 @@ limit ?
         }
         const now = new Date().toISOString()
 
-        await this.adapter.transaction(async () => {
+        const operation = async () => {
             if (input.supersedesRelationId) {
                 await this.supersedeRelation(input.supersedesRelationId, now)
             }
@@ -294,19 +306,22 @@ insert into relations (
                     now,
                 ],
             )
-        })
+        }
+
+        await this.adapter.transaction(operation)
 
         return relation
     }
 
     async invalidateRelation(id: string, validTo?: string): Promise<void> {
+        const now = new Date().toISOString()
         await this.adapter.execute(
             `
 update relations
 set status = 'invalidated', valid_to = coalesce(?, valid_to), updated_at = ?
 where id = ?
 `,
-            [validTo ?? null, new Date().toISOString(), id],
+            [validTo ?? null, now, id],
         )
     }
 
@@ -523,9 +538,10 @@ where id = ?
     }
 }
 
-function entityFromRow(row: EntityRow): EntityRecord {
+// biome-ignore lint/suspicious/noExplicitAny: WILL FIX THIS LATER
+function entityFromRow(row: any): EntityRecord {
     return {
-        canonicalName: row.canonical_name,
+        canonicalName: row.canonical_name ?? row.canonicalName,
         id: row.id,
         name: row.name,
         summary: row.summary ?? undefined,

@@ -1,12 +1,11 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { indexSearchDocument } from '../memory/search-index.js'
-import { TaxonomyStore } from '../memory/taxonomy-store.js'
+import type { TaxonomyStore } from '../memory/taxonomy-store.js'
 import type { LoadedProjectContext } from '../project/context.js'
 import { contentHash } from '../storage/content.js'
-import { appendMemoryEvent } from '../storage/event-log.js'
+import type { DatabaseService } from '../storage/db.js'
 import { storePayload } from '../storage/payload.js'
-import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 import { createToonStore } from '../storage/toon-store.js'
 import { chunkFile } from './chunking.js'
 import {
@@ -75,7 +74,7 @@ type PreparedFile = {
 const defaultMaxChunksPerFile = 200
 
 export async function mineChunks(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     context: LoadedProjectContext,
     files: ScannedFile[],
     minedAt: string,
@@ -89,7 +88,7 @@ export async function mineChunks(
 ): Promise<MineChunksResult> {
     const progress = options.onProgress
     const toonStore = createToonStore(context.memoryDir)
-    const taxonomy = new TaxonomyStore(adapter)
+    const taxonomy = db.taxonomy
     let engine: TreeSitterEngine | undefined
 
     if (files.length > 0) {
@@ -131,14 +130,14 @@ export async function mineChunks(
         phase: 'database',
         status: 'progress',
     })
-    await adapter.transaction(async () => {
+    await db.transaction(async tx => {
         if (options.mode === 'changed') {
-            await clearMinedChunksForPaths(adapter, [
+            await clearMinedChunksForPaths(tx, [
                 ...files.map(file => file.path),
                 ...(options.deletedPaths ?? []),
             ])
         } else if (options.mode !== 'resume') {
-            await clearMinedChunks(adapter)
+            await clearMinedChunks(tx)
         }
         const rootNode = await taxonomy.upsertNode({
             name: 'Project Files',
@@ -157,8 +156,8 @@ export async function mineChunks(
     }
     for (const [fileIndex, file] of files.entries()) {
         const preparedFile = await prepareFileChunks({
-            adapter,
             context,
+            db,
             engine,
             file,
             toonStore,
@@ -180,35 +179,19 @@ export async function mineChunks(
             continue
         }
 
-        await adapter.transaction(async () => {
-            await adapter.execute(
-                `
-insert into sources (
-    id,
-    type,
-    uri,
-    excerpt_ref,
-    created_at,
-    source_role,
-    language,
-    topics_json,
-    entities_json,
-    metadata_json
-) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`,
-                [
-                    preparedFile.sourceId,
-                    'mined_file',
-                    preparedFile.path,
-                    null,
-                    minedAt,
-                    preparedFile.sourceRole,
-                    preparedFile.language,
-                    JSON.stringify(preparedFile.sourceTopics),
-                    JSON.stringify([]),
-                    JSON.stringify(preparedFile.sourceMetadata),
-                ],
-            )
+        await db.transaction(async tx => {
+            await tx.sources.insert({
+                entities_json: JSON.stringify([]),
+                excerpt_ref: null,
+                id: preparedFile.sourceId,
+                language: preparedFile.language,
+                metadata_json: JSON.stringify(preparedFile.sourceMetadata),
+                source_role: preparedFile.sourceRole,
+                topics_json: JSON.stringify(preparedFile.sourceTopics),
+                type: 'mined_file',
+                uri: preparedFile.path,
+            })
+
             const taxonomyNode = await ensurePathTaxonomy(
                 taxonomy,
                 rootNodeId,
@@ -216,66 +199,36 @@ insert into sources (
             )
 
             for (const chunk of preparedFile.chunks) {
-                await adapter.execute(
-                    `
-insert into chunks (
-    id,
-    source_id,
-    kind,
-    path,
-    symbol,
-    summary,
-    content_inline,
-    payload_ref,
-    content_hash,
-    token_count,
-    created_at,
-    updated_at,
-    source_role,
-    language,
-    anchor_type,
-    anchor,
-    heading,
-    json_path,
-    topics_json,
-    entities_json,
-    metadata_json,
-    start_line,
-    end_line
-) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`,
-                    [
-                        chunk.id,
-                        preparedFile.sourceId,
-                        chunk.kind,
-                        chunk.path,
-                        chunk.symbol ?? null,
-                        chunk.summary,
-                        chunk.contentInline ?? null,
-                        chunk.payloadRef ?? null,
-                        chunk.contentHash,
-                        chunk.tokenCount,
-                        minedAt,
-                        minedAt,
-                        preparedFile.sourceRole,
-                        preparedFile.language,
-                        chunk.anchorType,
-                        chunk.anchor,
-                        chunk.heading ?? null,
-                        chunk.jsonPath ?? null,
-                        JSON.stringify(chunk.topics),
-                        JSON.stringify([]),
-                        JSON.stringify(chunk.metadata ?? {}),
-                        chunk.startLine ?? null,
-                        chunk.endLine ?? null,
-                    ],
-                )
+                await db.chunks.insert({
+                    anchor: chunk.anchor,
+                    anchor_type: chunk.anchorType,
+                    content_hash: chunk.contentHash,
+                    content_inline: chunk.contentInline ?? null,
+                    end_line: chunk.endLine ?? null,
+                    entities_json: JSON.stringify([]),
+                    heading: chunk.heading ?? null,
+                    id: chunk.id,
+                    json_path: chunk.jsonPath ?? null,
+                    kind: chunk.kind,
+                    language: preparedFile.language,
+                    metadata_json: JSON.stringify(chunk.metadata ?? {}),
+                    path: chunk.path,
+                    payload_ref: chunk.payloadRef ?? null,
+                    source_id: preparedFile.sourceId,
+                    source_role: preparedFile.sourceRole,
+                    start_line: chunk.startLine ?? null,
+                    summary: chunk.summary,
+                    symbol: chunk.symbol ?? null,
+                    token_count: chunk.tokenCount,
+                    topics_json: JSON.stringify(chunk.topics),
+                })
+
                 await taxonomy.linkTarget({
                     nodeId: taxonomyNode.id,
                     targetId: chunk.id,
                     targetType: 'chunk',
                 })
-                await indexSearchDocument(adapter, {
+                await indexSearchDocument(db.adapter, {
                     content: chunk.contentInline ?? chunk.summary,
                     createdAt: minedAt,
                     id: chunk.id,
@@ -283,7 +236,7 @@ insert into chunks (
                     task: chunk.path,
                     type: 'chunk',
                 })
-                await upsertRetrievalDocument(adapter, {
+                await upsertRetrievalDocument(db, {
                     anchor: chunk.anchor,
                     embeddingText: chunk.retrievalTexts.embeddingText,
                     ftsText: chunk.retrievalTexts.ftsText,
@@ -323,11 +276,11 @@ insert into chunks (
         phase: 'modules',
         status: 'start',
     })
-    await adapter.transaction(async () => {
-        await rebuildModuleArtifacts(adapter, minedAt, options.metadata)
-        await reindexRetrievalDocumentFts(adapter)
+    await db.transaction(async tx => {
+        await rebuildModuleArtifacts(tx, minedAt, options.metadata)
+        await reindexRetrievalDocumentFts(tx)
 
-        await appendMemoryEvent(adapter, {
+        await tx.events.append({
             actor: 'cli',
             eventType: 'project_mined',
             id: `event_${contentHash(`${context.projectRoot}:${minedAt}`).slice(0, 32)}`,
@@ -350,7 +303,7 @@ insert into chunks (
 }
 
 async function prepareFileChunks(input: {
-    adapter: SqliteAdapter
+    db: DatabaseService
     context: LoadedProjectContext
     engine?: TreeSitterEngine
     file: ScannedFile
@@ -410,7 +363,7 @@ async function prepareFileChunks(input: {
         })
         if (
             await isMinedChunkSuppressed(
-                input.adapter,
+                input.db,
                 input.file.path,
                 chunk.anchor,
                 stored.contentHash,
@@ -478,12 +431,12 @@ async function prepareFileChunks(input: {
 }
 
 async function isMinedChunkSuppressed(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     path: string,
     anchor: string,
     contentHashValue: string,
 ): Promise<boolean> {
-    const rows = await adapter.query<{ content_hash: string }>(
+    const rows = await db.adapter.query<{ content_hash: string }>(
         `
 select content_hash
 from mined_suppressions
@@ -498,8 +451,9 @@ limit 1
     return rows.length > 0
 }
 
-async function clearMinedChunks(adapter: SqliteAdapter): Promise<void> {
-    await recordMinedSuppressions(adapter)
+async function clearMinedChunks(db: DatabaseService): Promise<void> {
+    const adapter = db.adapter
+    await recordMinedSuppressions(db)
     await adapter.execute(`
 delete from memory_fts_indexed
 where id in (select id from chunks where source_id in (select id from sources where type = 'mined_file'));
@@ -517,11 +471,11 @@ where target_type = 'chunk'
 select id from chunks where source_id in (select id from sources where type = 'mined_file');
 `)
     await deleteRetrievalDocuments(
-        adapter,
+        db,
         'chunk',
         chunkIds.map(row => row.id),
     )
-    await deleteRetrievalDocuments(adapter, 'module')
+    await deleteRetrievalDocuments(db, 'module')
     await adapter.execute(`
 delete from target_embeddings
 where target_type = 'chunk'
@@ -531,7 +485,7 @@ where target_type = 'chunk'
 delete from target_embeddings
 where target_type = 'module';
 `)
-    await adapter.execute('delete from modules')
+    await db.modules.clear()
     await adapter.execute(`
 delete from chunks
 where source_id in (select id from sources where type = 'mined_file');
@@ -543,9 +497,10 @@ where type = 'mined_file';
 }
 
 async function clearMinedChunksForPaths(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     paths: string[],
 ): Promise<void> {
+    const adapter = db.adapter
     const uniquePaths = [...new Set(paths)].filter(Boolean)
     if (uniquePaths.length === 0) {
         return
@@ -553,7 +508,7 @@ async function clearMinedChunksForPaths(
 
     const placeholders = uniquePaths.map(() => '?').join(', ')
 
-    await recordMinedSuppressions(adapter, uniquePaths)
+    await recordMinedSuppressions(db, uniquePaths)
     const chunkIds = await adapter.query<{ id: string }>(
         `
 select id
@@ -598,7 +553,7 @@ where target_type = 'chunk'
         uniquePaths,
     )
     await deleteRetrievalDocuments(
-        adapter,
+        db,
         'chunk',
         chunkIds.map(row => row.id),
     )
@@ -632,14 +587,14 @@ where type = 'mined_file'
 }
 
 async function recordMinedSuppressions(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     paths?: string[],
 ): Promise<void> {
     const pathFilter =
         paths && paths.length > 0
             ? `and path in (${paths.map(() => '?').join(', ')})`
             : ''
-    await adapter.execute(
+    await db.adapter.execute(
         `
 insert or ignore into mined_suppressions (
     path,

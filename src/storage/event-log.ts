@@ -1,6 +1,7 @@
-import type { SqliteAdapter } from './sqlite-adapter.js'
+import { memoryEvents } from './schema.js'
+import type { KonteksDatabase } from './sqlite-adapter.js'
 
-type MemoryEventInput = {
+export type MemoryEventInput = {
     actor?: string
     eventType: string
     id: string
@@ -11,34 +12,20 @@ type MemoryEventInput = {
     summary: string
 }
 
-export async function appendMemoryEvent(
-    adapter: SqliteAdapter,
-    event: MemoryEventInput,
-): Promise<void> {
-    await adapter.execute(
-        `
-insert into memory_events (
-    id,
-    event_type,
-    subject_type,
-    subject_id,
-    source_id,
-    summary,
-    payload_ref,
-    actor,
-    created_at
-) values (?, ?, ?, ?, ?, ?, ?, ?, ?)
-`,
-        [
-            event.id,
-            event.eventType,
-            event.subjectType,
-            event.subjectId ?? null,
-            event.sourceId ?? null,
-            event.summary,
-            event.payloadRef ?? null,
-            event.actor ?? null,
-            new Date().toISOString(),
-        ],
-    )
+export class EventLogStore {
+    constructor(private readonly db: KonteksDatabase) {}
+
+    async append(event: MemoryEventInput): Promise<void> {
+        await this.db.insert(memoryEvents).values({
+            actor: event.actor ?? null,
+            createdAt: new Date().toISOString(),
+            eventType: event.eventType,
+            id: event.id,
+            payloadRef: event.payloadRef ?? null,
+            sourceId: event.sourceId ?? null,
+            subjectId: event.subjectId ?? null,
+            subjectType: event.subjectType,
+            summary: event.summary,
+        })
+    }
 }

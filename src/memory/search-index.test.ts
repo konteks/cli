@@ -25,15 +25,16 @@ afterEach(async () => {
 
 describe('search index', () => {
     it('creates an FTS index when supported by SQLite WASM', async () => {
-        const adapter = await makeAdapter()
+        const service = await makeAdapter()
 
-        expect(await hasSearchIndex(adapter)).toBe(true)
+        expect(await hasSearchIndex(service.adapter)).toBe(true)
 
-        await adapter.close()
+        await service.close()
     })
 
     it('backfills existing observations into FTS', async () => {
-        const adapter = await makeAdapter()
+        const service = await makeAdapter()
+        const adapter = service.adapter
         await adapter.execute('drop table memory_fts')
         await adapter.execute('drop table memory_fts_indexed')
         await adapter.execute(
@@ -52,7 +53,7 @@ values (?, ?, ?, ?, ?, ?)
         )
 
         expect(await ensureSearchIndex(adapter)).toBe(true)
-        const results = await searchMemory(adapter, {
+        const results = await searchMemory(service, {
             limit: 5,
             query: 'lexical search',
         })
@@ -61,6 +62,6 @@ values (?, ?, ?, ?, ?, ?)
             id: 'obs_existing',
             type: 'memory',
         })
-        await adapter.close()
+        await service.close()
     })
 })

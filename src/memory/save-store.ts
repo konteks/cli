@@ -2,9 +2,8 @@ import { randomUUID } from 'node:crypto'
 import { upsertRetrievalDocument } from '../mining/retrieval-documents.js'
 import type { LoadedProjectContext } from '../project/context.js'
 import { contentHash } from '../storage/content.js'
-import { appendMemoryEvent } from '../storage/event-log.js'
+import type { DatabaseService } from '../storage/db.js'
 import { storePayload } from '../storage/payload.js'
-import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 import { createToonStore } from '../storage/toon-store.js'
 import { indexSearchDocument } from './search-index.js'
 
@@ -69,32 +68,32 @@ export type SaveProjectUpdate = {
 }
 
 export async function saveKonteksInput(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     context: LoadedProjectContext,
     input: SaveStoreInput,
     options: { projectUpdate?: SaveProjectUpdate } = {},
 ): Promise<SaveResult> {
     if (input.type === 'memory') {
-        return saveMemory(adapter, context, input)
+        return saveMemory(db, context, input)
     }
 
     if (input.type === 'memories') {
-        return saveMemories(adapter, context, input)
+        return saveMemories(db, context, input)
     }
 
     if (input.type === 'diary') {
         return saveDiary(
-            adapter,
+            db,
             context,
             withProjectUpdateSummary(input, options.projectUpdate),
         )
     }
 
-    return saveSession(adapter, context, input)
+    return saveSession(db, context, input)
 }
 
 async function saveMemories(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     context: LoadedProjectContext,
     input: Extract<SaveStoreInput, { type: 'memories' }>,
 ): Promise<SaveResult> {
@@ -102,10 +101,10 @@ async function saveMemories(
     const memoryIds: string[] = []
     let skippedMemories = 0
 
-    await adapter.transaction(async () => {
+    await db.transaction(async tx => {
         for (const memory of input.memories) {
             try {
-                const saved = await saveMemory(adapter, context, memory)
+                const saved = await saveMemory(tx, context, memory)
                 memoryIds.push(saved.id)
             } catch (error) {
                 if (!isSkippableMemoryError(error)) {
@@ -126,13 +125,13 @@ async function saveMemories(
 }
 
 async function saveMemory(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     context: LoadedProjectContext,
     input: Extract<SaveStoreInput, { type: 'memory' }>,
 ): Promise<SaveResult> {
     validateMemoryQuality(input.content)
     const hash = contentHash(input.content)
-    const duplicate = await findDuplicateObservation(adapter, hash)
+    const duplicate = await findDuplicateObservation(db, hash)
     if (duplicate) {
         return {
             accepted: true,
@@ -151,8 +150,8 @@ async function saveMemory(
     const summary = summarizeText(input.content)
     const createdAt = new Date().toISOString()
 
-    await adapter.transaction(async () => {
-        await adapter.execute(
+    await db.transaction(async tx => {
+        await tx.adapter.execute(
             `
 insert into observations (
     id,
@@ -174,7 +173,8 @@ insert into observations (
                 createdAt,
             ],
         )
-        await appendMemoryEvent(adapter, {
+
+        await tx.events.append({
             actor: 'mcp',
             eventType: 'memory_saved',
             id: `event_${randomUUID()}`,
@@ -183,14 +183,15 @@ insert into observations (
             subjectType: 'observation',
             summary,
         })
-        await indexSearchDocument(adapter, {
+
+        await indexSearchDocument(tx.adapter, {
             content: stored.contentInline ?? summary,
             createdAt,
             id,
             kind: input.kind,
             type: 'memory',
         })
-        await upsertRetrievalDocument(adapter, {
+        await upsertRetrievalDocument(tx, {
             anchor: input.source ?? id,
             embeddingText: stored.contentInline ?? input.content,
             ftsText: stored.contentInline ?? input.content,
@@ -212,7 +213,7 @@ insert into observations (
 }
 
 async function saveSession(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     context: LoadedProjectContext,
     input: Extract<SaveStoreInput, { type: 'session' }>,
 ): Promise<SaveResult> {
@@ -225,8 +226,8 @@ async function saveSession(
     })
     const createdAt = new Date().toISOString()
 
-    await adapter.transaction(async () => {
-        await adapter.execute(
+    await db.transaction(async tx => {
+        await tx.adapter.execute(
             `
 insert into diary_entries (
     id,
@@ -248,7 +249,8 @@ insert into diary_entries (
                 createdAt,
             ],
         )
-        await appendMemoryEvent(adapter, {
+
+        await tx.events.append({
             actor: 'mcp',
             eventType: 'diary_entry_saved',
             id: `event_${randomUUID()}`,
@@ -257,7 +259,8 @@ insert into diary_entries (
             subjectType: 'diary_entry',
             summary: input.summary,
         })
-        await indexSearchDocument(adapter, {
+
+        await indexSearchDocument(tx.adapter, {
             content: input.summary,
             createdAt,
             id,
@@ -275,7 +278,7 @@ insert into diary_entries (
 }
 
 async function saveDiary(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     context: LoadedProjectContext,
     input: Extract<SaveStoreInput, { type: 'diary' }>,
 ): Promise<SaveResult> {
@@ -289,8 +292,8 @@ async function saveDiary(
     })
     const createdAt = new Date().toISOString()
 
-    await adapter.transaction(async () => {
-        await adapter.execute(
+    await db.transaction(async tx => {
+        await tx.adapter.execute(
             `
 insert into diary_entries (
     id,
@@ -312,7 +315,8 @@ insert into diary_entries (
                 createdAt,
             ],
         )
-        await appendMemoryEvent(adapter, {
+
+        await tx.events.append({
             actor: 'mcp',
             eventType: 'diary_entry_saved',
             id: `event_${randomUUID()}`,
@@ -321,14 +325,15 @@ insert into diary_entries (
             subjectType: 'diary_entry',
             summary: input.summary,
         })
-        await indexSearchDocument(adapter, {
+
+        await indexSearchDocument(tx.adapter, {
             content: text,
             createdAt,
             id,
             kind: 'diary',
             type: 'diary',
         })
-        await upsertRetrievalDocument(adapter, {
+        await upsertRetrievalDocument(tx, {
             anchor: input.subject ?? id,
             embeddingText: text,
             ftsText: text,
@@ -360,10 +365,10 @@ function importanceToConfidence(importance: number | undefined): number {
 }
 
 async function findDuplicateObservation(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     hash: string,
 ): Promise<{ id: string } | undefined> {
-    const rows = await adapter.query<{ id: string }>(
+    const rows = await db.adapter.query<{ id: string }>(
         `
 select id
 from observations

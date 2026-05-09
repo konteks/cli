@@ -272,21 +272,23 @@ limit 1
     }
 }
 
-function nodeFromRow(row: TaxonomyNodeRow): TaxonomyNode {
+// biome-ignore lint/suspicious/noExplicitAny: WILL FIX THIS LATER
+function nodeFromRow(row: any): TaxonomyNode {
     return {
         id: row.id,
         name: row.name,
-        parentId: row.parent_id ?? undefined,
+        parentId: row.parent_id ?? row.parentId ?? undefined,
         summary: row.summary ?? undefined,
     }
 }
 
-function linkFromRow(row: TaxonomyLinkRow): TaxonomyLink {
+// biome-ignore lint/suspicious/noExplicitAny: WILL FIX THIS LATER
+function linkFromRow(row: any): TaxonomyLink {
     return {
         id: row.id,
-        nodeId: row.node_id,
-        targetId: row.target_id,
-        targetType: row.target_type,
+        nodeId: row.node_id ?? row.nodeId,
+        targetId: row.target_id ?? row.targetId,
+        targetType: row.target_type ?? row.targetType,
     }
 }
 

@@ -96,6 +96,11 @@ class WasmSqliteAdapter implements SqliteAdapter {
         return this.db.selectObjects(sql, toBindingSpec(params)) as T[]
     }
 
+    async queryArrays(sql: string, params?: SqliteParams) {
+        this.assertOpen()
+        return this.db.selectArrays(sql, toBindingSpec(params))
+    }
+
     async transaction<T>(operation: () => Promise<T>): Promise<T> {
         this.assertOpen()
 

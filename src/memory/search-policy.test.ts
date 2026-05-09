@@ -24,8 +24,8 @@ afterEach(async () => {
 
 describe('search policy', () => {
     it('gates diary from recall when no continuity intent is present', async () => {
-        const adapter = await makeAdapter()
-        await adapter.execute(
+        const service = await makeAdapter()
+        await service.adapter.execute(
             `
 insert into diary_entries (id, subject, summary, tags_json, created_at)
 values (?, ?, ?, ?, ?)
@@ -38,20 +38,21 @@ values (?, ?, ?, ?, ?)
                 new Date().toISOString(),
             ],
         )
-        const recall = await searchMemory(adapter, {
+        const recall = await searchMemory(service, {
             task: 'auth refactor design',
         })
-        const withContinuity = await searchMemory(adapter, {
+        const withContinuity = await searchMemory(service, {
             task: 'continue auth refactor after previous failed attempt',
         })
 
         expect(recall.some(item => item.id === 'diary_test')).toBe(false)
         expect(withContinuity.some(item => item.id === 'diary_test')).toBe(true)
-        await adapter.close()
+        await service.close()
     })
 
     it('downranks agent references for recall unless query asks for agent context', async () => {
-        const adapter = await makeAdapter()
+        const service = await makeAdapter()
+        const adapter = service.adapter
         await adapter.execute(
             `
 insert into retrieval_documents (
@@ -123,15 +124,15 @@ insert into retrieval_documents_fts (
             ],
         )
 
-        const normal = await searchMemory(adapter, {
+        const normal = await searchMemory(service, {
             task: 'auth session refresh flow',
         })
-        const agent = await searchMemory(adapter, {
+        const agent = await searchMemory(service, {
             task: 'agent prompt auth session refresh flow',
         })
 
         expect(normal[0]?.id).toBe('module_app')
         expect(agent.some(item => item.id === 'module_agent_ref')).toBe(true)
-        await adapter.close()
+        await service.close()
     })
 })

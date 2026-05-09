@@ -15,11 +15,11 @@ async function makeGraphStore(): Promise<{
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-graph-test-'))
     tempDirs.push(projectRoot)
     const context = await loadProjectContext(projectRoot)
-    const adapter = await openProjectDatabase(context)
+    const service = await openProjectDatabase(context)
 
     return {
-        close: () => adapter.close(),
-        store: new GraphStore(adapter),
+        close: () => service.close(),
+        store: new GraphStore(service.adapter, service.db),
     }
 }
 

@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { ForgetInput } from '../mcp/inputs.js'
-import { appendMemoryEvent } from '../storage/event-log.js'
-import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
-import { GraphStore } from './graph-store.js'
+import type { DatabaseService } from '../storage/db.js'
+// import { GraphStore } from './graph-store.js'
 import { queryDiaries, queryObservations } from './persistence-adapter.js'
 
 type ForgetResult = {
@@ -19,27 +18,23 @@ type ForgetTarget = {
 }
 
 export async function forgetMemory(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     input: ForgetInput,
 ): Promise<ForgetResult> {
     const mode = input.mode ?? 'soft_delete'
-    const targets = await resolveTargets(adapter, input)
+    const targets = await resolveTargets(db, input)
     const affectedIds: string[] = []
 
-    await adapter.transaction(async () => {
+    await db.transaction(async tx => {
         for (const target of targets) {
-            const changed = await applyForget(
-                adapter,
-                target,
-                mode,
-                input.reason,
-            )
+            const changed = await applyForget(tx, target, mode, input.reason)
             if (!changed) {
                 continue
             }
 
-            await removeFromSearchIndex(adapter, target.id)
-            await appendMemoryEvent(adapter, {
+            await removeFromSearchIndex(tx, target.id)
+
+            await tx.events.append({
                 actor: 'mcp',
                 eventType: `memory_${mode}`,
                 id: `event_${randomUUID()}`,
@@ -59,7 +54,7 @@ export async function forgetMemory(
 }
 
 async function resolveTargets(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     input: ForgetInput,
 ): Promise<ForgetTarget[]> {
     if (input.id) {
@@ -76,8 +71,8 @@ async function resolveTargets(
     }
 
     const [observations, diaries] = await Promise.all([
-        queryObservations(adapter, terms, 10),
-        queryDiaries(adapter, terms, 10),
+        queryObservations(db.adapter, terms, 10),
+        queryDiaries(db.adapter, terms, 10),
     ])
 
     return [
@@ -93,29 +88,29 @@ async function resolveTargets(
 }
 
 async function applyForget(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     target: ForgetTarget,
     mode: NonNullable<ForgetInput['mode']>,
     reason: string | undefined,
 ): Promise<boolean> {
     if (target.kind === 'relation') {
-        await new GraphStore(adapter).invalidateRelation(target.id)
+        await db.graph.invalidateRelation(target.id)
         return true
     }
 
     if (mode === 'invalidate') {
-        return markSuppressed(adapter, target, reason)
+        return markSuppressed(db, target, reason)
     }
 
     if (mode === 'hard_delete') {
-        return hardDelete(adapter, target)
+        return hardDelete(db, target)
     }
 
-    return markForgotten(adapter, target, reason)
+    return markForgotten(db, target, reason)
 }
 
 async function markForgotten(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     target: ForgetTarget,
     reason: string | undefined,
 ): Promise<boolean> {
@@ -124,7 +119,7 @@ async function markForgotten(
         return false
     }
 
-    await adapter.execute(
+    await db.adapter.execute(
         `
 update ${table}
 set deleted_at = ?, forget_reason = ?
@@ -136,7 +131,7 @@ where id = ?
 }
 
 async function markSuppressed(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     target: ForgetTarget,
     reason: string | undefined,
 ): Promise<boolean> {
@@ -145,7 +140,7 @@ async function markSuppressed(
         return false
     }
 
-    await adapter.execute(
+    await db.adapter.execute(
         `
 update ${table}
 set suppressed_at = ?, forget_reason = ?
@@ -157,11 +152,11 @@ where id = ?
 }
 
 async function hardDelete(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     target: ForgetTarget,
 ): Promise<boolean> {
     if (target.kind === 'chunk') {
-        await adapter.execute(
+        await db.adapter.execute(
             'delete from taxonomy_links where target_id = ?',
             [target.id],
         )
@@ -172,19 +167,21 @@ async function hardDelete(
         return false
     }
 
-    await adapter.execute(`delete from ${table} where id = ?`, [target.id])
+    await db.adapter.execute(`delete from ${table} where id = ?`, [target.id])
     return true
 }
 
 async function removeFromSearchIndex(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     id: string,
 ): Promise<void> {
-    await adapter.execute(
+    await db.adapter.execute(
         'delete from memory_fts where rowid in (select rowid from memory_fts where id = ?)',
         [id],
     )
-    await adapter.execute('delete from memory_fts_indexed where id = ?', [id])
+    await db.adapter.execute('delete from memory_fts_indexed where id = ?', [
+        id,
+    ])
 }
 
 function inferKind(id: string): TargetKind {

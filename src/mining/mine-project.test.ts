@@ -10,7 +10,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { searchMemory } from '../memory/search-store.js'
-import { TaxonomyStore } from '../memory/taxonomy-store.js'
+// import { TaxonomyStore } from '../memory/taxonomy-store.js'
 import { loadProjectContext } from '../project/context.js'
 import { getProjectStatus } from '../project/status.js'
 import { openProjectDatabase } from '../storage/database.js'
@@ -136,7 +136,8 @@ describe('mineProject', () => {
 
         await mineProject(context, 'full')
 
-        const adapter = await openProjectDatabase(context)
+        const service = await openProjectDatabase(context)
+        const adapter = service.adapter
         const chunks = await adapter.query<{
             anchor: string | null
             id: string
@@ -166,17 +167,17 @@ order by target_type, source_role
             'select package_name, imports_json from modules where source_role = ? and package_name is not null',
             ['package_config'],
         )
-        const searchResults = await searchMemory(adapter, {
+        const searchResults = await searchMemory(service, {
             limit: 5,
             query: 'Fixture',
         })
-        const taxonomy = new TaxonomyStore(adapter)
+        const taxonomy = service.taxonomy
         const roots = await taxonomy.getSubtree(undefined, { maxDepth: 2 })
         const events = await adapter.query<{ event_type: string }>(
             'select event_type from memory_events where event_type = ?',
             ['project_mined'],
         )
-        await adapter.close()
+        await service.close()
 
         expect(chunks.some(chunk => chunk.path === 'README.md')).toBe(true)
         expect(chunks.some(chunk => chunk.source_role === 'product_doc')).toBe(
@@ -213,9 +214,9 @@ order by target_type, source_role
 
         await mineProject(context, 'full', { embeddingProvider })
 
-        const adapter = await openProjectDatabase(context)
+        const service = await openProjectDatabase(context)
         const vectorResults = await searchMemory(
-            adapter,
+            service,
             {
                 limit: 5,
                 query: 'Fixture',
@@ -223,7 +224,7 @@ order by target_type, source_role
             { embeddingProvider },
         )
         const fallbackResults = await searchMemory(
-            adapter,
+            service,
             {
                 limit: 5,
                 query: 'Fixture',
@@ -231,14 +232,14 @@ order by target_type, source_role
             { embeddingProvider: throwingEmbeddingProvider },
         )
         const mismatchedResults = await searchMemory(
-            adapter,
+            service,
             {
                 limit: 5,
                 query: 'Fixture',
             },
             { embeddingProvider: mismatchedEmbeddingProvider },
         )
-        await adapter.close()
+        await service.close()
 
         expect(vectorResults[0]?.type).toBe('chunk')
         expect(vectorResults[0]?.sourceRole).toBeTruthy()
@@ -262,8 +263,8 @@ order by target_type, source_role
 
         await mineProject(context, 'full')
 
-        const adapter = await openProjectDatabase(context)
-        const chunks = await adapter.query<{
+        const service = await openProjectDatabase(context)
+        const chunks = await service.adapter.query<{
             anchor: string
             content_hash: string
             path: string
@@ -278,7 +279,7 @@ limit 1
         )
         const chunk = chunks[0]
         expect(chunk).toBeDefined()
-        await adapter.execute(
+        await service.adapter.execute(
             `
 update chunks
 set suppressed_at = ?, forget_reason = ?
@@ -292,12 +293,14 @@ where path = ? and anchor = ? and content_hash = ?
                 chunk?.content_hash ?? '',
             ],
         )
-        await adapter.close()
+        await service.close()
 
         await mineProject(context, 'reindex')
 
-        const reindexedAdapter = await openProjectDatabase(context)
-        const restored = await reindexedAdapter.query<{ count: number }>(
+        const reindexedService = await openProjectDatabase(context)
+        const restored = await reindexedService.adapter.query<{
+            count: number
+        }>(
             `
 select count(*) as count
 from chunks
@@ -305,7 +308,9 @@ where path = ? and anchor = ? and content_hash = ?
 `,
             [chunk?.path ?? '', chunk?.anchor ?? '', chunk?.content_hash ?? ''],
         )
-        const suppressions = await reindexedAdapter.query<{ count: number }>(
+        const suppressions = await reindexedService.adapter.query<{
+            count: number
+        }>(
             `
 select count(*) as count
 from mined_suppressions
@@ -313,7 +318,7 @@ where path = ? and anchor = ? and content_hash = ?
 `,
             [chunk?.path ?? '', chunk?.anchor ?? '', chunk?.content_hash ?? ''],
         )
-        await reindexedAdapter.close()
+        await reindexedService.close()
 
         expect(restored[0]?.count).toBe(0)
         expect(suppressions[0]?.count).toBe(1)
@@ -350,12 +355,12 @@ where path = ? and anchor = ? and content_hash = ?
 
         await mineProject(context, 'full')
 
-        const adapter = await openProjectDatabase(context)
-        const chunks = await adapter.query<{ count: number }>(
+        const service = await openProjectDatabase(context)
+        const chunks = await service.adapter.query<{ count: number }>(
             'select count(*) as count from chunks where path = ?',
             ['src/many.ts'],
         )
-        await adapter.close()
+        await service.close()
         const manifest = await readMineManifest(context.memoryDir)
 
         expect(chunks[0]?.count).toBe(200)
@@ -387,11 +392,11 @@ where path = ? and anchor = ? and content_hash = ?
             'utf8',
         )
         const manifest = JSON.parse(rawManifest)
-        const adapter = await openProjectDatabase(context)
-        const chunks = await adapter.query<{ count: number }>(
+        const service = await openProjectDatabase(context)
+        const chunks = await service.adapter.query<{ count: number }>(
             'select count(*) as count from chunks',
         )
-        await adapter.close()
+        await service.close()
 
         expect(manifest.mode).toBe('reindex')
         expect(chunks[0]?.count).toBeGreaterThan(0)
@@ -410,20 +415,20 @@ where path = ? and anchor = ? and content_hash = ?
         )
         await mineProject(context, 'changed')
 
-        const adapter = await openProjectDatabase(context)
-        const readmeChunks = await adapter.query<{ count: number }>(
+        const service = await openProjectDatabase(context)
+        const readmeChunks = await service.adapter.query<{ count: number }>(
             'select count(*) as count from chunks where path = ?',
             ['README.md'],
         )
-        const indexChunks = await adapter.query<{ count: number }>(
+        const indexChunks = await service.adapter.query<{ count: number }>(
             'select count(*) as count from chunks where path = ?',
             ['src/index.ts'],
         )
-        const newChunks = await adapter.query<{ count: number }>(
+        const newChunks = await service.adapter.query<{ count: number }>(
             'select count(*) as count from chunks where path = ?',
             ['src/new.ts'],
         )
-        await adapter.close()
+        await service.close()
 
         expect(readmeChunks[0]?.count).toBe(0)
         expect(indexChunks[0]?.count).toBeGreaterThan(0)
@@ -440,12 +445,12 @@ where path = ? and anchor = ? and content_hash = ?
 
         await mineProject(context, 'full')
 
-        const adapter = await openProjectDatabase(context)
-        const readmeChunks = await adapter.query<{ count: number }>(
+        const service = await openProjectDatabase(context)
+        const readmeChunks = await service.adapter.query<{ count: number }>(
             'select count(*) as count from chunks where path = ?',
             ['README.md'],
         )
-        await adapter.close()
+        await service.close()
 
         expect(readmeChunks[0]?.count).toBe(2)
     })

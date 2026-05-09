@@ -45,6 +45,9 @@ describe('migrations', () => {
             async query() {
                 return []
             },
+            async queryArrays() {
+                return []
+            },
             async transaction(operation) {
                 return operation()
             },

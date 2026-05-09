@@ -75,7 +75,7 @@ function emptyMemoryStats(): ProjectStatus['memoryStats'] {
 async function readMemoryStats(
     context: Awaited<ReturnType<typeof loadProjectContext>>,
 ): Promise<ProjectStatus['memoryStats']> {
-    const adapter = await openProjectDatabase(context)
+    const service = await openProjectDatabase(context)
     try {
         const [
             sections,
@@ -87,27 +87,27 @@ async function readMemoryStats(
             events,
         ] = await Promise.all([
             countRows(
-                adapter,
+                service,
                 'select count(*) as count from chunks where deleted_at is null and suppressed_at is null',
             ),
-            countRows(adapter, 'select count(*) as count from modules'),
+            countRows(service, 'select count(*) as count from modules'),
             countRows(
-                adapter,
+                service,
                 'select count(*) as count from observations where deleted_at is null and suppressed_at is null',
             ),
             countRows(
-                adapter,
+                service,
                 'select count(*) as count from diary_entries where deleted_at is null and suppressed_at is null',
             ),
             countRows(
-                adapter,
+                service,
                 'select count(*) as count from retrieval_documents',
             ),
             countRows(
-                adapter,
+                service,
                 'select count(*) as count from target_embeddings',
             ),
-            countRows(adapter, 'select count(*) as count from memory_events'),
+            countRows(service, 'select count(*) as count from memory_events'),
         ])
 
         return {
@@ -120,14 +120,14 @@ async function readMemoryStats(
             sections,
         }
     } finally {
-        await adapter.close()
+        await service.close()
     }
 }
 
 async function countRows(
-    adapter: Awaited<ReturnType<typeof openProjectDatabase>>,
+    service: Awaited<ReturnType<typeof openProjectDatabase>>,
     sql: string,
 ): Promise<number> {
-    const rows = await adapter.query<{ count: number }>(sql)
+    const rows = await service.adapter.query<{ count: number }>(sql)
     return rows[0]?.count ?? 0
 }

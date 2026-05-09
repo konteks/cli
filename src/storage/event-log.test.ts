@@ -1,24 +1,30 @@
 import { describe, expect, it } from 'bun:test'
-import { appendMemoryEvent } from './event-log.js'
-import type { SqliteAdapter, SqliteParams } from './sqlite-adapter.js'
+import { EventLogStore } from './event-log.js'
+import type { KonteksDatabase } from './sqlite-adapter.js'
+
+type MemoryEvent = {
+    actor: string
+    eventType: string
+    id: string
+    subjectId: string
+    subjectType: string
+    summary: string
+}
 
 describe('event log', () => {
-    it('inserts memory events with chronology metadata', async () => {
-        const executed: Array<{ params?: SqliteParams; sql: string }> = []
-        const adapter: SqliteAdapter = {
-            async close() {},
-            async execute(sql, params) {
-                executed.push({ params, sql })
-            },
-            async query() {
-                return []
-            },
-            async transaction(operation) {
-                return operation()
-            },
-        }
+    it('inserts memory events with drizzle', async () => {
+        const inserted: MemoryEvent[] = []
+        const db = {
+            insert: () => ({
+                values: (val: MemoryEvent) => {
+                    inserted.push(val)
+                },
+            }),
+        } as unknown as KonteksDatabase
 
-        await appendMemoryEvent(adapter, {
+        const store = new EventLogStore(db)
+
+        await store.append({
             actor: 'test',
             eventType: 'memory_saved',
             id: 'event_1',
@@ -27,9 +33,8 @@ describe('event log', () => {
             summary: 'Saved test memory',
         })
 
-        expect(executed).toHaveLength(1)
-        expect(executed[0]?.sql).toContain('insert into memory_events')
-        expect(executed[0]?.params).toContain('memory_saved')
-        expect(executed[0]?.params).toContain('Saved test memory')
+        expect(inserted).toHaveLength(1)
+        expect(inserted[0].eventType).toBe('memory_saved')
+        expect(inserted[0].summary).toBe('Saved test memory')
     })
 })

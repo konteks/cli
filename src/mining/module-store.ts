@@ -1,5 +1,5 @@
 import { contentHash } from '../storage/content.js'
-import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
+import type { DatabaseService } from '../storage/db.js'
 import type { ProjectMetadata } from './metadata.js'
 import {
     deleteRetrievalDocuments,
@@ -14,11 +14,12 @@ type ModuleSummaryRow = {
 }
 
 export async function rebuildModuleArtifacts(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     minedAt: string,
     metadata?: ProjectMetadata,
 ): Promise<void> {
-    await deleteRetrievalDocuments(adapter, 'module')
+    const adapter = db.adapter
+    await deleteRetrievalDocuments(db, 'module')
     await adapter.execute(
         'delete from target_embeddings where target_type = ?',
         ['module'],
@@ -88,7 +89,7 @@ insert into modules (
             `topics: ${topics.join(', ')}`,
         ].join('\n')
 
-        await upsertRetrievalDocument(adapter, {
+        await upsertRetrievalDocument(db, {
             anchor: row.module_path,
             embeddingText: ftsText,
             ftsText,
@@ -102,7 +103,7 @@ insert into modules (
     }
 
     if (metadata) {
-        await insertPackageModule(adapter, metadata, minedAt)
+        await insertPackageModule(db, metadata, minedAt)
     }
 }
 
@@ -119,10 +120,11 @@ function moduleTopics(path: string): string[] {
 }
 
 async function insertPackageModule(
-    adapter: SqliteAdapter,
+    db: DatabaseService,
     metadata: ProjectMetadata,
     minedAt: string,
 ): Promise<void> {
+    const adapter = db.adapter
     const dependencyNames = [
         ...metadata.dependencies,
         ...metadata.devDependencies,
@@ -194,7 +196,7 @@ insert into modules (
         .filter(Boolean)
         .join('\n')
 
-    await upsertRetrievalDocument(adapter, {
+    await upsertRetrievalDocument(db, {
         anchor: modulePath,
         embeddingText: text,
         ftsText: text,

@@ -1,6 +1,7 @@
 import { mkdir } from 'node:fs/promises'
 import type { LoadedProjectContext } from '../project/context.js'
 import { openProjectDatabase } from '../storage/database.js'
+import type { DatabaseService } from '../storage/db.js'
 import { createToonStore } from '../storage/toon-store.js'
 import { mineChunks } from './chunk-store.js'
 import { generateTargetEmbeddings } from './embedding-pipeline.js'
@@ -80,14 +81,14 @@ export async function mineProject(
         phase: 'database',
         status: 'start',
     })
-    const adapter = await openProjectDatabase(context)
+    const db = await openProjectDatabase(context)
     progress?.({
         message: 'Local memory database ready',
         phase: 'database',
         status: 'done',
     })
     const alreadyExtractedPaths =
-        mode === 'resume' ? await readExtractedPaths(adapter) : undefined
+        mode === 'resume' ? await readExtractedPaths(db) : undefined
     const { deletedPaths, filesToMine } = selectFilesForMode(
         files,
         previousManifest,
@@ -100,30 +101,24 @@ export async function mineProject(
         status: 'done',
         total: filesToMine.length,
     })
-    const minedChunks = await mineChunks(
-        adapter,
-        context,
-        filesToMine,
-        minedAt,
-        {
-            deletedPaths,
-            metadata,
-            mode,
-            onProgress: progress,
-            treeSitterEngine: options.treeSitterEngine,
-        },
-    )
+    const minedChunks = await mineChunks(db, context, filesToMine, minedAt, {
+        deletedPaths,
+        metadata,
+        mode,
+        onProgress: progress,
+        treeSitterEngine: options.treeSitterEngine,
+    })
     const embeddingRun = options.embeddingProvider
         ? await generateTargetEmbeddings(
-              adapter,
+              db,
               options.embeddingProvider,
               ['chunk', 'module'],
               minedAt,
               { onProgress: progress },
           )
         : { embeddedCount: 0, reusedCount: 0 }
-    const totalChunkCount = await readTotalChunkCount(adapter)
-    await adapter.close()
+    const totalChunkCount = await readTotalChunkCount(db)
+    await db.close()
     const toonStore = createToonStore(context.memoryDir)
     progress?.({
         message: 'Writing project summary',
@@ -239,10 +234,8 @@ function selectFilesForMode(
     return { deletedPaths, filesToMine }
 }
 
-async function readExtractedPaths(
-    adapter: Awaited<ReturnType<typeof openProjectDatabase>>,
-): Promise<Set<string>> {
-    const rows = await adapter.query<{ path: string }>(
+async function readExtractedPaths(db: DatabaseService): Promise<Set<string>> {
+    const rows = await db.adapter.query<{ path: string }>(
         `
 select distinct sources.uri as path
 from sources
@@ -255,10 +248,8 @@ where sources.type = 'mined_file'
     return new Set(rows.map(row => row.path))
 }
 
-async function readTotalChunkCount(
-    adapter: Awaited<ReturnType<typeof openProjectDatabase>>,
-): Promise<number> {
-    const rows = await adapter.query<{ count: number }>(
+async function readTotalChunkCount(db: DatabaseService): Promise<number> {
+    const rows = await db.adapter.query<{ count: number }>(
         'select count(*) as count from chunks',
     )
 

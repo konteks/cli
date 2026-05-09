@@ -224,7 +224,7 @@ describe('save and search stores', () => {
             }),
         ).rejects.toThrow('memory content appears to contain a secret')
 
-        const rows = await adapter.query<{ count: number }>(
+        const rows = await adapter.adapter.query<{ count: number }>(
             'select count(*) as count from observations',
         )
         expect(rows[0]?.count).toBe(0)
