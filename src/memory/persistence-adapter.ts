@@ -8,14 +8,6 @@ export type ObservationRow = {
     created_at: string
 }
 
-export type HandoffRow = {
-    id: string
-    task: string
-    status: string
-    summary: string
-    created_at: string
-}
-
 export type DiaryRow = {
     id: string
     subject: string | null
@@ -26,7 +18,7 @@ export type DiaryRow = {
 
 type FtsRow = {
     id: string
-    type: 'chunk' | 'diary' | 'memory' | 'session'
+    type: 'chunk' | 'diary' | 'memory'
     kind: string | null
     task: string | null
     content: string
@@ -70,27 +62,6 @@ order by created_at desc
 limit ?
 `,
         [...terms.map(term => `%${term}%`), limit],
-    )
-}
-
-export async function queryHandoffs(
-    adapter: SqliteAdapter,
-    terms: string[],
-    limit: number,
-): Promise<HandoffRow[]> {
-    return adapter.query<HandoffRow>(
-        `
-select id, task, status, summary, created_at
-from session_handoffs
-where (${terms
-            .map(() => '(lower(summary) like ? or lower(task) like ?)')
-            .join(' or ')})
-  and deleted_at is null
-  and suppressed_at is null
-order by created_at desc
-limit ?
-`,
-        [...terms.flatMap(term => [`%${term}%`, `%${term}%`]), limit],
     )
 }
 
@@ -205,7 +176,6 @@ select
 from memory_fts
 left join chunks c on c.id = memory_fts.id
 left join observations o on o.id = memory_fts.id
-left join session_handoffs h on h.id = memory_fts.id
 where memory_fts match ?
   and not exists (
       select 1 from chunks dc
@@ -218,9 +188,9 @@ where memory_fts match ?
         and (do.deleted_at is not null or do.suppressed_at is not null)
   )
   and not exists (
-      select 1 from session_handoffs dh
-      where dh.id = memory_fts.id
-        and (dh.deleted_at is not null or dh.suppressed_at is not null)
+      select 1 from diary_entries dd
+      where dd.id = memory_fts.id
+        and (dd.deleted_at is not null or dd.suppressed_at is not null)
   )
 order by rank
 limit ?

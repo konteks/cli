@@ -3,11 +3,7 @@ import type { ForgetInput } from '../mcp/inputs.js'
 import { appendMemoryEvent } from '../storage/event-log.js'
 import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 import { GraphStore } from './graph-store.js'
-import {
-    queryDiaries,
-    queryHandoffs,
-    queryObservations,
-} from './persistence-adapter.js'
+import { queryDiaries, queryObservations } from './persistence-adapter.js'
 
 type ForgetResult = {
     accepted: boolean
@@ -15,12 +11,7 @@ type ForgetResult = {
     affectedIds: string[]
 }
 
-type TargetKind =
-    | 'chunk'
-    | 'diary_entry'
-    | 'observation'
-    | 'relation'
-    | 'session_handoff'
+type TargetKind = 'chunk' | 'diary_entry' | 'observation' | 'relation'
 
 type ForgetTarget = {
     id: string
@@ -84,10 +75,9 @@ async function resolveTargets(
         return []
     }
 
-    const [observations, diaries, handoffs] = await Promise.all([
+    const [observations, diaries] = await Promise.all([
         queryObservations(adapter, terms, 10),
         queryDiaries(adapter, terms, 10),
-        queryHandoffs(adapter, terms, 10),
     ])
 
     return [
@@ -98,10 +88,6 @@ async function resolveTargets(
         ...diaries.map(row => ({
             id: row.id,
             kind: 'diary_entry' as const,
-        })),
-        ...handoffs.map(row => ({
-            id: row.id,
-            kind: 'session_handoff' as const,
         })),
     ].slice(0, 10)
 }
@@ -205,9 +191,6 @@ function inferKind(id: string): TargetKind {
     if (id.startsWith('chunk_')) {
         return 'chunk'
     }
-    if (id.startsWith('handoff_')) {
-        return 'session_handoff'
-    }
     if (id.startsWith('diary_')) {
         return 'diary_entry'
     }
@@ -224,9 +207,6 @@ function tableForKind(kind: TargetKind): string | undefined {
     }
     if (kind === 'observation') {
         return 'observations'
-    }
-    if (kind === 'session_handoff') {
-        return 'session_handoffs'
     }
     if (kind === 'diary_entry') {
         return 'diary_entries'

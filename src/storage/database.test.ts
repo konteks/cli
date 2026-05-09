@@ -33,13 +33,6 @@ describe('project database', () => {
         expect(projectDatabasePath(context)).toBe(
             join(projectRoot, '.konteks', 'memory.sqlite'),
         )
-        expect(migrations).toEqual([
-            { id: '001_initial_schema' },
-            { id: '002_memory_hygiene' },
-            { id: '003_mining_artifact_contract' },
-            { id: '004_retrieval_fts_and_mining_suppressions' },
-            { id: '005_diary_entries' },
-            { id: '006_migrate_session_handoffs_to_diary' },
-        ])
+        expect(migrations).toEqual([{ id: '001_initial_schema' }])
     })
 })

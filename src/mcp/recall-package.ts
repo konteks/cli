@@ -224,7 +224,6 @@ function compactMemory(memory: MemorySearchResult): MemorySearchResult {
         score: memory.score,
         scoreDetails: memory.scoreDetails,
         sourceRole: memory.sourceRole,
-        status: memory.status,
         task: memory.task,
         tokenCost: memory.tokenCost,
         type: memory.type,

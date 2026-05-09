@@ -3,58 +3,13 @@ import { migrations, runMigrations } from './migrations.js'
 import type { SqliteAdapter, SqliteParams } from './sqlite-adapter.js'
 
 describe('migrations', () => {
-    it('defines the initial schema migration', () => {
+    it('defines the squashed initial schema migration', () => {
         expect(migrations.map(migration => migration.id)).toEqual([
             '001_initial_schema',
-            '002_memory_hygiene',
-            '003_mining_artifact_contract',
-            '004_retrieval_fts_and_mining_suppressions',
-            '005_diary_entries',
-            '006_migrate_session_handoffs_to_diary',
         ])
     })
 
-    it('adds memory hygiene metadata', () => {
-        const sql = migrations[1]?.sql ?? ''
-
-        expect(sql).toContain('observations add column content_hash')
-        expect(sql).toContain('chunks add column deleted_at')
-        expect(sql).toContain('session_handoffs add column forget_reason')
-    })
-
-    it('adds the mining artifact contract', () => {
-        const sql = migrations[2]?.sql ?? ''
-
-        expect(sql).toContain('sources add column source_role')
-        expect(sql).toContain('chunks add column anchor_type')
-        expect(sql).toContain('create table if not exists retrieval_documents')
-        expect(sql).toContain('create table if not exists target_embeddings')
-        expect(sql).toContain('create table if not exists modules')
-    })
-
-    it('adds retrieval FTS and mining suppressions', () => {
-        const sql = migrations[3]?.sql ?? ''
-
-        expect(sql).toContain('retrieval_documents_fts')
-        expect(sql).toContain('create table if not exists mined_suppressions')
-    })
-
-    it('adds diary entries storage', () => {
-        const sql = migrations[4]?.sql ?? ''
-
-        expect(sql).toContain('create table if not exists diary_entries')
-        expect(sql).toContain('diary_entries_deleted_idx')
-    })
-
-    it('migrates session handoffs into diary entries', () => {
-        const sql = migrations[5]?.sql ?? ''
-
-        expect(sql).toContain('insert into diary_entries')
-        expect(sql).toContain("replace(h.id, 'handoff_', 'diary_')")
-        expect(sql).toContain('from session_handoffs h')
-    })
-
-    it('creates the core memory tables', () => {
+    it('creates the core memory tables in the squashed migration', () => {
         const sql = migrations[0]?.sql ?? ''
 
         for (const table of [
@@ -63,14 +18,21 @@ describe('migrations', () => {
             'entities',
             'relations',
             'observations',
-            'sessions',
-            'session_handoffs',
             'memory_events',
             'taxonomy_nodes',
             'taxonomy_links',
+            'diary_entries',
+            'retrieval_documents',
+            'modules',
+            'memory_fts',
         ]) {
             expect(sql).toContain(`create table if not exists ${table}`)
         }
+
+        // Verify unused tables are removed
+        expect(sql).not.toContain('create table if not exists sessions')
+        expect(sql).not.toContain('create table if not exists session_events')
+        expect(sql).not.toContain('create table if not exists session_handoffs')
     })
 
     it('runs unapplied migrations through an adapter transaction', async () => {

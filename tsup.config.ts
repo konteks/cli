@@ -8,6 +8,7 @@ export default defineConfig({
         options.loader = {
             ...options.loader,
             '.md': 'text',
+            '.sql': 'text',
         }
     },
     format: ['esm'],

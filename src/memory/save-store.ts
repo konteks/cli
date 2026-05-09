@@ -217,7 +217,7 @@ async function saveSession(
     input: Extract<SaveStoreInput, { type: 'session' }>,
 ): Promise<SaveResult> {
     validateSessionQuality(input.summary)
-    const id = `handoff_${randomUUID()}`
+    const id = `diary_${randomUUID()}`
     const payload = JSON.stringify(input, null, 2)
     const stored = await storePayload(payload, {
         inlineMaxBytes: context.config.storage.inlinePayloadMaxBytes,
@@ -228,23 +228,21 @@ async function saveSession(
     await adapter.transaction(async () => {
         await adapter.execute(
             `
-insert into session_handoffs (
+insert into diary_entries (
     id,
-    session_id,
-    task,
-    status,
+    subject,
     summary,
+    tags_json,
     payload_ref,
     content_hash,
     created_at
-) values (?, ?, ?, ?, ?, ?, ?, ?)
+) values (?, ?, ?, ?, ?, ?, ?)
 `,
             [
                 id,
-                null,
                 input.task,
-                input.status,
                 input.summary,
+                JSON.stringify([input.status]),
                 stored.payloadRef ?? null,
                 stored.contentHash,
                 createdAt,
@@ -252,20 +250,20 @@ insert into session_handoffs (
         )
         await appendMemoryEvent(adapter, {
             actor: 'mcp',
-            eventType: 'session_handoff_saved',
+            eventType: 'diary_entry_saved',
             id: `event_${randomUUID()}`,
             payloadRef: stored.payloadRef,
             subjectId: id,
-            subjectType: 'session_handoff',
+            subjectType: 'diary_entry',
             summary: input.summary,
         })
         await indexSearchDocument(adapter, {
             content: input.summary,
             createdAt,
             id,
-            kind: input.status,
+            kind: 'diary',
             task: input.task,
-            type: 'session',
+            type: 'diary',
         })
     })
 

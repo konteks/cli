@@ -5,11 +5,9 @@ import type { SqliteAdapter } from '../storage/sqlite-adapter.js'
 import { estimateTextTokens } from '../utils/format.js'
 import {
     type DiaryRow,
-    type HandoffRow,
     type ObservationRow,
     queryDiaries,
     queryFtsRows,
-    queryHandoffs,
     queryObservations,
     queryRetrievalDocuments,
     type RetrievalDocumentRow,
@@ -18,7 +16,7 @@ import { hasSearchIndex } from './search-index.js'
 
 export type MemorySearchResult = {
     id: string
-    type: 'chunk' | 'diary' | 'memory' | 'module' | 'session'
+    type: 'chunk' | 'diary' | 'memory' | 'module'
     kind?: string
     anchor?: string
     embeddingDimensions?: number
@@ -26,7 +24,6 @@ export type MemorySearchResult = {
     path?: string
     sourceId?: string
     sourceRole?: string
-    status?: string
     task?: string
     excerpt: string
     score: number
@@ -90,14 +87,12 @@ export async function searchMemory(
     }
 
     const observations = await queryObservations(adapter, terms, limit * 2)
-    const handoffs = await queryHandoffs(adapter, terms, limit * 2)
     const diaries = await queryDiaries(adapter, terms, limit * 2)
 
     return applyGroupAwarePruning(
         [
             ...observations.map(row => observationToResult(row, terms)),
             ...diaries.map(row => diaryToResult(row, terms)),
-            ...handoffs.map(row => handoffToResult(row, terms)),
         ],
         mode,
         intent,
@@ -167,15 +162,8 @@ async function searchFts(
                 content: row.content,
                 createdAt: row.created_at,
                 id: row.id,
-                kind:
-                    row.type !== 'session'
-                        ? (row.kind ?? undefined)
-                        : undefined,
+                kind: row.kind ?? undefined,
                 sourceId: row.source_id ?? undefined,
-                status:
-                    row.type === 'session'
-                        ? (row.kind ?? undefined)
-                        : undefined,
                 task: row.task ?? undefined,
                 terms,
                 tokenCost: row.token_count ?? estimateTextTokens(row.content),
@@ -203,21 +191,6 @@ function observationToResult(
         kind: row.kind,
         terms,
         type: 'memory',
-    })
-}
-
-function handoffToResult(row: HandoffRow, terms: string[]): MemorySearchResult {
-    const text = `${row.task}\n${row.summary}`
-    return makeSearchResult({
-        confidence: 1,
-        content: row.summary,
-        createdAt: row.created_at,
-        id: row.id,
-        status: row.status,
-        task: row.task,
-        terms,
-        textForScoring: text,
-        type: 'session',
     })
 }
 
@@ -320,7 +293,6 @@ function makeSearchResult(input: {
     path?: string
     sourceId?: string
     sourceRole?: string
-    status?: string
     targetType?: 'chunk' | 'diary' | 'memory' | 'module'
     task?: string
     terms: string[]
@@ -364,7 +336,6 @@ function makeSearchResult(input: {
         },
         sourceId: input.sourceId,
         sourceRole: input.sourceRole,
-        status: input.status,
         targetType: input.targetType,
         task: input.task,
         tokenCost: Math.min(tokenCost, maxExcerptTokens),
@@ -527,10 +498,7 @@ function allowResult(
     if (mode === 'search') {
         return true
     }
-    if (
-        (result.type === 'diary' || result.type === 'session') &&
-        !intent.allowsDiary
-    ) {
+    if (result.type === 'diary' && !intent.allowsDiary) {
         return false
     }
     return true
