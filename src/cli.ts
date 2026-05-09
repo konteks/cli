@@ -12,7 +12,7 @@ import {
 import { repairCommand } from './cli/commands/mine.js'
 import { skillsInstallCommand } from './cli/commands/skills.js'
 import { statusCommand } from './cli/commands/status.js'
-import { VERSION } from './cli/version.js'
+import { VERSION } from './utils/version.js'
 
 const program = new Command()
     .name('konteks')

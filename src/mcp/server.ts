@@ -7,6 +7,7 @@ import type {
 } from '@modelcontextprotocol/sdk/types.js'
 import { z } from 'zod'
 import type { StartMcpServerOptions } from '../types/mcp.js'
+import { VERSION } from '../utils/version.js'
 import {
     forgetInputSchema,
     recallInputSchema,
@@ -108,7 +109,7 @@ function createMcpServer(options: StartMcpServerOptions): McpServer {
     const server = new McpServer(
         {
             name: 'konteks',
-            version: '0.0.0',
+            version: VERSION,
         },
         {
             instructions: MCP_INSTRUCTIONS,

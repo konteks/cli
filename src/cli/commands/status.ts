@@ -1,8 +1,8 @@
 import { getProjectStatus } from '../../project/status.js'
 import { type ColorPalette, createColorPalette } from '../../shared/color.js'
 import { formatInteger } from '../../utils/format.js'
+import { VERSION } from '../../utils/version.js'
 import type { GlobalCliOptions } from '../options.js'
-import { VERSION } from '../version.js'
 
 export async function statusCommand(options: GlobalCliOptions): Promise<void> {
     const status = await getProjectStatus(options.project)
