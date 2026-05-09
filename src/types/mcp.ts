@@ -1,4 +1,4 @@
-import type { CallToolResult, Tool } from '@modelcontextprotocol/sdk/types.js'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { MemorySearchResult } from '../memory/search-store.js'
 import type { LoadedProjectContext } from './project.js'
 
@@ -9,25 +9,7 @@ export type StartMcpServerOptions = {
 
 export type ProjectContext = LoadedProjectContext
 
-export type FlexibleRegisterTool = (
-    name: string,
-    config: {
-        annotations?: Tool['annotations']
-        description: string
-        inputSchema: Tool['inputSchema']
-        outputSchema?: Tool['outputSchema']
-    },
-    callback: (input: unknown) => CallToolResult | Promise<CallToolResult>,
-) => unknown
-
-export type ToolRegistration = {
-    annotations?: Tool['annotations']
-    callback: (input: unknown) => CallToolResult | Promise<CallToolResult>
-    description: string
-    inputSchema: Tool['inputSchema']
-    name: string
-    outputSchema?: Tool['outputSchema']
-}
+export type KonteksMcpServer = McpServer
 
 export type RecallGraphItem = {
     entityId: string

@@ -1,89 +1,32 @@
-import { Server } from '@modelcontextprotocol/sdk/server/index.js'
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
-import {
-    CallToolRequestSchema,
-    type CallToolResult,
-    ErrorCode,
-    GetPromptRequestSchema,
-    type GetPromptResult,
-    ListPromptsRequestSchema,
-    ListToolsRequestSchema,
-    McpError,
-    type Prompt,
-    type Tool,
-} from '@modelcontextprotocol/sdk/types.js'
 import type {
-    FlexibleRegisterTool,
-    StartMcpServerOptions,
-    ToolRegistration,
-} from '../types/mcp.js'
+    CallToolResult,
+    Prompt,
+    Tool,
+} from '@modelcontextprotocol/sdk/types.js'
+import { z } from 'zod'
+import type { StartMcpServerOptions } from '../types/mcp.js'
+import {
+    forgetInputSchema,
+    recallInputSchema,
+    saveInputSchema,
+    searchInputSchema,
+    warmUpInputSchema,
+} from './inputs.js'
 import { listPromptDefinitions, renderPromptText } from './prompt-library.js'
 import { recallGraph, recallHistory } from './recall-package.js'
-import { registerKonteksTools } from './tool-handlers.js'
-import { MCP_INSTRUCTIONS } from './tool-surface.js'
+import { createToolHandlers, registerKonteksTools } from './tool-handlers.js'
+import { KONTEKS_TOOL_SURFACE, MCP_INSTRUCTIONS } from './tool-surface.js'
 
 export { recallGraph, recallHistory }
 
 export async function startMcpServer(
     options: StartMcpServerOptions,
 ): Promise<void> {
-    const server = new Server(
-        {
-            name: 'konteks',
-            version: '0.0.0',
-        },
-        {
-            capabilities: {
-                prompts: {},
-                tools: {},
-            },
-            instructions: MCP_INSTRUCTIONS,
-        },
-    )
-    const tools = createToolRegistrations(options)
-    const prompts = listPromptDefinitions()
-
-    server.setRequestHandler(ListPromptsRequestSchema, async () => ({
-        prompts,
-    }))
-
-    server.setRequestHandler(GetPromptRequestSchema, async request => {
-        const prompt = prompts.find(item => item.name === request.params.name)
-        if (!prompt) {
-            throw new McpError(
-                ErrorCode.MethodNotFound,
-                `Unknown Konteks prompt: ${request.params.name}`,
-            )
-        }
-
-        return getPromptResult(prompt, request.params.arguments ?? {})
-    })
-
-    server.setRequestHandler(ListToolsRequestSchema, async () => ({
-        tools: toolList(tools),
-    }))
-
-    server.setRequestHandler(CallToolRequestSchema, async request => {
-        const tool = tools.get(request.params.name)
-
-        if (!tool) {
-            throw new McpError(
-                ErrorCode.MethodNotFound,
-                `Unknown Konteks tool: ${request.params.name}`,
-            )
-        }
-
-        try {
-            return await tool.callback(request.params.arguments ?? {})
-        } catch (error) {
-            throw new McpError(
-                ErrorCode.InvalidParams,
-                error instanceof Error ? error.message : String(error),
-            )
-        }
-    })
-
-    await server.connect(new StdioServerTransport())
+    const server = createMcpServer(options)
+    const transport = new StdioServerTransport()
+    await server.connect(transport)
 }
 
 export function listMcpPrompts(): Prompt[] {
@@ -93,65 +36,15 @@ export function listMcpPrompts(): Prompt[] {
 export function getMcpPrompt(
     name: string,
     args: Record<string, string> = {},
-): GetPromptResult {
+): {
+    description?: string
+    messages: Array<{ content: { text: string; type: 'text' }; role: 'user' }>
+} {
     const prompt = listPromptDefinitions().find(item => item.name === name)
     if (!prompt) {
         throw new Error(`Unknown Konteks prompt: ${name}`)
     }
 
-    return getPromptResult(prompt, args)
-}
-
-export function listMcpTools(options: StartMcpServerOptions): Tool[] {
-    return toolList(createToolRegistrations(options))
-}
-
-export async function callMcpTool(
-    options: StartMcpServerOptions,
-    name: string,
-    input: unknown = {},
-): Promise<CallToolResult> {
-    const tool = createToolRegistrations(options).get(name)
-    if (!tool) {
-        throw new Error(`Unknown Konteks tool: ${name}`)
-    }
-
-    return await tool.callback(input)
-}
-
-function createToolRegistrations(
-    options: StartMcpServerOptions,
-): Map<string, ToolRegistration> {
-    const tools = new Map<string, ToolRegistration>()
-    const registerTool: FlexibleRegisterTool = (name, config, callback) => {
-        tools.set(name, {
-            annotations: config.annotations,
-            callback,
-            description: config.description,
-            inputSchema: config.inputSchema,
-            name,
-            outputSchema: config.outputSchema,
-        })
-    }
-
-    registerKonteksTools(options, registerTool)
-    return tools
-}
-
-function toolList(tools: Map<string, ToolRegistration>): Tool[] {
-    return [...tools.values()].map(tool => ({
-        annotations: tool.annotations,
-        description: tool.description,
-        inputSchema: tool.inputSchema,
-        name: tool.name,
-        outputSchema: tool.outputSchema,
-    }))
-}
-
-function getPromptResult(
-    prompt: Prompt,
-    args: Record<string, string>,
-): GetPromptResult {
     return {
         description: prompt.description,
         messages: [
@@ -164,4 +57,100 @@ function getPromptResult(
             },
         ],
     }
+}
+
+export function listMcpTools(): Tool[] {
+    return KONTEKS_TOOL_SURFACE.map(surface => ({
+        description: surface.description,
+        inputSchema: {
+            properties: {},
+            type: 'object',
+        },
+        name: surface.name,
+    }))
+}
+
+export async function callMcpTool(
+    options: StartMcpServerOptions,
+    name: string,
+    input: unknown = {},
+): Promise<CallToolResult> {
+    const schema = inputSchemaForTool(name)
+    const validated = schema.parse(input)
+
+    const handlers = createToolHandlers(options)
+    const handler = handlers[name]
+    if (!handler) {
+        throw new Error(`Unknown Konteks tool: ${name}`)
+    }
+
+    return await handler(validated)
+}
+
+function inputSchemaForTool(name: string): z.ZodTypeAny {
+    switch (name) {
+        case 'konteks_warm_up':
+            return warmUpInputSchema
+        case 'konteks_recall':
+            return recallInputSchema
+        case 'konteks_save':
+            return saveInputSchema
+        case 'konteks_search':
+            return searchInputSchema
+        case 'konteks_forget':
+            return forgetInputSchema
+        default:
+            throw new Error(`Unknown tool: ${name}`)
+    }
+}
+
+function createMcpServer(options: StartMcpServerOptions): McpServer {
+    const server = new McpServer(
+        {
+            name: 'konteks',
+            version: '0.0.0',
+        },
+        {
+            instructions: MCP_INSTRUCTIONS,
+        },
+    )
+
+    // Register Tools
+    registerKonteksTools(options, server)
+
+    // Register Prompts
+    for (const definition of listPromptDefinitions()) {
+        const argsSchema: Record<string, z.ZodTypeAny> = {}
+        for (const arg of definition.arguments ?? []) {
+            let schema: z.ZodTypeAny = z
+                .string()
+                .describe(arg.description ?? '')
+            if (!arg.required) {
+                schema = schema.optional()
+            }
+            argsSchema[arg.name] = schema
+        }
+
+        server.registerPrompt(
+            definition.name,
+            {
+                // biome-ignore lint/suspicious/noExplicitAny: compatibility cast
+                argsSchema: argsSchema as any,
+                description: definition.description,
+            },
+            (args: Record<string, string>) => ({
+                messages: [
+                    {
+                        content: {
+                            text: renderPromptText(definition.name, args),
+                            type: 'text' as const,
+                        },
+                        role: 'user' as const,
+                    },
+                ],
+            }),
+        )
+    }
+
+    return server
 }

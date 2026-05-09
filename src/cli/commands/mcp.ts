@@ -15,10 +15,8 @@ export async function mcpCommand(options: GlobalCliOptions): Promise<void> {
     await startMcpServer({ project: options.project })
 }
 
-export async function mcpToolsCommand(
-    options: GlobalCliOptions,
-): Promise<void> {
-    printJson(listMcpTools({ project: options.project }))
+export async function mcpToolsCommand(): Promise<void> {
+    printJson(listMcpTools())
 }
 
 export async function mcpPromptsCommand(): Promise<void> {
@@ -39,9 +37,7 @@ export async function mcpCallCommand(
     callOptions: { apply?: boolean; json?: boolean } = {},
 ): Promise<void> {
     const input = parseJsonInput(jsonInput)
-    const tool = listMcpTools({ project: options.project }).find(
-        item => item.name === name,
-    )
+    const tool = listMcpTools().find(item => item.name === name)
 
     if (!tool) {
         throw new Error(`Unknown Konteks tool: ${name}`)

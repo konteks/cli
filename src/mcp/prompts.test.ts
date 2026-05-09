@@ -9,13 +9,13 @@ function promptText(name: string, args: Record<string, string> = {}): string {
 
 describe('MCP prompts', () => {
     it('does not expose a status tool', () => {
-        expect(listMcpTools({}).map(tool => tool.name)).not.toContain(
+        expect(listMcpTools().map(tool => tool.name)).not.toContain(
             'konteks_status',
         )
     })
 
     it('exposes tools in the documented MCP API order', () => {
-        expect(listMcpTools({}).map(tool => tool.name)).toEqual([
+        expect(listMcpTools().map(tool => tool.name)).toEqual([
             'konteks_warm_up',
             'konteks_recall',
             'konteks_save',

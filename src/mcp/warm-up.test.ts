@@ -3,22 +3,20 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { FakeEmbeddingProvider } from '../mining/embedding-provider.js'
-import { readMineManifest } from '../mining/manifest.js'
 import { mineProject } from '../mining/mine-project.js'
 import { loadProjectContext } from '../project/context.js'
 import { callMcpTool } from './server.js'
 
-const tempDirs: string[] = []
-
-afterEach(async () => {
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
-})
-
 describe('konteks_warm_up', () => {
+    let tempDirs: string[] = []
+
+    afterEach(async () => {
+        for (const dir of tempDirs) {
+            await rm(dir, { force: true, recursive: true })
+        }
+        tempDirs = []
+    })
+
     it('returns stable project context assembled from stored artifacts', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
         tempDirs.push(projectRoot)
@@ -27,9 +25,8 @@ describe('konteks_warm_up', () => {
             join(projectRoot, 'package.json'),
             JSON.stringify(
                 {
-                    dependencies: { commander: '^14.0.0' },
+                    dependencies: { typescript: '^5.0.0' },
                     name: 'warm-up-fixture',
-                    packageManager: 'bun@1.3.12',
                 },
                 null,
                 2,
@@ -37,31 +34,37 @@ describe('konteks_warm_up', () => {
         )
         await writeFile(
             join(projectRoot, 'src', 'index.ts'),
-            'export const hello = () => "world"\n',
+            'export const version = "1.0.0"\n',
         )
 
         const context = await loadProjectContext(projectRoot)
         await mineProject(context, 'full', {
             embeddingProvider: new FakeEmbeddingProvider(),
         })
+
+        // Seed some durable memories
         await callMcpTool({ project: projectRoot }, 'konteks_save', {
             memories: [
                 {
                     content: 'Use Bun test for project verification.',
                     kind: 'preference',
+                    type: 'memory',
                 },
                 {
                     content: 'Konteks save must preserve explicit constraints.',
                     kind: 'constraint',
+                    type: 'memory',
                 },
                 {
                     content: 'Use structured save payloads for session memory.',
                     kind: 'decision',
+                    type: 'memory',
                 },
                 {
                     content:
                         'Patched warm-up formatter to collapse old sections.',
-                    kind: 'decision',
+                    kind: 'fact',
+                    type: 'memory',
                 },
             ],
             type: 'memories',
@@ -172,3 +175,8 @@ describe('konteks_warm_up', () => {
         ).rejects.toThrow('Konteks memory is not initialized')
     })
 })
+
+async function readMineManifest(memoryDir: string) {
+    const { readMineManifest: read } = await import('../mining/manifest.js')
+    return read(memoryDir)
+}

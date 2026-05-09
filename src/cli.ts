@@ -60,7 +60,7 @@ const mcp = program
 mcp.command('tools')
     .description('List MCP tools exposed by Konteks.')
     .action(async () => {
-        await mcpToolsCommand(program.opts())
+        await mcpToolsCommand()
     })
 
 mcp.command('prompts')

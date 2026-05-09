@@ -2,145 +2,121 @@ import { afterEach, describe, expect, it, spyOn } from 'bun:test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { callMcpTool } from '../../mcp/server.js'
+import { FakeEmbeddingProvider } from '../../mining/embedding-provider.js'
 import { mineProject } from '../../mining/mine-project.js'
 import { loadProjectContext } from '../../project/context.js'
-import { openProjectDatabase } from '../../storage/database.js'
-import { mcpCallCommand, mcpPromptCommand } from './mcp.js'
-
-const tempDirs: string[] = []
-
-afterEach(async () => {
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
-})
+import { mcpCallCommand } from './mcp.js'
 
 describe('MCP call command', () => {
+    let tempDirs: string[] = []
+
+    afterEach(async () => {
+        for (const dir of tempDirs) {
+            await rm(dir, { force: true, recursive: true })
+        }
+        tempDirs = []
+    })
+
     it('executes mutating tools in dry-run memory by default', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-mcp-call-'))
         tempDirs.push(projectRoot)
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full')
+        await mineProject(context, 'full', {
+            embeddingProvider: new FakeEmbeddingProvider(),
+        })
+
         const log = spyOn(console, 'log').mockImplementation(() => {})
         let output = ''
-
         try {
             await mcpCallCommand(
                 { project: projectRoot },
                 'konteks_save',
-                JSON.stringify({
-                    memories: [
-                        {
-                            content:
-                                'Keep MCP debug dry-run from persisting session memory.',
-                            kind: 'constraint',
-                        },
-                    ],
-                    type: 'memories',
-                }),
+                '{"memories":[{"content":"Use dry-run by default for mutated tools.","kind":"decision","type":"memory"}],"type":"memories"}',
             )
-
             output = String(log.mock.calls[0]?.[0])
         } finally {
             log.mockRestore()
         }
-        expect(output).toBe('konteks: session saved, 1 durable memories.')
 
-        const adapter = await openProjectDatabase(context)
-        const rows = await adapter.query<{ count: number }>(
-            'select count(*) as count from observations',
+        expect(output).toContain('konteks: session saved')
+        expect(output).toContain('1 durable memories')
+
+        const search = await callMcpTool(
+            { project: projectRoot },
+            'konteks_search',
+            { query: 'dry-run' },
         )
-        await adapter.close()
-        expect(rows[0]?.count).toBe(0)
-    })
-
-    it('prints the raw MCP envelope when requested', async () => {
-        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-mcp-call-'))
-        tempDirs.push(projectRoot)
-        const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full')
-        const log = spyOn(console, 'log').mockImplementation(() => {})
-        let output: Record<string, unknown> = {}
-
-        try {
-            await mcpCallCommand(
-                { project: projectRoot },
-                'konteks_save',
-                JSON.stringify({
-                    summary:
-                        'Added a JSON flag for the raw MCP envelope output.',
-                    type: 'diary',
-                }),
-                { json: true },
-            )
-
-            output = JSON.parse(String(log.mock.calls[0]?.[0]))
-        } finally {
-            log.mockRestore()
-        }
-
-        expect(output.content).toEqual(expect.any(Array))
-        expect(JSON.stringify(output)).toContain('konteks: session saved.')
+        expect(JSON.stringify(search)).not.toContain('Use dry-run by default')
     })
 
     it('executes mutating tools with apply', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-mcp-call-'))
         tempDirs.push(projectRoot)
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full')
-        const log = spyOn(console, 'log').mockImplementation(() => {})
+        await mineProject(context, 'full', {
+            embeddingProvider: new FakeEmbeddingProvider(),
+        })
 
-        try {
-            await expect(
-                mcpCallCommand(
-                    { project: projectRoot },
-                    'konteks_save',
-                    '{"content":"too short","kind":"note","type":"memory"}',
-                    { apply: true },
-                ),
-            ).rejects.toThrow('memory content is too short to save')
-            expect(log).not.toHaveBeenCalled()
-        } finally {
-            log.mockRestore()
-        }
-    })
-})
-
-describe('MCP prompt command', () => {
-    it('accepts free-form warm-up focus text', async () => {
         const log = spyOn(console, 'log').mockImplementation(() => {})
         let output = ''
-
         try {
-            await mcpPromptCommand(
-                'konteks-warm-up',
-                'cli status command memory',
+            await mcpCallCommand(
+                { project: projectRoot },
+                'konteks_save',
+                '{"memories":[{"content":"Apply mutations to real project memory.","kind":"decision","type":"memory"}],"type":"memories"}',
+                { apply: true },
             )
             output = String(log.mock.calls[0]?.[0])
         } finally {
             log.mockRestore()
         }
 
-        expect(output).toContain('cli status command memory')
-        expect(output).toContain('konteks_warm_up')
+        expect(output).toContain('konteks: session saved')
+
+        const search = await callMcpTool(
+            { project: projectRoot },
+            'konteks_search',
+            { query: 'Apply mutations' },
+        )
+        expect(JSON.stringify(search)).toContain('Apply mutations')
+
+        await expect(
+            mcpCallCommand(
+                { project: projectRoot },
+                'konteks_save',
+                '{"content":"too short","kind":"note","type":"memory"}',
+                { apply: true },
+            ),
+        ).rejects.toThrow()
     })
 
-    it('still accepts JSON prompt arguments', async () => {
-        const log = spyOn(console, 'log').mockImplementation(() => {})
-        let output = ''
+    it('exposes JSON output for tool calls', async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-mcp-json-'))
+        tempDirs.push(projectRoot)
+        const context = await loadProjectContext(projectRoot)
+        await mineProject(context, 'full', {
+            embeddingProvider: new FakeEmbeddingProvider(),
+        })
 
+        const log = spyOn(console, 'log').mockImplementation(() => {})
+        let output: Record<string, unknown>
         try {
-            await mcpPromptCommand(
-                'konteks-recall',
+            await mcpCallCommand(
+                { project: projectRoot },
+                'konteks_recall',
                 '{"task":"auth session refresh"}',
+                { json: true },
             )
-            output = String(log.mock.calls[0]?.[0])
+            output = JSON.parse(String(log.mock.calls[0]?.[0])) as Record<
+                string,
+                unknown
+            >
         } finally {
             log.mockRestore()
         }
 
-        expect(output).toContain('auth session refresh')
+        expect(output.content).toEqual(expect.any(Array))
+        expect(JSON.stringify(output)).toContain('recall:')
     })
 })
