@@ -10,7 +10,6 @@ For terms, see the [Glossary](../reference/glossary.md).
 | :--- | :--- |
 | **Prompts** | Guided workflows for Warm Up -> Build -> Save. |
 | **Tools** | Lower-level operations the agent can call while following prompts. |
-| **Resources** | Readable memory artifacts for inspection. |
 
 ## Prompts
 
@@ -40,17 +39,3 @@ Tools are lower-level callable operations used by agents and debugging workflows
 | `konteks_forget` | Forget | `id`, `query`, `mode`, `reason` | Remove or suppress wrong, stale, or sensitive memory using `soft_delete`, `invalidate`, or `hard_delete`. |
 
 MCP tools validate project health silently before doing work. If memory is not initialized or repair is required, the tool fails with a short actionable error instead of returning status context.
-
-## Resources
-
-Resources are readable memory artifacts. They are useful for inspection, picker UIs, and debugging.
-
-| Resource | Shows |
-| :--- | :--- |
-| `konteks://extraction/manifest` | Extraction and indexing state diagnostics. |
-| `konteks://project/summary` | Stable extracted project summary. |
-| `konteks://project/modules` | Current module and architecture index. |
-| `konteks://memory/{id}` | One saved durable memory. |
-| `konteks://retrieval/{targetType}/{targetId}` | One retrieval document for debugging. |
-
-Resource lists are dynamic because memory changes after initialization, repair, `save`, and `forget`. Resource URIs should remain stable for the artifact they identify.
