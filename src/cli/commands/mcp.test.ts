@@ -82,7 +82,7 @@ describe('MCP call command', () => {
         }
 
         expect(output.content).toEqual(expect.any(Array))
-        expect(JSON.stringify(output)).toContain('diary_')
+        expect(JSON.stringify(output)).toContain('konteks: session saved.')
     })
 
     it('executes mutating tools with apply', async () => {

@@ -31,7 +31,7 @@ type RankedGuidance = WarmUpGuidance & {
     score: number
 }
 
-type WarmUpContext = {
+export type WarmUpContext = {
     architecture: string[]
     description?: string
     entryPoints: string[]

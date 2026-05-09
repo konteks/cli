@@ -9,41 +9,46 @@ import {
 describe('retrieval formatter', () => {
     it('formats warm up text', () => {
         const text = formatWarmUpText({
-            description: 'Konteks stores project memory locally.',
-            entryPoints: ['src/index.ts'],
-            guidance: [
-                {
-                    kind: 'decision',
-                    text: 'Use WASM SQLite',
-                },
-                {
-                    kind: 'constraint',
-                    text: 'Prefer repair only for recovery',
-                },
-                {
-                    kind: 'convention',
-                    text: 'Use functional patterns',
-                },
-            ],
-            highlights: [
-                {
-                    excerpt: 'protocol layer',
-                    id: 'module_src_mcp',
-                    path: 'src/mcp',
-                    score: 124,
-                    scoreDetails: {
-                        importance: 80,
-                        recency: 10,
-                        role: 35,
-                        tokenCostPenalty: 1,
+            warmUp: {
+                architecture: [],
+                description: 'Konteks stores project memory locally.',
+                entryPoints: ['src/index.ts'],
+                guidance: [
+                    {
+                        kind: 'decision',
+                        text: 'Use WASM SQLite',
                     },
-                    sourceRole: 'app_code',
-                    tokenCost: 20,
-                    type: 'module',
-                },
-            ],
-            summary: 'warm-up-fixture',
-            technologies: ['typescript', 'mcp'],
+                    {
+                        kind: 'constraint',
+                        text: 'Prefer repair only for recovery',
+                    },
+                    {
+                        kind: 'convention',
+                        text: 'Use functional patterns',
+                    },
+                ],
+                highlights: [
+                    {
+                        excerpt: 'protocol layer',
+                        id: 'module_src_mcp',
+                        path: 'src/mcp',
+                        score: 124,
+                        scoreDetails: {
+                            importance: 80,
+                            recency: 10,
+                            role: 35,
+                            tokenCostPenalty: 1,
+                        },
+                        sourceRole: 'app_code',
+                        tokenCost: 20,
+                        type: 'module',
+                    },
+                ],
+                keyFiles: [],
+                summary: 'warm-up-fixture',
+                taxonomy: [],
+                technologies: ['typescript', 'mcp'],
+            },
         })
 
         expect(text).toContain('warm_up:')
@@ -84,14 +89,17 @@ describe('retrieval formatter', () => {
         ]
 
         const recall = formatRecallText({
-            brief: ['Inspect first: src/auth.ts'],
-            graphCount: 2,
-            graphEvidence: ['Konteks stores_in .konteks (depth=1)'],
-            historyCount: 1,
-            historyEvidence: ['Konteks stores_in global-memory [superseded]'],
-            memories,
-            primaryTargets: ['src/auth.ts'],
-            task: 'continue auth refresh fix',
+            recall: {
+                brief: ['Inspect first: src/auth.ts'],
+                graph: [],
+                history: [],
+                memories,
+                primaryTargets: ['src/auth.ts'],
+                quality: 'strong',
+                sourceCount: 1,
+                task: 'continue auth refresh fix',
+                tokenBudget: 2000,
+            },
         })
         const search = formatSearchText({
             limit: 5,
@@ -103,22 +111,27 @@ describe('retrieval formatter', () => {
         expect(recall).toContain('task: continue auth refresh fix')
         expect(recall).toContain('primary_targets:')
         expect(recall).toContain('score=140')
-        expect(recall).toContain('graph_evidence:')
-        expect(recall).toContain('history_evidence:')
+        expect(recall).toContain(
+            'evidence_counts: memories=1, graph=0, history=0',
+        )
+        expect(recall).not.toContain('graph_evidence:')
         expect(search).toContain('search:')
         expect(search).toContain('query: auth refresh')
     })
 
     it('omits empty recall evidence sections', () => {
         const recall = formatRecallText({
-            brief: ['Evidence: none found.'],
-            graphCount: 0,
-            graphEvidence: [],
-            historyCount: 0,
-            historyEvidence: [],
-            memories: [],
-            primaryTargets: [],
-            task: 'unknown task',
+            recall: {
+                brief: ['Evidence: none found.'],
+                graph: [],
+                history: [],
+                memories: [],
+                primaryTargets: [],
+                quality: 'weak',
+                sourceCount: 0,
+                task: 'unknown task',
+                tokenBudget: 2000,
+            },
         })
 
         expect(recall).toContain(

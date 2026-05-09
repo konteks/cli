@@ -1,56 +1,47 @@
 import type { MemorySearchResult } from '../memory/search-store.js'
-import type { WarmUpGuidance, WarmUpHighlight } from './warm-up-context.js'
+import type { RecallPackage } from '../types/mcp.js'
+import { graphEvidenceLines, historyEvidenceLines } from './recall-package.js'
+import type {
+    WarmUpContext,
+    WarmUpGuidance,
+    WarmUpHighlight,
+} from './warm-up-context.js'
 
 export function formatWarmUpText(input: {
-    summary: string
-    description?: string
-    technologies: string[]
-    entryPoints: string[]
-    highlights: WarmUpHighlight[]
-    guidance: WarmUpGuidance[]
-    recall?: {
-        brief: string[]
-        task: string
-        memories: MemorySearchResult[]
-        primaryTargets: string[]
-        quality?: 'partial' | 'strong' | 'weak'
-        sourceCount: number
-    }
+    warmUp: WarmUpContext
+    recall?: RecallPackage
 }): string {
+    const { warmUp, recall } = input
     const lines = [
         'warm_up:',
-        `  summary: ${inline(input.summary)}`,
-        input.description
-            ? `  description: ${inline(input.description)}`
+        `  summary: ${inline(warmUp.summary)}`,
+        warmUp.description
+            ? `  description: ${inline(warmUp.description)}`
             : null,
-        `  stack: ${list(input.technologies)}`,
-        input.entryPoints.length > 0
-            ? `  entry: ${list(input.entryPoints)}`
+        `  stack: ${list(warmUp.technologies)}`,
+        warmUp.entryPoints.length > 0
+            ? `  entry: ${list(warmUp.entryPoints)}`
             : null,
         '  highlights:',
-        ...input.highlights
+        ...warmUp.highlights
             .slice(0, 8)
             .map(highlight => formatWarmUpHighlight(highlight, 4)),
         '  guidance:',
-        ...input.guidance.slice(0, 10).map(item => formatGuidance(item, 4)),
+        ...warmUp.guidance.slice(0, 10).map(item => formatGuidance(item, 4)),
     ]
 
-    if (input.recall) {
+    if (recall) {
         lines.push(
             '  recall:',
-            `    task: ${inline(input.recall.task)}`,
-            input.recall.quality
-                ? `    quality: ${input.recall.quality}`
-                : null,
+            `    task: ${inline(recall.task)}`,
+            recall.quality ? `    quality: ${recall.quality}` : null,
             '    brief:',
-            ...toBullets(input.recall.brief, 6),
-            input.recall.primaryTargets.length > 0
-                ? '    primary_targets:'
-                : null,
-            ...toBullets(input.recall.primaryTargets, 6, { empty: false }),
-            `    evidence_counts: memories=${input.recall.memories.length}, sources=${input.recall.sourceCount}`,
+            ...toBullets(recall.brief, 6),
+            recall.primaryTargets.length > 0 ? '    primary_targets:' : null,
+            ...toBullets(recall.primaryTargets, 6, { empty: false }),
+            `    evidence_counts: memories=${recall.memories.length}, sources=${recall.sourceCount}`,
             '    memories:',
-            ...input.recall.memories
+            ...recall.memories
                 .slice(0, 6)
                 .map(memory => formatMemory(memory, 6)),
         )
@@ -60,32 +51,26 @@ export function formatWarmUpText(input: {
 }
 
 export function formatRecallText(input: {
-    brief: string[]
-    task: string
-    memories: MemorySearchResult[]
-    primaryTargets: string[]
-    graphCount: number
-    historyCount: number
-    graphEvidence: string[]
-    historyEvidence: string[]
+    recall: RecallPackage
     includeSources?: boolean
 }): string {
+    const { recall, includeSources } = input
     return [
         'recall:',
-        `  task: ${inline(input.task)}`,
+        `  task: ${inline(recall.task)}`,
         '  brief:',
-        ...toBullets(input.brief, 4),
-        input.primaryTargets.length > 0 ? '  primary_targets:' : null,
-        ...toBullets(input.primaryTargets, 4, { empty: false }),
-        `  evidence_counts: memories=${input.memories.length}, graph=${input.graphCount}, history=${input.historyCount}`,
-        input.graphEvidence.length > 0 ? '  graph_evidence:' : null,
-        ...toBullets(input.graphEvidence, 4, { empty: false }),
-        input.historyEvidence.length > 0 ? '  history_evidence:' : null,
-        ...toBullets(input.historyEvidence, 4, { empty: false }),
+        ...toBullets(recall.brief, 4),
+        recall.primaryTargets.length > 0 ? '  primary_targets:' : null,
+        ...toBullets(recall.primaryTargets, 4, { empty: false }),
+        `  evidence_counts: memories=${recall.memories.length}, graph=${recall.graph.length}, history=${recall.history.length}`,
+        recall.graph.length > 0 ? '  graph_evidence:' : null,
+        ...toBullets(graphEvidenceLines(recall.graph), 4, { empty: false }),
+        recall.history.length > 0 ? '  history_evidence:' : null,
+        ...toBullets(historyEvidenceLines(recall.history), 4, { empty: false }),
         '  memories:',
-        ...input.memories
+        ...recall.memories
             .slice(0, 8)
-            .map(memory => formatMemory(memory, 4, input.includeSources)),
+            .map(memory => formatMemory(memory, 4, includeSources)),
     ]
         .filter((line): line is string => line !== null)
         .join('\n')

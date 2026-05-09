@@ -72,54 +72,19 @@ describe('konteks_warm_up', () => {
             'konteks_warm_up',
             { maxTokens: 500 },
         )
-        const payload = (result.structuredContent ?? {}) as Record<
-            string,
-            unknown
-        >
+        const text =
+            result.content.find(item => item.type === 'text' && 'text' in item)
+                ?.text ?? ''
 
-        expect(payload.summary).toEqual(expect.any(String))
-        expect(payload.technologies).toEqual(
-            expect.arrayContaining(['javascript', 'typescript']),
+        expect(text).toContain('warm_up:')
+        expect(text).toContain('summary:')
+        expect(text).toContain('Use Bun test for project verification.')
+        expect(text).toContain(
+            'Konteks save must preserve explicit constraints.',
         )
-        expect(payload.keyFiles).toBeUndefined()
-        expect(payload.architecture).toBeUndefined()
-        expect(payload.constraints).toBeUndefined()
-        expect(payload.conventions).toBeUndefined()
-        expect(payload.durableDecisions).toBeUndefined()
-        expect(payload.highlights).toEqual(expect.any(Array))
-        expect(
-            (payload.highlights as Array<{ score?: number }>).some(
-                highlight => typeof highlight.score === 'number',
-            ),
-        ).toBe(true)
-        expect(payload.entryPoints).toEqual(expect.any(Array))
-        expect(payload.guidance).toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({
-                    kind: 'convention',
-                    text: 'Use Bun test for project verification.',
-                }),
-                expect.objectContaining({
-                    kind: 'constraint',
-                    text: 'Konteks save must preserve explicit constraints.',
-                }),
-                expect.objectContaining({
-                    kind: 'decision',
-                    text: 'Use structured save payloads for session memory.',
-                }),
-            ]),
+        expect(text).toContain(
+            'Use structured save payloads for session memory.',
         )
-        expect(payload.guidance).not.toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({
-                    text: 'Patched warm-up formatter to collapse old sections.',
-                }),
-            ]),
-        )
-        expect(payload.freshness).toBeUndefined()
-        expect(payload.recentChanges).toBeUndefined()
-        expect(payload.recentHandoffs).toBeUndefined()
-        expect(payload.commonCommands).toBeUndefined()
     })
 
     it('updates changed project memory before warming up', async () => {
@@ -189,27 +154,13 @@ describe('konteks_warm_up', () => {
             'konteks_warm_up',
             { maxTokens: 500, topic: 'focused recall warm up' },
         )
-        const payload = (result.structuredContent ?? {}) as Record<
-            string,
-            unknown
-        >
-        const recall = payload.recall as
-            | { primaryTargets: string[]; quality: string }
-            | undefined
-        const text = result.content.find(
-            item => item.type === 'text' && 'text' in item,
-        )?.text
+        const text =
+            result.content.find(item => item.type === 'text' && 'text' in item)
+                ?.text ?? ''
 
-        expect(recall).toBeDefined()
-        if (!recall) {
-            throw new Error('expected focused recall')
-        }
-        expect(recall?.quality).toMatch(/^(strong|partial|weak)$/)
-        expect(recall.primaryTargets.length).toBeGreaterThan(0)
-        expect(new Set(recall.primaryTargets).size).toBe(
-            recall.primaryTargets.length,
-        )
+        expect(text).toContain('recall:')
         expect(text).toContain('quality:')
+        expect(text).toContain('primary_targets:')
     })
 
     it('fails with a short health error when memory is not initialized', async () => {

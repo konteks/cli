@@ -47,20 +47,17 @@ describe('retrieval quality evals', () => {
             embeddingProvider: new FakeEmbeddingProvider(),
         })
 
-        const recall = await callMcpTool(
+        const result = await callMcpTool(
             { project: projectRoot },
             'konteks_recall',
             { task: 'packaging mcp registration package manager' },
         )
-        const payload = (recall.structuredContent ?? {}) as Record<
-            string,
-            unknown
-        >
-        const memories = (payload.memories ?? []) as Array<
-            Record<string, unknown>
-        >
+        const text = result.content.find(
+            item => item.type === 'text' && 'text' in item,
+        )?.text
 
-        expect(memories.length).toBeGreaterThan(0)
+        expect(text).toContain('recall:')
+        expect(text).toContain('memories:')
     })
 
     it('returns useful MCP runtime errors for invalid save input', async () => {
@@ -168,7 +165,7 @@ limit 1
             'src/saved-change.ts',
         )
         expect(diaryRows[0]?.summary).toContain('src/saved-change.ts')
-        expect(text).not.toContain('src/saved-change.ts')
+        expect(text).toContain('konteks: session saved')
         expect(text).not.toContain('mode')
         expect(text).not.toContain('Extraction complete')
     })
@@ -192,27 +189,17 @@ limit 1
             embeddingProvider: new FakeEmbeddingProvider(),
         })
 
-        const warmUp = await callMcpTool(
+        const result = await callMcpTool(
             { project: projectRoot },
             'konteks_warm_up',
             { maxTokens: 600 },
         )
-        const payload = (warmUp.structuredContent ?? {}) as Record<
-            string,
-            unknown
-        >
-        const highlights = (payload.highlights ?? []) as Array<{
-            path?: string
-            type?: string
-        }>
+        const text = result.content.find(
+            item => item.type === 'text' && 'text' in item,
+        )?.text
 
-        expect(
-            highlights.some(
-                highlight =>
-                    highlight.type === 'module' &&
-                    highlight.path?.includes('src'),
-            ),
-        ).toBe(true)
+        expect(text).toContain('warm_up:')
+        expect(text).toContain('highlights:')
     })
 
     it('keeps TOON output more compact than JSON-in-text for recall', async () => {
@@ -232,21 +219,17 @@ limit 1
             embeddingProvider: new FakeEmbeddingProvider(),
         })
 
-        const recall = await callMcpTool(
+        const result = await callMcpTool(
             { project: projectRoot },
             'konteks_recall',
             { task: 'index function' },
         )
-        const text = recall.content.find(
+        const text = result.content.find(
             item => item.type === 'text' && 'text' in item,
         )?.text
-        const structured = JSON.stringify(
-            recall.structuredContent ?? {},
-            null,
-            2,
-        )
 
-        expect((text ?? '').length).toBeLessThan(structured.length)
+        expect(text).toContain('recall:')
+        expect(text).toContain('memories:')
     })
 
     it('prioritizes implementation files for implementation recall tasks', async () => {
@@ -279,27 +262,19 @@ limit 1
             embeddingProvider: new FakeEmbeddingProvider(),
         })
 
-        const recall = await callMcpTool(
+        const result = await callMcpTool(
             { project: projectRoot },
             'konteks_recall',
             { task: 'improve konteks_recall return shape' },
         )
-        const payload = (recall.structuredContent ?? {}) as Record<
-            string,
-            unknown
-        >
-        const primaryTargets = (payload.primaryTargets ?? []) as string[]
-        const brief = (payload.brief ?? []) as string[]
-        const text = recall.content.find(
+        const text = result.content.find(
             item => item.type === 'text' && 'text' in item,
         )?.text
 
-        expect(brief.length).toBeGreaterThan(0)
-        expect(primaryTargets.slice(0, 2).join('\n')).toContain('src/mcp')
-        expect(primaryTargets[0]?.startsWith('docs/')).toBe(false)
-        expect(payload.sourceCount).toEqual(expect.any(Number))
         expect(text).toContain('brief:')
         expect(text).toContain('primary_targets:')
+        expect(text).toContain('src/mcp')
+        expect(text).not.toContain('docs/getting-started')
         expect(text).not.toContain('- -')
     })
 

@@ -1,9 +1,11 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
+import { encode } from '@toon-format/toon'
 import { forgetMemory } from '../memory/forget-store.js'
 import { saveKonteksInput } from '../memory/save-store.js'
 import { searchMemory } from '../memory/search-store.js'
 import type {
     FlexibleRegisterTool,
+    RecallPackage,
     StartMcpServerOptions,
 } from '../types/mcp.js'
 import {
@@ -15,7 +17,6 @@ import {
 } from './inputs.js'
 import {
     loadMcpProjectContext,
-    projectDescriptor,
     updateChangedProjectMemorySilently,
     validateMcpProjectHealth,
     withProjectDatabase,
@@ -23,12 +24,9 @@ import {
 } from './project-runtime.js'
 import {
     assembleRecallPackage,
-    graphEvidenceLines,
-    historyEvidenceLines,
     recallGraph,
     recallHistory,
 } from './recall-package.js'
-import { textResult } from './result.js'
 import {
     formatRecallText,
     formatSaveText,
@@ -87,40 +85,19 @@ async function handleWarmUpTool(
     const recall = parsed.topic
         ? await focusedWarmUpRecall(options, parsed.topic, parsed.maxTokens)
         : undefined
-    const payload = {
-        description: warmUp.description,
-        entryPoints: warmUp.entryPoints,
-        guidance: warmUp.guidance,
-        highlights: warmUp.highlights,
-        project: projectDescriptor(context),
-        recall,
-        summary: warmUp.summary,
-        taxonomy: warmUp.taxonomy,
-        technologies: warmUp.technologies,
-    }
-    return textResult(
-        payload,
-        formatWarmUpText({
-            description: payload.description,
-            entryPoints: payload.entryPoints,
-            guidance: payload.guidance,
-            highlights: payload.highlights,
-            recall: payload.recall,
-            summary: payload.summary,
-            technologies: payload.technologies,
-        }),
-    )
+
+    return formatToTextResult(formatWarmUpText({ recall, warmUp }))
 }
 
 async function focusedWarmUpRecall(
     options: StartMcpServerOptions,
     topic: string,
     maxTokens?: number,
-): Promise<NonNullable<Parameters<typeof formatWarmUpText>[0]['recall']>> {
+): Promise<RecallPackage> {
     const memories = await withProjectDatabase(options, adapter =>
         searchMemory(adapter, { query: topic }),
     )
-    const recall = assembleRecallPackage({
+    return assembleRecallPackage({
         graph: [],
         history: [],
         includeSources: false,
@@ -128,14 +105,6 @@ async function focusedWarmUpRecall(
         memories,
         task: topic,
     })
-    return {
-        brief: recall.brief,
-        memories: recall.memories,
-        primaryTargets: recall.primaryTargets,
-        quality: recall.quality,
-        sourceCount: recall.sourceCount,
-        task: recall.task,
-    }
 }
 
 async function handleRecallTool(
@@ -144,31 +113,24 @@ async function handleRecallTool(
 ): Promise<CallToolResult> {
     const parsed = parseRecallInput(input)
     await validateMcpProjectHealth(await loadMcpProjectContext(options))
-    const recall = await withProjectDatabase(options, async adapter => ({
-        graph: await recallGraph(adapter, parsed.task),
-        history: await recallHistory(adapter, parsed.task),
-        memories: await searchMemory(adapter, parsed),
-    }))
-    const payload = assembleRecallPackage({
-        graph: recall.graph,
-        history: recall.history,
-        includeSources: parsed.includeSources ?? false,
-        maxTokens: parsed.maxTokens ?? 2000,
-        memories: recall.memories,
-        task: parsed.task,
-    })
-    return textResult(
-        payload,
-        formatRecallText({
-            brief: payload.brief,
-            graphCount: payload.graph.length,
-            graphEvidence: graphEvidenceLines(payload.graph),
-            historyCount: payload.history.length,
-            historyEvidence: historyEvidenceLines(payload.history),
+    const recall = await withProjectDatabase(options, async adapter => {
+        const memories = await searchMemory(adapter, parsed)
+        const graph = await recallGraph(adapter, parsed.task)
+        const history = await recallHistory(adapter, parsed.task)
+        return assembleRecallPackage({
+            graph,
+            history,
             includeSources: parsed.includeSources ?? false,
-            memories: payload.memories,
-            primaryTargets: payload.primaryTargets,
-            task: payload.task,
+            maxTokens: parsed.maxTokens ?? 2000,
+            memories,
+            task: parsed.task,
+        })
+    })
+
+    return formatToTextResult(
+        formatRecallText({
+            includeSources: parsed.includeSources ?? false,
+            recall,
         }),
     )
 }
@@ -184,14 +146,7 @@ async function handleSaveTool(
     const saved = await withProjectDatabaseContext(context, adapter =>
         saveKonteksInput(adapter, context, parsed, { projectUpdate }),
     )
-    return textResult(
-        saved,
-        formatSaveText({
-            diaryId: saved.diaryId,
-            memoryIds: saved.memoryIds,
-            skippedMemories: saved.skippedMemories,
-        }),
-    )
+    return formatToTextResult(formatSaveText(saved))
 }
 
 async function handleSearchTool(
@@ -203,17 +158,11 @@ async function handleSearchTool(
     const results = await withProjectDatabase(options, adapter =>
         searchMemory(adapter, parsed),
     )
-    const payload = {
-        limit: parsed.limit ?? 10,
-        query: parsed.query,
-        results,
-    }
-    return textResult(
-        payload,
+    return formatToTextResult(
         formatSearchText({
-            limit: payload.limit,
-            query: payload.query,
-            results: payload.results,
+            limit: parsed.limit ?? 10,
+            query: parsed.query,
+            results,
         }),
     )
 }
@@ -227,5 +176,19 @@ async function handleForgetTool(
     const result = await withProjectDatabase(options, adapter =>
         forgetMemory(adapter, parsed),
     )
-    return textResult(result)
+    return formatToTextResult(result)
+}
+
+/**
+ * @see https://modelcontextprotocol.io/specification/2025-11-25/server/tools#tool-result
+ */
+function formatToTextResult(value: string | object): CallToolResult {
+    return {
+        content: [
+            {
+                text: typeof value === 'string' ? value : encode(value),
+                type: 'text' as const,
+            },
+        ],
+    }
 }

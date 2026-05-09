@@ -83,15 +83,3 @@ export async function updateChangedProjectMemorySilently(
         updatedFilePaths: result.updatedFilePaths,
     }
 }
-
-export function projectDescriptor(context: ProjectContext): {
-    memoryDir: string
-    name: string
-    root: string
-} {
-    return {
-        memoryDir: context.memoryDir,
-        name: context.projectRoot.split('/').at(-1) ?? 'project',
-        root: context.projectRoot,
-    }
-}
