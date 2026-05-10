@@ -2,7 +2,7 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { env, pipeline } from '@huggingface/transformers'
-import { formatBytes } from '../../utils/format.js'
+import { formatBytes } from '@/utils/format.js'
 import type { MineProgressReporter } from '../mining/progress.js'
 
 export interface EmbeddingProvider {

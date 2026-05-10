@@ -3,8 +3,8 @@ import { MineProjectUseCase } from '@/application/use-cases/mine-project-use-cas
 import { HuggingFaceEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider.js'
 import { FileSystemProjectRepository } from '@/infrastructure/file-system/file-system-project-repository.js'
 import { KonteksMineEngine } from '@/infrastructure/mining/mine-project.js'
-import { stringifyPretty } from '../../../utils/json.js'
-import { confirmInteractive } from '../../../utils/prompts.js'
+import { stringifyPretty } from '@/utils/json.js'
+import { confirmInteractive } from '@/utils/prompts.js'
 import type { GlobalCliOptions } from '../options.js'
 import { createMineProgressReporter } from './mine-progress.js'
 
