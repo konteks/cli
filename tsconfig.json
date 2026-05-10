@@ -11,6 +11,9 @@
         "moduleResolution": "NodeNext",
         "noEmit": true,
         "outDir": "dist",
+        "paths": {
+            "@/*": ["./src/*"]
+        },
         "resolveJsonModule": true,
         "rootDir": "src",
         "skipLibCheck": true,

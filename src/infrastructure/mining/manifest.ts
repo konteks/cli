@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import type { Project } from '@/domain/entities/project.js'
 import type { MineMode } from '../../application/dto/mine-project.js'
-import type { Project } from '../../domain/entities/project.js'
 import { pathExists } from '../file-system/context.js'
 import {
     type ScanDiagnostics,

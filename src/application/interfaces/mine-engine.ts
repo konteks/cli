@@ -1,4 +1,4 @@
-import type { Project } from '../../domain/entities/project.js'
+import type { Project } from '@/domain/entities/project.js'
 import type {
     MineProjectRequest,
     MineProjectResponse,

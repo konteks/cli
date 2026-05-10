@@ -2,15 +2,15 @@ import type {
     MemoryEntity,
     MemoryRelation,
     MemorySearchResult,
-} from '../../../domain/entities/memory.js'
-import type { Project } from '../../../domain/entities/project.js'
+} from '@/domain/entities/memory.js'
+import type { Project } from '@/domain/entities/project.js'
 import type {
     IMemoryRepository,
     SaveDiaryInput,
     SaveMemoryInput,
     SaveResult,
     SaveSessionInput,
-} from '../../../domain/repositories/memory-repository.js'
+} from '@/domain/repositories/memory-repository.js'
 import type { DatabaseService } from './db.js'
 import { type MemoryKind, saveKonteksInput } from './save-store.js'
 import { searchMemory } from './search-store.js'

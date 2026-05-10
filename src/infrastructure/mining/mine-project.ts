@@ -1,11 +1,11 @@
 import { mkdir } from 'node:fs/promises'
+import type { Project } from '@/domain/entities/project.js'
 import type {
     MineProjectRequest,
     MineProjectResponse,
 } from '../../application/dto/mine-project.js'
 import type { IEmbeddingProvider as EmbeddingProvider } from '../../application/interfaces/embedding-provider.js'
 import type { IMineEngine } from '../../application/interfaces/mine-engine.js'
-import type { Project } from '../../domain/entities/project.js'
 import { generateTargetEmbeddings } from '../ai/embedding-pipeline.js'
 import { openProjectDatabase } from '../persistence/sqlite/database.js'
 import type { DatabaseService } from '../persistence/sqlite/db.js'

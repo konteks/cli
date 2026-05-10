@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { Project } from '../../../domain/entities/project.js'
+import type { Project } from '@/domain/entities/project.js'
 import { upsertRetrievalDocument } from '../../mining/retrieval-documents.js'
 import { contentHash } from '../../storage/content.js'
 import { storePayload } from '../../storage/payload.js'

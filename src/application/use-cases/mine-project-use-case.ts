@@ -1,4 +1,4 @@
-import type { IProjectRepository } from '../../domain/repositories/project-repository.js'
+import type { IProjectRepository } from '@/domain/repositories/project-repository.js'
 import type {
     MineProjectRequest,
     MineProjectResponse,
