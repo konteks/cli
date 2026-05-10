@@ -1,4 +1,4 @@
-import type { IEmbeddingProvider as EmbeddingProvider } from '../../../application/interfaces/embedding-provider.js'
+import type { IEmbeddingProvider as EmbeddingProvider } from '@/application/interfaces/embedding-provider.js'
 import type {
     RecallInput,
     SearchInput,

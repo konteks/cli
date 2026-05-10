@@ -1,5 +1,5 @@
-import type { MineMode } from '../../../application/dto/mine-project.js'
-import { MineProjectUseCase } from '../../../application/use-cases/mine-project-use-case.js'
+import type { MineMode } from '@/application/dto/mine-project.js'
+import { MineProjectUseCase } from '@/application/use-cases/mine-project-use-case.js'
 import { HuggingFaceEmbeddingProvider } from '../../../infrastructure/ai/hugging-face-embedding-provider.js'
 import { FileSystemProjectRepository } from '../../../infrastructure/file-system/file-system-project-repository.js'
 import { KonteksMineEngine } from '../../../infrastructure/mining/mine-project.js'

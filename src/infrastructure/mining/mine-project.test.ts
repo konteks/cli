@@ -9,7 +9,7 @@ import {
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { IEmbeddingProvider as EmbeddingProvider } from '../../application/interfaces/embedding-provider.js'
+import type { IEmbeddingProvider as EmbeddingProvider } from '@/application/interfaces/embedding-provider.js'
 import { FakeEmbeddingProvider } from '../ai/hugging-face-embedding-provider.js'
 // import { TaxonomyStore } from '../persistence/sqli./taxonomy-store.js'
 import { loadProjectContext } from '../file-system/context.js'
