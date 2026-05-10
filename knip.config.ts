@@ -1,13 +1,7 @@
 import type { KnipConfig } from 'knip'
 
 const knipConfig: KnipConfig = {
-    entry: ['src/**/*.test.ts'],
-    ignore: [
-        'src/domain/entities/*.ts',
-        'src/application/interfaces/*.ts',
-        'src/domain/repositories/*.ts',
-        'src/infrastructure/persistence/sqlite/sqlite-memory-repository.ts',
-    ],
+    entry: ['src/interfaces/mcp/server.ts', 'src/**/*.test.ts'],
     ignoreDependencies: [
         'tree-sitter-html',
         'tree-sitter-javascript',
@@ -16,8 +10,6 @@ const knipConfig: KnipConfig = {
         'tree-sitter-php',
         'tree-sitter-typescript',
     ],
-    ignoreExportsUsedInFile: true,
-    project: ['src/**/*.ts'],
 }
 
 export default knipConfig

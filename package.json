@@ -1,6 +1,6 @@
 {
     "bin": {
-        "konteks": "./dist/cli.js"
+        "konteks": "./dist/main.js"
     },
     "bugs": {
         "url": "https://github.com/dominosaurs/konteks/issues"
@@ -60,7 +60,7 @@
     "scripts": {
         "build": "tsup",
         "check": "bun --silent run lint && bun --silent run test && bun --silent run build",
-        "dev": "bun src/cli.ts",
+        "dev": "bun src/main.ts",
         "format": "biome check --write --reporter=github",
         "lint": "bun --silent run format && knip -n --reporter compact && tsc --noEmit --pretty false",
         "prepack": "bun run build",
