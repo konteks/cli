@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
-import { doctorCommand } from './cli/commands/doctor.js'
-import { initCommand } from './cli/commands/init.js'
+import { doctorCommand } from './interfaces/cli/commands/doctor.js'
+import { initCommand } from './interfaces/cli/commands/init.js'
 import {
     mcpCallCommand,
     mcpCommand,
     mcpPromptCommand,
     mcpPromptsCommand,
     mcpToolsCommand,
-} from './cli/commands/mcp.js'
-import { repairCommand } from './cli/commands/mine.js'
-import { skillsInstallCommand } from './cli/commands/skills.js'
-import { statusCommand } from './cli/commands/status.js'
+} from './interfaces/cli/commands/mcp.js'
+import { repairCommand } from './interfaces/cli/commands/mine.js'
+import { skillsInstallCommand } from './interfaces/cli/commands/skills.js'
+import { statusCommand } from './interfaces/cli/commands/status.js'
 import { VERSION } from './utils/version.js'
 
 const program = new Command()
