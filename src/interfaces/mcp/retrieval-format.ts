@@ -1,6 +1,11 @@
-import type { MemorySearchResult } from '@/infrastructure/persistence/sqlite/search-store.js'
-import type { RecallPackage } from '@/types/mcp.js'
-import { graphEvidenceLines, historyEvidenceLines } from './recall-package.js'
+import {
+    graphEvidenceLines,
+    historyEvidenceLines,
+} from '@/application/services/recall-service.js'
+import type {
+    MemorySearchResult,
+    RecallPackage,
+} from '@/domain/entities/memory.js'
 import type {
     WarmUpContext,
     WarmUpGuidance,

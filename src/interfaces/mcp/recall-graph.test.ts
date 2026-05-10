@@ -2,21 +2,22 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { RecallMemoryUseCase } from '@/application/use-cases/recall-memory-use-case.js'
 import { loadProjectContext } from '@/infrastructure/file-system/context.js'
 import { openProjectDatabase } from '@/infrastructure/persistence/sqlite/database.js'
+import { SQLiteMemoryRepository } from '@/infrastructure/persistence/sqlite/sqlite-memory-repository.js'
 import { GraphStore } from '@/infrastructure/persistence/sqlite/stores/graph-store.js'
-import { recallGraph, recallHistory } from './server.js'
 
 const tempDirs: string[] = []
 
 async function makeGraph() {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-recall-graph-'))
     tempDirs.push(projectRoot)
-    const adapter = await openProjectDatabase(
-        await loadProjectContext(projectRoot),
-    )
+    const context = await loadProjectContext(projectRoot)
+    const adapter = await openProjectDatabase(context)
     return {
         adapter,
+        context,
         graph: new GraphStore(adapter),
     }
 }
@@ -31,7 +32,7 @@ afterEach(async () => {
 
 describe('recallGraph', () => {
     it('returns compact active graph context for task-matched entities', async () => {
-        const { adapter, graph } = await makeGraph()
+        const { adapter, context, graph } = await makeGraph()
         const project = await graph.upsertEntity({
             aliases: ['memory system'],
             name: 'Konteks',
@@ -57,7 +58,10 @@ describe('recallGraph', () => {
             supersedesRelationId: oldRelation.id,
         })
 
-        const items = await recallGraph(adapter, 'memory system runtime')
+        const repo = new SQLiteMemoryRepository(adapter, context)
+        const useCase = new RecallMemoryUseCase(repo)
+        const recall = await useCase.execute({ task: 'memory system runtime' })
+        const items = recall.graph
 
         expect(items.map(item => item.relatedEntityName)).toContain('Bun')
         expect(items.map(item => item.relatedEntityName)).not.toContain('Node')
@@ -70,7 +74,7 @@ describe('recallGraph', () => {
     })
 
     it('only returns historical graph context when the task asks for it', async () => {
-        const { adapter, graph } = await makeGraph()
+        const { adapter, context, graph } = await makeGraph()
         const project = await graph.upsertEntity({
             aliases: ['memory system'],
             name: 'Konteks',
@@ -96,11 +100,18 @@ describe('recallGraph', () => {
             supersedesRelationId: oldRelation.id,
         })
 
-        const normal = await recallHistory(adapter, 'work on memory system')
-        const historical = await recallHistory(
-            adapter,
-            'why did the previous memory system storage decision change',
-        )
+        const repo = new SQLiteMemoryRepository(adapter, context)
+        const useCase = new RecallMemoryUseCase(repo)
+
+        const normalRecall = await useCase.execute({
+            task: 'work on memory system',
+        })
+        const normal = normalRecall.history
+
+        const historicalRecall = await useCase.execute({
+            task: 'why did the previous memory system storage decision change',
+        })
+        const historical = historicalRecall.history
 
         expect(normal).toEqual([])
         expect(historical).toEqual([

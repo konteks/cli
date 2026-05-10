@@ -1,14 +1,12 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { encode } from '@toon-format/toon'
-import type { z } from 'zod'
-import { forgetMemory } from '@/infrastructure/persistence/sqlite/forget-store.js'
-import { saveKonteksInput } from '@/infrastructure/persistence/sqlite/save-store.js'
-import { searchMemory } from '@/infrastructure/persistence/sqlite/search-store.js'
-import type {
-    KonteksMcpServer,
-    RecallPackage,
-    StartMcpServerOptions,
-} from '@/types/mcp.js'
+import { ForgetMemoryUseCase } from '@/application/use-cases/forget-memory-use-case.js'
+import { RecallMemoryUseCase } from '@/application/use-cases/recall-memory-use-case.js'
+import { SaveMemoryUseCase } from '@/application/use-cases/save-memory-use-case.js' // Fix: was .ts in plan but should be .js for runtime if using tsc, but here we are in source.
+import { SearchMemoryUseCase } from '@/application/use-cases/search-memory-use-case.js'
+import { WarmUpUseCase } from '@/application/use-cases/warm-up-use-case.js'
+import { SQLiteMemoryRepository } from '@/infrastructure/persistence/sqlite/sqlite-memory-repository.js'
+import type { KonteksMcpServer, StartMcpServerOptions } from '@/types/mcp.js'
 import type {
     ForgetInput,
     RecallInput,
@@ -17,20 +15,12 @@ import type {
     WarmUpInput,
 } from './inputs.js'
 import {
-    forgetInputSchema,
-    recallInputSchema,
-    saveInputSchema,
-    searchInputSchema,
-    warmUpInputSchema,
-} from './inputs.js'
-import {
     loadMcpProjectContext,
     updateChangedProjectMemorySilently,
     validateMcpProjectHealth,
     withProjectDatabase,
     withProjectDatabaseContext,
 } from './project-runtime.js'
-import { assembleRecallPackage, recallHistory } from './recall-package.js'
 import {
     formatRecallText,
     formatSaveText,
@@ -38,7 +28,6 @@ import {
     formatWarmUpText,
 } from './retrieval-format.js'
 import { KONTEKS_TOOL_SURFACE } from './tool-surface.js'
-import { assembleWarmUpContext, limitWarmUpContext } from './warm-up-context.js'
 
 type ToolHandlers = Record<string, (input: unknown) => Promise<CallToolResult>>
 
@@ -49,14 +38,13 @@ export function registerKonteksTools(
     const handlers = createToolHandlers(options)
 
     for (const surface of KONTEKS_TOOL_SURFACE) {
-        const schema = inputSchemaForTool(surface.name)
         server.registerTool(
             surface.name,
             {
                 annotations: surface.annotations,
                 description: surface.description,
                 // biome-ignore lint/suspicious/noExplicitAny: compatibility cast
-                inputSchema: schema as any,
+                inputSchema: surface.inputSchema as any,
             },
             (input: unknown) => handlers[surface.name](input),
         )
@@ -87,52 +75,26 @@ async function handleWarmUpTool(
     const context = await loadMcpProjectContext(options)
     await validateMcpProjectHealth(context)
     await updateChangedProjectMemorySilently(context)
-    const warmUp = limitWarmUpContext(
-        await assembleWarmUpContext(context),
-        input.maxTokens ?? 2000,
-    )
 
-    const recall = input.topic
-        ? await focusedWarmUpRecall(options, input.topic, input.maxTokens)
-        : undefined
-
-    return formatToTextResult(formatWarmUpText({ recall, warmUp }))
-}
-
-async function focusedWarmUpRecall(
-    options: StartMcpServerOptions,
-    topic: string,
-    maxTokens?: number,
-): Promise<RecallPackage> {
-    const memories = await withProjectDatabase(options, service =>
-        searchMemory(service, { query: topic }),
-    )
-    return assembleRecallPackage({
-        graph: [],
-        history: [],
-        includeSources: false,
-        maxTokens: maxTokens ?? 2000,
-        memories,
-        task: topic,
+    const result = await withProjectDatabase(options, service => {
+        const repo = new SQLiteMemoryRepository(service, context)
+        const useCase = new WarmUpUseCase(context, repo)
+        return useCase.execute(input)
     })
+
+    return formatToTextResult(formatWarmUpText(result))
 }
 
 async function handleRecallTool(
     options: StartMcpServerOptions,
     input: RecallInput,
 ) {
-    await validateMcpProjectHealth(await loadMcpProjectContext(options))
+    const context = await loadMcpProjectContext(options)
+    await validateMcpProjectHealth(context)
     const recall = await withProjectDatabase(options, async service => {
-        const memories = await searchMemory(service, input)
-        const history = await recallHistory(service, input.task)
-        return assembleRecallPackage({
-            graph: [], // Placeholder
-            history,
-            includeSources: input.includeSources ?? false,
-            maxTokens: input.maxTokens ?? 2000,
-            memories,
-            task: input.task,
-        })
+        const repo = new SQLiteMemoryRepository(service, context)
+        const useCase = new RecallMemoryUseCase(repo)
+        return useCase.execute(input)
     })
 
     return formatToTextResult(
@@ -150,9 +112,11 @@ async function handleSaveTool(
     const context = await loadMcpProjectContext(options)
     await validateMcpProjectHealth(context)
     const projectUpdate = await updateChangedProjectMemorySilently(context)
-    const saved = await withProjectDatabaseContext(context, service =>
-        saveKonteksInput(service, context, input, { projectUpdate }),
-    )
+    const saved = await withProjectDatabaseContext(context, service => {
+        const repo = new SQLiteMemoryRepository(service, context)
+        const useCase = new SaveMemoryUseCase(repo)
+        return useCase.execute(input, { projectUpdate })
+    })
     return formatToTextResult(formatSaveText(saved))
 }
 
@@ -160,10 +124,13 @@ async function handleSearchTool(
     options: StartMcpServerOptions,
     input: SearchInput,
 ) {
-    await validateMcpProjectHealth(await loadMcpProjectContext(options))
-    const results = await withProjectDatabase(options, service =>
-        searchMemory(service, input),
-    )
+    const context = await loadMcpProjectContext(options)
+    await validateMcpProjectHealth(context)
+    const results = await withProjectDatabase(options, service => {
+        const repo = new SQLiteMemoryRepository(service, context)
+        const useCase = new SearchMemoryUseCase(repo)
+        return useCase.execute(input)
+    })
     return formatToTextResult(
         formatSearchText({
             limit: input.limit ?? 10,
@@ -177,10 +144,13 @@ async function handleForgetTool(
     options: StartMcpServerOptions,
     input: ForgetInput,
 ) {
-    await validateMcpProjectHealth(await loadMcpProjectContext(options))
-    const result = await withProjectDatabase(options, service =>
-        forgetMemory(service, input),
-    )
+    const context = await loadMcpProjectContext(options)
+    await validateMcpProjectHealth(context)
+    const result = await withProjectDatabase(options, service => {
+        const repo = new SQLiteMemoryRepository(service, context)
+        const useCase = new ForgetMemoryUseCase(repo)
+        return useCase.execute(input)
+    })
     return formatToTextResult(result)
 }
 
@@ -192,22 +162,5 @@ function formatToTextResult(value: string | object): CallToolResult {
                 type: 'text' as const,
             },
         ],
-    }
-}
-
-function inputSchemaForTool(name: string): z.ZodTypeAny {
-    switch (name) {
-        case 'konteks_warm_up':
-            return warmUpInputSchema
-        case 'konteks_recall':
-            return recallInputSchema
-        case 'konteks_save':
-            return saveInputSchema
-        case 'konteks_search':
-            return searchInputSchema
-        case 'konteks_forget':
-            return forgetInputSchema
-        default:
-            throw new Error(`Unknown tool: ${name}`)
     }
 }

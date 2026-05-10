@@ -1,4 +1,13 @@
-export type MemoryKind = 'session_diary' | 'durable_memory' | 'session_save'
+export type ObservationKind =
+    | 'blocker'
+    | 'code_insight'
+    | 'constraint'
+    | 'decision'
+    | 'fact'
+    | 'note'
+    | 'preference'
+
+type MemoryType = 'chunk' | 'diary' | 'memory' | 'module'
 
 export type MemoryEntity = {
     id: string
@@ -21,19 +30,88 @@ export type MemoryRelation = {
     properties?: Record<string, unknown>
 }
 
-export type MemoryChunk = {
-    id: string
-    sourceId: string
-    content: string
-    contentHash: string
-    metadata: Record<string, unknown>
-}
-
 export type MemorySearchResult = {
     id: string
-    source: string
-    score: number
+    type: MemoryType
+    kind?: string
+    path?: string
+    anchor?: string
+    sourceRole?: string
     excerpt: string
-    kind: MemoryKind
+    score: number
+    tokenCost?: number
+    createdAt: string
     metadata?: Record<string, unknown>
+}
+
+export type SaveResult = {
+    id: string
+    accepted: boolean
+    duplicateOf?: string
+    diaryId?: string
+    memoryIds?: string[]
+    skippedMemories?: number
+}
+
+export type ForgetResult = {
+    accepted: boolean
+    mode: 'hard_delete' | 'invalidate' | 'soft_delete'
+    affectedIds: string[]
+}
+
+export type GraphNeighbor = {
+    depth: number
+    relationId: string
+    predicate: string
+    direction: 'incoming' | 'outgoing'
+    entity: MemoryEntity
+}
+
+export type HistoricalRelation = {
+    relationId: string
+    predicate: string
+    status: 'invalidated' | 'superseded'
+    validFrom?: string
+    validTo?: string
+    subject: MemoryEntity
+    object: MemoryEntity
+}
+
+export type RecallGraphItem = {
+    entityId: string
+    entityName: string
+    entityType: string
+    relationId: string
+    predicate: string
+    direction: 'incoming' | 'outgoing'
+    depth: number
+    score: number
+    relatedEntityId: string
+    relatedEntityName: string
+    relatedEntityType: string
+}
+
+export type RecallHistoryItem = {
+    relationId: string
+    predicate: string
+    status: 'invalidated' | 'superseded'
+    subjectEntityId: string
+    subjectEntityName: string
+    objectEntityId: string
+    objectEntityName: string
+    validFrom?: string
+    validTo?: string
+    reason: string
+}
+
+export type RecallPackage = {
+    brief: string[]
+    graph: RecallGraphItem[]
+    history: RecallHistoryItem[]
+    memories: MemorySearchResult[]
+    primaryTargets: string[]
+    quality: 'partial' | 'strong' | 'weak'
+    sourceCount: number
+    task: string
+    tokenBudget: number
 }

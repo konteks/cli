@@ -1,18 +1,23 @@
 import type {
+    ForgetResult,
+    GraphNeighbor,
+    HistoricalRelation,
     MemoryEntity,
     MemoryRelation,
     MemorySearchResult,
+    SaveResult,
 } from '@/domain/entities/memory.js'
 import type { Project } from '@/domain/entities/project.js'
 import type {
+    ForgetInput,
     IMemoryRepository,
-    SaveDiaryInput,
-    SaveMemoryInput,
-    SaveResult,
-    SaveSessionInput,
+    MemorySearchInput,
+    SaveInput,
+    SaveOptions,
 } from '@/domain/repositories/memory-repository.js'
 import type { DatabaseService } from './db.js'
-import { type MemoryKind, saveKonteksInput } from './save-store.js'
+import { forgetMemory } from './forget-store.js'
+import { saveKonteksInput } from './save-store.js'
 import { searchMemory } from './search-store.js'
 
 export class SQLiteMemoryRepository implements IMemoryRepository {
@@ -21,55 +26,44 @@ export class SQLiteMemoryRepository implements IMemoryRepository {
         private readonly project: Project,
     ) {}
 
-    async search(query: string, limit?: number): Promise<MemorySearchResult[]> {
-        const results = await searchMemory(this.db, { limit, query })
+    async search(input: MemorySearchInput): Promise<MemorySearchResult[]> {
+        const results = await searchMemory(this.db, input)
         return results.map(r => ({
+            createdAt: r.createdAt,
             excerpt: r.excerpt,
             id: r.id,
-            kind: this.mapTypeToKind(r.type),
+            kind: r.kind,
             metadata: {
-                kind: r.kind,
                 sourceRole: r.sourceRole,
-                type: r.type,
+                targetType: r.targetType,
+                task: r.task,
             },
+            path: r.path,
             score: r.score,
-            source: r.path || r.sourceId || 'unknown',
+            type: r.type,
         }))
     }
 
-    async saveMemory(input: SaveMemoryInput): Promise<SaveResult> {
-        const result = await saveKonteksInput(this.db, this.project, {
-            ...input,
-            kind: input.kind as MemoryKind,
-            type: 'memory',
-        })
+    async save(input: SaveInput, options?: SaveOptions): Promise<SaveResult> {
+        const result = await saveKonteksInput(
+            this.db,
+            this.project,
+            // biome-ignore lint/suspicious/noExplicitAny: domain-to-infrastructure union mapping
+            input as any,
+            options,
+        )
         return {
             accepted: result.accepted,
+            diaryId: result.diaryId,
             duplicateOf: result.duplicateOf,
             id: result.id,
+            memoryIds: result.memoryIds,
+            skippedMemories: result.skippedMemories,
         }
     }
 
-    async saveDiary(input: SaveDiaryInput): Promise<SaveResult> {
-        const result = await saveKonteksInput(this.db, this.project, {
-            ...input,
-            type: 'diary',
-        })
-        return {
-            accepted: result.accepted,
-            id: result.id,
-        }
-    }
-
-    async saveSession(input: SaveSessionInput): Promise<SaveResult> {
-        const result = await saveKonteksInput(this.db, this.project, {
-            ...input,
-            type: 'session',
-        })
-        return {
-            accepted: result.accepted,
-            id: result.id,
-        }
+    async forget(input: ForgetInput): Promise<ForgetResult> {
+        return await forgetMemory(this.db, input)
     }
 
     async upsertEntity(
@@ -128,11 +122,31 @@ export class SQLiteMemoryRepository implements IMemoryRepository {
         }
     }
 
-    private mapTypeToKind(
-        type: string,
-    ): 'session_diary' | 'durable_memory' | 'session_save' {
-        if (type === 'diary') return 'session_diary'
-        if (type === 'memory') return 'durable_memory'
-        return 'session_save'
+    async searchEntities(
+        query: string,
+        limit?: number,
+    ): Promise<MemoryEntity[]> {
+        const records = await this.db.graph.searchEntities(query, { limit })
+        return records.map(record => ({
+            canonicalName: record.canonicalName,
+            id: record.id,
+            name: record.name,
+            summary: record.summary,
+            type: record.type,
+        }))
+    }
+
+    async traverseNeighbors(
+        entityId: string,
+        options?: { maxDepth?: number; limit?: number },
+    ): Promise<GraphNeighbor[]> {
+        return await this.db.graph.traverseNeighbors(entityId, options)
+    }
+
+    async historicalRelations(
+        entityId: string,
+        limit?: number,
+    ): Promise<HistoricalRelation[]> {
+        return await this.db.graph.historicalRelations(entityId, { limit })
     }
 }

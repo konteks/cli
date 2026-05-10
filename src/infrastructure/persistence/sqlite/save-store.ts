@@ -17,7 +17,7 @@ type SaveResult = {
     type: SaveStoreInput['type']
 }
 
-export type MemoryKind =
+type MemoryKind =
     | 'blocker'
     | 'code_insight'
     | 'constraint'

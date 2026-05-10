@@ -1,13 +1,16 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import type { MineProjectResponse } from '@/application/dto/mine-project.js'
+import { MineProjectUseCase } from '@/application/use-cases/mine-project-use-case.js'
 import type { EmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider.js'
 import { HuggingFaceEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider.js'
 import {
     createDefaultConfig,
     loadProjectContext,
 } from '@/infrastructure/file-system/context.js'
+import { FileSystemProjectRepository } from '@/infrastructure/file-system/file-system-project-repository.js'
 import { readMineManifest } from '@/infrastructure/mining/manifest.js'
-import { mineProject } from '@/infrastructure/mining/mine-project.js'
+import { KonteksMineEngine } from '@/infrastructure/mining/mine-project.js'
 import { ensureProjectDatabase } from '@/infrastructure/persistence/sqlite/database.js'
 import type { GlobalCliOptions } from '../options.js'
 import { createMineProgressReporter } from './mine.js'
@@ -40,21 +43,24 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
     await ensureProjectDatabase(await loadProjectContext(options.project))
     await ensureKonteksGitignore(context.projectRoot)
     const progress = createMineProgressReporter()
-    let extraction: Awaited<ReturnType<typeof mineProject>>
+    let extraction: MineProjectResponse
     try {
         const embeddingProvider =
             options.embeddingProvider ??
             new HuggingFaceEmbeddingProvider({
                 onProgress: progress.report,
             })
-        extraction = await mineProject(
-            await loadProjectContext(options.project),
-            context.configExists ? 'resume' : 'full',
-            {
-                embeddingProvider,
-                onProgress: progress.report,
-            },
-        )
+        const projectRepo = new FileSystemProjectRepository()
+        const mineEngine = new KonteksMineEngine({
+            embeddingProvider,
+            onProgress: progress.report,
+        })
+        const useCase = new MineProjectUseCase(projectRepo, mineEngine)
+
+        extraction = await useCase.execute({
+            mode: context.configExists ? 'resume' : 'full',
+            projectRoot: context.projectRoot,
+        })
     } finally {
         progress.done()
     }
