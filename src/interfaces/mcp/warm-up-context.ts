@@ -1,8 +1,8 @@
 import { readMineManifest } from '@/infrastructure/mining/manifest.js'
 import { openProjectDatabase } from '@/infrastructure/persistence/sqlite/database.js'
 import type { SqliteAdapter } from '@/infrastructure/persistence/sqlite/sqlite-adapter.js'
+import type { ProjectContext } from '@/types/mcp.js'
 import { estimateCharacterTokens, estimateTextTokens } from '@/utils/format.js'
-import type { ProjectContext } from '../../types/mcp.js'
 
 export type WarmUpHighlight = {
     anchor?: string

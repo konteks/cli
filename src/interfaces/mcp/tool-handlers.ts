@@ -8,7 +8,7 @@ import type {
     KonteksMcpServer,
     RecallPackage,
     StartMcpServerOptions,
-} from '../../types/mcp.js'
+} from '@/types/mcp.js'
 import type {
     ForgetInput,
     RecallInput,

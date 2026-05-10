@@ -11,7 +11,7 @@ import {
 } from '@/infrastructure/persistence/sqlite/database.js'
 import type { DatabaseService } from '@/infrastructure/persistence/sqlite/db.js'
 import type { SaveProjectUpdate } from '@/infrastructure/persistence/sqlite/save-store.js'
-import type { ProjectContext, StartMcpServerOptions } from '../../types/mcp.js'
+import type { ProjectContext, StartMcpServerOptions } from '@/types/mcp.js'
 
 export async function withProjectDatabase<T>(
     options: StartMcpServerOptions,

@@ -7,7 +7,7 @@ import type {
     RecallGraphItem,
     RecallHistoryItem,
     RecallPackage,
-} from '../../types/mcp.js'
+} from '@/types/mcp.js'
 
 export async function recallHistory(
     db: DatabaseService,

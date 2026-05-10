@@ -1,9 +1,6 @@
 import type { IEmbeddingProvider as EmbeddingProvider } from '@/application/interfaces/embedding-provider.js'
+import type { RecallInput, SearchInput } from '@/interfaces/mcp/inputs.js'
 import { estimateTextTokens } from '@/utils/format.js'
-import type {
-    RecallInput,
-    SearchInput,
-} from '../../../interfaces/mcp/inputs.js'
 import { classifySourceRole } from '../../mining/classification.js'
 import type { DatabaseService } from './db.js'
 import {

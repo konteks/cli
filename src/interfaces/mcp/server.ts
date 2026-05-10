@@ -6,8 +6,8 @@ import type {
     Tool,
 } from '@modelcontextprotocol/sdk/types.js'
 import { z } from 'zod'
+import type { StartMcpServerOptions } from '@/types/mcp.js'
 import { VERSION } from '@/utils/version.js'
-import type { StartMcpServerOptions } from '../../types/mcp.js'
 import {
     forgetInputSchema,
     recallInputSchema,

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { ForgetInput } from '../../../interfaces/mcp/inputs.js'
+import type { ForgetInput } from '@/interfaces/mcp/inputs.js'
 import type { DatabaseService } from './db.js'
 // import { GraphStore } from ./graph-store.js'
 import { queryDiaries, queryObservations } from './persistence-adapter.js'
