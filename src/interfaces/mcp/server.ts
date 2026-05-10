@@ -19,8 +19,6 @@ import { listPromptDefinitions, renderPromptText } from './prompt-library.js'
 import { createToolHandlers, registerKonteksTools } from './tool-handlers.js'
 import { KONTEKS_TOOL_SURFACE, MCP_INSTRUCTIONS } from './tool-surface.js'
 
-export { createToolHandlers }
-
 export async function startMcpServer(
     options: StartMcpServerOptions,
 ): Promise<void> {

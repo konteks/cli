@@ -1,7 +1,7 @@
 import type { KnipConfig } from 'knip'
 
 const knipConfig: KnipConfig = {
-    entry: ['src/interfaces/mcp/server.ts', 'src/**/*.test.ts'],
+    entry: ['src/**/*.test.ts'],
     ignoreDependencies: [
         'tree-sitter-html',
         'tree-sitter-javascript',
