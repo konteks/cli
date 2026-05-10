@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { resolveProjectContext } from '../../../infrastructure/file-system/context.js'
+import { resolveProjectContext } from '@/infrastructure/file-system/context.js'
 import { listCanonicalPromptFiles } from '../../mcp/prompt-library.js'
 
 type InstallSkillOptions = {

@@ -1,5 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import type { MemorySearchResult } from '../infrastructure/persistence/sqlite/search-store.js'
+import type { MemorySearchResult } from '@/infrastructure/persistence/sqlite/search-store.js'
 import type { LoadedProjectContext } from './project.js'
 
 export type StartMcpServerOptions = {

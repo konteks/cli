@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import {
     loadProjectContext,
     pathExists,
-} from '../../../infrastructure/file-system/context.js'
+} from '@/infrastructure/file-system/context.js'
 import { replaceStringDeep } from '../../../utils/object.js'
 import { callMcpTool } from '../../mcp/server.js'
 import type { GlobalCliOptions } from '../options.js'

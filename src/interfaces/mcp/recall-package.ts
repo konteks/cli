@@ -1,8 +1,8 @@
-// import { GraphStore } from '../../infrastructure/persistence/sqli./graph-store.js'
+// import { GraphStore } from '@/infrastructure/persistence/sqli./graph-store.js'
 
-import type { DatabaseService } from '../../infrastructure/persistence/sqlite/db.js'
-import type { MemorySearchResult } from '../../infrastructure/persistence/sqlite/search-store.js'
-// import type { SqliteAdapter } from '../../infrastructure/persistence/sqlite/sqlite-adapter.js'
+import type { DatabaseService } from '@/infrastructure/persistence/sqlite/db.js'
+import type { MemorySearchResult } from '@/infrastructure/persistence/sqlite/search-store.js'
+// import type { SqliteAdapter } from '@/infrastructure/persistence/sqlite/sqlite-adapter.js'
 import type {
     RecallGraphItem,
     RecallHistoryItem,

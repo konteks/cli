@@ -1,9 +1,9 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { encode } from '@toon-format/toon'
 import type { z } from 'zod'
-import { forgetMemory } from '../../infrastructure/persistence/sqlite/forget-store.js'
-import { saveKonteksInput } from '../../infrastructure/persistence/sqlite/save-store.js'
-import { searchMemory } from '../../infrastructure/persistence/sqlite/search-store.js'
+import { forgetMemory } from '@/infrastructure/persistence/sqlite/forget-store.js'
+import { saveKonteksInput } from '@/infrastructure/persistence/sqlite/save-store.js'
+import { searchMemory } from '@/infrastructure/persistence/sqlite/search-store.js'
 import type {
     KonteksMcpServer,
     RecallPackage,

@@ -1,4 +1,4 @@
-import type { MineProgressEvent } from '../../../infrastructure/mining/progress.js'
+import type { MineProgressEvent } from '@/infrastructure/mining/progress.js'
 import { type ColorPalette, createColorPalette } from '../../../shared/color.js'
 import { formatBytes } from '../../../utils/format.js'
 

@@ -1,16 +1,16 @@
 import { join } from 'node:path'
-import { readMineManifest } from '../../infrastructu../../infrastructure/mining/manifest.js'
 import {
     loadProjectContext,
     pathExists,
-} from '../../infrastructure/file-system/context.js'
-import { mineProject } from '../../infrastructure/mining/mine-project.js'
+} from '@/infrastructure/file-system/context.js'
+import { readMineManifest } from '@/infrastructure/mining/manifest.js'
+import { mineProject } from '@/infrastructure/mining/mine-project.js'
 import {
     openProjectDatabase,
     projectDatabasePath,
-} from '../../infrastructure/persistence/sqlite/database.js'
-import type { DatabaseService } from '../../infrastructure/persistence/sqlite/db.js'
-import type { SaveProjectUpdate } from '../../infrastructure/persistence/sqlite/save-store.js'
+} from '@/infrastructure/persistence/sqlite/database.js'
+import type { DatabaseService } from '@/infrastructure/persistence/sqlite/db.js'
+import type { SaveProjectUpdate } from '@/infrastructure/persistence/sqlite/save-store.js'
 import type { ProjectContext, StartMcpServerOptions } from '../../types/mcp.js'
 
 export async function withProjectDatabase<T>(

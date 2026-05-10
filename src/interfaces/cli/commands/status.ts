@@ -1,4 +1,4 @@
-import { getProjectStatus } from '../../../infrastructure/file-system/status.js'
+import { getProjectStatus } from '@/infrastructure/file-system/status.js'
 import { type ColorPalette, createColorPalette } from '../../../shared/color.js'
 import { formatInteger } from '../../../utils/format.js'
 import { VERSION } from '../../../utils/version.js'

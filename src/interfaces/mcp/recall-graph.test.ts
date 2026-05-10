@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { loadProjectContext } from '../../infrastructure/file-system/context.js'
-import { openProjectDatabase } from '../../infrastructure/persistence/sqlite/database.js'
-import { GraphStore } from '../../infrastructure/persistence/sqlite/stores/graph-store.js'
+import { loadProjectContext } from '@/infrastructure/file-system/context.js'
+import { openProjectDatabase } from '@/infrastructure/persistence/sqlite/database.js'
+import { GraphStore } from '@/infrastructure/persistence/sqlite/stores/graph-store.js'
 import { recallGraph, recallHistory } from './server.js'
 
 const tempDirs: string[] = []

@@ -1,14 +1,14 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { EmbeddingProvider } from '../../../infrastructure/ai/hugging-face-embedding-provider.js'
-import { HuggingFaceEmbeddingProvider } from '../../../infrastructure/ai/hugging-face-embedding-provider.js'
+import type { EmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider.js'
+import { HuggingFaceEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider.js'
 import {
     createDefaultConfig,
     loadProjectContext,
-} from '../../../infrastructure/file-system/context.js'
-import { readMineManifest } from '../../../infrastructure/mining/manifest.js'
-import { mineProject } from '../../../infrastructure/mining/mine-project.js'
-import { ensureProjectDatabase } from '../../../infrastructure/persistence/sqlite/database.js'
+} from '@/infrastructure/file-system/context.js'
+import { readMineManifest } from '@/infrastructure/mining/manifest.js'
+import { mineProject } from '@/infrastructure/mining/mine-project.js'
+import { ensureProjectDatabase } from '@/infrastructure/persistence/sqlite/database.js'
 import type { GlobalCliOptions } from '../options.js'
 import { createMineProgressReporter } from './mine.js'
 
