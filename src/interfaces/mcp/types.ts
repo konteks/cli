@@ -1,5 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import type { LoadedProjectContext } from './project.js'
+import type { LoadedProjectContext } from '../../types/project.js'
 
 export type StartMcpServerOptions = {
     memoryDir?: string

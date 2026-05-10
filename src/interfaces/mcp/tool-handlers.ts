@@ -6,7 +6,10 @@ import { SaveMemoryUseCase } from '@/application/use-cases/save-memory-use-case.
 import { SearchMemoryUseCase } from '@/application/use-cases/search-memory-use-case.js'
 import { WarmUpUseCase } from '@/application/use-cases/warm-up-use-case.js'
 import { SQLiteMemoryRepository } from '@/infrastructure/persistence/sqlite/sqlite-memory-repository.js'
-import type { KonteksMcpServer, StartMcpServerOptions } from '@/types/mcp.js'
+import type {
+    KonteksMcpServer,
+    StartMcpServerOptions,
+} from '@/interfaces/mcp/types.js'
 import type {
     ForgetInput,
     RecallInput,
