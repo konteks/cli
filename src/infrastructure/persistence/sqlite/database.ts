@@ -1,6 +1,6 @@
 import { join } from 'node:path'
-import { drizzle } from 'drizzle-orm/sqlite-proxy'
 import type { Project } from '@/domain/entities/project.js'
+import { drizzle } from '@/services/database.js'
 import { mkdir, writeFile } from '@/services/file-manager.js'
 import { DatabaseService } from './db.js'
 import { runMigrations } from './migrations.js'

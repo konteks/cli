@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm'
+import { sql } from '@/services/database.js'
 import { chunks } from '../schema.js'
 import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter.js'
 

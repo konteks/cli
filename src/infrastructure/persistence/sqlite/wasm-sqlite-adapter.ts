@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import { dirname } from 'node:path'
-import sqlite3InitModule, {
+import {
     type BindingSpec,
     type Database,
     type Sqlite3Static,
-} from '@sqlite.org/sqlite-wasm'
+    sqlite3InitModule,
+} from '@/services/database.js'
 import { mkdir, readFile, rename, writeFile } from '@/services/file-manager.js'
 import { pathExists } from '../../file-system/context.js'
 import type { SqliteAdapter, SqliteParams } from './sqlite-adapter.js'
