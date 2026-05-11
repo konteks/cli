@@ -1,5 +1,5 @@
-import type { Tool } from '@modelcontextprotocol/sdk/types.js'
-import type { z } from 'zod'
+import type { Tool } from '@/services/mcp'
+import type { z } from '@/services/validation'
 import {
     forgetInputSchema,
     recallInputSchema,

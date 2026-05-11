@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '@/services/validation'
 
 export const warmUpInputSchema = z.object({
     maxTokens: z.number().int().min(1).max(8000).optional(),

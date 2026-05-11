@@ -1,10 +1,11 @@
-import { confirm } from '@inquirer/prompts'
+import { confirm } from '@/services/interactive-prompts'
+import { terminal } from '@/services/terminal'
 
 export async function confirmInteractive(
     message: string,
     defaultValue: boolean,
 ): Promise<boolean> {
-    if (!process.stdin.isTTY || !process.stderr.isTTY) {
+    if (!terminal.stdinIsInteractive() || !terminal.stderrIsInteractive()) {
         return defaultValue
     }
 

@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import type { Project } from '@/domain/entities/project'
 import { readFile } from '@/services/file-manager'
+import { terminal } from '@/services/terminal'
 import type { DatabaseService } from '../persistence/sqlite/db'
 import { indexSearchDocument } from '../persistence/sqlite/search-index'
 import type { TaxonomyStore } from '../persistence/sqlite/stores/taxonomy-store'
@@ -106,7 +107,7 @@ export async function mineChunks(
                 status: 'progress',
             })
         } catch (error) {
-            console.error(
+            terminal.error(
                 'Tree-sitter initialization failed, using heuristic chunking fallback:',
                 error,
             )
@@ -326,7 +327,7 @@ async function prepareFileChunks(input: {
             parserStatus = parsedMetadata ? 'ok' : 'unavailable'
         } catch (error) {
             parserStatus = 'failed'
-            console.error(
+            terminal.error(
                 `Tree-sitter parse failed for ${input.file.path}, falling back to heuristic chunking:`,
                 error,
             )

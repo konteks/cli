@@ -1,4 +1,4 @@
-import type { Prompt, PromptArgument } from '@modelcontextprotocol/sdk/types.js'
+import type { Prompt, PromptArgument } from '@/services/mcp'
 
 export type PromptTemplate = {
     body: string

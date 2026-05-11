@@ -13,6 +13,7 @@ import { KonteksMineEngine } from '@/infrastructure/mining/mine-project'
 import { ensureProjectDatabase } from '@/infrastructure/persistence/sqlite/database'
 import type { GlobalCliOptions } from '@/interfaces/cli/options'
 import { mkdir, readFile, writeFile } from '@/services/file-manager'
+import { terminal } from '@/services/terminal'
 import { createMineProgressReporter } from './mine-progress'
 
 type InitCommandOptions = GlobalCliOptions & {
@@ -22,7 +23,7 @@ type InitCommandOptions = GlobalCliOptions & {
 export async function initCommand(options: InitCommandOptions): Promise<void> {
     const context = await loadProjectContext(options.project)
     if (context.configExists && (await readMineManifest(context.memoryDir))) {
-        console.log(
+        terminal.log(
             `Konteks is already initialized at ${context.memoryDir}. Use 'konteks repair' if memory artifacts need recovery.`,
         )
         return
@@ -65,8 +66,8 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
         progress.done()
     }
 
-    console.log(`Initialized Konteks at ${context.memoryDir}`)
-    console.log(
+    terminal.log(`Initialized Konteks at ${context.memoryDir}`)
+    terminal.log(
         `Extracted ${extraction.fileCount} files into ${extraction.chunkCount} sections`,
     )
 }

@@ -1,11 +1,3 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
-import type {
-    CallToolResult,
-    Prompt,
-    Tool,
-} from '@modelcontextprotocol/sdk/types.js'
-import { z } from 'zod'
 import {
     forgetInputSchema,
     recallInputSchema,
@@ -21,6 +13,9 @@ import type {
     KonteksMcpServer,
     StartMcpServerOptions,
 } from '@/interfaces/mcp/types'
+import type { CallToolResult, Prompt, Tool } from '@/services/mcp'
+import { McpServer, StdioServerTransport } from '@/services/mcp'
+import { z } from '@/services/validation'
 import { VERSION } from '@/utils/version'
 import { recallPrompt } from './prompts/recall'
 import { savePrompt } from './prompts/save'

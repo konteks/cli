@@ -1,5 +1,6 @@
 import { getProjectStatus } from '@/infrastructure/file-system/status'
 import type { GlobalCliOptions } from '@/interfaces/cli/options'
+import { terminal } from '@/services/terminal'
 
 export async function getHealthCommand(
     options: GlobalCliOptions,
@@ -11,7 +12,7 @@ export async function getHealthCommand(
         ['config', status.configExists],
     ] as const
 
-    console.log(
+    terminal.log(
         JSON.stringify(
             { checks, ok: checks.every(([, ok]) => ok), status },
             null,

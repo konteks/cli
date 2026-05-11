@@ -1,4 +1,4 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { McpServerType as McpServer } from '@/services/mcp'
 import type { LoadedProjectContext } from '../../types/project'
 
 export type StartMcpServerOptions = {

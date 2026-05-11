@@ -4,6 +4,7 @@ import { HuggingFaceEmbeddingProvider } from '@/infrastructure/ai/hugging-face-e
 import { FileSystemProjectRepository } from '@/infrastructure/file-system/file-system-project-repository'
 import { KonteksMineEngine } from '@/infrastructure/mining/mine-project'
 import type { GlobalCliOptions } from '@/interfaces/cli/options'
+import { terminal } from '@/services/terminal'
 import { stringifyPretty } from '@/utils/json'
 import { confirmInteractive } from '@/utils/prompts'
 import { createMineProgressReporter } from './mine-progress'
@@ -78,5 +79,5 @@ async function confirmRepair(): Promise<boolean> {
 }
 
 function printMineResult(value: unknown): void {
-    console.log(stringifyPretty(value))
+    terminal.log(stringifyPretty(value))
 }

@@ -4,6 +4,7 @@ import {
     createColorPalette,
 } from '@/interfaces/cli/create-color-palette'
 import type { GlobalCliOptions } from '@/interfaces/cli/options'
+import { terminal } from '@/services/terminal'
 import { formatInteger } from '@/utils/format'
 import { VERSION } from '@/utils/version'
 
@@ -11,11 +12,9 @@ export async function getStatusCommand(
     options: GlobalCliOptions,
 ): Promise<void> {
     const status = await getProjectStatus(options.project)
-    console.log(
+    terminal.log(
         formatStatus(status, {
-            color: createColorPalette(
-                Boolean(process.stdout.isTTY && !process.env.NO_COLOR),
-            ),
+            color: createColorPalette(terminal.stdoutSupportsColor()),
             version: VERSION,
         }),
     )

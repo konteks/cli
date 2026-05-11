@@ -1,3 +1,4 @@
+import { terminal } from '@/services/terminal'
 import type { ScannedFile } from './file-scan'
 import type { CodeMetadata, TreeSitterEngine } from './tree-sitter-engine'
 
@@ -47,7 +48,7 @@ export async function chunkFile(
                 }
             } catch (error) {
                 // Fallback to heuristic if engine fails
-                console.error(`Tree-sitter failed for ${file.path}:`, error)
+                terminal.error(`Tree-sitter failed for ${file.path}:`, error)
             }
         }
         return chunkCodeHeuristic(file.path, trimmed)

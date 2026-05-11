@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { listCanonicalPromptFiles } from '@/controllers/mcp/serve'
 import { resolveProjectContext } from '@/infrastructure/file-system/context'
 import { mkdir, writeFile } from '@/services/file-manager'
+import { terminal } from '@/services/terminal'
 
 type InstallSkillOptions = {
     global?: boolean
@@ -31,7 +32,7 @@ export async function installSkillsCommand(
         await writeFile(join(targetDir, 'SKILL.md'), `${skill.content}\n`)
     }
 
-    console.log(`Installed ${skills.length} Konteks skills at ${skillsDir}`)
+    terminal.log(`Installed ${skills.length} Konteks skills at ${skillsDir}`)
 }
 
 function promptFileToSkill(

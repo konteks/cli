@@ -3,6 +3,7 @@ import {
     type ColorPalette,
     createColorPalette,
 } from '@/interfaces/cli/create-color-palette'
+import { terminal } from '@/services/terminal'
 import { formatBytes } from '@/utils/format'
 
 export function createMineProgressReporter(): {
@@ -15,13 +16,13 @@ export function createMineProgressReporter(): {
     let spinnerIndex = 0
     let lastCompactMessage = ''
     const downloadBuckets = new Map<string, number>()
-    const isTty = process.stderr.isTTY
-    const color = createColorPalette(Boolean(isTty && !process.env.NO_COLOR))
+    const isTty = terminal.stderrIsInteractive()
+    const color = createColorPalette(terminal.stderrSupportsColor())
 
     return {
         done() {
             if (isTty && lastInlineLength > 0) {
-                process.stderr.write('\n')
+                terminal.writeError('\n')
             }
         },
         report(event) {
@@ -45,7 +46,7 @@ export function createMineProgressReporter(): {
                     (downloadBucket !== undefined &&
                         downloadBucket > previousDownloadBucket)
                 ) {
-                    console.error(message)
+                    terminal.error(message)
                     lastStep = step
                     if (downloadBucket !== undefined) {
                         downloadBuckets.set(downloadKey, downloadBucket)
@@ -57,12 +58,12 @@ export function createMineProgressReporter(): {
             const step = stepKey(event)
             if (step !== activeStep || event.status === 'start') {
                 if (lastInlineLength > 0) {
-                    process.stderr.write('\n')
+                    terminal.writeError('\n')
                     lastInlineLength = 0
                 }
                 activeStep = step
                 lastCompactMessage = ''
-                process.stderr.write(`${formatStepHeader(event, color)}\n`)
+                terminal.writeError(`${formatStepHeader(event, color)}\n`)
             }
 
             if (event.status === 'progress') {
@@ -80,7 +81,7 @@ export function createMineProgressReporter(): {
                     0,
                     lastInlineLength - visibleLength(output),
                 )
-                process.stderr.write(`\r${output}${' '.repeat(padding)}`)
+                terminal.writeError(`\r${output}${' '.repeat(padding)}`)
                 lastInlineLength = visibleLength(output)
                 lastCompactMessage = compact
                 return
@@ -88,18 +89,18 @@ export function createMineProgressReporter(): {
 
             if (event.status === 'done' && event.phase !== 'done') {
                 if (lastInlineLength > 0) {
-                    process.stderr.write('\n')
+                    terminal.writeError('\n')
                     lastInlineLength = 0
                 }
-                process.stderr.write(`${formatDoneLine(event, color)}\n`)
+                terminal.writeError(`${formatDoneLine(event, color)}\n`)
                 return
             }
 
             if (event.phase === 'done') {
                 if (lastInlineLength > 0) {
-                    process.stderr.write('\n')
+                    terminal.writeError('\n')
                 }
-                process.stderr.write(`${formatFinalLine(event, color)}\n`)
+                terminal.writeError(`${formatFinalLine(event, color)}\n`)
                 lastInlineLength = 0
             }
         },

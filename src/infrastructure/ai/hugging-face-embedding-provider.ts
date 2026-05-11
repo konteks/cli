@@ -1,6 +1,6 @@
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { env, pipeline } from '@huggingface/transformers'
+import { env, pipeline } from '@/services/embedding'
 import { mkdir, readFile, stat, writeFile } from '@/services/file-manager'
 import { formatBytes } from '@/utils/format'
 import type { MineProgressReporter } from '../mining/progress'

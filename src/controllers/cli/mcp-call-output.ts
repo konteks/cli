@@ -1,3 +1,4 @@
+import { terminal } from '@/services/terminal'
 import { isRecord, printJson } from './json-output'
 
 export function printMcpCallResult(
@@ -11,7 +12,7 @@ export function printMcpCallResult(
 
     const text = extractMcpText(result)
     if (text) {
-        console.log(text)
+        terminal.log(text)
         return
     }
 

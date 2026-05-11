@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { Command } from 'commander'
 import { callMcpToolCommand } from '@/controllers/cli/call-mcp-tool'
 import { getHealthCommand } from '@/controllers/cli/get-health'
 import { getPromptDetailCommand } from '@/controllers/cli/get-prompt-detail'
@@ -11,6 +10,7 @@ import { initCommand } from '@/controllers/cli/init'
 import { installSkillsCommand } from '@/controllers/cli/install-skills'
 import { repairCommand } from '@/controllers/cli/repair'
 import { startMcpServer } from '@/controllers/mcp/serve'
+import { Command } from '@/services/cli'
 import { VERSION } from '@/utils/version'
 
 const program = new Command()
