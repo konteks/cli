@@ -2,7 +2,7 @@ import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { env, pipeline } from '@/services/embedding'
 import { mkdir, readFile, stat, writeFile } from '@/services/file-manager'
-import { formatBytes } from '@/utils/format'
+import { formatBytes } from '@/services/format'
 import type { MineProgressReporter } from '../mining/progress'
 
 export interface EmbeddingProvider {

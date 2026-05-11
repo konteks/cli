@@ -1,6 +1,6 @@
+import { parseJsonInput, stringifyPretty } from '@/services/json'
+import { isRecord } from '@/services/object'
 import { terminal } from '@/services/terminal'
-import { parseJsonInput, stringifyPretty } from '@/utils/json'
-import { isRecord } from '@/utils/object'
 
 export { isRecord, parseJsonInput }
 

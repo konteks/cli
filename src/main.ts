@@ -11,7 +11,7 @@ import { installSkillsCommand } from '@/controllers/cli/install-skills'
 import { repairCommand } from '@/controllers/cli/repair'
 import { startMcpServer } from '@/controllers/mcp/serve'
 import { Command } from '@/services/cli'
-import { VERSION } from '@/utils/version'
+import { VERSION } from '@/services/version'
 
 const program = new Command()
     .name('konteks')

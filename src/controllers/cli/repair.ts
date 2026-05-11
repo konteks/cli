@@ -4,9 +4,9 @@ import { HuggingFaceEmbeddingProvider } from '@/infrastructure/ai/hugging-face-e
 import { FileSystemProjectRepository } from '@/infrastructure/file-system/file-system-project-repository'
 import { KonteksMineEngine } from '@/infrastructure/mining/mine-project'
 import type { GlobalCliOptions } from '@/interfaces/cli/options'
+import { stringifyPretty } from '@/services/json'
+import { confirmInteractive } from '@/services/prompts'
 import { terminal } from '@/services/terminal'
-import { stringifyPretty } from '@/utils/json'
-import { confirmInteractive } from '@/utils/prompts'
 import { createMineProgressReporter } from './mine-progress'
 
 type MineOptions = {

@@ -1,6 +1,6 @@
 import type { IEmbeddingProvider as EmbeddingProvider } from '@/application/interfaces/embedding-provider'
 import type { RecallInput, SearchInput } from '@/interfaces/mcp/inputs'
-import { estimateTextTokens } from '@/utils/format'
+import { estimateTextTokens } from '@/services/format'
 import { classifySourceRole } from '../../mining/classification'
 import type { DatabaseService } from './db'
 import {

@@ -16,7 +16,7 @@ import type {
 import type { CallToolResult, Prompt, Tool } from '@/services/mcp'
 import { McpServer, StdioServerTransport } from '@/services/mcp'
 import { z } from '@/services/validation'
-import { VERSION } from '@/utils/version'
+import { VERSION } from '@/services/version'
 import { recallPrompt } from './prompts/recall'
 import { savePrompt } from './prompts/save'
 import type { PromptTemplate } from './prompts/template'

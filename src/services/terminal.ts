@@ -1,4 +1,4 @@
-import { stringifyPretty } from '@/utils/json'
+import { stringifyPretty } from '@/services/json'
 
 type WritableStream = {
     isTTY?: boolean

@@ -7,7 +7,7 @@ import {
 } from '@/infrastructure/file-system/context'
 import type { GlobalCliOptions } from '@/interfaces/cli/options'
 import { cp, mkdtemp, rm } from '@/services/file-manager'
-import { replaceStringDeep } from '@/utils/object'
+import { replaceStringDeep } from '@/services/object'
 
 export async function dryRunMcpTool(
     options: GlobalCliOptions,

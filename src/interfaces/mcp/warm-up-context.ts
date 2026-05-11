@@ -2,7 +2,7 @@ import { readMineManifest } from '@/infrastructure/mining/manifest'
 import { openProjectDatabase } from '@/infrastructure/persistence/sqlite/database'
 import type { SqliteAdapter } from '@/infrastructure/persistence/sqlite/sqlite-adapter'
 import type { ProjectContext } from '@/interfaces/mcp/types'
-import { estimateCharacterTokens, estimateTextTokens } from '@/utils/format'
+import { estimateCharacterTokens, estimateTextTokens } from '@/services/format'
 
 export type WarmUpHighlight = {
     anchor?: string
