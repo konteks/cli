@@ -1,5 +1,5 @@
+import type { LoadedProjectContext } from '@/dto/project'
 import type { McpServerType as McpServer } from '@/services/mcp'
-import type { LoadedProjectContext } from '../../types/project'
 
 export type StartMcpServerOptions = {
     memoryDir?: string
