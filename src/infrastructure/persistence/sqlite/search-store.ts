@@ -1,8 +1,8 @@
-import type { IEmbeddingProvider as EmbeddingProvider } from '@/application/interfaces/embedding-provider.js'
-import type { RecallInput, SearchInput } from '@/interfaces/mcp/inputs.js'
-import { estimateTextTokens } from '@/utils/format.js'
-import { classifySourceRole } from '../../mining/classification.js'
-import type { DatabaseService } from './db.js'
+import type { IEmbeddingProvider as EmbeddingProvider } from '@/application/interfaces/embedding-provider'
+import type { RecallInput, SearchInput } from '@/interfaces/mcp/inputs'
+import { estimateTextTokens } from '@/utils/format'
+import { classifySourceRole } from '../../mining/classification'
+import type { DatabaseService } from './db'
 import {
     type DiaryRow,
     type ObservationRow,
@@ -11,9 +11,9 @@ import {
     queryObservations,
     queryRetrievalDocuments,
     type RetrievalDocumentRow,
-} from './persistence-adapter.js'
-import { hasSearchIndex } from './search-index.js'
-import type { SqliteAdapter } from './sqlite-adapter.js'
+} from './persistence-adapter'
+import { hasSearchIndex } from './search-index'
+import type { SqliteAdapter } from './sqlite-adapter'
 
 export type MemorySearchResult = {
     id: string

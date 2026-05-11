@@ -1,6 +1,6 @@
-import { sql } from '@/services/database.js'
-import { chunks } from '../schema.js'
-import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter.js'
+import { sql } from '@/services/database'
+import { chunks } from '../schema'
+import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter'
 
 export type ChunkRow = {
     id: string

@@ -1,8 +1,8 @@
-import type { Project } from '@/domain/entities/project.js'
+import type { Project } from '@/domain/entities/project'
 import type {
     MineProjectRequest,
     MineProjectResponse,
-} from '../dto/mine-project.js'
+} from '../dto/mine-project'
 
 export interface IMineEngine {
     mine(

@@ -6,19 +6,19 @@ import type {
     MemoryRelation,
     MemorySearchResult,
     SaveResult,
-} from '@/domain/entities/memory.js'
-import type { Project } from '@/domain/entities/project.js'
+} from '@/domain/entities/memory'
+import type { Project } from '@/domain/entities/project'
 import type {
     ForgetInput,
     IMemoryRepository,
     MemorySearchInput,
     SaveInput,
     SaveOptions,
-} from '@/domain/repositories/memory-repository.js'
-import type { DatabaseService } from './db.js'
-import { forgetMemory } from './forget-store.js'
-import { saveKonteksInput } from './save-store.js'
-import { searchMemory } from './search-store.js'
+} from '@/domain/repositories/memory-repository'
+import type { DatabaseService } from './db'
+import { forgetMemory } from './forget-store'
+import { saveKonteksInput } from './save-store'
+import { searchMemory } from './search-store'
 
 export class SQLiteMemoryRepository implements IMemoryRepository {
     constructor(

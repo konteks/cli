@@ -1,12 +1,12 @@
-import type { MineMode } from '@/application/dto/mine-project.js'
-import { MineProjectUseCase } from '@/application/use-cases/mine-project-use-case.js'
-import { HuggingFaceEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider.js'
-import { FileSystemProjectRepository } from '@/infrastructure/file-system/file-system-project-repository.js'
-import { KonteksMineEngine } from '@/infrastructure/mining/mine-project.js'
-import { stringifyPretty } from '@/utils/json.js'
-import { confirmInteractive } from '@/utils/prompts.js'
-import type { GlobalCliOptions } from '../options.js'
-import { createMineProgressReporter } from './mine-progress.js'
+import type { MineMode } from '@/application/dto/mine-project'
+import { MineProjectUseCase } from '@/application/use-cases/mine-project-use-case'
+import { HuggingFaceEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider'
+import { FileSystemProjectRepository } from '@/infrastructure/file-system/file-system-project-repository'
+import { KonteksMineEngine } from '@/infrastructure/mining/mine-project'
+import { stringifyPretty } from '@/utils/json'
+import { confirmInteractive } from '@/utils/prompts'
+import type { GlobalCliOptions } from '../options'
+import { createMineProgressReporter } from './mine-progress'
 
 type MineOptions = {
     changed?: boolean

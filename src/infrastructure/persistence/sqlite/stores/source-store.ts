@@ -1,5 +1,5 @@
-import { sources } from '../schema.js'
-import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter.js'
+import { sources } from '../schema'
+import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter'
 
 export type SourceRow = {
     id: string

@@ -1,5 +1,5 @@
-import { modules } from '../schema.js'
-import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter.js'
+import { modules } from '../schema'
+import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter'
 
 export type ModuleRow = {
     id: string

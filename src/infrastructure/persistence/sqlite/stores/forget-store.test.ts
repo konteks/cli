@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { loadProjectContext } from '@/infrastructure/file-system/context.js'
-import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager.js'
-import { openProjectDatabase } from '../database.js'
-import { forgetMemory } from '../forget-store.js'
-import { saveKonteksInput } from '../save-store.js'
-import { searchMemory } from '../search-store.js'
-import { GraphStore } from './graph-store.js'
+import { loadProjectContext } from '@/infrastructure/file-system/context'
+import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager'
+import { openProjectDatabase } from '../database'
+import { forgetMemory } from '../forget-store'
+import { saveKonteksInput } from '../save-store'
+import { searchMemory } from '../search-store'
+import { GraphStore } from './graph-store'
 
 const tempDirs: string[] = []
 

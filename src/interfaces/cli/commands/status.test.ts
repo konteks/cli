@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, spyOn } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { loadProjectContext } from '@/infrastructure/file-system/context.js'
-import { mineProject } from '@/infrastructure/mining/mine-project.js'
-import { openProjectDatabase } from '@/infrastructure/persistence/sqlite/database.js'
-import { saveKonteksInput } from '@/infrastructure/persistence/sqlite/save-store.js'
-import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager.js'
-import { formatStatus, statusCommand } from './status.js'
+import { loadProjectContext } from '@/infrastructure/file-system/context'
+import { mineProject } from '@/infrastructure/mining/mine-project'
+import { openProjectDatabase } from '@/infrastructure/persistence/sqlite/database'
+import { saveKonteksInput } from '@/infrastructure/persistence/sqlite/save-store'
+import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager'
+import { formatStatus, statusCommand } from './status'
 
 const tempDirs: string[] = []
 

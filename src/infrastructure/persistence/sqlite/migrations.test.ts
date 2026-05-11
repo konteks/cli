@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
-import { migrations, runMigrations } from './migrations.js'
-import type { SqliteAdapter, SqliteParams } from './sqlite-adapter.js'
+import { migrations, runMigrations } from './migrations'
+import type { SqliteAdapter, SqliteParams } from './sqlite-adapter'
 
 describe('migrations', () => {
     it('defines the squashed initial schema migration', () => {

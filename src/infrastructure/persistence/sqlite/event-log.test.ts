@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
-import { EventLogStore } from './event-log.js'
-import type { KonteksDatabase } from './sqlite-adapter.js'
+import { EventLogStore } from './event-log'
+import type { KonteksDatabase } from './sqlite-adapter'
 
 type MemoryEvent = {
     actor: string

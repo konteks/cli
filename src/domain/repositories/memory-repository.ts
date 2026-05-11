@@ -7,7 +7,7 @@ import type {
     MemorySearchResult,
     ObservationKind,
     SaveResult,
-} from '../entities/memory.js'
+} from '../entities/memory'
 
 export type MemorySearchInput = {
     query: string

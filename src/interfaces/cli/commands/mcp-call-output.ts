@@ -1,4 +1,4 @@
-import { isRecord, printJson } from './json-output.js'
+import { isRecord, printJson } from './json-output'
 
 export function printMcpCallResult(
     result: unknown,

@@ -1,14 +1,14 @@
 import { join } from 'node:path'
-import type { MineMode } from '@/application/dto/mine-project.js'
-import type { Project } from '@/domain/entities/project.js'
-import { readFile, writeFile } from '@/services/file-manager.js'
-import { pathExists } from '../file-system/context.js'
+import type { MineMode } from '@/application/dto/mine-project'
+import type { Project } from '@/domain/entities/project'
+import { readFile, writeFile } from '@/services/file-manager'
+import { pathExists } from '../file-system/context'
 import {
     type ScanDiagnostics,
     type ScannedFile,
     scanProjectFiles,
-} from './file-scan.js'
-import type { ProjectMetadata } from './metadata.js'
+} from './file-scan'
+import type { ProjectMetadata } from './metadata'
 
 export type { MineMode }
 

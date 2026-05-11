@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import {
-    createIgnoreMatcher,
-    shouldIgnoreRelativePath,
-} from './ignore-rules.js'
+import { createIgnoreMatcher, shouldIgnoreRelativePath } from './ignore-rules'
 
 describe('mining ignore rules', () => {
     it('skips dependency, build, memory, secret, and binary paths', () => {

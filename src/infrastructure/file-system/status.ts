@@ -1,9 +1,9 @@
-import { getMiningFreshness } from '../mining/manifest.js'
+import { getMiningFreshness } from '../mining/manifest'
 import {
     openProjectDatabase,
     projectDatabasePath,
-} from '../persistence/sqlite/database.js'
-import { loadProjectContext, pathExists } from './context.js'
+} from '../persistence/sqlite/database'
+import { loadProjectContext, pathExists } from './context'
 
 type ProjectStatus = {
     projectRoot: string

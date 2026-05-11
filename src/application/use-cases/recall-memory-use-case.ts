@@ -3,12 +3,12 @@ import type {
     RecallGraphItem,
     RecallHistoryItem,
     RecallPackage,
-} from '@/domain/entities/memory.js'
+} from '@/domain/entities/memory'
 import type {
     IMemoryRepository,
     MemoryRecallInput,
-} from '@/domain/repositories/memory-repository.js'
-import { assembleRecallPackage } from '../services/recall-service.js'
+} from '@/domain/repositories/memory-repository'
+import { assembleRecallPackage } from '../services/recall-service'
 
 export class RecallMemoryUseCase {
     constructor(private readonly memoryRepository: IMemoryRepository) {}

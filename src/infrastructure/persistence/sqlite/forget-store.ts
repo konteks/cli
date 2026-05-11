@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto'
-import type { ForgetInput } from '@/interfaces/mcp/inputs.js'
-import type { DatabaseService } from './db.js'
+import type { ForgetInput } from '@/interfaces/mcp/inputs'
+import type { DatabaseService } from './db'
 // import { GraphStore } from ./graph-store.js'
-import { queryDiaries, queryObservations } from './persistence-adapter.js'
+import { queryDiaries, queryObservations } from './persistence-adapter'
 
 type ForgetResult = {
     accepted: boolean

@@ -3,9 +3,9 @@ import type {
     KonteksConfig,
     Project,
     ProjectContext,
-} from '@/domain/entities/project.js'
-import type { IProjectRepository } from '@/domain/repositories/project-repository.js'
-import { access, readFile } from '@/services/file-manager.js'
+} from '@/domain/entities/project'
+import type { IProjectRepository } from '@/domain/repositories/project-repository'
+import { access, readFile } from '@/services/file-manager'
 
 export class FileSystemProjectRepository implements IProjectRepository {
     async getProject(rootPath: string): Promise<Project> {

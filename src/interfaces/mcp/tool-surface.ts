@@ -6,7 +6,7 @@ import {
     saveInputSchema,
     searchInputSchema,
     warmUpInputSchema,
-} from './inputs.js'
+} from './inputs'
 
 export const MCP_INSTRUCTIONS =
     'Use prompts for the Warm Up -> Build -> Save flow. Use konteks_warm_up at session start, konteks_recall as supplemental Build context, and call konteks_save with structured durable memories plus one diary entry during Save.'

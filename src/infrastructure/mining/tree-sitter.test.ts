@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
-import { chunkFile } from './chunking.js'
-import { initTreeSitterWithBundledGrammars } from './grammar-loader.js'
-import { TreeSitterEngine } from './tree-sitter-engine.js'
+import { chunkFile } from './chunking'
+import { initTreeSitterWithBundledGrammars } from './grammar-loader'
+import { TreeSitterEngine } from './tree-sitter-engine'
 
 describe('TreeSitterEngine', () => {
     it('extracts symbols from typescript code', async () => {

@@ -1,10 +1,10 @@
 import { dirname, join, resolve } from 'node:path'
-import { access, readFile } from '@/services/file-manager.js'
+import { access, readFile } from '@/services/file-manager'
 import type {
     KonteksConfig,
     LoadedProjectContext,
     ProjectContext,
-} from '@/types/project.js'
+} from '@/types/project'
 
 export type { LoadedProjectContext }
 

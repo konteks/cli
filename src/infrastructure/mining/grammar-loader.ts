@@ -1,7 +1,7 @@
 import { join, resolve } from 'node:path'
-import { pathExists } from '../file-system/context.js'
+import { pathExists } from '../file-system/context'
 import grammarManifest from './grammars/manifest.json' with { type: 'json' }
-import type { TreeSitterLanguage } from './tree-sitter-engine.js'
+import type { TreeSitterLanguage } from './tree-sitter-engine'
 
 type TreeSitterBootstrapEngine = {
     init(): Promise<void>

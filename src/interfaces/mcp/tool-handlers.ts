@@ -1,36 +1,36 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { encode } from '@toon-format/toon'
-import { ForgetMemoryUseCase } from '@/application/use-cases/forget-memory-use-case.js'
-import { RecallMemoryUseCase } from '@/application/use-cases/recall-memory-use-case.js'
-import { SaveMemoryUseCase } from '@/application/use-cases/save-memory-use-case.js' // Fix: was .ts in plan but should be .js for runtime if using tsc, but here we are in source.
-import { SearchMemoryUseCase } from '@/application/use-cases/search-memory-use-case.js'
-import { WarmUpUseCase } from '@/application/use-cases/warm-up-use-case.js'
-import { SQLiteMemoryRepository } from '@/infrastructure/persistence/sqlite/sqlite-memory-repository.js'
+import { ForgetMemoryUseCase } from '@/application/use-cases/forget-memory-use-case'
+import { RecallMemoryUseCase } from '@/application/use-cases/recall-memory-use-case'
+import { SaveMemoryUseCase } from '@/application/use-cases/save-memory-use-case' // Fix: was .ts in plan but should be .js for runtime if using tsc, but here we are in source.
+import { SearchMemoryUseCase } from '@/application/use-cases/search-memory-use-case'
+import { WarmUpUseCase } from '@/application/use-cases/warm-up-use-case'
+import { SQLiteMemoryRepository } from '@/infrastructure/persistence/sqlite/sqlite-memory-repository'
 import type {
     KonteksMcpServer,
     StartMcpServerOptions,
-} from '@/interfaces/mcp/types.js'
+} from '@/interfaces/mcp/types'
 import type {
     ForgetInput,
     RecallInput,
     SaveInput,
     SearchInput,
     WarmUpInput,
-} from './inputs.js'
+} from './inputs'
 import {
     loadMcpProjectContext,
     updateChangedProjectMemorySilently,
     validateMcpProjectHealth,
     withProjectDatabase,
     withProjectDatabaseContext,
-} from './project-runtime.js'
+} from './project-runtime'
 import {
     formatRecallText,
     formatSaveText,
     formatSearchText,
     formatWarmUpText,
-} from './retrieval-format.js'
-import { KONTEKS_TOOL_SURFACE } from './tool-surface.js'
+} from './retrieval-format'
+import { KONTEKS_TOOL_SURFACE } from './tool-surface'
 
 type ToolHandlers = Record<string, (input: unknown) => Promise<CallToolResult>>
 

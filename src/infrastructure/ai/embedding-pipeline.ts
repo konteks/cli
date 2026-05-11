@@ -1,7 +1,7 @@
-import type { MineProgressReporter } from '../mining/progress.js'
-import type { DatabaseService } from '../persistence/sqlite/db.js'
-import { contentHash } from '../storage/content.js'
-import type { EmbeddingProvider } from './hugging-face-embedding-provider.js'
+import type { MineProgressReporter } from '../mining/progress'
+import type { DatabaseService } from '../persistence/sqlite/db'
+import { contentHash } from '../storage/content'
+import type { EmbeddingProvider } from './hugging-face-embedding-provider'
 
 type TargetType = 'chunk' | 'diary' | 'memory' | 'module'
 

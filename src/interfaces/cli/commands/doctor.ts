@@ -1,5 +1,5 @@
-import { getProjectStatus } from '@/infrastructure/file-system/status.js'
-import type { GlobalCliOptions } from '../options.js'
+import { getProjectStatus } from '@/infrastructure/file-system/status'
+import type { GlobalCliOptions } from '../options'
 
 export async function doctorCommand(options: GlobalCliOptions): Promise<void> {
     const status = await getProjectStatus(options.project)

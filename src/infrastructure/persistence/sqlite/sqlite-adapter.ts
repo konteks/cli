@@ -1,5 +1,5 @@
-import type { SqliteRemoteDatabase } from '@/services/database.js'
-import type * as schema from './schema.js'
+import type { SqliteRemoteDatabase } from '@/services/database'
+import type * as schema from './schema'
 
 type SqliteValue = Uint8Array | boolean | number | string | null
 

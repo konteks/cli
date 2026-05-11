@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { mkdtemp, readFile, rm } from '@/services/file-manager.js'
-import { loadProjectContext } from '../../file-system/context.js'
-import { openProjectDatabase, projectDatabasePath } from './database.js'
+import { mkdtemp, readFile, rm } from '@/services/file-manager'
+import { loadProjectContext } from '../../file-system/context'
+import { openProjectDatabase, projectDatabasePath } from './database'
 
 const tempDirs: string[] = []
 

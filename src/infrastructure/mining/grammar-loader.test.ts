@@ -3,8 +3,8 @@ import {
     getBundledGrammarForPath,
     getBundledGrammarManifest,
     initTreeSitterWithBundledGrammars,
-} from './grammar-loader.js'
-import type { TreeSitterLanguage } from './tree-sitter-engine.js'
+} from './grammar-loader'
+import type { TreeSitterLanguage } from './tree-sitter-engine'
 
 class MockTreeSitterEngine {
     readonly loaded: Array<{ lang: string; path: string }> = []

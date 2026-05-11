@@ -1,9 +1,9 @@
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { env, pipeline } from '@huggingface/transformers'
-import { mkdir, readFile, stat, writeFile } from '@/services/file-manager.js'
-import { formatBytes } from '@/utils/format.js'
-import type { MineProgressReporter } from '../mining/progress.js'
+import { mkdir, readFile, stat, writeFile } from '@/services/file-manager'
+import { formatBytes } from '@/utils/format'
+import type { MineProgressReporter } from '../mining/progress'
 
 export interface EmbeddingProvider {
     model: string

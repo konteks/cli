@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto'
 import { join, relative, sep } from 'node:path'
-import { readdir, readFile, stat } from '@/services/file-manager.js'
+import { readdir, readFile, stat } from '@/services/file-manager'
 import {
     createIgnoreMatcher,
     defaultMaxMineFileBytes,
     type IgnoreMatcher,
     type IgnoreReason,
-} from './ignore-rules.js'
+} from './ignore-rules'
 
 export type ScannedFile = {
     contentHash: string

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { classifySourceRole, detectLanguage } from './classification.js'
+import { classifySourceRole, detectLanguage } from './classification'
 
 describe('detectLanguage', () => {
     it('detects supported languages from extensions', () => {

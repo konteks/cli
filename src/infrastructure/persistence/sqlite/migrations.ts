@@ -1,5 +1,5 @@
 import initialSchemaSql from './migrations/001_initial_schema.sql'
-import type { SqliteAdapter } from './sqlite-adapter.js'
+import type { SqliteAdapter } from './sqlite-adapter'
 
 type Migration = {
     id: string

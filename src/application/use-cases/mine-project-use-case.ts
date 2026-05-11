@@ -1,9 +1,9 @@
-import type { IProjectRepository } from '@/domain/repositories/project-repository.js'
+import type { IProjectRepository } from '@/domain/repositories/project-repository'
 import type {
     MineProjectRequest,
     MineProjectResponse,
-} from '../dto/mine-project.js'
-import type { IMineEngine } from '../interfaces/mine-engine.js'
+} from '../dto/mine-project'
+import type { IMineEngine } from '../interfaces/mine-engine'
 
 export class MineProjectUseCase {
     constructor(

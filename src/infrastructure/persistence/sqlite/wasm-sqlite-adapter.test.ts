@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { mkdtemp, rm } from '@/services/file-manager.js'
-import { openWasmSqliteAdapter } from './wasm-sqlite-adapter.js'
+import { mkdtemp, rm } from '@/services/file-manager'
+import { openWasmSqliteAdapter } from './wasm-sqlite-adapter'
 
 const tempDirs: string[] = []
 

@@ -1,14 +1,9 @@
 {
     "compilerOptions": {
-        "allowSyntheticDefaultImports": true,
-        "declaration": true,
-        "declarationMap": true,
-        "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
-        "ignoreDeprecations": "6.0",
-        "lib": ["ES2022"],
-        "module": "NodeNext",
-        "moduleResolution": "NodeNext",
+        "lib": ["es2022"],
+        "module": "esnext",
+        "moduleResolution": "bundler",
         "noEmit": true,
         "outDir": "dist",
         "paths": {
@@ -18,7 +13,7 @@
         "rootDir": "src",
         "skipLibCheck": true,
         "strict": true,
-        "target": "ES2022",
+        "target": "es2022",
         "types": ["bun"]
     },
     "include": ["src/**/*.ts"]

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { IEmbeddingProvider as EmbeddingProvider } from '@/application/interfaces/embedding-provider.js'
+import type { IEmbeddingProvider as EmbeddingProvider } from '@/application/interfaces/embedding-provider'
 import {
     mkdir,
     mkdtemp,
@@ -9,17 +9,17 @@ import {
     rm,
     unlink,
     writeFile,
-} from '@/services/file-manager.js'
-import { FakeEmbeddingProvider } from '../ai/hugging-face-embedding-provider.js'
-// import { TaxonomyStore } from '../persistence/sqli./taxonomy-store.js'
-import { loadProjectContext } from '../file-system/context.js'
-import { getProjectStatus } from '../file-system/status.js'
-import { openProjectDatabase } from '../persistence/sqlite/database.js'
-import { searchMemory } from '../persistence/sqlite/search-store.js'
-import { createToonStore } from '../storage/toon-store.js'
-import { getMiningFreshness, readMineManifest } from './manifest.js'
-import { mineProject } from './mine-project.js'
-import type { TreeSitterLanguage } from './tree-sitter-engine.js'
+} from '@/services/file-manager'
+import { FakeEmbeddingProvider } from '../ai/hugging-face-embedding-provider'
+// import { TaxonomyStore } from '../persistence/sqli./taxonomy-store'
+import { loadProjectContext } from '../file-system/context'
+import { getProjectStatus } from '../file-system/status'
+import { openProjectDatabase } from '../persistence/sqlite/database'
+import { searchMemory } from '../persistence/sqlite/search-store'
+import { createToonStore } from '../storage/toon-store'
+import { getMiningFreshness, readMineManifest } from './manifest'
+import { mineProject } from './mine-project'
+import type { TreeSitterLanguage } from './tree-sitter-engine'
 
 const tempDirs: string[] = []
 

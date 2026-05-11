@@ -1,5 +1,5 @@
-import { contentHash } from './content.js'
-import type { ToonStore } from './toon-store.js'
+import { contentHash } from './content'
+import type { ToonStore } from './toon-store'
 
 type StoredPayload = {
     contentHash: string

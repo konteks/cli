@@ -7,7 +7,7 @@ import {
     parseWarmUpInput,
     saveInputSchema,
     warmUpInputSchema,
-} from './inputs.js'
+} from './inputs'
 
 describe('MCP input parsing', () => {
     it('accepts warm-up options', () => {

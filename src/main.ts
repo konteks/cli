@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
-import { doctorCommand } from '@/interfaces/cli/commands/doctor.js'
-import { initCommand } from '@/interfaces/cli/commands/init.js'
+import { doctorCommand } from '@/interfaces/cli/commands/doctor'
+import { initCommand } from '@/interfaces/cli/commands/init'
 import {
     mcpCallCommand,
     mcpCommand,
     mcpPromptCommand,
     mcpPromptsCommand,
     mcpToolsCommand,
-} from '@/interfaces/cli/commands/mcp.js'
-import { repairCommand } from '@/interfaces/cli/commands/mine.js'
-import { skillsInstallCommand } from '@/interfaces/cli/commands/skills.js'
-import { statusCommand } from '@/interfaces/cli/commands/status.js'
-import { VERSION } from '@/utils/version.js'
+} from '@/interfaces/cli/commands/mcp'
+import { repairCommand } from '@/interfaces/cli/commands/mine'
+import { skillsInstallCommand } from '@/interfaces/cli/commands/skills'
+import { statusCommand } from '@/interfaces/cli/commands/status'
+import { VERSION } from '@/utils/version'
 
 const program = new Command()
     .name('konteks')

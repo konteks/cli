@@ -6,18 +6,18 @@ import type {
     Tool,
 } from '@modelcontextprotocol/sdk/types.js'
 import { z } from 'zod'
-import type { StartMcpServerOptions } from '@/interfaces/mcp/types.js'
-import { VERSION } from '@/utils/version.js'
+import type { StartMcpServerOptions } from '@/interfaces/mcp/types'
+import { VERSION } from '@/utils/version'
 import {
     forgetInputSchema,
     recallInputSchema,
     saveInputSchema,
     searchInputSchema,
     warmUpInputSchema,
-} from './inputs.js'
-import { listPromptDefinitions, renderPromptText } from './prompt-library.js'
-import { createToolHandlers, registerKonteksTools } from './tool-handlers.js'
-import { KONTEKS_TOOL_SURFACE, MCP_INSTRUCTIONS } from './tool-surface.js'
+} from './inputs'
+import { listPromptDefinitions, renderPromptText } from './prompt-library'
+import { createToolHandlers, registerKonteksTools } from './tool-handlers'
+import { KONTEKS_TOOL_SURFACE, MCP_INSTRUCTIONS } from './tool-surface'
 
 export async function startMcpServer(
     options: StartMcpServerOptions,

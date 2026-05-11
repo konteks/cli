@@ -1,11 +1,11 @@
-import { EventLogStore } from './event-log.js'
-import type { KonteksDatabase, SqliteAdapter } from './sqlite-adapter.js'
-import { ChunkStore } from './stores/chunk-store.js'
-import { GraphStore } from './stores/graph-store.js'
-import { ModuleStore } from './stores/module-store.js'
-import { ObservationStore } from './stores/observation-store.js'
-import { SourceStore } from './stores/source-store.js'
-import { TaxonomyStore } from './stores/taxonomy-store.js'
+import { EventLogStore } from './event-log'
+import type { KonteksDatabase, SqliteAdapter } from './sqlite-adapter'
+import { ChunkStore } from './stores/chunk-store'
+import { GraphStore } from './stores/graph-store'
+import { ModuleStore } from './stores/module-store'
+import { ObservationStore } from './stores/observation-store'
+import { SourceStore } from './stores/source-store'
+import { TaxonomyStore } from './stores/taxonomy-store'
 
 export class DatabaseService {
     readonly events: EventLogStore

@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, spyOn } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { FakeEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider.js'
-import { loadProjectContext } from '@/infrastructure/file-system/context.js'
-import { mineProject } from '@/infrastructure/mining/mine-project.js'
-import { mkdtemp, rm } from '@/services/file-manager.js'
-import { callMcpTool } from '../../mcp/server.js'
-import { mcpCallCommand } from './mcp.js'
+import { FakeEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider'
+import { loadProjectContext } from '@/infrastructure/file-system/context'
+import { mineProject } from '@/infrastructure/mining/mine-project'
+import { mkdtemp, rm } from '@/services/file-manager'
+import { callMcpTool } from '../../mcp/server'
+import { mcpCallCommand } from './mcp'
 
 describe('MCP call command', () => {
     let tempDirs: string[] = []

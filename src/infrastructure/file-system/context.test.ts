@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager.js'
-import { createDefaultConfig, resolveProjectContext } from './context.js'
-import { getProjectStatus } from './status.js'
+import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager'
+import { createDefaultConfig, resolveProjectContext } from './context'
+import { getProjectStatus } from './status'
 
 const tempDirs: string[] = []
 

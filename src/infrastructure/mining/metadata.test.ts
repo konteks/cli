@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager.js'
-import { scanProjectFilesWithDiagnostics } from './file-scan.js'
-import { extractProjectMetadata } from './metadata.js'
+import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager'
+import { scanProjectFilesWithDiagnostics } from './file-scan'
+import { extractProjectMetadata } from './metadata'
 
 const tempDirs: string[] = []
 

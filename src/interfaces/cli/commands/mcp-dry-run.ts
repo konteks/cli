@@ -3,11 +3,11 @@ import { join } from 'node:path'
 import {
     loadProjectContext,
     pathExists,
-} from '@/infrastructure/file-system/context.js'
-import { cp, mkdtemp, rm } from '@/services/file-manager.js'
-import { replaceStringDeep } from '@/utils/object.js'
-import { callMcpTool } from '../../mcp/server.js'
-import type { GlobalCliOptions } from '../options.js'
+} from '@/infrastructure/file-system/context'
+import { cp, mkdtemp, rm } from '@/services/file-manager'
+import { replaceStringDeep } from '@/utils/object'
+import { callMcpTool } from '../../mcp/server'
+import type { GlobalCliOptions } from '../options'
 
 export async function dryRunMcpTool(
     options: GlobalCliOptions,

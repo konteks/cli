@@ -1,5 +1,5 @@
-import { memoryEvents } from './schema.js'
-import type { KonteksDatabase } from './sqlite-adapter.js'
+import { memoryEvents } from './schema'
+import type { KonteksDatabase } from './sqlite-adapter'
 
 export type MemoryEventInput = {
     actor?: string

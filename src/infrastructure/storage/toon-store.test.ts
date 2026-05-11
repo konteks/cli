@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { mkdtemp, rm } from '@/services/file-manager.js'
-import { contentAddressPath, contentHash } from './content.js'
-import { storePayload } from './payload.js'
-import { createToonStore } from './toon-store.js'
+import { mkdtemp, rm } from '@/services/file-manager'
+import { contentAddressPath, contentHash } from './content'
+import { storePayload } from './payload'
+import { createToonStore } from './toon-store'
 
 const tempDirs: string[] = []
 

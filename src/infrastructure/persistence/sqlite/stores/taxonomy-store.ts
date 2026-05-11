@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { SqliteAdapter } from '../sqlite-adapter.js'
+import type { SqliteAdapter } from '../sqlite-adapter'
 
 type TaxonomyNodeInput = {
     parentId?: string

@@ -1,4 +1,4 @@
-import type { Project, ProjectContext } from '../entities/project.js'
+import type { Project, ProjectContext } from '../entities/project'
 
 export interface IProjectRepository {
     getProject(rootPath: string): Promise<Project>

@@ -1,16 +1,16 @@
 import {
     graphEvidenceLines,
     historyEvidenceLines,
-} from '@/application/services/recall-service.js'
+} from '@/application/services/recall-service'
 import type {
     MemorySearchResult,
     RecallPackage,
-} from '@/domain/entities/memory.js'
+} from '@/domain/entities/memory'
 import type {
     WarmUpContext,
     WarmUpGuidance,
     WarmUpHighlight,
-} from './warm-up-context.js'
+} from './warm-up-context'
 
 export function formatWarmUpText(input: {
     warmUp: WarmUpContext

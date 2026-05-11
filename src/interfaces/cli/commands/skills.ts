@@ -1,8 +1,8 @@
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { resolveProjectContext } from '@/infrastructure/file-system/context.js'
-import { mkdir, writeFile } from '@/services/file-manager.js'
-import { listCanonicalPromptFiles } from '../../mcp/prompt-library.js'
+import { resolveProjectContext } from '@/infrastructure/file-system/context'
+import { mkdir, writeFile } from '@/services/file-manager'
+import { listCanonicalPromptFiles } from '../../mcp/prompt-library'
 
 type InstallSkillOptions = {
     global?: boolean

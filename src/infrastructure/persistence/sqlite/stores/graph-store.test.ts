@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { mkdtemp, rm } from '@/services/file-manager.js'
-import { loadProjectContext } from '../../../file-system/context.js'
-import { openProjectDatabase } from '../database.js'
-import { GraphStore } from './graph-store.js'
+import { mkdtemp, rm } from '@/services/file-manager'
+import { loadProjectContext } from '../../../file-system/context'
+import { openProjectDatabase } from '../database'
+import { GraphStore } from './graph-store'
 
 const tempDirs: string[] = []
 

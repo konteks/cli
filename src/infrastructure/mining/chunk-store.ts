@@ -1,31 +1,31 @@
 import { join } from 'node:path'
-import type { Project } from '@/domain/entities/project.js'
-import { readFile } from '@/services/file-manager.js'
-import type { DatabaseService } from '../persistence/sqlite/db.js'
-import { indexSearchDocument } from '../persistence/sqlite/search-index.js'
-import type { TaxonomyStore } from '../persistence/sqlite/stores/taxonomy-store.js'
-import { contentHash } from '../storage/content.js'
-import { storePayload } from '../storage/payload.js'
-import { createToonStore } from '../storage/toon-store.js'
-import { chunkFile } from './chunking.js'
+import type { Project } from '@/domain/entities/project'
+import { readFile } from '@/services/file-manager'
+import type { DatabaseService } from '../persistence/sqlite/db'
+import { indexSearchDocument } from '../persistence/sqlite/search-index'
+import type { TaxonomyStore } from '../persistence/sqlite/stores/taxonomy-store'
+import { contentHash } from '../storage/content'
+import { storePayload } from '../storage/payload'
+import { createToonStore } from '../storage/toon-store'
+import { chunkFile } from './chunking'
 import {
     classifySourceRole,
     detectLanguage,
     extractTopics,
-} from './classification.js'
-import type { ScannedFile } from './file-scan.js'
-import { initTreeSitterWithBundledGrammars } from './grammar-loader.js'
-import type { ProjectMetadata } from './metadata.js'
-import { rebuildModuleArtifacts } from './module-store.js'
-import type { MineProgressReporter } from './progress.js'
+} from './classification'
+import type { ScannedFile } from './file-scan'
+import { initTreeSitterWithBundledGrammars } from './grammar-loader'
+import type { ProjectMetadata } from './metadata'
+import { rebuildModuleArtifacts } from './module-store'
+import type { MineProgressReporter } from './progress'
 import {
     buildChunkRetrievalTexts,
     deleteRetrievalDocuments,
     reindexRetrievalDocumentFts,
     upsertRetrievalDocument,
-} from './retrieval-documents.js'
-import type { CodeMetadata } from './tree-sitter-engine.js'
-import { TreeSitterEngine } from './tree-sitter-engine.js'
+} from './retrieval-documents'
+import type { CodeMetadata } from './tree-sitter-engine'
+import { TreeSitterEngine } from './tree-sitter-engine'
 
 type MineChunksResult = {
     chunkCount: number

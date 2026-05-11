@@ -1,19 +1,19 @@
 import { join } from 'node:path'
-import type { MineProjectResponse } from '@/application/dto/mine-project.js'
-import { MineProjectUseCase } from '@/application/use-cases/mine-project-use-case.js'
-import type { EmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider.js'
-import { HuggingFaceEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider.js'
+import type { MineProjectResponse } from '@/application/dto/mine-project'
+import { MineProjectUseCase } from '@/application/use-cases/mine-project-use-case'
+import type { EmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider'
+import { HuggingFaceEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider'
 import {
     createDefaultConfig,
     loadProjectContext,
-} from '@/infrastructure/file-system/context.js'
-import { FileSystemProjectRepository } from '@/infrastructure/file-system/file-system-project-repository.js'
-import { readMineManifest } from '@/infrastructure/mining/manifest.js'
-import { KonteksMineEngine } from '@/infrastructure/mining/mine-project.js'
-import { ensureProjectDatabase } from '@/infrastructure/persistence/sqlite/database.js'
-import { mkdir, readFile, writeFile } from '@/services/file-manager.js'
-import type { GlobalCliOptions } from '../options.js'
-import { createMineProgressReporter } from './mine.js'
+} from '@/infrastructure/file-system/context'
+import { FileSystemProjectRepository } from '@/infrastructure/file-system/file-system-project-repository'
+import { readMineManifest } from '@/infrastructure/mining/manifest'
+import { KonteksMineEngine } from '@/infrastructure/mining/mine-project'
+import { ensureProjectDatabase } from '@/infrastructure/persistence/sqlite/database'
+import { mkdir, readFile, writeFile } from '@/services/file-manager'
+import type { GlobalCliOptions } from '../options'
+import { createMineProgressReporter } from './mine'
 
 type InitCommandOptions = GlobalCliOptions & {
     embeddingProvider?: EmbeddingProvider

@@ -1,5 +1,5 @@
-import type { ScannedFile } from './file-scan.js'
-import type { ProjectMetadata } from './metadata.js'
+import type { ScannedFile } from './file-scan'
+import type { ProjectMetadata } from './metadata'
 
 type ProjectSummaryInput = {
     projectRoot: string

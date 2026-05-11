@@ -1,8 +1,8 @@
-import type { MemorySearchResult } from '@/domain/entities/memory.js'
+import type { MemorySearchResult } from '@/domain/entities/memory'
 import type {
     IMemoryRepository,
     MemorySearchInput,
-} from '@/domain/repositories/memory-repository.js'
+} from '@/domain/repositories/memory-repository'
 
 export class SearchMemoryUseCase {
     constructor(private readonly memoryRepository: IMemoryRepository) {}

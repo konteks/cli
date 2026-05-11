@@ -1,5 +1,5 @@
 import type { Prompt, PromptArgument } from '@modelcontextprotocol/sdk/types.js'
-import { promptFiles } from './prompt-assets.js'
+import { promptFiles } from './prompt-assets'
 
 type PromptTemplate = {
     body: string

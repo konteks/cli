@@ -5,10 +5,10 @@ import {
     type Database,
     type Sqlite3Static,
     sqlite3InitModule,
-} from '@/services/database.js'
-import { mkdir, readFile, rename, writeFile } from '@/services/file-manager.js'
-import { pathExists } from '../../file-system/context.js'
-import type { SqliteAdapter, SqliteParams } from './sqlite-adapter.js'
+} from '@/services/database'
+import { mkdir, readFile, rename, writeFile } from '@/services/file-manager'
+import { pathExists } from '../../file-system/context'
+import type { SqliteAdapter, SqliteParams } from './sqlite-adapter'
 
 let sqliteInitPromise: Promise<Sqlite3Static> | undefined
 

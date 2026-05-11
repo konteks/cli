@@ -1,12 +1,12 @@
-import type { RecallPackage } from '@/domain/entities/memory.js'
-import type { Project } from '@/domain/entities/project.js'
-import type { IMemoryRepository } from '@/domain/repositories/memory-repository.js'
-import type { WarmUpContext } from '@/interfaces/mcp/warm-up-context.js'
+import type { RecallPackage } from '@/domain/entities/memory'
+import type { Project } from '@/domain/entities/project'
+import type { IMemoryRepository } from '@/domain/repositories/memory-repository'
+import type { WarmUpContext } from '@/interfaces/mcp/warm-up-context'
 import {
     assembleWarmUpContext,
     limitWarmUpContext,
-} from '@/interfaces/mcp/warm-up-context.js'
-import { RecallMemoryUseCase } from './recall-memory-use-case.js'
+} from '@/interfaces/mcp/warm-up-context'
+import { RecallMemoryUseCase } from './recall-memory-use-case'
 
 export type WarmUpInput = {
     maxTokens?: number

@@ -3,7 +3,7 @@ import {
     buildChunkRetrievalTexts,
     maxEmbeddingTextChars,
     maxFtsTextChars,
-} from './retrieval-documents.js'
+} from './retrieval-documents'
 
 describe('buildChunkRetrievalTexts', () => {
     it('keeps FTS and embedding text bounded', () => {

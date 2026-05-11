@@ -1,8 +1,8 @@
-import { readMineManifest } from '@/infrastructure/mining/manifest.js'
-import { openProjectDatabase } from '@/infrastructure/persistence/sqlite/database.js'
-import type { SqliteAdapter } from '@/infrastructure/persistence/sqlite/sqlite-adapter.js'
-import type { ProjectContext } from '@/interfaces/mcp/types.js'
-import { estimateCharacterTokens, estimateTextTokens } from '@/utils/format.js'
+import { readMineManifest } from '@/infrastructure/mining/manifest'
+import { openProjectDatabase } from '@/infrastructure/persistence/sqlite/database'
+import type { SqliteAdapter } from '@/infrastructure/persistence/sqlite/sqlite-adapter'
+import type { ProjectContext } from '@/interfaces/mcp/types'
+import { estimateCharacterTokens, estimateTextTokens } from '@/utils/format'
 
 export type WarmUpHighlight = {
     anchor?: string

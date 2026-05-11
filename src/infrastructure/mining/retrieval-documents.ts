@@ -1,5 +1,5 @@
-import type { DatabaseService } from '../persistence/sqlite/db.js'
-import { contentHash } from '../storage/content.js'
+import type { DatabaseService } from '../persistence/sqlite/db'
+import { contentHash } from '../storage/content'
 
 const maxChunkContentChars = 3000
 export const maxEmbeddingTextChars = 2500

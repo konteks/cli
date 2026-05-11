@@ -1,8 +1,8 @@
-import type { ForgetResult } from '@/domain/entities/memory.js'
+import type { ForgetResult } from '@/domain/entities/memory'
 import type {
     ForgetInput,
     IMemoryRepository,
-} from '@/domain/repositories/memory-repository.js'
+} from '@/domain/repositories/memory-repository'
 
 export class ForgetMemoryUseCase {
     constructor(private readonly memoryRepository: IMemoryRepository) {}

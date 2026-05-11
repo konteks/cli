@@ -1,9 +1,9 @@
-import type { SaveResult } from '@/domain/entities/memory.js'
+import type { SaveResult } from '@/domain/entities/memory'
 import type {
     IMemoryRepository,
     SaveInput,
     SaveOptions,
-} from '@/domain/repositories/memory-repository.js'
+} from '@/domain/repositories/memory-repository'
 
 export class SaveMemoryUseCase {
     constructor(private readonly memoryRepository: IMemoryRepository) {}

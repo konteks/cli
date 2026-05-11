@@ -1,4 +1,4 @@
-import type { SqliteAdapter } from './sqlite-adapter.js'
+import type { SqliteAdapter } from './sqlite-adapter'
 
 export type ObservationRow = {
     id: string

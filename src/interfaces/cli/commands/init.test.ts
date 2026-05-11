@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { FakeEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider.js'
+import { FakeEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider'
 import {
     mkdir,
     mkdtemp,
     readFile,
     rm,
     writeFile,
-} from '@/services/file-manager.js'
-import { ensureKonteksGitignore, initCommand } from './init.js'
+} from '@/services/file-manager'
+import { ensureKonteksGitignore, initCommand } from './init'
 
 const tempDirs: string[] = []
 

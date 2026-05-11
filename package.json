@@ -64,6 +64,7 @@
         "format": "biome check --write --reporter=github",
         "lint": "bun --silent run format && knip -n --reporter compact && tsc --noEmit --pretty false",
         "prepack": "bun run build",
+        "preview": "bun dist/main.js",
         "test": "bun test --reporter=dots > /dev/null 2>&1 || bun test --only-failures"
     },
     "type": "module",

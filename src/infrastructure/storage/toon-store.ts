@@ -1,6 +1,6 @@
 import { dirname, join } from 'node:path'
-import { mkdir, readFile, writeFile } from '@/services/file-manager.js'
-import { contentAddressPath, contentHash } from './content.js'
+import { mkdir, readFile, writeFile } from '@/services/file-manager'
+import { contentAddressPath, contentHash } from './content'
 
 type ToonObject = {
     hash: string

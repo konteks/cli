@@ -4,12 +4,12 @@ import {
     listMcpPrompts,
     listMcpTools,
     startMcpServer,
-} from '../../mcp/server.js'
-import type { GlobalCliOptions } from '../options.js'
-import { parseJsonInput, printJson } from './json-output.js'
-import { printMcpCallResult } from './mcp-call-output.js'
-import { dryRunMcpTool } from './mcp-dry-run.js'
-import { parsePromptArguments } from './mcp-prompt-input.js'
+} from '../../mcp/server'
+import type { GlobalCliOptions } from '../options'
+import { parseJsonInput, printJson } from './json-output'
+import { printMcpCallResult } from './mcp-call-output'
+import { dryRunMcpTool } from './mcp-dry-run'
+import { parsePromptArguments } from './mcp-prompt-input'
 
 export async function mcpCommand(options: GlobalCliOptions): Promise<void> {
     await startMcpServer({ project: options.project })

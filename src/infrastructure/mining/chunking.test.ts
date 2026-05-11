@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { chunkFile } from './chunking.js'
+import { chunkFile } from './chunking'
 
 const file = {
     contentHash: 'hash',

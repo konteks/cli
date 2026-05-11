@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager.js'
-import { loadProjectContext } from '../file-system/context.js'
-import { upsertRetrievalDocument } from '../mining/retrieval-documents.js'
-import { openProjectDatabase } from '../persistence/sqlite/database.js'
-import { generateTargetEmbeddings } from './embedding-pipeline.js'
-import { FakeEmbeddingProvider } from './hugging-face-embedding-provider.js'
+import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager'
+import { loadProjectContext } from '../file-system/context'
+import { upsertRetrievalDocument } from '../mining/retrieval-documents'
+import { openProjectDatabase } from '../persistence/sqlite/database'
+import { generateTargetEmbeddings } from './embedding-pipeline'
+import { FakeEmbeddingProvider } from './hugging-face-embedding-provider'
 
 const tempDirs: string[] = []
 

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test'
-import type { MemorySearchResult } from '@/infrastructure/persistence/sqlite/search-store.js'
+import type { MemorySearchResult } from '@/infrastructure/persistence/sqlite/search-store'
 import {
     formatRecallText,
     formatSearchText,
     formatWarmUpText,
-} from './retrieval-format.js'
+} from './retrieval-format'
 
 describe('retrieval formatter', () => {
     it('formats warm up text', () => {

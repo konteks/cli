@@ -1,4 +1,4 @@
-import type { SqliteAdapter } from './sqlite-adapter.js'
+import type { SqliteAdapter } from './sqlite-adapter'
 
 type SearchDocument = {
     id: string

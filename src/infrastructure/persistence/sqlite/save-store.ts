@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto'
-import type { Project } from '@/domain/entities/project.js'
-import { upsertRetrievalDocument } from '../../mining/retrieval-documents.js'
-import { contentHash } from '../../storage/content.js'
-import { storePayload } from '../../storage/payload.js'
-import { createToonStore } from '../../storage/toon-store.js'
-import type { DatabaseService } from './db.js'
-import { indexSearchDocument } from './search-index.js'
+import type { Project } from '@/domain/entities/project'
+import { upsertRetrievalDocument } from '../../mining/retrieval-documents'
+import { contentHash } from '../../storage/content'
+import { storePayload } from '../../storage/payload'
+import { createToonStore } from '../../storage/toon-store'
+import type { DatabaseService } from './db'
+import { indexSearchDocument } from './search-index'
 
 type SaveResult = {
     accepted: true

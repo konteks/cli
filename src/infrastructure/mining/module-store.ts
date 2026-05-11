@@ -1,10 +1,10 @@
-import type { DatabaseService } from '../persistence/sqlite/db.js'
-import { contentHash } from '../storage/content.js'
-import type { ProjectMetadata } from './metadata.js'
+import type { DatabaseService } from '../persistence/sqlite/db'
+import { contentHash } from '../storage/content'
+import type { ProjectMetadata } from './metadata'
 import {
     deleteRetrievalDocuments,
     upsertRetrievalDocument,
-} from './retrieval-documents.js'
+} from './retrieval-documents'
 
 type ModuleSummaryRow = {
     chunk_count: number

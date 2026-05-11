@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter.js'
+import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter'
 
 type EntityInput = {
     type: string

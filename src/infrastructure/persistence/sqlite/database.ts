@@ -1,12 +1,12 @@
 import { join } from 'node:path'
-import type { Project } from '@/domain/entities/project.js'
-import { drizzle } from '@/services/database.js'
-import { mkdir, writeFile } from '@/services/file-manager.js'
-import { DatabaseService } from './db.js'
-import { runMigrations } from './migrations.js'
-import * as schema from './schema.js'
-import { ensureSearchIndex } from './search-index.js'
-import { openWasmSqliteAdapter } from './wasm-sqlite-adapter.js'
+import type { Project } from '@/domain/entities/project'
+import { drizzle } from '@/services/database'
+import { mkdir, writeFile } from '@/services/file-manager'
+import { DatabaseService } from './db'
+import { runMigrations } from './migrations'
+import * as schema from './schema'
+import { ensureSearchIndex } from './search-index'
+import { openWasmSqliteAdapter } from './wasm-sqlite-adapter'
 
 export function projectDatabasePath(context: Project): string {
     return join(context.memoryDir, 'memory.sqlite')

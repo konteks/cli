@@ -6,7 +6,7 @@ import {
     type SQLiteColumn,
     sqliteTable,
     text,
-} from '@/services/database.js'
+} from '@/services/database'
 
 export const sources = sqliteTable('sources', {
     createdAt: text('created_at').notNull(),

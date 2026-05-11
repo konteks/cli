@@ -1,5 +1,5 @@
-import type { ScannedFile } from './file-scan.js'
-import type { CodeMetadata, TreeSitterEngine } from './tree-sitter-engine.js'
+import type { ScannedFile } from './file-scan'
+import type { CodeMetadata, TreeSitterEngine } from './tree-sitter-engine'
 
 type MinedChunk = {
     anchor: string
