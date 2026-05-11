@@ -2,13 +2,11 @@ import { readPromptMarkdown } from '@/services/mcp-prompts'
 
 const basePath = './src/controllers/mcp/prompts'
 
-const recallPrompt = await readPromptMarkdown(`${basePath}/konteks-recall.md`)
-const savePrompt = await readPromptMarkdown(`${basePath}/konteks-save.md`)
-const warmUpPrompt = await readPromptMarkdown(`${basePath}/konteks-warm-up.md`)
-const workOnNewPrompt = await readPromptMarkdown(
-    `${basePath}/konteks-work-on-new.md`,
-)
-const workOnExistingPrompt = await readPromptMarkdown(
+const recallPrompt = readPromptMarkdown(`${basePath}/konteks-recall.md`)
+const savePrompt = readPromptMarkdown(`${basePath}/konteks-save.md`)
+const warmUpPrompt = readPromptMarkdown(`${basePath}/konteks-warm-up.md`)
+const workOnNewPrompt = readPromptMarkdown(`${basePath}/konteks-work-on-new.md`)
+const workOnExistingPrompt = readPromptMarkdown(
     `${basePath}/konteks-work-on-existing.md`,
 )
 

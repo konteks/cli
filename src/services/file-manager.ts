@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+
 export {
     access,
     cp,
@@ -11,3 +13,9 @@ export {
     unlink,
     writeFile,
 } from 'node:fs/promises'
+
+export default class FileManager {
+    public read(path: string): string {
+        return readFileSync(path, 'utf8')
+    }
+}
