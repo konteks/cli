@@ -3,8 +3,8 @@ import {
     type ColorPalette,
     createColorPalette,
 } from '@/interfaces/cli/create-color-palette'
-import { formatBytes } from '@/services/format'
-import { terminal } from '@/services/terminal'
+import { formatBytes } from '../format'
+import { terminal } from '../terminal'
 
 export function createMineProgressReporter(): {
     done(): void

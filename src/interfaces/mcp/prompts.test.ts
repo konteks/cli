@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import {
-    getMcpPrompt,
-    listMcpPrompts,
-    listMcpTools,
-} from '@/controllers/mcp/serve'
+import { getMcpPrompt, listMcpPrompts, listMcpTools } from '@/controllers/mcp'
 
 function promptText(name: string, args: Record<string, string> = {}): string {
     const result = getMcpPrompt(name, args)

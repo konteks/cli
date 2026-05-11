@@ -5,7 +5,7 @@ import { loadProjectContext } from '@/infrastructure/file-system/context'
 import { openProjectDatabase } from '@/infrastructure/persistence/sqlite/database'
 import { saveKonteksInput } from '@/infrastructure/persistence/sqlite/save-store'
 import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager'
-import { mineProject } from '@/services/mining/mine-project'
+import { mineProject } from '@/services/mining'
 import { formatStatus, getStatusCommand } from './get-status'
 
 const tempDirs: string[] = []

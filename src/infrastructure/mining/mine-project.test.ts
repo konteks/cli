@@ -10,7 +10,7 @@ import {
     unlink,
     writeFile,
 } from '@/services/file-manager'
-import { mineProject } from '@/services/mining/mine-project'
+import { mineProject } from '@/services/mining'
 import { FakeEmbeddingProvider } from '../ai/hugging-face-embedding-provider'
 // import { TaxonomyStore } from '../persistence/sqli./taxonomy-store'
 import { loadProjectContext } from '../file-system/context'

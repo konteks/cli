@@ -14,7 +14,7 @@ import type {
     ProjectContext,
     StartMcpServerOptions,
 } from '@/interfaces/mcp/types'
-import { mineProject } from '@/services/mining/mine-project'
+import { mineProject } from '@/services/mining'
 
 export async function withProjectDatabase<T>(
     options: StartMcpServerOptions,

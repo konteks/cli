@@ -1,4 +1,4 @@
-import { listMcpTools } from '@/controllers/mcp/serve'
+import { listMcpTools } from '@/controllers/mcp'
 import { printJson } from './json-output'
 
 export async function getToolDetailCommand(name: string): Promise<void> {

@@ -1,20 +1,19 @@
 import { join } from 'node:path'
 import type { MineProjectResponse } from '@/application/dto/mine-project'
-import { MineProjectUseCase } from '@/application/use-cases/mine-project-use-case'
 import type { EmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider'
-import { HuggingFaceEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider'
 import {
     createDefaultConfig,
     loadProjectContext,
 } from '@/infrastructure/file-system/context'
-import { FileSystemProjectRepository } from '@/infrastructure/file-system/file-system-project-repository'
 import { readMineManifest } from '@/infrastructure/mining/manifest'
 import { ensureProjectDatabase } from '@/infrastructure/persistence/sqlite/database'
 import type { GlobalCliOptions } from '@/interfaces/cli/options'
+import { terminal } from '@/services'
 import { mkdir, readFile, writeFile } from '@/services/file-manager'
-import { KonteksMineEngine } from '@/services/mining/mine-project'
-import { terminal } from '@/services/terminal'
-import { createMineProgressReporter } from './mine-progress'
+import {
+    createMineProgressReporter,
+    createMiningUseCase,
+} from '@/services/mining'
 
 type InitCommandOptions = GlobalCliOptions & {
     embeddingProvider?: EmbeddingProvider
@@ -46,17 +45,10 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
     const progress = createMineProgressReporter()
     let extraction: MineProjectResponse
     try {
-        const embeddingProvider =
-            options.embeddingProvider ??
-            new HuggingFaceEmbeddingProvider({
-                onProgress: progress.report,
-            })
-        const projectRepo = new FileSystemProjectRepository()
-        const mineEngine = new KonteksMineEngine({
-            embeddingProvider,
+        const useCase = createMiningUseCase({
+            embeddingProvider: options.embeddingProvider,
             onProgress: progress.report,
         })
-        const useCase = new MineProjectUseCase(projectRepo, mineEngine)
 
         extraction = await useCase.execute({
             mode: context.configExists ? 'resume' : 'full',

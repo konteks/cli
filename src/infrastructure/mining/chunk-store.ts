@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import type { Project } from '@/domain/entities/project'
+import { terminal } from '@/services'
 import { readFile } from '@/services/file-manager'
-import { terminal } from '@/services/terminal'
 import type { DatabaseService } from '../persistence/sqlite/db'
 import { indexSearchDocument } from '../persistence/sqlite/search-index'
 import type { TaxonomyStore } from '../persistence/sqlite/stores/taxonomy-store'

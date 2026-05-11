@@ -13,14 +13,14 @@ import type {
     KonteksMcpServer,
     StartMcpServerOptions,
 } from '@/interfaces/mcp/types'
+import { VERSION } from '@/services'
 import type { CallToolResult, Prompt, Tool } from '@/services/mcp'
 import { McpServer, StdioServerTransport } from '@/services/mcp'
+import type { PromptTemplate } from '@/services/mcp-prompts'
+import { renderPromptTemplate } from '@/services/mcp-prompts'
 import { z } from '@/services/validation'
-import { VERSION } from '@/services/version'
 import { recallPrompt } from './prompts/recall'
 import { savePrompt } from './prompts/save'
-import type { PromptTemplate } from './prompts/template'
-import { renderPromptTemplate } from './prompts/template'
 import { warmUpPrompt } from './prompts/warm-up'
 import { workOnExistingPrompt } from './prompts/work-on-existing'
 import { workOnNewPrompt } from './prompts/work-on-new'

@@ -4,9 +4,7 @@ import {
     createColorPalette,
 } from '@/interfaces/cli/create-color-palette'
 import type { GlobalCliOptions } from '@/interfaces/cli/options'
-import { formatInteger } from '@/services/format'
-import { terminal } from '@/services/terminal'
-import { VERSION } from '@/services/version'
+import { formatInteger, terminal, VERSION } from '@/services'
 
 export async function getStatusCommand(
     options: GlobalCliOptions,

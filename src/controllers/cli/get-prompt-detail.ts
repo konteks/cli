@@ -1,4 +1,4 @@
-import { getMcpPrompt } from '@/controllers/mcp/serve'
+import { getMcpPrompt } from '@/controllers/mcp'
 import { printJson } from './json-output'
 import { parsePromptArguments } from './mcp-prompt-input'
 

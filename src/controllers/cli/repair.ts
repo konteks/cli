@@ -1,13 +1,10 @@
 import type { MineMode } from '@/application/dto/mine-project'
-import { MineProjectUseCase } from '@/application/use-cases/mine-project-use-case'
-import { HuggingFaceEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider'
-import { FileSystemProjectRepository } from '@/infrastructure/file-system/file-system-project-repository'
 import type { GlobalCliOptions } from '@/interfaces/cli/options'
-import { stringifyPretty } from '@/services/json'
-import { KonteksMineEngine } from '@/services/mining/mine-project'
-import { confirmInteractive } from '@/services/prompts'
-import { terminal } from '@/services/terminal'
-import { createMineProgressReporter } from './mine-progress'
+import { confirmInteractive, stringifyPretty, terminal } from '@/services'
+import {
+    createMineProgressReporter,
+    createMiningUseCase,
+} from '@/services/mining'
 
 type MineOptions = {
     changed?: boolean
@@ -31,15 +28,9 @@ async function mineCommand(
 
     const progress = createMineProgressReporter()
     try {
-        const embeddingProvider = new HuggingFaceEmbeddingProvider({
+        const useCase = createMiningUseCase({
             onProgress: progress.report,
         })
-        const projectRepo = new FileSystemProjectRepository()
-        const mineEngine = new KonteksMineEngine({
-            embeddingProvider,
-            onProgress: progress.report,
-        })
-        const useCase = new MineProjectUseCase(projectRepo, mineEngine)
 
         const result = await useCase.execute({
             mode: mode as MineMode,
