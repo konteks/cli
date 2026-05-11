@@ -5,20 +5,23 @@ import type {
 import type { IEmbeddingProvider as EmbeddingProvider } from '@/application/interfaces/embedding-provider'
 import type { IMineEngine } from '@/application/interfaces/mine-engine'
 import type { Project } from '@/domain/entities/project'
+import { generateTargetEmbeddings } from '@/infrastructure/ai/embedding-pipeline'
+import { mineChunks } from '@/infrastructure/mining/chunk-store'
+import type { ScannedFile } from '@/infrastructure/mining/file-scan'
+import { scanProjectFilesWithDiagnostics } from '@/infrastructure/mining/file-scan'
+import type { MineManifest, MineMode } from '@/infrastructure/mining/manifest'
+import {
+    readMineManifest,
+    writeMineManifest,
+} from '@/infrastructure/mining/manifest'
+import { extractProjectMetadata } from '@/infrastructure/mining/metadata'
+import type { MineProgressReporter } from '@/infrastructure/mining/progress'
+import { formatProjectSummaryToon } from '@/infrastructure/mining/toon-summary'
+import type { TreeSitterEngine } from '@/infrastructure/mining/tree-sitter-engine'
+import { openProjectDatabase } from '@/infrastructure/persistence/sqlite/database'
+import type { DatabaseService } from '@/infrastructure/persistence/sqlite/db'
+import { createToonStore } from '@/infrastructure/storage/toon-store'
 import { mkdir } from '@/services/file-manager'
-import { generateTargetEmbeddings } from '../ai/embedding-pipeline'
-import { openProjectDatabase } from '../persistence/sqlite/database'
-import type { DatabaseService } from '../persistence/sqlite/db'
-import { createToonStore } from '../storage/toon-store'
-import { mineChunks } from './chunk-store'
-import type { ScannedFile } from './file-scan'
-import { scanProjectFilesWithDiagnostics } from './file-scan'
-import type { MineManifest, MineMode } from './manifest'
-import { readMineManifest, writeMineManifest } from './manifest'
-import { extractProjectMetadata } from './metadata'
-import type { MineProgressReporter } from './progress'
-import { formatProjectSummaryToon } from './toon-summary'
-import type { TreeSitterEngine } from './tree-sitter-engine'
 
 export async function mineProject(
     project: Project,

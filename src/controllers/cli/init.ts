@@ -9,10 +9,10 @@ import {
 } from '@/infrastructure/file-system/context'
 import { FileSystemProjectRepository } from '@/infrastructure/file-system/file-system-project-repository'
 import { readMineManifest } from '@/infrastructure/mining/manifest'
-import { KonteksMineEngine } from '@/infrastructure/mining/mine-project'
 import { ensureProjectDatabase } from '@/infrastructure/persistence/sqlite/database'
 import type { GlobalCliOptions } from '@/interfaces/cli/options'
 import { mkdir, readFile, writeFile } from '@/services/file-manager'
+import { KonteksMineEngine } from '@/services/mining/mine-project'
 import { terminal } from '@/services/terminal'
 import { createMineProgressReporter } from './mine-progress'
 

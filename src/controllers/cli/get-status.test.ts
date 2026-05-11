@@ -2,10 +2,10 @@ import { afterEach, describe, expect, it, spyOn } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { loadProjectContext } from '@/infrastructure/file-system/context'
-import { mineProject } from '@/infrastructure/mining/mine-project'
 import { openProjectDatabase } from '@/infrastructure/persistence/sqlite/database'
 import { saveKonteksInput } from '@/infrastructure/persistence/sqlite/save-store'
 import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager'
+import { mineProject } from '@/services/mining/mine-project'
 import { formatStatus, getStatusCommand } from './get-status'
 
 const tempDirs: string[] = []

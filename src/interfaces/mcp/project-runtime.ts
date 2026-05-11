@@ -4,7 +4,6 @@ import {
     pathExists,
 } from '@/infrastructure/file-system/context'
 import { readMineManifest } from '@/infrastructure/mining/manifest'
-import { mineProject } from '@/infrastructure/mining/mine-project'
 import {
     openProjectDatabase,
     projectDatabasePath,
@@ -15,6 +14,7 @@ import type {
     ProjectContext,
     StartMcpServerOptions,
 } from '@/interfaces/mcp/types'
+import { mineProject } from '@/services/mining/mine-project'
 
 export async function withProjectDatabase<T>(
     options: StartMcpServerOptions,

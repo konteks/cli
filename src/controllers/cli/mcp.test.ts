@@ -4,8 +4,8 @@ import { join } from 'node:path'
 import { callMcpTool } from '@/controllers/mcp/serve'
 import { FakeEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider'
 import { loadProjectContext } from '@/infrastructure/file-system/context'
-import { mineProject } from '@/infrastructure/mining/mine-project'
 import { mkdtemp, rm } from '@/services/file-manager'
+import { mineProject } from '@/services/mining/mine-project'
 import { callMcpToolCommand } from './call-mcp-tool'
 
 describe('MCP call command', () => {

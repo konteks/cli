@@ -10,6 +10,7 @@ import {
     unlink,
     writeFile,
 } from '@/services/file-manager'
+import { mineProject } from '@/services/mining/mine-project'
 import { FakeEmbeddingProvider } from '../ai/hugging-face-embedding-provider'
 // import { TaxonomyStore } from '../persistence/sqli./taxonomy-store'
 import { loadProjectContext } from '../file-system/context'
@@ -18,7 +19,6 @@ import { openProjectDatabase } from '../persistence/sqlite/database'
 import { searchMemory } from '../persistence/sqlite/search-store'
 import { createToonStore } from '../storage/toon-store'
 import { getMiningFreshness, readMineManifest } from './manifest'
-import { mineProject } from './mine-project'
 import type { TreeSitterLanguage } from './tree-sitter-engine'
 
 const tempDirs: string[] = []

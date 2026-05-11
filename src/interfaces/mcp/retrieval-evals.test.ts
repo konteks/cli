@@ -5,9 +5,9 @@ import { callMcpTool } from '@/controllers/mcp/serve'
 import { FakeEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider'
 import { loadProjectContext } from '@/infrastructure/file-system/context'
 import { readMineManifest } from '@/infrastructure/mining/manifest'
-import { mineProject } from '@/infrastructure/mining/mine-project'
 import { openProjectDatabase } from '@/infrastructure/persistence/sqlite/database'
 import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager'
+import { mineProject } from '@/services/mining/mine-project'
 
 const tempDirs: string[] = []
 
