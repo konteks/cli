@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { callMcpTool } from '@/controllers/mcp/serve'
 import { FakeEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider'
 import { loadProjectContext } from '@/infrastructure/file-system/context'
 import { mineProject } from '@/infrastructure/mining/mine-project'
 import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager'
-import { callMcpTool } from './server'
 
 describe('konteks_warm_up', () => {
     let tempDirs: string[] = []

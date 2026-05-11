@@ -1,65 +1,16 @@
 import type { Prompt, PromptArgument } from '@modelcontextprotocol/sdk/types.js'
-import { promptFiles } from './prompt-assets'
 
-type PromptTemplate = {
+export type PromptTemplate = {
     body: string
     fileName: string
     prompt: Prompt
     raw: string
 }
 
-const promptOrder = [
-    'konteks-warm-up',
-    'konteks-recall',
-    'konteks-work-on-existing',
-    'konteks-work-on-new',
-    'konteks-save',
-]
-
-export function listPromptDefinitions(): Prompt[] {
-    return promptTemplates().map(template => template.prompt)
-}
-
-export function listCanonicalPromptFiles(): Array<{
-    content: string
-    fileName: string
-}> {
-    return canonicalPromptTemplates().map(template => ({
-        content: template.raw,
-        fileName: template.fileName,
-    }))
-}
-
-export function renderPromptText(
-    name: string,
-    args: Record<string, string>,
-): string {
-    const template = promptTemplates().find(item => item.prompt.name === name)
-    if (!template) {
-        return ''
-    }
-
-    return template.body.replaceAll(
-        /\{\{\s*([a-zA-Z0-9_-]+)\s*\}\}/g,
-        (_, key: string) => renderArgumentValue(template.prompt, args, key),
-    )
-}
-
-function promptTemplates(): PromptTemplate[] {
-    return canonicalPromptTemplates()
-}
-
-function canonicalPromptTemplates(): PromptTemplate[] {
-    return promptFiles
-        .map(file => readPromptMarkdown(file.raw, file.fileName))
-        .sort(
-            (left, right) =>
-                promptOrder.indexOf(left.prompt.name) -
-                promptOrder.indexOf(right.prompt.name),
-        )
-}
-
-function readPromptMarkdown(raw: string, fileName: string): PromptTemplate {
+export function readPromptMarkdown(
+    raw: string,
+    fileName: string,
+): PromptTemplate {
     const match =
         /^---\n(?<frontmatter>[\s\S]*?)\n---\n(?<body>[\s\S]*)$/u.exec(raw)
     if (!match?.groups) {
@@ -86,6 +37,16 @@ function readPromptMarkdown(raw: string, fileName: string): PromptTemplate {
         prompt,
         raw,
     }
+}
+
+export function renderPromptTemplate(
+    template: PromptTemplate,
+    args: Record<string, string>,
+): string {
+    return template.body.replaceAll(
+        /\{\{\s*([a-zA-Z0-9_-]+)\s*\}\}/g,
+        (_, key: string) => renderArgumentValue(template.prompt, args, key),
+    )
 }
 
 function readPromptArguments(

@@ -10,7 +10,7 @@ import { getToolsCommand } from '@/controllers/cli/get-tools'
 import { initCommand } from '@/controllers/cli/init'
 import { installSkillsCommand } from '@/controllers/cli/install-skills'
 import { repairCommand } from '@/controllers/cli/repair'
-import { startMcpServer } from '@/interfaces/mcp/server'
+import { startMcpServer } from '@/controllers/mcp/serve'
 import { VERSION } from '@/utils/version'
 
 const program = new Command()

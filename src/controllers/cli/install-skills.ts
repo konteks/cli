@@ -1,7 +1,7 @@
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { listCanonicalPromptFiles } from '@/controllers/mcp/serve'
 import { resolveProjectContext } from '@/infrastructure/file-system/context'
-import { listCanonicalPromptFiles } from '@/interfaces/mcp/prompt-library'
 import { mkdir, writeFile } from '@/services/file-manager'
 
 type InstallSkillOptions = {
