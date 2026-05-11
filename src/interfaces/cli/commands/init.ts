@@ -1,4 +1,3 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { MineProjectResponse } from '@/application/dto/mine-project.js'
 import { MineProjectUseCase } from '@/application/use-cases/mine-project-use-case.js'
@@ -12,6 +11,7 @@ import { FileSystemProjectRepository } from '@/infrastructure/file-system/file-s
 import { readMineManifest } from '@/infrastructure/mining/manifest.js'
 import { KonteksMineEngine } from '@/infrastructure/mining/mine-project.js'
 import { ensureProjectDatabase } from '@/infrastructure/persistence/sqlite/database.js'
+import { mkdir, readFile, writeFile } from '@/services/file-manager.js'
 import type { GlobalCliOptions } from '../options.js'
 import { createMineProgressReporter } from './mine.js'
 

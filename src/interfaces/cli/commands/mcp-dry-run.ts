@@ -1,10 +1,10 @@
-import { cp, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
     loadProjectContext,
     pathExists,
 } from '@/infrastructure/file-system/context.js'
+import { cp, mkdtemp, rm } from '@/services/file-manager.js'
 import { replaceStringDeep } from '@/utils/object.js'
 import { callMcpTool } from '../../mcp/server.js'
 import type { GlobalCliOptions } from '../options.js'

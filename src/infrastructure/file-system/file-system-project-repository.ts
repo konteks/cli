@@ -1,4 +1,3 @@
-import { access, readFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import type {
     KonteksConfig,
@@ -6,6 +5,7 @@ import type {
     ProjectContext,
 } from '@/domain/entities/project.js'
 import type { IProjectRepository } from '@/domain/repositories/project-repository.js'
+import { access, readFile } from '@/services/file-manager.js'
 
 export class FileSystemProjectRepository implements IProjectRepository {
     async getProject(rootPath: string): Promise<Project> {

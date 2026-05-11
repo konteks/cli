@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, spyOn } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { loadProjectContext } from '@/infrastructure/file-system/context.js'
 import { mineProject } from '@/infrastructure/mining/mine-project.js'
 import { openProjectDatabase } from '@/infrastructure/persistence/sqlite/database.js'
 import { saveKonteksInput } from '@/infrastructure/persistence/sqlite/save-store.js'
+import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager.js'
 import { formatStatus, statusCommand } from './status.js'
 
 const tempDirs: string[] = []

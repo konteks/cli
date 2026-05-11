@@ -1,6 +1,6 @@
-import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Project } from '@/domain/entities/project.js'
+import { readFile } from '@/services/file-manager.js'
 import type { DatabaseService } from '../persistence/sqlite/db.js'
 import { indexSearchDocument } from '../persistence/sqlite/search-index.js'
 import type { TaxonomyStore } from '../persistence/sqlite/stores/taxonomy-store.js'

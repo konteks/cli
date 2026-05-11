@@ -1,5 +1,5 @@
-import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { readFile } from '@/services/file-manager.js'
 import { pathExists } from '../file-system/context.js'
 import type { ScannedFile } from './file-scan.js'
 

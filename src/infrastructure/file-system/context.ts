@@ -1,5 +1,5 @@
-import { access, readFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
+import { access, readFile } from '@/services/file-manager.js'
 import type {
     KonteksConfig,
     LoadedProjectContext,

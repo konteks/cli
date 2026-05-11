@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { FakeEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider.js'
@@ -7,6 +6,7 @@ import { loadProjectContext } from '@/infrastructure/file-system/context.js'
 import { readMineManifest } from '@/infrastructure/mining/manifest.js'
 import { mineProject } from '@/infrastructure/mining/mine-project.js'
 import { openProjectDatabase } from '@/infrastructure/persistence/sqlite/database.js'
+import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager.js'
 import { callMcpTool } from './server.js'
 
 const tempDirs: string[] = []
