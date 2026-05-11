@@ -1,4 +1,5 @@
 import type { Prompt, PromptArgument } from '@/services/mcp'
+import { readFile } from './file-manager'
 
 export type PromptTemplate = {
     body: string
@@ -7,10 +8,11 @@ export type PromptTemplate = {
     raw: string
 }
 
-export function readPromptMarkdown(
-    raw: string,
+export async function readPromptMarkdown(
     fileName: string,
-): PromptTemplate {
+): Promise<PromptTemplate> {
+    const raw = await readFile(fileName, 'utf8')
+
     const match =
         /^---\n(?<frontmatter>[\s\S]*?)\n---\n(?<body>[\s\S]*)$/u.exec(raw)
     if (!match?.groups) {

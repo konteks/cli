@@ -19,11 +19,7 @@ import { McpServer, StdioServerTransport } from '@/services/mcp'
 import type { PromptTemplate } from '@/services/mcp-prompts'
 import { renderPromptTemplate } from '@/services/mcp-prompts'
 import { z } from '@/services/validation'
-import { recallPrompt } from './prompts/recall'
-import { savePrompt } from './prompts/save'
-import { warmUpPrompt } from './prompts/warm-up'
-import { workOnExistingPrompt } from './prompts/work-on-existing'
-import { workOnNewPrompt } from './prompts/work-on-new'
+import promptTemplates from './prompts'
 import { handleForgetTool } from './tools/forget'
 import { handleRecallTool } from './tools/recall'
 import { handleSaveTool } from './tools/save'
@@ -31,14 +27,6 @@ import { handleSearchTool } from './tools/search'
 import { handleWarmUpTool } from './tools/warm-up'
 
 type ToolHandlers = Record<string, (input: unknown) => Promise<CallToolResult>>
-
-const promptTemplates = [
-    warmUpPrompt,
-    recallPrompt,
-    workOnExistingPrompt,
-    workOnNewPrompt,
-    savePrompt,
-]
 
 export async function startMcpServer(
     options: StartMcpServerOptions,

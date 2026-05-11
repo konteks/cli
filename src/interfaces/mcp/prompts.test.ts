@@ -26,18 +26,18 @@ describe('MCP prompts', () => {
 
     it('exposes lifecycle prompts with Konteks-prefixed names', () => {
         expect(listMcpPrompts().map(prompt => prompt.name)).toEqual([
-            'konteks-warm-up',
             'konteks-recall',
+            'konteks-save',
+            'konteks-warm-up',
             'konteks-work-on-existing',
             'konteks-work-on-new',
-            'konteks-save',
         ])
         expect(listMcpPrompts().map(prompt => prompt.title)).toEqual([
-            'Konteks Warm Up',
             'Konteks Recall',
+            'Konteks Save',
+            'Konteks Warm Up',
             'Konteks Build Existing',
             'Konteks Build New',
-            'Konteks Save',
         ])
     })
 
