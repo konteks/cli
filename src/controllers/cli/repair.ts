@@ -3,9 +3,9 @@ import { MineProjectUseCase } from '@/application/use-cases/mine-project-use-cas
 import { HuggingFaceEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider'
 import { FileSystemProjectRepository } from '@/infrastructure/file-system/file-system-project-repository'
 import { KonteksMineEngine } from '@/infrastructure/mining/mine-project'
+import type { GlobalCliOptions } from '@/interfaces/cli/options'
 import { stringifyPretty } from '@/utils/json'
 import { confirmInteractive } from '@/utils/prompts'
-import type { GlobalCliOptions } from '../options'
 import { createMineProgressReporter } from './mine-progress'
 
 type MineOptions = {
@@ -80,5 +80,3 @@ async function confirmRepair(): Promise<boolean> {
 function printMineResult(value: unknown): void {
     console.log(stringifyPretty(value))
 }
-
-export { createMineProgressReporter }

@@ -11,9 +11,9 @@ import { FileSystemProjectRepository } from '@/infrastructure/file-system/file-s
 import { readMineManifest } from '@/infrastructure/mining/manifest'
 import { KonteksMineEngine } from '@/infrastructure/mining/mine-project'
 import { ensureProjectDatabase } from '@/infrastructure/persistence/sqlite/database'
+import type { GlobalCliOptions } from '@/interfaces/cli/options'
 import { mkdir, readFile, writeFile } from '@/services/file-manager'
-import type { GlobalCliOptions } from '../options'
-import { createMineProgressReporter } from './mine'
+import { createMineProgressReporter } from './mine-progress'
 
 type InitCommandOptions = GlobalCliOptions & {
     embeddingProvider?: EmbeddingProvider

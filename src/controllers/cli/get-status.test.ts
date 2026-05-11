@@ -6,7 +6,7 @@ import { mineProject } from '@/infrastructure/mining/mine-project'
 import { openProjectDatabase } from '@/infrastructure/persistence/sqlite/database'
 import { saveKonteksInput } from '@/infrastructure/persistence/sqlite/save-store'
 import { mkdir, mkdtemp, rm, writeFile } from '@/services/file-manager'
-import { formatStatus, statusCommand } from './status'
+import { formatStatus, getStatusCommand } from './get-status'
 
 const tempDirs: string[] = []
 
@@ -49,7 +49,7 @@ describe('status command', () => {
         const log = spyOn(console, 'log').mockImplementation(() => {})
         let output = ''
         try {
-            await statusCommand({ project: projectRoot })
+            await getStatusCommand({ project: projectRoot })
             output = String(log.mock.calls[0]?.[0] ?? '')
         } finally {
             log.mockRestore()
@@ -106,7 +106,7 @@ describe('status command', () => {
         const log = spyOn(console, 'log').mockImplementation(() => {})
         let output = ''
         try {
-            await statusCommand({ project: projectRoot })
+            await getStatusCommand({ project: projectRoot })
             output = String(log.mock.calls[0]?.[0] ?? '')
         } finally {
             log.mockRestore()
@@ -123,7 +123,7 @@ describe('status command', () => {
         const log = spyOn(console, 'log').mockImplementation(() => {})
         let output = ''
         try {
-            await statusCommand({ project: projectRoot })
+            await getStatusCommand({ project: projectRoot })
             output = String(log.mock.calls[0]?.[0] ?? '')
         } finally {
             log.mockRestore()

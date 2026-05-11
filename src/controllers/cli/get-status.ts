@@ -1,10 +1,15 @@
 import { getProjectStatus } from '@/infrastructure/file-system/status'
+import {
+    type ColorPalette,
+    createColorPalette,
+} from '@/interfaces/cli/create-color-palette'
+import type { GlobalCliOptions } from '@/interfaces/cli/options'
 import { formatInteger } from '@/utils/format'
 import { VERSION } from '@/utils/version'
-import { type ColorPalette, createColorPalette } from '../create-color-palette'
-import type { GlobalCliOptions } from '../options'
 
-export async function statusCommand(options: GlobalCliOptions): Promise<void> {
+export async function getStatusCommand(
+    options: GlobalCliOptions,
+): Promise<void> {
     const status = await getProjectStatus(options.project)
     console.log(
         formatStatus(status, {

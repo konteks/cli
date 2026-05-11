@@ -1,8 +1,8 @@
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { resolveProjectContext } from '@/infrastructure/file-system/context'
+import { listCanonicalPromptFiles } from '@/interfaces/mcp/prompt-library'
 import { mkdir, writeFile } from '@/services/file-manager'
-import { listCanonicalPromptFiles } from '../../mcp/prompt-library'
 
 type InstallSkillOptions = {
     global?: boolean
@@ -10,7 +10,7 @@ type InstallSkillOptions = {
     project?: string
 }
 
-export async function skillsInstallCommand(
+export async function installSkillsCommand(
     options: InstallSkillOptions,
 ): Promise<void> {
     const skillsDir = options.global

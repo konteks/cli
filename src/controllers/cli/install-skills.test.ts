@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { mkdtemp, readdir, readFile, rm } from '@/services/file-manager'
-import { skillsInstallCommand } from './skills'
+import { installSkillsCommand } from './install-skills'
 
 const tempDirs: string[] = []
 
@@ -19,7 +19,7 @@ describe('skills install command', () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-skills-'))
         tempDirs.push(projectRoot)
 
-        await skillsInstallCommand({ project: projectRoot })
+        await installSkillsCommand({ project: projectRoot })
 
         expect(
             (await readdir(join(projectRoot, '.agents', 'skills'))).sort(),
@@ -50,7 +50,7 @@ describe('skills install command', () => {
         const homeDir = await mkdtemp(join(tmpdir(), 'konteks-skills-home-'))
         tempDirs.push(homeDir)
 
-        await skillsInstallCommand({ global: true, homeDir })
+        await installSkillsCommand({ global: true, homeDir })
 
         await expect(
             readFile(
@@ -64,7 +64,7 @@ describe('skills install command', () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-skills-'))
         tempDirs.push(projectRoot)
 
-        await skillsInstallCommand({ project: projectRoot })
+        await installSkillsCommand({ project: projectRoot })
 
         await expect(
             readFile(

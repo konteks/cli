@@ -4,9 +4,9 @@ import { join } from 'node:path'
 import { FakeEmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider'
 import { loadProjectContext } from '@/infrastructure/file-system/context'
 import { mineProject } from '@/infrastructure/mining/mine-project'
+import { callMcpTool } from '@/interfaces/mcp/server'
 import { mkdtemp, rm } from '@/services/file-manager'
-import { callMcpTool } from '../../mcp/server'
-import { mcpCallCommand } from './mcp'
+import { callMcpToolCommand } from './call-mcp-tool'
 
 describe('MCP call command', () => {
     let tempDirs: string[] = []
@@ -29,7 +29,7 @@ describe('MCP call command', () => {
         const log = spyOn(console, 'log').mockImplementation(() => {})
         let output = ''
         try {
-            await mcpCallCommand(
+            await callMcpToolCommand(
                 { project: projectRoot },
                 'konteks_save',
                 '{"memories":[{"content":"Use dry-run by default for mutated tools.","kind":"decision","type":"memory"}],"type":"memories"}',
@@ -61,7 +61,7 @@ describe('MCP call command', () => {
         const log = spyOn(console, 'log').mockImplementation(() => {})
         let output = ''
         try {
-            await mcpCallCommand(
+            await callMcpToolCommand(
                 { project: projectRoot },
                 'konteks_save',
                 '{"memories":[{"content":"Apply mutations to real project memory.","kind":"decision","type":"memory"}],"type":"memories"}',
@@ -82,7 +82,7 @@ describe('MCP call command', () => {
         expect(JSON.stringify(search)).toContain('Apply mutations')
 
         await expect(
-            mcpCallCommand(
+            callMcpToolCommand(
                 { project: projectRoot },
                 'konteks_save',
                 '{"content":"too short","kind":"note","type":"memory"}',
@@ -102,7 +102,7 @@ describe('MCP call command', () => {
         const log = spyOn(console, 'log').mockImplementation(() => {})
         let output: Record<string, unknown>
         try {
-            await mcpCallCommand(
+            await callMcpToolCommand(
                 { project: projectRoot },
                 'konteks_recall',
                 '{"task":"auth session refresh"}',

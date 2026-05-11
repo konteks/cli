@@ -1,17 +1,16 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
-import { doctorCommand } from '@/interfaces/cli/commands/doctor'
-import { initCommand } from '@/interfaces/cli/commands/init'
-import {
-    mcpCallCommand,
-    mcpCommand,
-    mcpPromptCommand,
-    mcpPromptsCommand,
-    mcpToolsCommand,
-} from '@/interfaces/cli/commands/mcp'
-import { repairCommand } from '@/interfaces/cli/commands/mine'
-import { skillsInstallCommand } from '@/interfaces/cli/commands/skills'
-import { statusCommand } from '@/interfaces/cli/commands/status'
+import { callMcpToolCommand } from '@/controllers/cli/call-mcp-tool'
+import { getHealthCommand } from '@/controllers/cli/get-health'
+import { getPromptDetailCommand } from '@/controllers/cli/get-prompt-detail'
+import { getPromptsCommand } from '@/controllers/cli/get-prompts'
+import { getStatusCommand } from '@/controllers/cli/get-status'
+import { getToolDetailCommand } from '@/controllers/cli/get-tool-detail'
+import { getToolsCommand } from '@/controllers/cli/get-tools'
+import { initCommand } from '@/controllers/cli/init'
+import { installSkillsCommand } from '@/controllers/cli/install-skills'
+import { repairCommand } from '@/controllers/cli/repair'
+import { startMcpServer } from '@/interfaces/mcp/server'
 import { VERSION } from '@/utils/version'
 
 const program = new Command()
@@ -33,14 +32,14 @@ program
     .command('status')
     .description('Print Konteks project memory status for humans.')
     .action(async () => {
-        await statusCommand(program.opts())
+        await getStatusCommand(program.opts())
     })
 
 program
     .command('doctor')
     .description('Diagnose runtime, project root, and memory directory setup.')
     .action(async () => {
-        await doctorCommand(program.opts())
+        await getHealthCommand(program.opts())
     })
 
 program
@@ -54,19 +53,26 @@ const mcp = program
     .command('mcp')
     .description('Start the MCP server or run MCP debug commands.')
     .action(async () => {
-        await mcpCommand(program.opts())
+        await startMcpServer({ project: program.opts().project })
     })
 
 mcp.command('tools')
     .description('List MCP tools exposed by Konteks.')
     .action(async () => {
-        await mcpToolsCommand()
+        await getToolsCommand()
+    })
+
+mcp.command('tool')
+    .description('Show one MCP tool exposed by Konteks.')
+    .argument('<name>', 'MCP tool name, such as konteks_warm_up')
+    .action(async (name: string) => {
+        await getToolDetailCommand(name)
     })
 
 mcp.command('prompts')
     .description('List MCP prompts exposed by Konteks.')
     .action(async () => {
-        await mcpPromptsCommand()
+        await getPromptsCommand()
     })
 
 mcp.command('prompt')
@@ -77,7 +83,7 @@ mcp.command('prompt')
         'Optional JSON prompt arguments or free-form warm-up topic',
     )
     .action(async (name: string, input?: string[]) => {
-        await mcpPromptCommand(name, input?.join(' '))
+        await getPromptDetailCommand(name, input?.join(' '))
     })
 
 mcp.command('call')
@@ -92,7 +98,7 @@ mcp.command('call')
             jsonInput?: string,
             options?: { apply?: boolean; json?: boolean },
         ) => {
-            await mcpCallCommand(program.opts(), name, jsonInput, options)
+            await callMcpToolCommand(program.opts(), name, jsonInput, options)
         },
     )
 
@@ -101,7 +107,7 @@ program
     .description('Install Konteks skills for agents without MCP prompts.')
     .option('--global', 'Install into ~/.agents/skills')
     .action(async (options: { global?: boolean }) => {
-        await skillsInstallCommand({
+        await installSkillsCommand({
             ...program.opts(),
             ...options,
         })

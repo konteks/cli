@@ -1,6 +1,9 @@
 import type { MineProgressEvent } from '@/infrastructure/mining/progress'
+import {
+    type ColorPalette,
+    createColorPalette,
+} from '@/interfaces/cli/create-color-palette'
 import { formatBytes } from '@/utils/format'
-import { type ColorPalette, createColorPalette } from '../create-color-palette'
 
 export function createMineProgressReporter(): {
     done(): void

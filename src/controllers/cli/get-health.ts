@@ -1,7 +1,9 @@
 import { getProjectStatus } from '@/infrastructure/file-system/status'
-import type { GlobalCliOptions } from '../options'
+import type { GlobalCliOptions } from '@/interfaces/cli/options'
 
-export async function doctorCommand(options: GlobalCliOptions): Promise<void> {
+export async function getHealthCommand(
+    options: GlobalCliOptions,
+): Promise<void> {
     const status = await getProjectStatus(options.project)
     const checks = [
         ['projectRoot', Boolean(status.projectRoot)],
