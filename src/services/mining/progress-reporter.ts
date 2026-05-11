@@ -1,8 +1,5 @@
 import type { MineProgressEvent } from '@/infrastructure/mining/progress'
-import {
-    type ColorPalette,
-    createColorPalette,
-} from '@/interfaces/cli/create-color-palette'
+import { type ColorPalette, createColorPalette } from '@/services/color-palette'
 import { formatBytes } from '../format'
 import { terminal } from '../terminal'
 

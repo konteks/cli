@@ -1,5 +1,5 @@
 import type { MineMode } from '@/application/dto/mine-project'
-import type { GlobalCliOptions } from '@/interfaces/cli/options'
+import type { GlobalCliOptions } from '@/dto/options'
 import { confirmInteractive, stringifyPretty, terminal } from '@/services'
 import {
     createMineProgressReporter,

@@ -1,5 +1,6 @@
 import { join } from 'node:path'
 import type { MineProjectResponse } from '@/application/dto/mine-project'
+import type { GlobalCliOptions } from '@/dto/options'
 import type { EmbeddingProvider } from '@/infrastructure/ai/hugging-face-embedding-provider'
 import {
     createDefaultConfig,
@@ -7,7 +8,6 @@ import {
 } from '@/infrastructure/file-system/context'
 import { readMineManifest } from '@/infrastructure/mining/manifest'
 import { ensureProjectDatabase } from '@/infrastructure/persistence/sqlite/database'
-import type { GlobalCliOptions } from '@/interfaces/cli/options'
 import { terminal } from '@/services'
 import { mkdir, readFile, writeFile } from '@/services/file-manager'
 import {
