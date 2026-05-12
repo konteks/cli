@@ -6,9 +6,6 @@
 
 It builds a project-local context graph through autonomous **knowledge curation**, ensuring you **never re-explain your project** to an AI agent.
 
-> [!IMPORTANT]
-> 🚧 Work in Progress: The core architecture is functional, but the retrieval logic and language support are being actively refined.
-
 Memory artifacts are stored directly inside your repository, exposing compact, task-specific recall through an MCP server without requiring global installation or cloud dependencies.
 
 ## 🚀 Key Features
