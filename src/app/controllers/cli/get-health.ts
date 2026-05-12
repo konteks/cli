@@ -1,6 +1,6 @@
 import type { GlobalCliOptions } from '@/app/dto/cli/options'
-import { terminal } from '@/app/services'
-import { getProjectStatus } from '@/app/services/file-system/status'
+import { getProjectStatus } from '@/app/file-system/status'
+import { terminal } from '@/app/support/terminal'
 
 export async function getHealthCommand(
     options: GlobalCliOptions,

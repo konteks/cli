@@ -9,8 +9,9 @@ import { getToolsCommand } from '@/app/controllers/cli/get-tools'
 import { initCommand } from '@/app/controllers/cli/init'
 import { installSkillsCommand } from '@/app/controllers/cli/install-skills'
 import { repairCommand } from '@/app/controllers/cli/repair'
-import { startMcpServer } from '@/app/controllers/mcp'
-import { Command, VERSION } from '@/app/services'
+import { startMcpServer } from '@/app/controllers/mcp/serve'
+import { Command } from '@/app/support/cli'
+import { VERSION } from '@/app/support/version'
 
 const program = new Command()
     .name('konteks')

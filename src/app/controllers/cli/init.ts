@@ -3,17 +3,15 @@ import type { EmbeddingProviderContract } from '@/app/contracts/services/embeddi
 import { ensureProjectDatabase } from '@/app/database/sqlite/database'
 import type { MineProjectResponse } from '@/app/dto/application/mine-project'
 import type { GlobalCliOptions } from '@/app/dto/cli/options'
-import { terminal } from '@/app/services'
-import { mkdir, readFile, writeFile } from '@/app/services/file-manager'
 import {
     createDefaultConfig,
     loadProjectContext,
-} from '@/app/services/file-system/context'
-import {
-    createMineProgressReporter,
-    createMiningAction,
-} from '@/app/services/mining'
-import { readMineManifest } from '@/app/services/mining/engine/manifest'
+} from '@/app/file-system/context'
+import { createMiningAction } from '@/app/mining/create-mining-action'
+import { readMineManifest } from '@/app/mining/engine/manifest'
+import { createMineProgressReporter } from '@/app/mining/progress-reporter'
+import { mkdir, readFile, writeFile } from '@/app/support/file-manager'
+import { terminal } from '@/app/support/terminal'
 
 type InitCommandOptions = GlobalCliOptions & {
     embeddingProvider?: EmbeddingProviderContract

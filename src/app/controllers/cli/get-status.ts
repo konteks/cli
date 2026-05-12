@@ -1,10 +1,12 @@
 import type { GlobalCliOptions } from '@/app/dto/cli/options'
-import { formatInteger, terminal, VERSION } from '@/app/services'
+import { getProjectStatus } from '@/app/file-system/status'
 import {
     type ColorPalette,
     createColorPalette,
-} from '@/app/services/color-palette'
-import { getProjectStatus } from '@/app/services/file-system/status'
+} from '@/app/support/color-palette'
+import { formatInteger } from '@/app/support/format'
+import { terminal } from '@/app/support/terminal'
+import { VERSION } from '@/app/support/version'
 
 export async function getStatusCommand(
     options: GlobalCliOptions,

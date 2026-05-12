@@ -1,12 +1,12 @@
 import { ForgetMemoryAction } from '@/app/actions/forget-memory-action'
 import { SQLiteMemoryRepository } from '@/app/database/sqlite/sqlite-memory-repository'
-import type { ForgetInput } from '@/app/services/mcp/inputs'
+import type { ForgetInput } from '@/app/mcp/inputs'
 import {
     loadMcpProjectContext,
     validateMcpProjectHealth,
     withProjectDatabase,
-} from '@/app/services/mcp/project-runtime'
-import type { StartMcpServerOptions } from '@/app/services/mcp/types'
+} from '@/app/mcp/project-runtime'
+import type { StartMcpServerOptions } from '@/app/mcp/types'
 import { formatToTextResult } from './result'
 
 export async function handleForgetTool(

@@ -5,7 +5,7 @@ import type {
     Project,
     ProjectContext,
 } from '@/app/models/project'
-import { access, readFile } from '@/app/services/file-manager'
+import { access, readFile } from '@/app/support/file-manager'
 
 export class FileSystemProjectRepository implements ProjectRepositoryContract {
     async getProject(rootPath: string): Promise<Project> {

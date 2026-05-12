@@ -1,4 +1,4 @@
-import { and, isNull, or, sql } from '@/app/services/database'
+import { and, isNull, or, sql } from '@/app/support/database'
 import { observations } from '../schema'
 import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter'
 

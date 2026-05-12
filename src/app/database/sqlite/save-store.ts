@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
+import { upsertRetrievalDocument } from '@/app/mining/engine/retrieval-documents'
 import type { Project } from '@/app/models/project'
-import { upsertRetrievalDocument } from '@/app/services/mining/engine/retrieval-documents'
 import { contentHash } from '@/app/storage/content'
 import { storePayload } from '@/app/storage/payload'
 import { createToonStore } from '@/app/storage/toon-store'

@@ -1,9 +1,9 @@
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { listCanonicalPromptFiles } from '@/app/controllers/mcp'
-import { terminal } from '@/app/services'
-import { mkdir, writeFile } from '@/app/services/file-manager'
-import { resolveProjectContext } from '@/app/services/file-system/context'
+import { listCanonicalPromptFiles } from '@/app/controllers/mcp/serve'
+import { resolveProjectContext } from '@/app/file-system/context'
+import { mkdir, writeFile } from '@/app/support/file-manager'
+import { terminal } from '@/app/support/terminal'
 
 type InstallSkillOptions = {
     global?: boolean

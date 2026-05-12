@@ -3,9 +3,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/app/database/sqlite/database'
 import { saveKonteksInput } from '@/app/database/sqlite/save-store'
-import { mkdir, mkdtemp, rm, writeFile } from '@/app/services/file-manager'
-import { loadProjectContext } from '@/app/services/file-system/context'
-import { mineProject } from '@/app/services/mining'
+import { loadProjectContext } from '@/app/file-system/context'
+import { mineProject } from '@/app/mining/mine-project'
+import { mkdir, mkdtemp, rm, writeFile } from '@/app/support/file-manager'
 import { formatStatus, getStatusCommand } from './get-status'
 
 const tempDirs: string[] = []

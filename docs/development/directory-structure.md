@@ -4,10 +4,18 @@ Konteks uses a Laravel-inspired TypeScript layout under `src/app`.
 
 - `actions`
   - One expressive action per user workflow, such as `recall-memory-action.ts`.
-  - Actions coordinate repositories and services, then return typed results.
+  - Actions coordinate repositories, feature modules, and support helpers, then return typed results.
+- `ai`
+  - Embedding providers and embedding pipeline behavior.
 - `controllers`
   - Thin CLI and MCP entrypoints.
-  - Controllers parse command/tool input, call actions or services, and format output.
+  - Controllers parse command/tool input, call actions or feature modules, and format output.
+- `file-system`
+  - Project context resolution and project status checks.
+- `mcp`
+  - MCP runtime inputs, retrieval formatting, warm-up context, and related tests.
+- `mining`
+  - Project extraction orchestration, progress reporting, and mining engine internals.
 - `models`
   - Core project and memory data shapes.
 - `contracts`
@@ -17,11 +25,11 @@ Konteks uses a Laravel-inspired TypeScript layout under `src/app`.
   - Concrete data access implementations that satisfy repository contracts.
 - `database`
   - SQLite schema, migrations, adapters, query stores, and persistence helpers.
-- `services`
-  - Reusable application services for mining, MCP runtime behavior, AI embeddings,
-    file-system context, terminal output, validation, and external library wrappers.
 - `storage`
   - Local object and TOON payload storage helpers.
+- `support`
+  - Generic wrappers and helpers for CLI libraries, JSON, formatting, terminal output,
+    validation, prompts, version lookup, and external SDK re-exports.
 - `dto`
   - Typed request/response objects for CLI and application workflows.
 
@@ -29,5 +37,6 @@ Rules:
 
 - Keep filenames kebab-case.
 - Prefer expressive action, service, repository, and contract names.
-- Keep controllers thin; do workflow orchestration in actions and reusable behavior in services.
+- Keep controllers thin; do workflow orchestration in actions and feature modules.
+- Prefer direct imports over barrel files.
 - Preserve public CLI commands, MCP tool names, prompt names, and persisted database behavior during refactors.

@@ -1,7 +1,7 @@
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/app/contracts/services/embedding-provider'
-import { estimateTextTokens } from '@/app/services'
-import type { RecallInput, SearchInput } from '@/app/services/mcp/inputs'
-import { classifySourceRole } from '@/app/services/mining/engine/classification'
+import type { RecallInput, SearchInput } from '@/app/mcp/inputs'
+import { classifySourceRole } from '@/app/mining/engine/classification'
+import { estimateTextTokens } from '@/app/support/format'
 import type { DatabaseService } from './db'
 import {
     type DiaryRow,

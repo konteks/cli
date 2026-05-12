@@ -1,13 +1,13 @@
 import { SearchMemoryAction } from '@/app/actions/search-memory-action'
 import { SQLiteMemoryRepository } from '@/app/database/sqlite/sqlite-memory-repository'
-import type { SearchInput } from '@/app/services/mcp/inputs'
+import type { SearchInput } from '@/app/mcp/inputs'
 import {
     loadMcpProjectContext,
     validateMcpProjectHealth,
     withProjectDatabase,
-} from '@/app/services/mcp/project-runtime'
-import { formatSearchText } from '@/app/services/mcp/retrieval-format'
-import type { StartMcpServerOptions } from '@/app/services/mcp/types'
+} from '@/app/mcp/project-runtime'
+import { formatSearchText } from '@/app/mcp/retrieval-format'
+import type { StartMcpServerOptions } from '@/app/mcp/types'
 import { formatToTextResult } from './result'
 
 export async function handleSearchTool(

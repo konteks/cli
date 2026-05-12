@@ -8,7 +8,7 @@ import type {
     RecallHistoryItem,
     RecallPackage,
 } from '@/app/models/memory'
-import { assembleRecallPackage } from '../services/recall-service'
+import { assembleRecallPackage } from '@/app/support/recall-service'
 
 export class RecallMemoryAction {
     constructor(private readonly memoryRepository: MemoryRepositoryContract) {}

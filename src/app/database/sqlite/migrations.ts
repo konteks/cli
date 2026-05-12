@@ -1,4 +1,4 @@
-import { readFile } from '@/app/services/file-manager'
+import { readFile } from '@/app/support/file-manager'
 import type { SqliteAdapter } from './sqlite-adapter'
 
 type Migration = {

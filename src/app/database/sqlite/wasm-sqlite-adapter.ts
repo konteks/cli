@@ -1,13 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import { dirname } from 'node:path'
+import { pathExists } from '@/app/file-system/context'
 import {
     type BindingSpec,
     type Database,
     type Sqlite3Static,
     sqlite3InitModule,
-} from '@/app/services/database'
-import { mkdir, readFile, rename, writeFile } from '@/app/services/file-manager'
-import { pathExists } from '@/app/services/file-system/context'
+} from '@/app/support/database'
+import { mkdir, readFile, rename, writeFile } from '@/app/support/file-manager'
 import type { SqliteAdapter, SqliteParams } from './sqlite-adapter'
 
 let sqliteInitPromise: Promise<Sqlite3Static> | undefined

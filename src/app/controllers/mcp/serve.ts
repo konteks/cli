@@ -1,24 +1,18 @@
-import { VERSION } from '@/app/services'
-import type { CallToolResult, Prompt, Tool } from '@/app/services/mcp'
-import { McpServer, StdioServerTransport } from '@/app/services/mcp'
 import {
     forgetInputSchema,
     recallInputSchema,
     saveInputSchema,
     searchInputSchema,
     warmUpInputSchema,
-} from '@/app/services/mcp/inputs'
-import {
-    KONTEKS_TOOL_SURFACE,
-    MCP_INSTRUCTIONS,
-} from '@/app/services/mcp/tool-surface'
-import type {
-    KonteksMcpServer,
-    StartMcpServerOptions,
-} from '@/app/services/mcp/types'
-import type { PromptTemplate } from '@/app/services/mcp-prompts'
-import { renderPromptTemplate } from '@/app/services/mcp-prompts'
-import { z } from '@/app/services/validation'
+} from '@/app/mcp/inputs'
+import { KONTEKS_TOOL_SURFACE, MCP_INSTRUCTIONS } from '@/app/mcp/tool-surface'
+import type { KonteksMcpServer, StartMcpServerOptions } from '@/app/mcp/types'
+import type { CallToolResult, Prompt, Tool } from '@/app/support/mcp'
+import { McpServer, StdioServerTransport } from '@/app/support/mcp'
+import type { PromptTemplate } from '@/app/support/mcp-prompts'
+import { renderPromptTemplate } from '@/app/support/mcp-prompts'
+import { z } from '@/app/support/validation'
+import { VERSION } from '@/app/support/version'
 import promptTemplates from './prompts'
 import { handleForgetTool } from './tools/forget'
 import { handleRecallTool } from './tools/recall'

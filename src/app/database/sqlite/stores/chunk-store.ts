@@ -1,4 +1,4 @@
-import { sql } from '@/app/services/database'
+import { sql } from '@/app/support/database'
 import { chunks } from '../schema'
 import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter'
 

@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { mkdtemp, rm } from '@/app/services/file-manager'
-import { loadProjectContext } from '@/app/services/file-system/context'
+import { loadProjectContext } from '@/app/file-system/context'
+import { mkdtemp, rm } from '@/app/support/file-manager'
 import { openProjectDatabase } from '../database'
 import { searchMemory } from '../search-store'
 

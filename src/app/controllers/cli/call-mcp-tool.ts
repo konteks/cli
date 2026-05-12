@@ -1,4 +1,4 @@
-import { callMcpTool, listMcpTools } from '@/app/controllers/mcp'
+import { callMcpTool, listMcpTools } from '@/app/controllers/mcp/serve'
 import type { GlobalCliOptions } from '@/app/dto/cli/options'
 import { parseJsonInput } from './json-output'
 import { printMcpCallResult } from './mcp-call-output'

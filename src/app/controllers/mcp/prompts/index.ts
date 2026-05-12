@@ -1,4 +1,4 @@
-import { readPromptMarkdown } from '@/app/services/mcp-prompts'
+import { readPromptMarkdown } from '@/app/support/mcp-prompts'
 
 const basePath = './src/app/controllers/mcp/prompts'
 

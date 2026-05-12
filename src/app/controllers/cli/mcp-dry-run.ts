@@ -1,13 +1,10 @@
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { callMcpTool } from '@/app/controllers/mcp'
+import { callMcpTool } from '@/app/controllers/mcp/serve'
 import type { GlobalCliOptions } from '@/app/dto/cli/options'
-import { replaceStringDeep } from '@/app/services'
-import { cp, mkdtemp, rm } from '@/app/services/file-manager'
-import {
-    loadProjectContext,
-    pathExists,
-} from '@/app/services/file-system/context'
+import { loadProjectContext, pathExists } from '@/app/file-system/context'
+import { cp, mkdtemp, rm } from '@/app/support/file-manager'
+import { replaceStringDeep } from '@/app/support/object'
 
 export async function dryRunMcpTool(
     options: GlobalCliOptions,

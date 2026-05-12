@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { mkdtemp, rm } from '@/app/services/file-manager'
+import { mkdtemp, rm } from '@/app/support/file-manager'
 import { contentAddressPath, contentHash } from './content'
 import { storePayload } from './payload'
 import { createToonStore } from './toon-store'
