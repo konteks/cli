@@ -1,7 +1,6 @@
 import type { KnipConfig } from 'knip'
 
 const knipConfig: KnipConfig = {
-    entry: ['src/**/*.test.ts'],
     ignoreDependencies: [
         'tree-sitter-html',
         'tree-sitter-javascript',
@@ -10,6 +9,7 @@ const knipConfig: KnipConfig = {
         'tree-sitter-php',
         'tree-sitter-typescript',
     ],
+    ignoreFiles: ['src/**/*.test.ts'],
 }
 
 export default knipConfig
