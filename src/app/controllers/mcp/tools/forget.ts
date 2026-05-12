@@ -3,7 +3,6 @@ import { SQLiteMemoryRepository } from '@/app/providers/database/sqlite/sqlite-m
 import type { ForgetInput } from '@/app/providers/mcp/inputs'
 import {
     loadMcpProjectContext,
-    validateMcpProjectHealth,
     withProjectDatabase,
 } from '@/app/providers/mcp/project-runtime'
 import type { StartMcpServerOptions } from '@/app/providers/mcp/types'
@@ -14,7 +13,6 @@ export async function handleForgetTool(
     input: ForgetInput,
 ) {
     const context = await loadMcpProjectContext(options)
-    await validateMcpProjectHealth(context)
     const result = await withProjectDatabase(options, service => {
         const repo = new SQLiteMemoryRepository(service, context)
         const action = new ForgetMemoryAction(repo)

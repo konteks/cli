@@ -4,7 +4,6 @@ import type { SaveInput } from '@/app/providers/mcp/inputs'
 import {
     loadMcpProjectContext,
     updateChangedProjectMemorySilently,
-    validateMcpProjectHealth,
     withProjectDatabaseContext,
 } from '@/app/providers/mcp/project-runtime'
 import { formatSaveText } from '@/app/providers/mcp/retrieval-format'
@@ -16,7 +15,6 @@ export async function handleSaveTool(
     input: SaveInput,
 ) {
     const context = await loadMcpProjectContext(options)
-    await validateMcpProjectHealth(context)
     const projectUpdate = await updateChangedProjectMemorySilently(context)
     const saved = await withProjectDatabaseContext(context, service => {
         const repo = new SQLiteMemoryRepository(service, context)

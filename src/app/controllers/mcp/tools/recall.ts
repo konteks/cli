@@ -3,7 +3,6 @@ import { SQLiteMemoryRepository } from '@/app/providers/database/sqlite/sqlite-m
 import type { RecallInput } from '@/app/providers/mcp/inputs'
 import {
     loadMcpProjectContext,
-    validateMcpProjectHealth,
     withProjectDatabase,
 } from '@/app/providers/mcp/project-runtime'
 import { formatRecallText } from '@/app/providers/mcp/retrieval-format'
@@ -15,7 +14,6 @@ export async function handleRecallTool(
     input: RecallInput,
 ) {
     const context = await loadMcpProjectContext(options)
-    await validateMcpProjectHealth(context)
     const recall = await withProjectDatabase(options, async service => {
         const repo = new SQLiteMemoryRepository(service, context)
         const action = new RecallMemoryAction(repo)

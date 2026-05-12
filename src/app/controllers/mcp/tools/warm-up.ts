@@ -4,7 +4,6 @@ import type { WarmUpInput } from '@/app/providers/mcp/inputs'
 import {
     loadMcpProjectContext,
     updateChangedProjectMemorySilently,
-    validateMcpProjectHealth,
     withProjectDatabase,
 } from '@/app/providers/mcp/project-runtime'
 import { formatWarmUpText } from '@/app/providers/mcp/retrieval-format'
@@ -16,7 +15,6 @@ export async function handleWarmUpTool(
     input: WarmUpInput,
 ) {
     const context = await loadMcpProjectContext(options)
-    await validateMcpProjectHealth(context)
     await updateChangedProjectMemorySilently(context)
 
     const result = await withProjectDatabase(options, service => {

@@ -1,8 +1,5 @@
 import { join } from 'node:path'
-import {
-    openProjectDatabase,
-    projectDatabasePath,
-} from '@/app/providers/database/sqlite/database'
+import { openProjectDatabase } from '@/app/providers/database/sqlite/database'
 import type { DatabaseService } from '@/app/providers/database/sqlite/db'
 import type { SaveProjectUpdate } from '@/app/providers/database/sqlite/save-store'
 import {
@@ -56,26 +53,6 @@ export async function withProjectDatabaseContext<T>(
         return await operation(service)
     } finally {
         await service.close()
-    }
-}
-
-export async function validateMcpProjectHealth(
-    context: ProjectContext,
-): Promise<void> {
-    if (!context.configExists) {
-        throw new Error(
-            'Konteks memory is not initialized. Run `konteks init`.',
-        )
-    }
-    if (!(await readMineManifest(context.memoryDir))) {
-        throw new Error(
-            'Konteks memory is missing extraction artifacts. Run `konteks repair`.',
-        )
-    }
-    if (!(await pathExists(projectDatabasePath(context)))) {
-        throw new Error(
-            'Konteks memory database is missing. Run `konteks repair`.',
-        )
     }
 }
 

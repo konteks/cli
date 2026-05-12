@@ -3,7 +3,6 @@ import { SQLiteMemoryRepository } from '@/app/providers/database/sqlite/sqlite-m
 import type { SearchInput } from '@/app/providers/mcp/inputs'
 import {
     loadMcpProjectContext,
-    validateMcpProjectHealth,
     withProjectDatabase,
 } from '@/app/providers/mcp/project-runtime'
 import { formatSearchText } from '@/app/providers/mcp/retrieval-format'
@@ -15,7 +14,6 @@ export async function handleSearchTool(
     input: SearchInput,
 ) {
     const context = await loadMcpProjectContext(options)
-    await validateMcpProjectHealth(context)
     const results = await withProjectDatabase(options, service => {
         const repo = new SQLiteMemoryRepository(service, context)
         const action = new SearchMemoryAction(repo)

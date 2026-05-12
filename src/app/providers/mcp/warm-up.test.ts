@@ -165,15 +165,6 @@ describe('konteks_warm_up', () => {
         expect(text).toContain('quality:')
         expect(text).toContain('primary_targets:')
     })
-
-    it('fails with a short health error when memory is not initialized', async () => {
-        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
-        tempDirs.push(projectRoot)
-
-        await expect(
-            callMcpTool({ project: projectRoot }, 'konteks_warm_up', {}),
-        ).rejects.toThrow('Konteks memory is not initialized')
-    })
 })
 
 async function readMineManifest(memoryDir: string) {
