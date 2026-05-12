@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { buildChunkRetrievalTexts } from './retrieval-documents'
+import { buildChunkRetrievalTexts } from '@/app/providers/persistence/sqlite/retrieval-documents'
 
 describe('buildChunkRetrievalTexts', () => {
     it('keeps FTS and embedding text bounded', () => {

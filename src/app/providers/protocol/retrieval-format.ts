@@ -1,13 +1,14 @@
-import type { MemorySearchResult, RecallPackage } from '@/app/models/memory'
+import type {
+    MemorySearchResult,
+    RecallPackage,
+    WarmUpContext,
+    WarmUpGuidance,
+    WarmUpHighlight,
+} from '@/app/models/memory'
 import {
     graphEvidenceLines,
     historyEvidenceLines,
 } from '@/app/support/recall-service'
-import type {
-    WarmUpContext,
-    WarmUpGuidance,
-    WarmUpHighlight,
-} from './warm-up-context'
 
 export function formatWarmUpText(input: {
     warmUp: WarmUpContext

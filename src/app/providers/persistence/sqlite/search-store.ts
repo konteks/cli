@@ -1,7 +1,11 @@
+import type {
+    MemoryRecallInput,
+    MemorySearchInput,
+} from '@/app/contracts/repositories/memory-repository'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/app/contracts/services/embedding-provider'
-import { classifySourceRole } from '@/app/providers/extraction/engine/classification'
-import type { RecallInput, SearchInput } from '@/app/providers/protocol/inputs'
+import type { MemorySearchResult } from '@/app/models/memory'
 import { estimateTextTokens } from '@/app/support/format'
+import { classifySourceRole } from '@/app/support/source-classification'
 import type { DatabaseService } from './db'
 import {
     type DiaryRow,
@@ -13,49 +17,30 @@ import {
     type RetrievalDocumentRow,
 } from './persistence-adapter'
 import { hasSearchIndex } from './search-index'
+import {
+    allowResult,
+    applyGroupAwarePruning,
+    applyRolePolicy,
+    compareSearchResults,
+    detectIntent,
+    type SearchIntent,
+    type SearchMode,
+    toFtsQuery,
+    tokenize,
+} from './search-policy'
+import {
+    computeVectorScore,
+    embedSearchQuery,
+    makeSearchResult,
+} from './search-scoring'
 import type { SqliteAdapter } from './sqlite-adapter'
-
-export type MemorySearchResult = {
-    id: string
-    type: 'chunk' | 'diary' | 'memory' | 'module'
-    kind?: string
-    anchor?: string
-    embeddingDimensions?: number
-    embeddingModel?: string
-    path?: string
-    sourceId?: string
-    sourceRole?: string
-    task?: string
-    excerpt: string
-    score: number
-    tokenCost: number
-    scoreDetails: {
-        confidence: number
-        lexical: number
-        recency: number
-        tokenCostPenalty: number
-        vector?: number
-    }
-    targetType?: 'chunk' | 'diary' | 'memory' | 'module'
-    vectorScore?: number
-    createdAt: string
-}
 
 type SearchMemoryOptions = {
     embeddingProvider?: EmbeddingProvider
 }
-type SearchMode = 'recall' | 'search'
-type SearchIntent = {
-    allowsDiary: boolean
-    implementationTask: boolean
-    prefersAgentReference: boolean
-}
-
-const maxExcerptTokens = 120
-
 export async function searchMemory(
     db: DatabaseService,
-    input: SearchInput | RecallInput,
+    input: MemorySearchInput | MemoryRecallInput,
     options: SearchMemoryOptions = {},
 ): Promise<MemorySearchResult[]> {
     const mode: SearchMode = 'query' in input ? 'search' : 'recall'
@@ -286,296 +271,4 @@ function resolveSourceRole(
         return undefined
     }
     return classifySourceRole(path)
-}
-
-function makeSearchResult(input: {
-    anchor?: string
-    confidence: number
-    content: string
-    createdAt: string
-    embeddingDimensions?: number
-    embeddingModel?: string
-    id: string
-    kind?: string
-    path?: string
-    sourceId?: string
-    sourceRole?: string
-    targetType?: 'chunk' | 'diary' | 'memory' | 'module'
-    task?: string
-    terms: string[]
-    textForScoring?: string
-    tokenCost?: number
-    type: MemorySearchResult['type']
-    vectorScore?: number
-}): MemorySearchResult {
-    const tokenCost = input.tokenCost ?? estimateTextTokens(input.content)
-    const lexical = scoreText(
-        input.textForScoring ?? input.content,
-        input.terms,
-    )
-    const recency = recencyBoost(input.createdAt)
-    const tokenCostPenalty = Math.ceil(tokenCost / 120)
-    const confidence = Math.max(0, Math.min(input.confidence, 1))
-    const score = Math.round(
-        lexical * 100 +
-            (input.vectorScore ?? 0) * 60 +
-            confidence * 20 +
-            recency -
-            tokenCostPenalty,
-    )
-
-    return {
-        anchor: input.anchor,
-        createdAt: input.createdAt,
-        embeddingDimensions: input.embeddingDimensions,
-        embeddingModel: input.embeddingModel,
-        excerpt: trimToTokenBudget(input.content, maxExcerptTokens),
-        id: input.id,
-        kind: input.kind,
-        path: input.path,
-        score,
-        scoreDetails: {
-            confidence,
-            lexical,
-            recency,
-            tokenCostPenalty,
-            vector: input.vectorScore,
-        },
-        sourceId: input.sourceId,
-        sourceRole: input.sourceRole,
-        targetType: input.targetType,
-        task: input.task,
-        tokenCost: Math.min(tokenCost, maxExcerptTokens),
-        type: input.type,
-        vectorScore: input.vectorScore,
-    }
-}
-
-async function embedSearchQuery(
-    provider: EmbeddingProvider | undefined,
-    terms: string[],
-): Promise<Float32Array | undefined> {
-    if (!provider) {
-        return undefined
-    }
-
-    try {
-        const vectors = await provider.embed([terms.join(' ')])
-        const vector = vectors[0]
-        return vector?.length === provider.dimensions ? vector : undefined
-    } catch {
-        return undefined
-    }
-}
-
-function computeVectorScore(
-    row: RetrievalDocumentRow,
-    input: {
-        provider?: EmbeddingProvider
-        queryVector?: Float32Array
-    },
-): number | undefined {
-    if (
-        !input.provider ||
-        !input.queryVector ||
-        !row.vector_blob ||
-        row.embedding_model !== input.provider.model ||
-        row.embedding_dimensions !== input.provider.dimensions
-    ) {
-        return undefined
-    }
-
-    const vector = blobToFloat32Array(row.vector_blob)
-    if (vector.length !== input.provider.dimensions) {
-        return undefined
-    }
-
-    return cosineSimilarity(input.queryVector, vector)
-}
-
-function blobToFloat32Array(blob: Uint8Array): Float32Array {
-    const buffer = blob.buffer.slice(
-        blob.byteOffset,
-        blob.byteOffset + blob.byteLength,
-    )
-    return new Float32Array(buffer)
-}
-
-function cosineSimilarity(left: Float32Array, right: Float32Array): number {
-    let dot = 0
-    let leftNorm = 0
-    let rightNorm = 0
-    for (let index = 0; index < left.length; index += 1) {
-        const leftValue = left[index] ?? 0
-        const rightValue = right[index] ?? 0
-        dot += leftValue * rightValue
-        leftNorm += leftValue * leftValue
-        rightNorm += rightValue * rightValue
-    }
-
-    if (leftNorm === 0 || rightNorm === 0) {
-        return 0
-    }
-
-    return dot / Math.sqrt(leftNorm * rightNorm)
-}
-
-function tokenize(query: string): string[] {
-    return [
-        ...new Set(
-            query
-                .toLowerCase()
-                .split(/[^a-z0-9_./-]+/u)
-                .map(term => term.trim())
-                .filter(term => term.length >= 2),
-        ),
-    ].slice(0, 12)
-}
-
-function toFtsQuery(terms: string[]): string | undefined {
-    const ftsTerms = terms
-        .map(term => term.replaceAll(/[^a-z0-9_]/gu, ''))
-        .filter(Boolean)
-        .map(term => `"${term}"`)
-
-    return ftsTerms.length > 0 ? ftsTerms.join(' OR ') : undefined
-}
-
-function scoreText(text: string, terms: string[]): number {
-    const lowerText = text.toLowerCase()
-    return terms.reduce(
-        (score, term) => score + (lowerText.includes(term) ? 1 : 0),
-        0,
-    )
-}
-
-function recencyBoost(createdAt: string): number {
-    const timestamp = Date.parse(createdAt)
-    if (Number.isNaN(timestamp)) {
-        return 0
-    }
-
-    const ageDays = (Date.now() - timestamp) / 86_400_000
-    return Math.max(0, 20 - Math.floor(ageDays))
-}
-
-function trimToTokenBudget(text: string, maxTokens: number): string {
-    const words = text.trim().split(/\s+/u).filter(Boolean)
-    const maxWords = Math.max(1, Math.floor(maxTokens / 1.33))
-
-    if (words.length <= maxWords) {
-        return text
-    }
-
-    return `${words.slice(0, maxWords).join(' ')}...`
-}
-
-function compareSearchResults(
-    left: MemorySearchResult,
-    right: MemorySearchResult,
-): number {
-    if (right.score !== left.score) {
-        return right.score - left.score
-    }
-
-    return right.createdAt.localeCompare(left.createdAt)
-}
-
-function detectIntent(query: string): SearchIntent {
-    const normalized = query.toLowerCase()
-    return {
-        allowsDiary:
-            /\b(continue|resume|history|previous|last time|already tried|debug|blocked|why failed|follow up)\b/iu.test(
-                normalized,
-            ),
-        implementationTask:
-            /\b(add|build|change|fix|implement|improve|patch|refactor|test|update)\b/iu.test(
-                normalized,
-            ),
-        prefersAgentReference:
-            /\b(agent|skill|prompt|mcp|reference|docs?)\b/iu.test(normalized),
-    }
-}
-
-function allowResult(
-    result: MemorySearchResult,
-    mode: SearchMode,
-    intent: SearchIntent,
-): boolean {
-    if (mode === 'search') {
-        return true
-    }
-    if (result.type === 'diary' && !intent.allowsDiary) {
-        return false
-    }
-    return true
-}
-
-function applyRolePolicy(
-    result: MemorySearchResult,
-    mode: SearchMode,
-    intent: SearchIntent,
-): MemorySearchResult {
-    const role = result.sourceRole ?? result.kind
-    let scoreDelta = 0
-    if (mode === 'recall') {
-        if (
-            role === 'agent_reference' ||
-            role === 'generated' ||
-            role === 'agent_config'
-        ) {
-            scoreDelta += intent.prefersAgentReference ? 20 : -60
-        }
-        if (
-            role === 'app_code' ||
-            role === 'test_code' ||
-            role === 'package_config'
-        ) {
-            scoreDelta += 15
-        }
-        if (role === 'product_doc') {
-            scoreDelta += intent.implementationTask ? -10 : 10
-        }
-        if (intent.implementationTask && result.path?.startsWith('src/')) {
-            scoreDelta += 25
-        }
-        if (intent.implementationTask && result.path?.endsWith('.test.ts')) {
-            scoreDelta += 10
-        }
-    }
-
-    if (scoreDelta === 0) {
-        return result
-    }
-    return {
-        ...result,
-        score: result.score + scoreDelta,
-    }
-}
-
-function applyGroupAwarePruning(
-    results: MemorySearchResult[],
-    mode: SearchMode,
-    _intent: SearchIntent,
-    limit: number,
-): MemorySearchResult[] {
-    const maxPerType = mode === 'recall' ? 4 : 6
-    const perType = new Map<string, number>()
-    const selected: MemorySearchResult[] = []
-    const sorted = [...results].sort(compareSearchResults)
-
-    for (const item of sorted) {
-        const key = item.type
-        const count = perType.get(key) ?? 0
-        if (count >= maxPerType) {
-            continue
-        }
-        selected.push(item)
-        perType.set(key, count + 1)
-        if (selected.length >= limit * 2) {
-            break
-        }
-    }
-
-    return selected
 }

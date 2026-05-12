@@ -1,10 +1,10 @@
 import { SearchMemoryAction } from '@/app/actions/search-memory-action'
-import { SQLiteMemoryRepository } from '@/app/providers/persistence/sqlite/sqlite-memory-repository'
-import type { SearchInput } from '@/app/providers/protocol/inputs'
 import {
     loadMcpProjectContext,
     withProjectDatabase,
-} from '@/app/providers/protocol/project-runtime'
+} from '@/app/composition/mcp-project-runtime'
+import { createMemoryRepository } from '@/app/composition/memory-repository'
+import type { SearchInput } from '@/app/providers/protocol/inputs'
 import { formatSearchText } from '@/app/providers/protocol/retrieval-format'
 import type { StartMcpServerOptions } from '@/app/providers/protocol/types'
 import { formatToTextResult } from './result'
@@ -15,7 +15,7 @@ export async function handleSearchTool(
 ) {
     const context = await loadMcpProjectContext(options)
     const results = await withProjectDatabase(options, service => {
-        const repo = new SQLiteMemoryRepository(service, context)
+        const repo = createMemoryRepository(service, context)
         const action = new SearchMemoryAction(repo)
         return action.execute(input)
     })

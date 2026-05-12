@@ -1,77 +1,35 @@
 import { randomUUID } from 'node:crypto'
+import type {
+    SaveInput,
+    SaveOptions,
+} from '@/app/contracts/repositories/memory-repository'
+import type { SaveResult as PublicSaveResult } from '@/app/models/memory'
 import type { Project } from '@/app/models/project'
-import { upsertRetrievalDocument } from '@/app/providers/extraction/engine/retrieval-documents'
 import { contentHash } from '@/app/providers/persistence/objects/content'
 import { storePayload } from '@/app/providers/persistence/objects/payload'
 import { createToonStore } from '@/app/providers/persistence/objects/toon-store'
+import { upsertRetrievalDocument } from '@/app/providers/persistence/sqlite/retrieval-documents'
 import type { DatabaseService } from './db'
+import {
+    importanceToConfidence,
+    isSkippableMemoryError,
+    summarizeText,
+    validateMemoryQuality,
+    validateSessionQuality,
+    withProjectUpdateSummary,
+} from './save-policy'
 import { indexSearchDocument } from './search-index'
 
-type SaveResult = {
+type SaveResult = PublicSaveResult & {
     accepted: true
-    duplicateOf?: string
-    diaryId?: string
-    id: string
-    memoryIds?: string[]
-    skippedMemories?: number
-    type: SaveStoreInput['type']
-}
-
-type MemoryKind =
-    | 'blocker'
-    | 'code_insight'
-    | 'constraint'
-    | 'decision'
-    | 'fact'
-    | 'note'
-    | 'preference'
-
-type SaveMemoryInput = {
-    content: string
-    entities?: string[]
-    importance?: 1 | 2 | 3 | 4 | 5
-    kind: MemoryKind
-    source?: string
-    tags?: string[]
-    type: 'memory'
-}
-
-type SaveStoreInput =
-    | SaveMemoryInput
-    | {
-          memories: SaveMemoryInput[]
-          type: 'memories'
-      }
-    | {
-          subject?: string
-          summary: string
-          tags?: string[]
-          type: 'diary'
-      }
-    | {
-          blockers?: string[]
-          decisions?: string[]
-          entities?: string[]
-          filesTouched?: string[]
-          nextSteps?: string[]
-          openQuestions?: string[]
-          status: 'blocked' | 'done' | 'partial'
-          summary: string
-          task: string
-          testsRun?: string[]
-          type: 'session'
-      }
-
-export type SaveProjectUpdate = {
-    deletedFilePaths: string[]
-    updatedFilePaths: string[]
+    type: SaveInput['type']
 }
 
 export async function saveKonteksInput(
     db: DatabaseService,
     context: Project,
-    input: SaveStoreInput,
-    options: { projectUpdate?: SaveProjectUpdate } = {},
+    input: SaveInput,
+    options: SaveOptions = {},
 ): Promise<SaveResult> {
     if (input.type === 'memory') {
         return saveMemory(db, context, input)
@@ -95,7 +53,7 @@ export async function saveKonteksInput(
 async function saveMemories(
     db: DatabaseService,
     context: Project,
-    input: Extract<SaveStoreInput, { type: 'memories' }>,
+    input: Extract<SaveInput, { type: 'memories' }>,
 ): Promise<SaveResult> {
     const batchId = `memory_batch_${randomUUID()}`
     const memoryIds: string[] = []
@@ -127,7 +85,7 @@ async function saveMemories(
 async function saveMemory(
     db: DatabaseService,
     context: Project,
-    input: Extract<SaveStoreInput, { type: 'memory' }>,
+    input: Extract<SaveInput, { type: 'memory' }>,
 ): Promise<SaveResult> {
     validateMemoryQuality(input.content)
     const hash = contentHash(input.content)
@@ -215,7 +173,7 @@ insert into observations (
 async function saveSession(
     db: DatabaseService,
     context: Project,
-    input: Extract<SaveStoreInput, { type: 'session' }>,
+    input: Extract<SaveInput, { type: 'session' }>,
 ): Promise<SaveResult> {
     validateSessionQuality(input.summary)
     const id = `diary_${randomUUID()}`
@@ -280,7 +238,7 @@ insert into diary_entries (
 async function saveDiary(
     db: DatabaseService,
     context: Project,
-    input: Extract<SaveStoreInput, { type: 'diary' }>,
+    input: Extract<SaveInput, { type: 'diary' }>,
 ): Promise<SaveResult> {
     validateSessionQuality(input.summary)
     const id = `diary_${randomUUID()}`
@@ -353,17 +311,6 @@ insert into diary_entries (
     }
 }
 
-function summarizeText(content: string): string {
-    const normalized = content.trim().replaceAll(/\s+/gu, ' ')
-    return normalized.length > 240
-        ? `${normalized.slice(0, 237).trimEnd()}...`
-        : normalized
-}
-
-function importanceToConfidence(importance: number | undefined): number {
-    return importance ? importance / 5 : 1
-}
-
 async function findDuplicateObservation(
     db: DatabaseService,
     hash: string,
@@ -381,70 +328,4 @@ limit 1
     )
 
     return rows[0]
-}
-
-function validateMemoryQuality(content: string): void {
-    const normalized = content.trim()
-    if (looksSensitive(normalized)) {
-        throw new Error('memory content appears to contain a secret')
-    }
-    if (normalized.split(/\s+/u).filter(Boolean).length < 4) {
-        throw new Error('memory content is too short to save')
-    }
-}
-
-function validateSessionQuality(summary: string): void {
-    if (summary.trim().split(/\s+/u).filter(Boolean).length < 4) {
-        throw new Error('session summary is too short to save')
-    }
-}
-
-function withProjectUpdateSummary(
-    input: Extract<SaveStoreInput, { type: 'diary' }>,
-    projectUpdate: SaveProjectUpdate | undefined,
-): Extract<SaveStoreInput, { type: 'diary' }> {
-    const projectSummary = summarizeProjectUpdate(projectUpdate)
-    if (!projectSummary) {
-        return input
-    }
-
-    return {
-        ...input,
-        summary: `${input.summary}\n${projectSummary}`,
-    }
-}
-
-function summarizeProjectUpdate(
-    projectUpdate: SaveProjectUpdate | undefined,
-): string {
-    if (!projectUpdate) {
-        return ''
-    }
-
-    const updated = projectUpdate.updatedFilePaths.slice(0, 8)
-    const deleted = projectUpdate.deletedFilePaths.slice(0, 8)
-    const lines: string[] = []
-
-    if (updated.length > 0) {
-        lines.push(`Updated project files considered: ${updated.join(', ')}`)
-    }
-    if (deleted.length > 0) {
-        lines.push(`Deleted project files considered: ${deleted.join(', ')}`)
-    }
-
-    return lines.join('\n')
-}
-
-function isSkippableMemoryError(error: unknown): boolean {
-    return (
-        error instanceof Error &&
-        (error.message.includes('too short') ||
-            error.message.includes('secret'))
-    )
-}
-
-function looksSensitive(content: string): boolean {
-    return /(api[_-]?key|secret|password|token)\s*[:=]\s*['"]?[A-Za-z0-9_./+=-]{12,}/iu.test(
-        content,
-    )
 }

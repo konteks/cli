@@ -36,10 +36,23 @@ export type MemorySearchResult = {
     kind?: string
     path?: string
     anchor?: string
+    embeddingDimensions?: number
+    embeddingModel?: string
+    sourceId?: string
     sourceRole?: string
     excerpt: string
     score: number
+    scoreDetails?: {
+        confidence: number
+        lexical: number
+        recency: number
+        tokenCostPenalty: number
+        vector?: number
+    }
+    targetType?: MemoryType
+    task?: string
     tokenCost?: number
+    vectorScore?: number
     createdAt: string
     metadata?: Record<string, unknown>
 }
@@ -114,4 +127,39 @@ export type RecallPackage = {
     sourceCount: number
     task: string
     tokenBudget: number
+}
+
+export type WarmUpHighlight = {
+    anchor?: string
+    excerpt: string
+    id: string
+    path?: string
+    score: number
+    scoreDetails: {
+        importance: number
+        recency: number
+        role: number
+        tokenCostPenalty: number
+    }
+    sourceRole?: string
+    tokenCost: number
+    type: 'chunk' | 'diary' | 'memory' | 'module'
+}
+
+export type WarmUpGuidance = {
+    id?: string
+    kind: 'constraint' | 'convention' | 'decision'
+    text: string
+}
+
+export type WarmUpContext = {
+    architecture: string[]
+    description?: string
+    entryPoints: string[]
+    guidance: WarmUpGuidance[]
+    highlights: WarmUpHighlight[]
+    keyFiles: string[]
+    summary: string
+    taxonomy: string[]
+    technologies: string[]
 }

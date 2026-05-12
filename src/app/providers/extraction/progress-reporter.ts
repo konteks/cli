@@ -1,4 +1,4 @@
-import type { MineProgressEvent } from '@/app/providers/extraction/engine/progress'
+import type { MineProgressEvent } from '@/app/contracts/services/progress'
 import {
     type ColorPalette,
     createColorPalette,

@@ -1,5 +1,5 @@
+import { getProjectStatus } from '@/app/actions/project-status-action'
 import type { GlobalCliOptions } from '@/app/dto/cli/options'
-import { getProjectStatus } from '@/app/providers/project/status'
 import {
     type ColorPalette,
     createColorPalette,

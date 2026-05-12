@@ -1,14 +1,16 @@
 import { join } from 'node:path'
+import type { SaveOptions } from '@/app/contracts/repositories/memory-repository'
 import { readMineManifest } from '@/app/providers/extraction/engine/manifest'
 import { mineProject } from '@/app/providers/extraction/mine-project'
 import { openProjectDatabase } from '@/app/providers/persistence/sqlite/database'
 import type { DatabaseService } from '@/app/providers/persistence/sqlite/db'
-import type { SaveProjectUpdate } from '@/app/providers/persistence/sqlite/save-store'
 import { loadProjectContext, pathExists } from '@/app/providers/project/context'
 import type {
     ProjectContext,
     StartMcpServerOptions,
 } from '@/app/providers/protocol/types'
+
+type SaveProjectUpdate = NonNullable<SaveOptions['projectUpdate']>
 
 export async function withProjectDatabase<T>(
     options: StartMcpServerOptions,

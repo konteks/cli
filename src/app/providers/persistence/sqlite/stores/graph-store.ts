@@ -1,5 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter'
+import {
+    clampDepth,
+    type GraphPathStep,
+    normalizeEntityName,
+    type PathRow,
+    tokenize,
+    toPathSteps,
+} from './graph-utils'
 
 type EntityInput = {
     type: string
@@ -57,14 +65,6 @@ type HistoricalRelation = {
     object: EntityRecord
 }
 
-type GraphPathStep = {
-    depth: number
-    relationId: string
-    fromEntityId: string
-    predicate: string
-    toEntityId: string
-}
-
 type EntityRow = {
     id: string
     type: string
@@ -82,12 +82,6 @@ type NeighborRow = EntityRow & {
     relation_id: string
     predicate: string
     direction: 'incoming' | 'outgoing'
-}
-
-type PathRow = {
-    relation_path: string
-    entity_path: string
-    predicate_path: string
 }
 
 type HistoricalRelationRow = {
@@ -562,38 +556,4 @@ function entityFromHistoricalRow(
             undefined,
         type: side === 'subject' ? row.subject_type : row.object_type,
     }
-}
-
-function normalizeEntityName(name: string): string {
-    return name.trim().toLowerCase().replaceAll(/\s+/gu, ' ')
-}
-
-function tokenize(query: string): string[] {
-    return [
-        ...new Set(
-            query
-                .toLowerCase()
-                .split(/[^a-z0-9_./-]+/u)
-                .map(term => term.trim())
-                .filter(term => term.length >= 2),
-        ),
-    ].slice(0, 8)
-}
-
-function clampDepth(depth: number): number {
-    return Math.max(1, Math.min(Math.trunc(depth), 5))
-}
-
-function toPathSteps(row: PathRow): GraphPathStep[] {
-    const entities = row.entity_path.split(',')
-    const relations = row.relation_path.split(',').filter(Boolean)
-    const predicates = row.predicate_path.split(',').filter(Boolean)
-
-    return relations.map((relationId, index) => ({
-        depth: index + 1,
-        fromEntityId: entities[index] ?? '',
-        predicate: predicates[index] ?? '',
-        relationId,
-        toEntityId: entities[index + 1] ?? '',
-    }))
 }

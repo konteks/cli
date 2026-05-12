@@ -3,7 +3,7 @@ import {
     openProjectDatabase,
     projectDatabasePath,
 } from '@/app/providers/persistence/sqlite/database'
-import { loadProjectContext, pathExists } from './context'
+import { loadProjectContext, pathExists } from '@/app/providers/project/context'
 
 type ProjectStatus = {
     projectRoot: string

@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { getProjectStatus } from '@/app/actions/project-status-action'
 import { mkdir, mkdtemp, rm, writeFile } from '@/app/support/file-manager'
 import { createDefaultConfig, resolveProjectContext } from './context'
-import { getProjectStatus } from './status'
 
 const tempDirs: string[] = []
 

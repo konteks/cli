@@ -1,6 +1,6 @@
+import { createMiningAction } from '@/app/composition/mining'
 import type { MineMode } from '@/app/dto/application/mine-project'
 import type { GlobalCliOptions } from '@/app/dto/cli/options'
-import { createMiningAction } from '@/app/providers/extraction/create-mining-action'
 import { createMineProgressReporter } from '@/app/providers/extraction/progress-reporter'
 import { stringifyPretty } from '@/app/support/json'
 import { confirmInteractive } from '@/app/support/prompts'

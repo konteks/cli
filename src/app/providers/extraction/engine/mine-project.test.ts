@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { getProjectStatus } from '@/app/actions/project-status-action'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/app/contracts/services/embedding-provider'
 import { mineProject } from '@/app/providers/extraction/mine-project'
 import { createToonStore } from '@/app/providers/persistence/objects/toon-store'
@@ -9,7 +10,6 @@ import { openProjectDatabase } from '@/app/providers/persistence/sqlite/database
 import { searchMemory } from '@/app/providers/persistence/sqlite/search-store'
 // import { TaxonomyStore } from '../persistence/sqli./taxonomy-store'
 import { loadProjectContext } from '@/app/providers/project/context'
-import { getProjectStatus } from '@/app/providers/project/status'
 import {
     mkdir,
     mkdtemp,
@@ -201,7 +201,7 @@ order by target_type, source_role
         expect(searchResults[0]?.type).toBe('chunk')
         expect(searchResults[0]?.sourceId).toStartWith('source_')
         expect(searchResults[0]?.tokenCost).toBeGreaterThan(0)
-        expect(searchResults[0]?.scoreDetails.lexical).toBeGreaterThan(0)
+        expect(searchResults[0]?.scoreDetails?.lexical).toBeGreaterThan(0)
         expect(roots.map(node => node.name)).toContain('Project Files')
         expect(roots.map(node => node.name)).toContain('src')
         expect(events).toEqual([{ event_type: 'project_mined' }])
@@ -250,7 +250,7 @@ order by target_type, source_role
             embeddingProvider.dimensions,
         )
         expect(vectorResults[0]?.vectorScore).toBeNumber()
-        expect(vectorResults[0]?.scoreDetails.vector).toBeNumber()
+        expect(vectorResults[0]?.scoreDetails?.vector).toBeNumber()
         expect(fallbackResults.length).toBeGreaterThan(0)
         expect(fallbackResults[0]?.vectorScore).toBeUndefined()
         expect(mismatchedResults.length).toBeGreaterThan(0)

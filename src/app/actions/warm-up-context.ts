@@ -1,56 +1,23 @@
+import type {
+    WarmUpContext,
+    WarmUpGuidance,
+    WarmUpHighlight,
+} from '@/app/models/memory'
+import type { Project } from '@/app/models/project'
 import { readMineManifest } from '@/app/providers/extraction/engine/manifest'
 import { openProjectDatabase } from '@/app/providers/persistence/sqlite/database'
 import type { SqliteAdapter } from '@/app/providers/persistence/sqlite/sqlite-adapter'
-import type { ProjectContext } from '@/app/providers/protocol/types'
 import {
     estimateCharacterTokens,
     estimateTextTokens,
 } from '@/app/support/format'
-
-export type WarmUpHighlight = {
-    anchor?: string
-    excerpt: string
-    id: string
-    path?: string
-    score: number
-    scoreDetails: {
-        importance: number
-        recency: number
-        role: number
-        tokenCostPenalty: number
-    }
-    sourceRole?: string
-    tokenCost: number
-    type: 'chunk' | 'diary' | 'memory' | 'module'
-}
-
-export type WarmUpGuidance = {
-    id?: string
-    kind: 'constraint' | 'convention' | 'decision'
-    text: string
-}
-
-type RankedGuidance = WarmUpGuidance & {
-    score: number
-}
-
-export type WarmUpContext = {
-    architecture: string[]
-    description?: string
-    entryPoints: string[]
-    guidance: WarmUpGuidance[]
-    highlights: WarmUpHighlight[]
-    keyFiles: string[]
-    summary: string
-    taxonomy: string[]
-    technologies: string[]
-}
-
-type ObservationRow = {
-    id: string
-    kind: string
-    text_inline: string | null
-}
+import {
+    guidanceFromObservations,
+    recencyBoost,
+    roleImportance,
+    targetImportance,
+    type WarmUpObservationRow,
+} from './warm-up-ranking'
 
 export function limitWarmUpContext(
     context: WarmUpContext,
@@ -88,7 +55,7 @@ export function limitWarmUpContext(
 }
 
 export async function assembleWarmUpContext(
-    context: ProjectContext,
+    context: Project,
 ): Promise<WarmUpContext> {
     const manifest = await readMineManifest(context.memoryDir)
     if (!manifest) {
@@ -125,7 +92,7 @@ limit 12
 `,
         )
         const highlights = await warmUpHighlights(service.adapter)
-        const observations = await service.adapter.query<ObservationRow>(
+        const observations = await service.adapter.query<WarmUpObservationRow>(
             `
 select id, kind, text_inline
 from observations
@@ -295,151 +262,6 @@ limit 40
         })
         .sort((left, right) => right.score - left.score)
         .slice(0, 12)
-}
-
-function targetImportance(type: WarmUpHighlight['type']): number {
-    if (type === 'module') {
-        return 80
-    }
-    if (type === 'chunk') {
-        return 60
-    }
-    return 40
-}
-
-function roleImportance(role: string | null): number {
-    if (role === 'app_code') {
-        return 35
-    }
-    if (role === 'package_config') {
-        return 30
-    }
-    if (role === 'test_code') {
-        return 25
-    }
-    if (role === 'product_doc') {
-        return 15
-    }
-    return 5
-}
-
-function recencyBoost(updatedAt: string): number {
-    const timestamp = Date.parse(updatedAt)
-    if (Number.isNaN(timestamp)) {
-        return 0
-    }
-    const ageDays = (Date.now() - timestamp) / 86_400_000
-    return Math.max(0, 10 - Math.floor(ageDays))
-}
-
-function guidanceFromObservations(
-    observations: ObservationRow[],
-): WarmUpGuidance[] {
-    const guidance: RankedGuidance[] = []
-    for (const item of observations) {
-        const kind = guidanceKind(item.kind)
-        if (!kind || !item.text_inline) {
-            continue
-        }
-        const score = guidanceScore(kind, item.text_inline)
-        if (score <= 0) {
-            continue
-        }
-        guidance.push({
-            id: item.id,
-            kind,
-            score,
-            text: item.text_inline,
-        })
-    }
-    return guidance
-        .sort(
-            (left, right) =>
-                right.score - left.score ||
-                guidanceKindRank(left.kind) - guidanceKindRank(right.kind) ||
-                left.text.length - right.text.length,
-        )
-        .slice(0, 8)
-        .map(({ score: _score, ...item }) => item)
-}
-
-function guidanceKind(kind: string): WarmUpGuidance['kind'] | undefined {
-    if (kind === 'constraint') {
-        return 'constraint'
-    }
-    if (kind === 'decision') {
-        return 'decision'
-    }
-    if (kind === 'preference') {
-        return 'convention'
-    }
-    return undefined
-}
-
-function guidanceScore(kind: WarmUpGuidance['kind'], text: string): number {
-    const normalized = text.toLowerCase()
-    let score = 0
-
-    if (kind === 'constraint') {
-        score += 90
-    } else if (kind === 'convention') {
-        score += 70
-    } else {
-        score += 60
-    }
-
-    if (
-        /\b(must|never|required|default|prefer|avoid|should)\b/u.test(
-            normalized,
-        )
-    ) {
-        score += 18
-    }
-    if (
-        /\b(user-facing|contract|schema|prompt|tool|mcp|cli|memory|save|recall|warm-up|warm up)\b/u.test(
-            normalized,
-        )
-    ) {
-        score += 8
-    }
-    if (text.length <= 180) {
-        score += 8
-    } else if (text.length > 280) {
-        score -= 12
-    }
-    if (
-        /\b(readiness|release plan|milestone|checklist|tracked in)\b/u.test(
-            normalized,
-        )
-    ) {
-        score -= 20
-    }
-    if (looksLikeImplementationLog(normalized)) {
-        score -= 80
-    }
-
-    return score
-}
-
-function guidanceKindRank(kind: WarmUpGuidance['kind']): number {
-    if (kind === 'constraint') {
-        return 0
-    }
-    if (kind === 'convention') {
-        return 1
-    }
-    return 2
-}
-
-function looksLikeImplementationLog(text: string): boolean {
-    return (
-        /^(patched|added|removed|renamed|moved|extracted|updated|implemented|fixed|reverted)\b/u.test(
-            text,
-        ) ||
-        /\b(now exposes|now includes|now resolves|no longer exposes|was not persisted|moved sql query logic|added regression test)\b/u.test(
-            text,
-        )
-    )
 }
 
 function stableProjectSummary(

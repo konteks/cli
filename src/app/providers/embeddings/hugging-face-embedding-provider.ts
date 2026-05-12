@@ -1,7 +1,7 @@
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import type { EmbeddingProviderContract } from '@/app/contracts/services/embedding-provider'
-import type { MineProgressReporter } from '@/app/providers/extraction/engine/progress'
+import type { MineProgressReporter } from '@/app/contracts/services/progress'
 import { env, pipeline } from '@/app/support/embedding'
 import { mkdir, readFile, stat, writeFile } from '@/app/support/file-manager'
 import { formatBytes } from '@/app/support/format'

@@ -1,5 +1,5 @@
 import type { EmbeddingProviderContract } from '@/app/contracts/services/embedding-provider'
-import type { MineProgressReporter } from '@/app/providers/extraction/engine/progress'
+import type { MineProgressReporter } from '@/app/contracts/services/progress'
 import { contentHash } from '@/app/providers/persistence/objects/content'
 import type { DatabaseService } from '@/app/providers/persistence/sqlite/db'
 

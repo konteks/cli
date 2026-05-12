@@ -1,24 +1,35 @@
 import { MineProjectAction } from '@/app/actions/mine-project-action'
 import type { EmbeddingProviderContract } from '@/app/contracts/services/embedding-provider'
+import type { MineProgressReporter } from '@/app/contracts/services/progress'
+import type {
+    MineProjectRequest,
+    MineProjectResponse,
+} from '@/app/dto/application/mine-project'
 import { HuggingFaceEmbeddingProvider } from '@/app/providers/embeddings/hugging-face-embedding-provider'
-import type { MineProgressReporter } from '@/app/providers/extraction/engine/progress'
-import { FileSystemProjectRepository } from '@/app/repositories/file-system-project-repository'
-import { KonteksMineEngine } from './mine-project'
+import { KonteksMineEngine } from '@/app/providers/extraction/mine-project'
+import { loadProjectContext } from '@/app/providers/project/context'
 
 export function createMiningAction(options: {
     embeddingProvider?: EmbeddingProviderContract
     onProgress?: MineProgressReporter
-}): MineProjectAction {
+}): {
+    execute(request: MineProjectRequest): Promise<MineProjectResponse>
+} {
     const embeddingProvider =
         options.embeddingProvider ??
         new HuggingFaceEmbeddingProvider({
             onProgress: options.onProgress,
         })
-    const projectRepo = new FileSystemProjectRepository()
     const mineEngine = new KonteksMineEngine({
         embeddingProvider,
         onProgress: options.onProgress,
     })
+    const action = new MineProjectAction(mineEngine)
 
-    return new MineProjectAction(projectRepo, mineEngine)
+    return {
+        async execute(request) {
+            const project = await loadProjectContext(request.projectRoot)
+            return action.execute(project, request)
+        },
+    }
 }

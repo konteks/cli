@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import type { MemorySearchResult } from '@/app/providers/persistence/sqlite/search-store'
+import type { MemorySearchResult } from '@/app/models/memory'
 import {
     formatRecallText,
     formatSearchText,

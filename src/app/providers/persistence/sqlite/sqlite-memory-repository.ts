@@ -48,8 +48,7 @@ export class SQLiteMemoryRepository implements MemoryRepositoryContract {
         const result = await saveKonteksInput(
             this.db,
             this.project,
-            // biome-ignore lint/suspicious/noExplicitAny: model-to-database union mapping
-            input as any,
+            input,
             options,
         )
         return {

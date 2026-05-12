@@ -1,5 +1,6 @@
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/app/contracts/services/embedding-provider'
 import type { MineEngineContract } from '@/app/contracts/services/mine-engine'
+import type { MineProgressReporter } from '@/app/contracts/services/progress'
 import type {
     MineProjectRequest,
     MineProjectResponse,
@@ -18,7 +19,6 @@ import {
     writeMineManifest,
 } from '@/app/providers/extraction/engine/manifest'
 import { extractProjectMetadata } from '@/app/providers/extraction/engine/metadata'
-import type { MineProgressReporter } from '@/app/providers/extraction/engine/progress'
 import { formatProjectSummaryToon } from '@/app/providers/extraction/engine/toon-summary'
 import type { TreeSitterEngine } from '@/app/providers/extraction/engine/tree-sitter-engine'
 import { createToonStore } from '@/app/providers/persistence/objects/toon-store'
