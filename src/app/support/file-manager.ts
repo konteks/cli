@@ -10,7 +10,6 @@ export {
     rename,
     rm,
     stat,
-    unlink,
     writeFile,
 } from 'node:fs/promises'
 

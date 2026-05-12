@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { FakeEmbeddingProvider } from '@/app/providers/ai/hugging-face-embedding-provider'
 import {
     mkdir,
     mkdtemp,
@@ -9,7 +8,8 @@ import {
     rm,
     writeFile,
 } from '@/app/support/file-manager'
-import { ensureKonteksGitignore, initCommand } from './init'
+import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
+import { initCommand } from './init'
 
 const tempDirs: string[] = []
 
@@ -46,7 +46,7 @@ describe('init command', () => {
         const projectRoot = await makeTempProject()
         await writeFile(join(projectRoot, '.gitignore'), 'node_modules\n')
 
-        await ensureKonteksGitignore(projectRoot)
+        await init(projectRoot)
 
         await expect(
             readFile(join(projectRoot, '.gitignore'), 'utf8'),

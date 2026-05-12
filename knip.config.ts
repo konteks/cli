@@ -9,7 +9,7 @@ const knipConfig: KnipConfig = {
         'tree-sitter-php',
         'tree-sitter-typescript',
     ],
-    ignoreFiles: ['src/**/*.test.ts'],
+    ignoreFiles: ['src/**/*.test.ts', 'src/test-support/**'],
 }
 
 export default knipConfig

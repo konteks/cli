@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import {
     getBundledGrammarForPath,
-    getBundledGrammarManifest,
     initTreeSitterWithBundledGrammars,
 } from './grammar-loader'
 import type { TreeSitterLanguage } from './tree-sitter-engine'
@@ -20,21 +19,6 @@ class MockTreeSitterEngine {
 }
 
 describe('grammar loader', () => {
-    it('exposes bundled manifest entries for built-in grammars', () => {
-        const manifest = getBundledGrammarManifest()
-
-        expect(manifest.runtime).toContain('web-tree-sitter')
-        expect(Object.keys(manifest.grammars).sort()).toEqual([
-            'html',
-            'javascript',
-            'jsdoc',
-            'json',
-            'php',
-            'tsx',
-            'typescript',
-        ])
-    })
-
     it('loads bundled grammars from package assets', async () => {
         const engine = new MockTreeSitterEngine()
         await initTreeSitterWithBundledGrammars(engine as never)

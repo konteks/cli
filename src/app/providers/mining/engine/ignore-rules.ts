@@ -75,10 +75,6 @@ type IgnorePattern = {
     rootRelative: boolean
 }
 
-export function shouldIgnoreRelativePath(relativePath: string): boolean {
-    return getHardIgnoreReason(relativePath) !== undefined
-}
-
 function getHardIgnoreReason(relativePath: string): IgnoreReason | undefined {
     const normalized = relativePath.replaceAll('\\', '/')
     const parts = normalized.split('/').filter(Boolean)

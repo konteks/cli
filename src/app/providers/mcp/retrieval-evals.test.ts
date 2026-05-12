@@ -2,12 +2,12 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { callMcpTool } from '@/app/controllers/mcp/serve'
-import { FakeEmbeddingProvider } from '@/app/providers/ai/hugging-face-embedding-provider'
 import { openProjectDatabase } from '@/app/providers/database/sqlite/database'
 import { loadProjectContext } from '@/app/providers/file-system/context'
 import { readMineManifest } from '@/app/providers/mining/engine/manifest'
 import { mineProject } from '@/app/providers/mining/mine-project'
 import { mkdir, mkdtemp, rm, writeFile } from '@/app/support/file-manager'
+import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
 
 const tempDirs: string[] = []
 

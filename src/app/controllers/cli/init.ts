@@ -62,9 +62,7 @@ export async function initCommand(options: InitCommandOptions): Promise<void> {
     )
 }
 
-export async function ensureKonteksGitignore(
-    projectRoot: string,
-): Promise<void> {
+async function ensureKonteksGitignore(projectRoot: string): Promise<void> {
     const gitignorePath = join(projectRoot, '.gitignore')
     const existing = await readFile(gitignorePath, 'utf8').catch(error => {
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') {

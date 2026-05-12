@@ -94,23 +94,3 @@ export const forgetInputSchema = z
     })
 
 export type ForgetInput = z.infer<typeof forgetInputSchema>
-
-export function parseWarmUpInput(input: unknown): WarmUpInput {
-    return warmUpInputSchema.parse(input)
-}
-
-export function parseRecallInput(input: unknown): RecallInput {
-    return recallInputSchema.parse(input)
-}
-
-export function parseSearchInput(input: unknown): SearchInput {
-    return searchInputSchema.parse(input)
-}
-
-export function parseSaveInput(input: unknown): SaveInput {
-    return saveInputSchema.parse(input)
-}
-
-export function parseForgetInput(input: unknown): ForgetInput {
-    return forgetInputSchema.parse(input)
-}

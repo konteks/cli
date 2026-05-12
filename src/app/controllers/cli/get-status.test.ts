@@ -6,7 +6,8 @@ import { saveKonteksInput } from '@/app/providers/database/sqlite/save-store'
 import { loadProjectContext } from '@/app/providers/file-system/context'
 import { mineProject } from '@/app/providers/mining/mine-project'
 import { mkdir, mkdtemp, rm, writeFile } from '@/app/support/file-manager'
-import { formatStatus, getStatusCommand } from './get-status'
+import { VERSION } from '@/app/support/version'
+import { getStatusCommand } from './get-status'
 
 const tempDirs: string[] = []
 
@@ -56,7 +57,7 @@ describe('status command', () => {
         }
 
         expect(output).toContain('Konteks Memory')
-        expect(output).toContain('v0.0.1')
+        expect(output).toContain(`v${VERSION}`)
         expect(output).toContain('Freshness')
         expect(output).toContain('no file changes')
         expect(output).toContain('Knowledge')
@@ -132,47 +133,5 @@ describe('status command', () => {
         expect(output).toContain('Freshness')
         expect(output).toContain('Konteks project memory is not initialized.')
         expect(output).toContain('run konteks init')
-    })
-
-    it('supports colorized formatting for terminal output', () => {
-        const output = formatStatus(
-            {
-                configExists: true,
-                databaseExists: true,
-                databasePath: '/tmp/project/.konteks/memory.sqlite',
-                freshness: {
-                    changedFileCount: 1,
-                    reason: 'Project extraction is current for 3 files.',
-                    status: 'fresh',
-                },
-                memoryDir: '/tmp/project/.konteks',
-                memoryDirExists: true,
-                memoryStats: {
-                    diaryEntries: 1,
-                    embeddings: 3,
-                    events: 4,
-                    memories: 2,
-                    modules: 1,
-                    retrievalDocuments: 6,
-                    sections: 3,
-                },
-                projectRoot: '/tmp/project',
-            },
-            {
-                color: {
-                    accent: value => `<accent>${value}</accent>`,
-                    dim: value => `<dim>${value}</dim>`,
-                    success: value => `<success>${value}</success>`,
-                },
-            },
-        )
-
-        expect(output).toContain(
-            '<accent>Konteks Memory</accent> <dim>v0.0.1</dim>',
-        )
-        expect(output).toContain('<dim>────────────────')
-        expect(output).toContain('1 file changed; indexed during warm up/save')
-        expect(output).toContain('<accent>Knowledge')
-        expect(output).toContain('<success>3</success> sections')
     })
 })

@@ -23,7 +23,7 @@ export async function getStatusCommand(
 type ProjectStatus = Awaited<ReturnType<typeof getProjectStatus>>
 type StatusColorPalette = Pick<ColorPalette, 'accent' | 'dim' | 'success'>
 
-export function formatStatus(
+function formatStatus(
     status: ProjectStatus,
     options: { color?: StatusColorPalette; version?: string } = {},
 ): string {

@@ -2,10 +2,10 @@ import { afterEach, describe, expect, it, spyOn } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { callMcpTool } from '@/app/controllers/mcp/serve'
-import { FakeEmbeddingProvider } from '@/app/providers/ai/hugging-face-embedding-provider'
 import { loadProjectContext } from '@/app/providers/file-system/context'
 import { mineProject } from '@/app/providers/mining/mine-project'
 import { mkdtemp, rm } from '@/app/support/file-manager'
+import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
 import { callMcpToolCommand } from './call-mcp-tool'
 
 describe('MCP call command', () => {

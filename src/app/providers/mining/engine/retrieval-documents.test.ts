@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import {
-    buildChunkRetrievalTexts,
-    maxEmbeddingTextChars,
-    maxFtsTextChars,
-} from './retrieval-documents'
+import { buildChunkRetrievalTexts } from './retrieval-documents'
 
 describe('buildChunkRetrievalTexts', () => {
     it('keeps FTS and embedding text bounded', () => {
@@ -17,10 +13,8 @@ describe('buildChunkRetrievalTexts', () => {
             topics: ['large', 'retrieval', 'bounds'],
         })
 
-        expect(texts.embeddingText.length).toBeLessThanOrEqual(
-            maxEmbeddingTextChars,
-        )
-        expect(texts.ftsText.length).toBeLessThanOrEqual(maxFtsTextChars)
+        expect(texts.embeddingText.length).toBeLessThanOrEqual(2500)
+        expect(texts.ftsText.length).toBeLessThanOrEqual(6000)
         expect(texts.embeddingText).toContain('path: src/large.ts#largeSymbol')
         expect(texts.ftsText).toContain('topics: large, retrieval, bounds')
     })

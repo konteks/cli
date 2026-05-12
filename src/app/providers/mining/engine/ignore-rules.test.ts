@@ -1,23 +1,27 @@
 import { describe, expect, it } from 'bun:test'
-import { createIgnoreMatcher, shouldIgnoreRelativePath } from './ignore-rules'
+import { createIgnoreMatcher } from './ignore-rules'
 
 describe('mining ignore rules', () => {
     it('skips dependency, build, memory, secret, and binary paths', () => {
-        expect(shouldIgnoreRelativePath('node_modules/pkg/index.js')).toBe(true)
-        expect(shouldIgnoreRelativePath('dist/index.js')).toBe(true)
-        expect(shouldIgnoreRelativePath('.konteks/config.json')).toBe(true)
-        expect(shouldIgnoreRelativePath('.env.local')).toBe(true)
-        expect(shouldIgnoreRelativePath('certs/prod.pem')).toBe(true)
-        expect(shouldIgnoreRelativePath('assets/logo.png')).toBe(true)
-        expect(shouldIgnoreRelativePath('bun.lock')).toBe(true)
-        expect(shouldIgnoreRelativePath('src/generated/client.ts')).toBe(true)
-        expect(shouldIgnoreRelativePath('public/app.min.js')).toBe(true)
+        const matcher = createIgnoreMatcher({})
+
+        expect(matcher.ignores('node_modules/pkg/index.js')).toBe(true)
+        expect(matcher.ignores('dist/index.js')).toBe(true)
+        expect(matcher.ignores('.konteks/config.json')).toBe(true)
+        expect(matcher.ignores('.env.local')).toBe(true)
+        expect(matcher.ignores('certs/prod.pem')).toBe(true)
+        expect(matcher.ignores('assets/logo.png')).toBe(true)
+        expect(matcher.ignores('bun.lock')).toBe(true)
+        expect(matcher.ignores('src/generated/client.ts')).toBe(true)
+        expect(matcher.ignores('public/app.min.js')).toBe(true)
     })
 
     it('keeps source and documentation paths', () => {
-        expect(shouldIgnoreRelativePath('src/index.ts')).toBe(false)
-        expect(shouldIgnoreRelativePath('README.md')).toBe(false)
-        expect(shouldIgnoreRelativePath('package.json')).toBe(false)
+        const matcher = createIgnoreMatcher({})
+
+        expect(matcher.ignores('src/index.ts')).toBe(false)
+        expect(matcher.ignores('README.md')).toBe(false)
+        expect(matcher.ignores('package.json')).toBe(false)
     })
 
     it('respects gitignore patterns and negation', () => {

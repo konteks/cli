@@ -1,18 +1,16 @@
 import { describe, expect, it } from 'bun:test'
 import {
-    parseForgetInput,
-    parseRecallInput,
-    parseSaveInput,
-    parseSearchInput,
-    parseWarmUpInput,
+    forgetInputSchema,
+    recallInputSchema,
     saveInputSchema,
+    searchInputSchema,
     warmUpInputSchema,
 } from './inputs'
 
 describe('MCP input parsing', () => {
     it('accepts warm-up options', () => {
         expect(
-            parseWarmUpInput({
+            warmUpInputSchema.parse({
                 maxTokens: 2000,
                 topic: 'recall output',
             }),
@@ -30,22 +28,22 @@ describe('MCP input parsing', () => {
     })
 
     it('requires recall task text', () => {
-        expect(parseRecallInput({ task: 'continue auth refactor' }).task).toBe(
-            'continue auth refactor',
-        )
-        expect(() => parseRecallInput({ task: '' })).toThrow()
+        expect(
+            recallInputSchema.parse({ task: 'continue auth refactor' }).task,
+        ).toBe('continue auth refactor')
+        expect(() => recallInputSchema.parse({ task: '' })).toThrow()
     })
 
     it('requires search query text', () => {
-        expect(parseSearchInput({ query: 'SQLite decision' }).query).toBe(
-            'SQLite decision',
-        )
-        expect(() => parseSearchInput({ query: '' })).toThrow()
+        expect(
+            searchInputSchema.parse({ query: 'SQLite decision' }).query,
+        ).toBe('SQLite decision')
+        expect(() => searchInputSchema.parse({ query: '' })).toThrow()
     })
 
     it('accepts structured memory save input', () => {
         expect(
-            parseSaveInput({
+            saveInputSchema.parse({
                 content:
                     'Use structured save payloads instead of raw chat transcripts.',
                 importance: 5,
@@ -66,7 +64,7 @@ describe('MCP input parsing', () => {
 
     it('accepts structured memory batches and diary save input', () => {
         expect(
-            parseSaveInput({
+            saveInputSchema.parse({
                 memories: [
                     {
                         content: 'Konteks save must not pass raw full chat.',
@@ -104,7 +102,7 @@ describe('MCP input parsing', () => {
         })
 
         expect(
-            parseSaveInput({
+            saveInputSchema.parse({
                 subject: 'structured save',
                 summary:
                     'Implemented structured save payloads and updated prompts.',
@@ -122,17 +120,17 @@ describe('MCP input parsing', () => {
 
     it('rejects raw chat transcript save input', () => {
         expect(() =>
-            parseSaveInput({
+            saveInputSchema.parse({
                 chat: 'User: save the whole transcript.',
             }),
         ).toThrow()
     })
 
     it('requires id or query for forget input', () => {
-        expect(parseForgetInput({ query: 'Redux decision' }).query).toBe(
+        expect(forgetInputSchema.parse({ query: 'Redux decision' }).query).toBe(
             'Redux decision',
         )
-        expect(() => parseForgetInput({ mode: 'soft_delete' })).toThrow()
+        expect(() => forgetInputSchema.parse({ mode: 'soft_delete' })).toThrow()
     })
 
     it('exposes discoverable save schema for structured saves', () => {

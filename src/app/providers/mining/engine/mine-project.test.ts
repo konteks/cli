@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'bun:test'
+import { unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/app/contracts/services/embedding-provider'
-import { FakeEmbeddingProvider } from '@/app/providers/ai/hugging-face-embedding-provider'
 import { openProjectDatabase } from '@/app/providers/database/sqlite/database'
 import { searchMemory } from '@/app/providers/database/sqlite/search-store'
 // import { TaxonomyStore } from '../persistence/sqli./taxonomy-store'
@@ -15,9 +15,9 @@ import {
     mkdtemp,
     readFile,
     rm,
-    unlink,
     writeFile,
 } from '@/app/support/file-manager'
+import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
 import { getMiningFreshness, readMineManifest } from './manifest'
 import type { TreeSitterLanguage } from './tree-sitter-engine'
 

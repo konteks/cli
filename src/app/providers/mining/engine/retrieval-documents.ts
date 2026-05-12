@@ -2,8 +2,8 @@ import type { DatabaseService } from '@/app/providers/database/sqlite/db'
 import { contentHash } from '@/app/providers/storage/content'
 
 const maxChunkContentChars = 3000
-export const maxEmbeddingTextChars = 2500
-export const maxFtsTextChars = 6000
+const maxEmbeddingTextChars = 2500
+const maxFtsTextChars = 6000
 
 type RetrievalDocumentInput = {
     anchor?: string

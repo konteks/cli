@@ -27,10 +27,6 @@ type GrammarManifest = {
 
 const bundledManifest = grammarManifest as GrammarManifest
 
-export function getBundledGrammarManifest(): GrammarManifest {
-    return bundledManifest
-}
-
 export function getBundledGrammarForPath(
     path: string,
 ): BundledGrammar | undefined {

@@ -5,8 +5,8 @@ import { openProjectDatabase } from '@/app/providers/database/sqlite/database'
 import { loadProjectContext } from '@/app/providers/file-system/context'
 import { upsertRetrievalDocument } from '@/app/providers/mining/engine/retrieval-documents'
 import { mkdir, mkdtemp, rm, writeFile } from '@/app/support/file-manager'
+import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
 import { generateTargetEmbeddings } from './embedding-pipeline'
-import { FakeEmbeddingProvider } from './hugging-face-embedding-provider'
 
 const tempDirs: string[] = []
 
