@@ -64,11 +64,15 @@ const saveMemorySchema = z.object({
     type: z.literal('memory'),
 })
 
+const saveBatchMemorySchema = saveMemorySchema.extend({
+    type: z.literal('memory').default('memory'),
+})
+
 export const saveInputSchema = z.discriminatedUnion('type', [
     saveMemorySchema,
     z.object({
         memories: z
-            .array(saveMemorySchema)
+            .array(saveBatchMemorySchema)
             .min(1, 'memories must contain at least one item'),
         type: z.literal('memories'),
     }),

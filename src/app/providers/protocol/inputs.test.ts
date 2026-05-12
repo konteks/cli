@@ -69,7 +69,6 @@ describe('MCP input parsing', () => {
                     {
                         content: 'Konteks save must not pass raw full chat.',
                         kind: 'constraint',
-                        type: 'memory',
                     },
                     {
                         content: 'Prefer one final diary per coherent session.',
@@ -116,6 +115,30 @@ describe('MCP input parsing', () => {
             tags: ['save'],
             type: 'diary',
         })
+    })
+
+    it('keeps top-level memory saves explicitly typed', () => {
+        expect(() =>
+            saveInputSchema.parse({
+                content: 'Top-level memory saves still need an explicit type.',
+                kind: 'constraint',
+            }),
+        ).toThrow()
+    })
+
+    it('rejects invalid memory batch item types', () => {
+        expect(() =>
+            saveInputSchema.parse({
+                memories: [
+                    {
+                        content: 'Batch memory item types must remain memory.',
+                        kind: 'constraint',
+                        type: 'diary',
+                    },
+                ],
+                type: 'memories',
+            }),
+        ).toThrow()
     })
 
     it('rejects raw chat transcript save input', () => {

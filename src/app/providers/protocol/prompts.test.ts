@@ -93,11 +93,18 @@ describe('MCP prompts', () => {
         expect(save).toContain('Save one compact session diary')
         expect(save).toContain('80-160 words or 3-6 short bullets')
         expect(save).toContain(
+            'Each durable memory should be short but operational',
+        )
+        expect(save).toContain(
             'Do not turn completed implementation steps, file-by-file changelogs, test pass lists, or generic progress narration into durable memories',
         )
         expect(save).toContain('write a handoff summary, not a transcript')
         expect(save).toContain('Omit command logs, tool output, routine files')
         expect(save).toContain('type: "memories"')
+        expect(save).toContain(
+            'the tool defaults omitted item types to `"memory"` inside a `memories` batch',
+        )
+        expect(save).toContain('Accepted durable memory batch shape')
         expect(save).toContain('type: "diary"')
         expect(save).toContain('If the memory payload is too large')
         expect(save).not.toContain('current Konteks task')
