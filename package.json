@@ -71,5 +71,5 @@
         "test": "bun test --reporter=dots > /dev/null 2>&1 || bun test --only-failures"
     },
     "type": "module",
-    "version": "0.0.2"
+    "version": "0.0.0"
 }
