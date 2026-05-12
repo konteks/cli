@@ -5,13 +5,6 @@ import type {
 } from '@modelcontextprotocol/sdk/types.js'
 import type { z } from 'zod'
 import {
-    forgetMemory,
-    recallMemory,
-    saveMemory,
-    searchMemory,
-    warmUpMemory,
-} from '@/app/composition/memory-operations'
-import {
     forgetInputSchema,
     recallInputSchema,
     saveInputSchema,
@@ -32,6 +25,13 @@ import {
 } from '@/app/providers/protocol/retrieval-format'
 import { KONTEKS_TOOL_SURFACE } from '@/app/providers/protocol/tool-surface'
 import type { StartMcpServerOptions } from '@/app/providers/protocol/types'
+import {
+    forgetMemory,
+    recallMemory,
+    saveMemory,
+    searchMemory,
+    warmUpMemory,
+} from '@/composition/memory-operations'
 
 export type ToolHandlers = Record<
     string,

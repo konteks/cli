@@ -1,5 +1,5 @@
-import { repairMemory } from '@/app/composition/memory-repair'
 import type { GlobalCliOptions } from '@/app/models/cli'
+import { repairMemory } from '@/composition/memory-repair'
 import { stringifyPretty } from '@/support/json/io'
 import { terminal } from '@/support/terminal/service'
 

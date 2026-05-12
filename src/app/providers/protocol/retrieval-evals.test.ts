@@ -2,11 +2,11 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { callKonteksTool } from '@/app/composition/mcp-surface'
 import { readMineManifest } from '@/app/providers/extraction/engine/manifest'
 import { mineProject } from '@/app/providers/extraction/mine-project'
 import { openProjectDatabase } from '@/app/providers/persistence/sqlite/database'
 import { loadProjectContext } from '@/app/providers/project/context'
+import { callKonteksTool } from '@/composition/mcp-surface'
 import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
 
 const tempDirs: string[] = []

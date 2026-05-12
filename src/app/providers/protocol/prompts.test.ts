@@ -3,7 +3,7 @@ import {
     getKonteksPrompt,
     listKonteksPrompts,
     listKonteksTools,
-} from '@/app/composition/mcp-surface'
+} from '@/composition/mcp-surface'
 
 function promptText(name: string, args: Record<string, string> = {}): string {
     const result = getKonteksPrompt(name, args)

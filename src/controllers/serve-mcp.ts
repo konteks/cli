@@ -1,7 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
-import { createToolHandlers } from '@/app/composition/mcp-surface'
 import {
     getPromptTemplates,
     renderPromptTemplate,
@@ -14,6 +13,7 @@ import type {
     KonteksMcpServer,
     StartMcpServerOptions,
 } from '@/app/providers/protocol/types'
+import { createToolHandlers } from '@/composition/mcp-surface'
 import { VERSION } from '@/support/version'
 
 export async function startMcpServer(

@@ -1,12 +1,9 @@
 import { cp, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import {
-    callKonteksTool,
-    listKonteksTools,
-} from '@/app/composition/mcp-surface'
 import type { GlobalCliOptions } from '@/app/models/cli'
 import { loadProjectContext, pathExists } from '@/app/providers/project/context'
+import { callKonteksTool, listKonteksTools } from '@/composition/mcp-surface'
 import { replaceStringDeep } from '@/support/object/value'
 
 export { callKonteksTool, listKonteksTools }

@@ -1,11 +1,11 @@
+import type { GlobalCliOptions } from '@/app/models/cli'
+import { parseJsonInput } from '@/app/providers/cli/json-output'
+import { printMcpCallResult } from '@/app/providers/cli/mcp-call-output'
 import {
     callKonteksTool,
     dryRunKonteksTool,
     listKonteksTools,
-} from '@/app/composition/mcp-tools'
-import type { GlobalCliOptions } from '@/app/models/cli'
-import { parseJsonInput } from '@/app/providers/cli/json-output'
-import { printMcpCallResult } from '@/app/providers/cli/mcp-call-output'
+} from '@/composition/mcp-tools'
 
 export async function callMcpToolCommand(
     options: GlobalCliOptions,

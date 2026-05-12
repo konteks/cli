@@ -1,7 +1,7 @@
 import type { Prompt, PromptArgument } from '@modelcontextprotocol/sdk/types.js'
-import recallMd from '@/app/assets/prompts/konteks-recall.md?raw'
-import SaveMd from '@/app/assets/prompts/konteks-save.md?raw'
-import warmUpMd from '@/app/assets/prompts/konteks-warm-up.md?raw'
+import recallMd from '@/assets/prompts/konteks-recall.md?raw'
+import SaveMd from '@/assets/prompts/konteks-save.md?raw'
+import warmUpMd from '@/assets/prompts/konteks-warm-up.md?raw'
 
 export type PromptTemplate = {
     body: string
