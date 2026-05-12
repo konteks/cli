@@ -26,12 +26,9 @@ jobs:
       - name: Set up npm
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
-
-      - name: Upgrade npm for OIDC
-        run: npm install -g npm@11.11.0
 
       - name: Resolve release tag
         id: release
@@ -71,4 +68,4 @@ jobs:
         run: bun run check
 
       - name: Publish to npm
-        run: npm publish --access public --tag "${{ steps.release.outputs.npm_tag }}"
+        run: npm publish --tag "${{ steps.release.outputs.npm_tag }}"
