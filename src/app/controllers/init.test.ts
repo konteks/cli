@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
+import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
 import { initCommand } from './init'
 
 const tempDirs: string[] = []

@@ -2,7 +2,7 @@ import {
     type InstallSkillOptions,
     installSkills,
 } from '@/app/composition/skills'
-import { terminal } from '@/app/support/terminal/service'
+import { terminal } from '@/support/terminal/service'
 
 export async function installSkillsCommand(
     options: InstallSkillOptions,

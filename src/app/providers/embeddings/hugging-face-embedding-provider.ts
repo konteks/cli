@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path'
 import { env, pipeline } from '@huggingface/transformers'
 import type { EmbeddingProviderContract } from '@/app/contracts/services/embedding-provider'
 import type { MineProgressReporter } from '@/app/contracts/services/progress'
-import { formatBytes } from '@/app/support/format/number'
+import { formatBytes } from '@/support/format/number'
 
 export class HuggingFaceEmbeddingProvider implements EmbeddingProviderContract {
     readonly model = 'Xenova/all-MiniLM-L6-v2'

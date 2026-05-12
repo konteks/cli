@@ -1,7 +1,7 @@
 import { initializeProject } from '@/app/composition/project-initialization'
 import type { EmbeddingProviderContract } from '@/app/contracts/services/embedding-provider'
 import type { GlobalCliOptions } from '@/app/models/cli'
-import { terminal } from '@/app/support/terminal/service'
+import { terminal } from '@/support/terminal/service'
 
 type InitCommandOptions = GlobalCliOptions & {
     embeddingProvider?: EmbeddingProviderContract

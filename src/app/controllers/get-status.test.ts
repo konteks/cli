@@ -6,7 +6,7 @@ import { mineProject } from '@/app/providers/extraction/mine-project'
 import { openProjectDatabase } from '@/app/providers/persistence/sqlite/database'
 import { saveKonteksInput } from '@/app/providers/persistence/sqlite/save-store'
 import { loadProjectContext } from '@/app/providers/project/context'
-import { VERSION } from '@/app/support/version'
+import { VERSION } from '@/support/version'
 import { getStatusCommand } from './get-status'
 
 const tempDirs: string[] = []

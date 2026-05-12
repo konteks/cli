@@ -14,7 +14,7 @@ import { repairCommand } from '@/app/controllers/repair'
 import { startMcpServer } from '@/app/controllers/serve-mcp'
 import { ensureCliProjectInitialized } from '@/app/middlewares/cli-initialization'
 import type { GlobalCliOptions } from '@/app/models/cli'
-import { VERSION } from '@/app/support/version'
+import { VERSION } from '@/support/version'
 
 type McpCallOptions = {
     apply?: boolean

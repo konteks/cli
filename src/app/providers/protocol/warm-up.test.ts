@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { callKonteksTool } from '@/app/composition/mcp-surface'
 import { mineProject } from '@/app/providers/extraction/mine-project'
 import { loadProjectContext } from '@/app/providers/project/context'
-import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
+import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
 
 describe('konteks_warm_up', () => {
     let tempDirs: string[] = []

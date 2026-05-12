@@ -7,7 +7,7 @@ import { readMineManifest } from '@/app/providers/extraction/engine/manifest'
 import { mineProject } from '@/app/providers/extraction/mine-project'
 import { openProjectDatabase } from '@/app/providers/persistence/sqlite/database'
 import { loadProjectContext } from '@/app/providers/project/context'
-import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
+import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
 
 const tempDirs: string[] = []
 

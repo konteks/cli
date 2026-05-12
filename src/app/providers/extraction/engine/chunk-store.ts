@@ -18,7 +18,7 @@ import {
     detectLanguage,
     extractTopics,
 } from '@/app/providers/project/source-classification'
-import { terminal } from '@/app/support/terminal/service'
+import { terminal } from '@/support/terminal/service'
 import {
     clearMinedChunks,
     clearMinedChunksForPaths,

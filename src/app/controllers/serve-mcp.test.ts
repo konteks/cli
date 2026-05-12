@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { callKonteksTool } from '@/app/composition/mcp-surface'
 import { mineProject } from '@/app/providers/extraction/mine-project'
 import { loadProjectContext } from '@/app/providers/project/context'
-import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
+import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
 import { callMcpToolCommand } from './call-mcp-tool'
 
 describe('MCP call command', () => {

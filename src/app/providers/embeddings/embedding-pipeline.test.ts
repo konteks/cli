@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { openProjectDatabase } from '@/app/providers/persistence/sqlite/database'
 import { upsertRetrievalDocument } from '@/app/providers/persistence/sqlite/retrieval-documents'
 import { loadProjectContext } from '@/app/providers/project/context'
-import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
+import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
 import { generateTargetEmbeddings } from './embedding-pipeline'
 
 const tempDirs: string[] = []

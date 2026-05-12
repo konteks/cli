@@ -1,4 +1,4 @@
-import { terminal } from '@/app/support/terminal/service'
+import { terminal } from '@/support/terminal/service'
 import type { ScannedFile } from './file-scan'
 import type { CodeMetadata, TreeSitterEngine } from './tree-sitter-engine'
 

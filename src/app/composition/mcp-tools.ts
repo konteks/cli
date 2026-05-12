@@ -7,7 +7,7 @@ import {
 } from '@/app/composition/mcp-surface'
 import type { GlobalCliOptions } from '@/app/models/cli'
 import { loadProjectContext, pathExists } from '@/app/providers/project/context'
-import { replaceStringDeep } from '@/app/support/object/value'
+import { replaceStringDeep } from '@/support/object/value'
 
 export { callKonteksTool, listKonteksTools }
 

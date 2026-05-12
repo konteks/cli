@@ -17,7 +17,7 @@ import { openProjectDatabase } from '@/app/providers/persistence/sqlite/database
 import { searchMemory } from '@/app/providers/persistence/sqlite/search-store'
 // import { TaxonomyStore } from '../persistence/sqli./taxonomy-store'
 import { loadProjectContext } from '@/app/providers/project/context'
-import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
+import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
 import { getMiningFreshness, readMineManifest } from './manifest'
 import type { TreeSitterLanguage } from './tree-sitter-engine'
 

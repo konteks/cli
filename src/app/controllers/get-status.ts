@@ -1,13 +1,13 @@
 import { readProjectStatus } from '@/app/composition/project-status'
 import type { ProjectStatus } from '@/app/contracts/services/project-status-reader'
 import type { GlobalCliOptions } from '@/app/models/cli'
-import { formatInteger } from '@/app/support/format/number'
+import { formatInteger } from '@/support/format/number'
 import {
     type ColorPalette,
     createColorPalette,
-} from '@/app/support/terminal/color-palette'
-import { terminal } from '@/app/support/terminal/service'
-import { VERSION } from '@/app/support/version'
+} from '@/support/terminal/color-palette'
+import { terminal } from '@/support/terminal/service'
+import { VERSION } from '@/support/version'
 
 export async function getStatusCommand(
     options: GlobalCliOptions,

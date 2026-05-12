@@ -3,7 +3,7 @@ import type {
     WarmUpGuidance,
     WarmUpHighlight,
 } from '@/app/models/memory'
-import { estimateCharacterTokens } from '@/app/support/format/tokens'
+import { estimateCharacterTokens } from '@/support/format/tokens'
 
 export function limitWarmUpContext(
     context: WarmUpContext,

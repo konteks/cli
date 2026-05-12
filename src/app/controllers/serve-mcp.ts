@@ -14,7 +14,7 @@ import type {
     KonteksMcpServer,
     StartMcpServerOptions,
 } from '@/app/providers/protocol/types'
-import { VERSION } from '@/app/support/version'
+import { VERSION } from '@/support/version'
 
 export async function startMcpServer(
     options: StartMcpServerOptions,
