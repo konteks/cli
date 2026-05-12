@@ -4,7 +4,7 @@ import type { MineProgressReporter } from '@/app/contracts/services/progress'
 import type {
     MineProjectRequest,
     MineProjectResponse,
-} from '@/app/dto/application/mine-project'
+} from '@/app/models/mining'
 import { HuggingFaceEmbeddingProvider } from '@/app/providers/embeddings/hugging-face-embedding-provider'
 import { KonteksMineEngine } from '@/app/providers/extraction/mine-project'
 import { loadProjectContext } from '@/app/providers/project/context'

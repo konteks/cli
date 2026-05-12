@@ -4,7 +4,7 @@ import type { MineProgressReporter } from '@/app/contracts/services/progress'
 import type {
     MineProjectRequest,
     MineProjectResponse,
-} from '@/app/dto/application/mine-project'
+} from '@/app/models/mining'
 import type { Project } from '@/app/models/project'
 import { generateTargetEmbeddings } from '@/app/providers/embeddings/embedding-pipeline'
 import { mineChunks } from '@/app/providers/extraction/engine/chunk-store'

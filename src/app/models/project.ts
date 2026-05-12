@@ -1,10 +1,10 @@
-type ProjectContext = {
+export type ProjectContext = {
     projectRoot: string
     memoryDir: string
     configPath: string
 }
 
-type KonteksConfig = {
+export type KonteksConfig = {
     projectRoot: string
     storage: {
         inlinePayloadMaxBytes: number
@@ -19,3 +19,5 @@ export type Project = ProjectContext & {
     config: KonteksConfig
     configExists: boolean
 }
+
+export type LoadedProjectContext = Project

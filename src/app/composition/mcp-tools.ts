@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import type { GlobalCliOptions } from '@/app/controllers/cli/types'
 import { callMcpTool, listMcpTools } from '@/app/controllers/mcp/serve'
-import type { GlobalCliOptions } from '@/app/dto/cli/options'
 import { loadProjectContext, pathExists } from '@/app/providers/project/context'
 import { cp, mkdtemp, rm } from '@/app/support/file-manager'
 import { replaceStringDeep } from '@/app/support/object'

@@ -2,7 +2,7 @@ import type { MineEngineContract } from '@/app/contracts/services/mine-engine'
 import type {
     MineProjectRequest,
     MineProjectResponse,
-} from '@/app/dto/application/mine-project'
+} from '@/app/models/mining'
 import type { Project } from '@/app/models/project'
 
 export class MineProjectAction {

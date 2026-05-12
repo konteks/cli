@@ -1,4 +1,4 @@
-import type { LoadedProjectContext } from '@/app/dto/cli/project'
+import type { LoadedProjectContext } from '@/app/models/project'
 import type { McpServerType as McpServer } from '@/app/support/mcp'
 
 export type StartMcpServerOptions = {

@@ -3,7 +3,7 @@ import type {
     KonteksConfig,
     LoadedProjectContext,
     ProjectContext,
-} from '@/app/dto/cli/project'
+} from '@/app/models/project'
 import { access, readFile } from '@/app/support/file-manager'
 
 export type { LoadedProjectContext }

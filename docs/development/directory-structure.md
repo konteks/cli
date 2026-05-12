@@ -6,7 +6,6 @@ src/app
 ├── composition/        # Concrete wiring between controllers, actions, and providers.
 ├── contracts/          # Service and persistence boundaries that need substitution.
 ├── controllers/        # Thin CLI and MCP entrypoints.
-├── dto/                # Typed request/response objects for CLI and app workflows.
 ├── models/             # Core project and memory data shapes.
 ├── providers/          # Local runtime capabilities.
 │   ├── cli/            # CLI-specific input/output helpers.
@@ -33,7 +32,7 @@ graph LR
     P --> FS[(project filesystem)]
     P --> EXT[external SDKs]
     A --> M[models]
-    C --> DTO[dto]
+    C --> M
     P --> S[support]
 ```
 

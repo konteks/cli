@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import type { MineMode } from '@/app/dto/application/mine-project'
+import type { MineMode } from '@/app/models/mining'
 import type { Project } from '@/app/models/project'
 import { pathExists } from '@/app/providers/project/context'
 import { readFile, writeFile } from '@/app/support/file-manager'

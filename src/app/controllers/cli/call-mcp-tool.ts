@@ -3,7 +3,7 @@ import {
     dryRunKonteksTool,
     listKonteksTools,
 } from '@/app/composition/mcp-tools'
-import type { GlobalCliOptions } from '@/app/dto/cli/options'
+import type { GlobalCliOptions } from '@/app/controllers/cli/types'
 import { parseJsonInput } from '@/app/providers/cli/json-output'
 import { printMcpCallResult } from '@/app/providers/cli/mcp-call-output'
 
