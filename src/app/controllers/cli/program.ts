@@ -9,9 +9,9 @@ import { installSkillsCommand } from '@/app/controllers/cli/install-skills'
 import { repairCommand } from '@/app/controllers/cli/repair'
 import { startMcpServer } from '@/app/controllers/mcp/serve'
 import type { GlobalCliOptions } from '@/app/dto/cli/options'
+import { ensureCliProjectInitialized } from '@/app/middlewares/cli-initialization'
 import { Command } from '@/app/support/cli'
 import { VERSION } from '@/app/support/version'
-import { ensureCliProjectInitialized } from '@/middlewares/cli-initialization'
 
 type McpCallOptions = {
     apply?: boolean
