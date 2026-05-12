@@ -11,7 +11,6 @@ For terms, see the [Glossary](../reference/glossary.md).
 | `konteks init` | Initialize | Prepare a project for local memory storage. |
 | `konteks repair` | Repair | Rebuild project memory artifacts from scratch. |
 | `konteks status` | Status | Check memory health and freshness. |
-| `konteks doctor` | Diagnose | Inspect runtime and project setup problems. |
 | `konteks mcp` | Serve | Start the MCP server for an agent client. |
 | `konteks install-skills` | Compatibility | Install Konteks skills for agents without MCP prompt support. |
 

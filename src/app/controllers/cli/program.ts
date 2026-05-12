@@ -1,18 +1,17 @@
 import { callMcpToolCommand } from '@/app/controllers/cli/call-mcp-tool'
-import { getHealthCommand } from '@/app/controllers/cli/get-health'
 import { getPromptDetailCommand } from '@/app/controllers/cli/get-prompt-detail'
 import { getPromptsCommand } from '@/app/controllers/cli/get-prompts'
 import { getStatusCommand } from '@/app/controllers/cli/get-status'
 import { getToolDetailCommand } from '@/app/controllers/cli/get-tool-detail'
 import { getToolsCommand } from '@/app/controllers/cli/get-tools'
 import { initCommand } from '@/app/controllers/cli/init'
-import { ensureCliProjectInitialized } from '@/app/controllers/cli/initialization-middleware'
 import { installSkillsCommand } from '@/app/controllers/cli/install-skills'
 import { repairCommand } from '@/app/controllers/cli/repair'
 import { startMcpServer } from '@/app/controllers/mcp/serve'
 import type { GlobalCliOptions } from '@/app/dto/cli/options'
 import { Command } from '@/app/support/cli'
 import { VERSION } from '@/app/support/version'
+import { ensureCliProjectInitialized } from '@/middlewares/cli-initialization'
 
 type McpCallOptions = {
     apply?: boolean
@@ -30,7 +29,6 @@ type CliCommandHandlers = {
         jsonInput?: string,
         callOptions?: McpCallOptions,
     ) => Promise<void>
-    getHealth: (options: GlobalCliOptions) => Promise<void>
     getPromptDetail: (name: string, input?: string) => Promise<void>
     getPrompts: () => Promise<void>
     getStatus: (options: GlobalCliOptions) => Promise<void>
@@ -52,7 +50,6 @@ export function createCliProgram(
 ): Command {
     const handlers = {
         callMcpTool: callMcpToolCommand,
-        getHealth: getHealthCommand,
         getPromptDetail: getPromptDetailCommand,
         getPrompts: getPromptsCommand,
         getStatus: getStatusCommand,
@@ -97,15 +94,6 @@ export function createCliProgram(
         .description('Print Konteks project memory status for humans.')
         .action(async () => {
             await handlers.getStatus(program.opts())
-        })
-
-    program
-        .command('doctor')
-        .description(
-            'Diagnose runtime, project root, and memory directory setup.',
-        )
-        .action(async () => {
-            await handlers.getHealth(program.opts())
         })
 
     program

@@ -17,7 +17,6 @@ afterEach(async () => {
 describe('CLI initialization middleware', () => {
     for (const args of [
         ['status'],
-        ['doctor'],
         ['repair'],
         ['install-skills'],
         ['mcp'],
@@ -99,7 +98,6 @@ function blockedHandlers(onAction: () => void) {
 
     return {
         callMcpTool: block,
-        getHealth: block,
         getPromptDetail: block,
         getPrompts: block,
         getStatus: block,

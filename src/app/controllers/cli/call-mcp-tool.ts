@@ -1,8 +1,8 @@
 import { callMcpTool, listMcpTools } from '@/app/controllers/mcp/serve'
 import type { GlobalCliOptions } from '@/app/dto/cli/options'
-import { parseJsonInput } from './json-output'
-import { printMcpCallResult } from './mcp-call-output'
-import { dryRunMcpTool } from './mcp-dry-run'
+import { parseJsonInput } from '@/app/providers/cli/json-output'
+import { printMcpCallResult } from '@/app/providers/cli/mcp-call-output'
+import { dryRunMcpTool } from '@/app/providers/cli/mcp-dry-run'
 
 export async function callMcpToolCommand(
     options: GlobalCliOptions,

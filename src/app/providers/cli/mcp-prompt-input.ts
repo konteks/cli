@@ -1,4 +1,4 @@
-import { isRecord, parseJsonInput } from './json-output'
+import { isRecord, parseJsonInput } from '@/app/providers/cli/json-output'
 
 export function parsePromptArguments(
     name: string,

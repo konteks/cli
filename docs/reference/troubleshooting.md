@@ -29,7 +29,7 @@ This guide helps you resolve common issues encountered while setting up or using
 **Symptoms**: Your AI agent reports that it cannot connect to the Konteks server or the tool timed out.
 **Cause**: The MCP server process may have crashed or is taking too long to process a large project.
 **Solution**:
-1. Run `konteks doctor` to check the health of your installation and project memory.
+1. Run `konteks status` to check project memory freshness.
 2. Ensure you are using a supported runtime (Bun 1.3+ or Node 22+).
 3. Check the logs of your AI agent/host for specific error messages.
 
@@ -40,15 +40,3 @@ This guide helps you resolve common issues encountered while setting up or using
 1. Immediately add the sensitive file to your `.gitignore` or `.ignore`.
 2. Run `konteks forget --query "the sensitive content"` to remove it from memory.
 3. Use `konteks repair` to ensure the stale index is cleared.
-
-## Health Check: `konteks doctor`
-
-The `doctor` command is your first line of defense. It performs a suite of checks:
-- Verifies the installation and version.
-- Checks the integrity of the SQLite database.
-- Validates the `.konteks` directory structure.
-- Confirms the presence of mining artifacts (manifests).
-
-```bash
-konteks doctor
-```

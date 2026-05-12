@@ -1,5 +1,5 @@
 import { listMcpTools } from '@/app/controllers/mcp/serve'
-import { printJson } from './json-output'
+import { printJson } from '@/app/providers/cli/json-output'
 
 export async function getToolDetailCommand(name: string): Promise<void> {
     const tool = listMcpTools().find(item => item.name === name)
