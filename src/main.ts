@@ -1,16 +1,16 @@
 #!/usr/bin/env node
-import { callMcpToolCommand } from '@/controllers/cli/call-mcp-tool'
-import { getHealthCommand } from '@/controllers/cli/get-health'
-import { getPromptDetailCommand } from '@/controllers/cli/get-prompt-detail'
-import { getPromptsCommand } from '@/controllers/cli/get-prompts'
-import { getStatusCommand } from '@/controllers/cli/get-status'
-import { getToolDetailCommand } from '@/controllers/cli/get-tool-detail'
-import { getToolsCommand } from '@/controllers/cli/get-tools'
-import { initCommand } from '@/controllers/cli/init'
-import { installSkillsCommand } from '@/controllers/cli/install-skills'
-import { repairCommand } from '@/controllers/cli/repair'
-import { startMcpServer } from '@/controllers/mcp'
-import { Command, VERSION } from '@/services'
+import { callMcpToolCommand } from '@/app/controllers/cli/call-mcp-tool'
+import { getHealthCommand } from '@/app/controllers/cli/get-health'
+import { getPromptDetailCommand } from '@/app/controllers/cli/get-prompt-detail'
+import { getPromptsCommand } from '@/app/controllers/cli/get-prompts'
+import { getStatusCommand } from '@/app/controllers/cli/get-status'
+import { getToolDetailCommand } from '@/app/controllers/cli/get-tool-detail'
+import { getToolsCommand } from '@/app/controllers/cli/get-tools'
+import { initCommand } from '@/app/controllers/cli/init'
+import { installSkillsCommand } from '@/app/controllers/cli/install-skills'
+import { repairCommand } from '@/app/controllers/cli/repair'
+import { startMcpServer } from '@/app/controllers/mcp'
+import { Command, VERSION } from '@/app/services'
 
 const program = new Command()
     .name('konteks')
