@@ -41,11 +41,11 @@ class TerminalService {
     }
 
     stdoutSupportsColor(): boolean {
-        return Boolean(this.stdout.isTTY && !this.env.NO_COLOR)
+        return this.supportsColor(this.stdout)
     }
 
     stderrSupportsColor(): boolean {
-        return Boolean(this.stderr.isTTY && !this.env.NO_COLOR)
+        return this.supportsColor(this.stderr)
     }
 
     stderrIsInteractive(): boolean {
@@ -54,6 +54,18 @@ class TerminalService {
 
     stdinIsInteractive(): boolean {
         return Boolean(this.stdin.isTTY)
+    }
+
+    private supportsColor(stream: WritableStream): boolean {
+        if (this.env.NO_COLOR) {
+            return false
+        }
+
+        if (this.env.FORCE_COLOR && this.env.FORCE_COLOR !== '0') {
+            return true
+        }
+
+        return Boolean(stream.isTTY)
     }
 }
 

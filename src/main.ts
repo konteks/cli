@@ -12,6 +12,7 @@ import { repairCommand } from '@/controllers/repair'
 import { startMcpServer } from '@/controllers/serve-mcp'
 import { ensureCliProjectInitialized } from '@/middlewares/cli-initialization'
 import type { GlobalCliOptions } from '@/models/cli'
+import { printCliError } from '@/support/cli/error-output'
 import { VERSION } from '@/support/version'
 
 type McpCallOptions = {
@@ -176,4 +177,9 @@ function createCliProgram(options: CreateCliProgramOptions = {}): Command {
     return program
 }
 
-createCliProgram().parseAsync(process.argv)
+createCliProgram()
+    .parseAsync(process.argv)
+    .catch(error => {
+        printCliError(error)
+        process.exitCode = 1
+    })

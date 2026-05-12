@@ -33,15 +33,38 @@ describe('CLI initialization middleware', () => {
 
             expect(result.exitCode).not.toBe(0)
             expect(result.output).toContain('Konteks memory is not initialized')
+            expect(result.output).toContain('Project memory is missing')
+            expect(result.output).toContain('konteks init')
+            expect(result.output).not.toContain(
+                'at ensureCliProjectInitialized',
+            )
         })
     }
+
+    it('renders the initialization error with color when color is forced', async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-cli-'))
+        tempDirs.push(projectRoot)
+
+        const result = await runKonteks(['--project', projectRoot, 'status'], {
+            FORCE_COLOR: '1',
+            NO_COLOR: '',
+        })
+
+        expect(result.exitCode).not.toBe(0)
+        expect(result.output).toContain('\u001b[31m')
+        expect(result.output).toContain('╭─')
+    })
 })
 
-async function runKonteks(args: string[]): Promise<{
+async function runKonteks(
+    args: string[],
+    env: Record<string, string> = {},
+): Promise<{
     exitCode: number | null
     output: string
 }> {
     const proc = Bun.spawn(['bun', 'src/main.ts', ...args], {
+        env: { ...process.env, ...env },
         stderr: 'pipe',
         stdout: 'pipe',
     })
