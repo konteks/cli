@@ -1,8 +1,5 @@
-import type {
-    MineProjectRequest,
-    MineProjectResponse,
-} from '@/app/models/mining'
-import type { Project } from '@/app/models/project'
+import type { MineProjectRequest, MineProjectResponse } from '@/models/mining'
+import type { Project } from '@/models/project'
 
 export interface MineEngineContract {
     mine(

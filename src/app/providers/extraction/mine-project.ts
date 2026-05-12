@@ -2,11 +2,6 @@ import { mkdir } from 'node:fs/promises'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/app/contracts/services/embedding-provider'
 import type { MineEngineContract } from '@/app/contracts/services/mine-engine'
 import type { MineProgressReporter } from '@/app/contracts/services/progress'
-import type {
-    MineProjectRequest,
-    MineProjectResponse,
-} from '@/app/models/mining'
-import type { Project } from '@/app/models/project'
 import { generateTargetEmbeddings } from '@/app/providers/embeddings/embedding-pipeline'
 import { mineChunks } from '@/app/providers/extraction/engine/chunk-store'
 import type { ScannedFile } from '@/app/providers/extraction/engine/file-scan'
@@ -25,6 +20,8 @@ import type { TreeSitterEngine } from '@/app/providers/extraction/engine/tree-si
 import { createToonStore } from '@/app/providers/persistence/objects/toon-store'
 import { openProjectDatabase } from '@/app/providers/persistence/sqlite/database'
 import type { DatabaseService } from '@/app/providers/persistence/sqlite/db'
+import type { MineProjectRequest, MineProjectResponse } from '@/models/mining'
+import type { Project } from '@/models/project'
 
 export async function mineProject(
     project: Project,

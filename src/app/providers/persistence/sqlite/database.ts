@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { drizzle } from 'drizzle-orm/sqlite-proxy'
-import type { Project } from '@/app/models/project'
+import type { Project } from '@/models/project'
 import { DatabaseService } from './db'
 import { runMigrations } from './migrations'
 import * as schema from './schema'

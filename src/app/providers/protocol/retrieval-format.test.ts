@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import type { MemorySearchResult } from '@/app/models/memory'
+import type { MemorySearchResult } from '@/models/memory'
 import {
     formatRecallText,
     formatSearchText,

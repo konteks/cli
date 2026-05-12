@@ -2,7 +2,7 @@ import type {
     MemoryRepositoryContract,
     MemorySearchInput,
 } from '@/app/contracts/repositories/memory-repository'
-import type { MemorySearchResult } from '@/app/models/memory'
+import type { MemorySearchResult } from '@/models/memory'
 
 export class SearchMemoryAction {
     constructor(private readonly memoryRepository: MemoryRepositoryContract) {}

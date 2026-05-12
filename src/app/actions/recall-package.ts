@@ -3,7 +3,7 @@ import type {
     RecallGraphItem,
     RecallHistoryItem,
     RecallPackage,
-} from '@/app/models/memory'
+} from '@/models/memory'
 
 export function assembleRecallPackage(input: {
     graph: RecallGraphItem[]

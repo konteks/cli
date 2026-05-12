@@ -3,8 +3,8 @@ import type {
     MemorySearchInput,
 } from '@/app/contracts/repositories/memory-repository'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/app/contracts/services/embedding-provider'
-import type { MemorySearchResult } from '@/app/models/memory'
 import { classifySourceRole } from '@/app/providers/project/source-classification'
+import type { MemorySearchResult } from '@/models/memory'
 import { estimateTextTokens } from '@/support/format/tokens'
 import type { DatabaseService } from './db'
 import {

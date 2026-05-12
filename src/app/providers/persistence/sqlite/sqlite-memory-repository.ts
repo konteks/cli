@@ -13,8 +13,8 @@ import type {
     MemoryRelation,
     MemorySearchResult,
     SaveResult,
-} from '@/app/models/memory'
-import type { Project } from '@/app/models/project'
+} from '@/models/memory'
+import type { Project } from '@/models/project'
 import type { DatabaseService } from './db'
 import { forgetMemory } from './forget-store'
 import { saveKonteksInput } from './save-store'

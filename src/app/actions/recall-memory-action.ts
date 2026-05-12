@@ -8,7 +8,7 @@ import type {
     RecallGraphItem,
     RecallHistoryItem,
     RecallPackage,
-} from '@/app/models/memory'
+} from '@/models/memory'
 
 export class RecallMemoryAction {
     constructor(private readonly memoryRepository: MemoryRepositoryContract) {}

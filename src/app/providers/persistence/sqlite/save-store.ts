@@ -3,12 +3,12 @@ import type {
     SaveInput,
     SaveOptions,
 } from '@/app/contracts/repositories/memory-repository'
-import type { SaveResult as PublicSaveResult } from '@/app/models/memory'
-import type { Project } from '@/app/models/project'
 import { contentHash } from '@/app/providers/persistence/objects/content'
 import { storePayload } from '@/app/providers/persistence/objects/payload'
 import { createToonStore } from '@/app/providers/persistence/objects/toon-store'
 import { upsertRetrievalDocument } from '@/app/providers/persistence/sqlite/retrieval-documents'
+import type { SaveResult as PublicSaveResult } from '@/models/memory'
+import type { Project } from '@/models/project'
 import type { DatabaseService } from './db'
 import {
     importanceToConfidence,

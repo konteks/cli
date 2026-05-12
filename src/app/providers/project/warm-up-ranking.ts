@@ -1,4 +1,4 @@
-import type { WarmUpGuidance, WarmUpHighlight } from '@/app/models/memory'
+import type { WarmUpGuidance, WarmUpHighlight } from '@/models/memory'
 
 export type WarmUpObservationRow = {
     id: string

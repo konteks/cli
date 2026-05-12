@@ -1,4 +1,4 @@
-import type { Project } from '@/app/models/project'
+import type { Project } from '@/models/project'
 
 export type ProjectStatus = {
     projectRoot: string

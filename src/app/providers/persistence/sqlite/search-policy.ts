@@ -1,4 +1,4 @@
-import type { MemorySearchResult } from '@/app/models/memory'
+import type { MemorySearchResult } from '@/models/memory'
 
 export type SearchMode = 'recall' | 'search'
 

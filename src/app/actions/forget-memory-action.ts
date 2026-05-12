@@ -2,7 +2,7 @@ import type {
     ForgetInput,
     MemoryRepositoryContract,
 } from '@/app/contracts/repositories/memory-repository'
-import type { ForgetResult } from '@/app/models/memory'
+import type { ForgetResult } from '@/models/memory'
 
 export class ForgetMemoryAction {
     constructor(private readonly memoryRepository: MemoryRepositoryContract) {}

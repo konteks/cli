@@ -8,7 +8,7 @@ import type {
     WarmUpContext,
     WarmUpGuidance,
     WarmUpHighlight,
-} from '@/app/models/memory'
+} from '@/models/memory'
 
 export function formatWarmUpText(input: {
     warmUp: WarmUpContext

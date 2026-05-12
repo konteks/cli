@@ -1,8 +1,8 @@
 import { limitWarmUpContext } from '@/app/actions/warm-up-context'
 import type { MemoryRepositoryContract } from '@/app/contracts/repositories/memory-repository'
 import type { WarmUpContextReaderContract } from '@/app/contracts/services/warm-up-context-reader'
-import type { RecallPackage, WarmUpContext } from '@/app/models/memory'
-import type { Project } from '@/app/models/project'
+import type { RecallPackage, WarmUpContext } from '@/models/memory'
+import type { Project } from '@/models/project'
 import { RecallMemoryAction } from './recall-memory-action'
 
 export type WarmUpInput = {

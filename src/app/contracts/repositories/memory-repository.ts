@@ -7,7 +7,7 @@ import type {
     MemorySearchResult,
     ObservationKind,
     SaveResult,
-} from '@/app/models/memory'
+} from '@/models/memory'
 
 export type MemorySearchInput = {
     query: string

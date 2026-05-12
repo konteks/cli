@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { MineProgressReporter } from '@/app/contracts/services/progress'
-import type { Project } from '@/app/models/project'
 import { contentHash } from '@/app/providers/persistence/objects/content'
 import { storePayload } from '@/app/providers/persistence/objects/payload'
 import { createToonStore } from '@/app/providers/persistence/objects/toon-store'
@@ -18,6 +17,7 @@ import {
     detectLanguage,
     extractTopics,
 } from '@/app/providers/project/source-classification'
+import type { Project } from '@/models/project'
 import { terminal } from '@/support/terminal/service'
 import {
     clearMinedChunks,

@@ -3,7 +3,7 @@ import type {
     SaveInput,
     SaveOptions,
 } from '@/app/contracts/repositories/memory-repository'
-import type { SaveResult } from '@/app/models/memory'
+import type { SaveResult } from '@/models/memory'
 
 export class SaveMemoryAction {
     constructor(private readonly memoryRepository: MemoryRepositoryContract) {}

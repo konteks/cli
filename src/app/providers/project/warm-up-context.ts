@@ -1,8 +1,8 @@
-import type { WarmUpContext, WarmUpHighlight } from '@/app/models/memory'
-import type { Project } from '@/app/models/project'
 import { readMineManifest } from '@/app/providers/extraction/engine/manifest'
 import { openProjectDatabase } from '@/app/providers/persistence/sqlite/database'
 import type { SqliteAdapter } from '@/app/providers/persistence/sqlite/sqlite-adapter'
+import type { WarmUpContext, WarmUpHighlight } from '@/models/memory'
+import type { Project } from '@/models/project'
 import { estimateTextTokens } from '@/support/format/tokens'
 import {
     guidanceFromObservations,

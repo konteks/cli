@@ -2,7 +2,6 @@ import type {
     ProjectStatus,
     ProjectStatusReaderContract,
 } from '@/app/contracts/services/project-status-reader'
-import type { Project } from '@/app/models/project'
 import { getMiningFreshness } from '@/app/providers/extraction/engine/manifest'
 import {
     openProjectDatabase,
@@ -10,6 +9,7 @@ import {
 } from '@/app/providers/persistence/sqlite/database'
 import type { DatabaseService } from '@/app/providers/persistence/sqlite/db'
 import { pathExists } from '@/app/providers/project/context'
+import type { Project } from '@/models/project'
 
 export class ProjectStatusReader implements ProjectStatusReaderContract {
     async read(context: Project): Promise<ProjectStatus> {

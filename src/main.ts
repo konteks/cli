@@ -2,7 +2,6 @@
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Command } from 'commander'
-import type { GlobalCliOptions } from '@/app/models/cli'
 import { callMcpToolCommand } from '@/controllers/call-mcp-tool'
 import { getPromptDetailCommand } from '@/controllers/get-prompt-detail'
 import { getPromptsCommand } from '@/controllers/get-prompts'
@@ -14,6 +13,7 @@ import { installSkillsCommand } from '@/controllers/install-skills'
 import { repairCommand } from '@/controllers/repair'
 import { startMcpServer } from '@/controllers/serve-mcp'
 import { ensureCliProjectInitialized } from '@/middlewares/cli-initialization'
+import type { GlobalCliOptions } from '@/models/cli'
 import { VERSION } from '@/support/version'
 
 type McpCallOptions = {

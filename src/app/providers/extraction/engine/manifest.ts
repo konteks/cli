@@ -1,8 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { MineMode } from '@/app/models/mining'
-import type { Project } from '@/app/models/project'
 import { pathExists } from '@/app/providers/project/context'
+import type { MineMode } from '@/models/mining'
+import type { Project } from '@/models/project'
 import {
     type ScanDiagnostics,
     type ScannedFile,

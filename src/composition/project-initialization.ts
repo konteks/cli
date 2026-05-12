@@ -1,7 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { EmbeddingProviderContract } from '@/app/contracts/services/embedding-provider'
-import type { MineProjectResponse } from '@/app/models/mining'
 import { readMineManifest } from '@/app/providers/extraction/engine/manifest'
 import { createMineProgressReporter } from '@/app/providers/extraction/progress-reporter'
 import { ensureProjectDatabase } from '@/app/providers/persistence/sqlite/database'
@@ -9,6 +8,7 @@ import {
     createDefaultConfig,
     loadProjectContext,
 } from '@/app/providers/project/context'
+import type { MineProjectResponse } from '@/models/mining'
 import { createMiningAction } from './mining'
 
 export type InitializeProjectOptions = {

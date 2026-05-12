@@ -1,9 +1,6 @@
 import type { MineEngineContract } from '@/app/contracts/services/mine-engine'
-import type {
-    MineProjectRequest,
-    MineProjectResponse,
-} from '@/app/models/mining'
-import type { Project } from '@/app/models/project'
+import type { MineProjectRequest, MineProjectResponse } from '@/models/mining'
+import type { Project } from '@/models/project'
 
 export class MineProjectAction {
     constructor(private readonly mineEngine: MineEngineContract) {}
