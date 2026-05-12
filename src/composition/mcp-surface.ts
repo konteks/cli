@@ -11,6 +11,7 @@ import {
     searchMemory,
     warmUpMemory,
 } from '@/composition/memory-operations'
+import type { StartMcpServerOptions } from '@/models/mcp'
 import {
     forgetInputSchema,
     recallInputSchema,
@@ -30,13 +31,38 @@ import {
     formatSearchText,
     formatWarmUpText,
 } from '@/providers/protocol/retrieval-format'
-import { KONTEKS_TOOL_SURFACE } from '@/providers/protocol/tool-surface'
-import type { StartMcpServerOptions } from '@/providers/protocol/types'
+import {
+    KONTEKS_TOOL_SURFACE,
+    MCP_INSTRUCTIONS,
+} from '@/providers/protocol/tool-surface'
 
 export type ToolHandlers = Record<
     string,
     (input: unknown) => Promise<CallToolResult>
 >
+
+export type KonteksPromptRegistration = {
+    args: NonNullable<Prompt['arguments']>
+    description?: string
+    name: string
+    render(args: Record<string, string>): {
+        messages: Array<{
+            content: { text: string; type: 'text' }
+            role: 'user'
+        }>
+    }
+}
+
+export type KonteksToolRegistration = {
+    annotations: Tool['annotations']
+    description: string
+    inputSchema: z.ZodTypeAny
+    name: string
+}
+
+export function getKonteksMcpInstructions(): string {
+    return MCP_INSTRUCTIONS
+}
 
 export function listKonteksPrompts(): Prompt[] {
     return getPromptTemplates().map(template => template.prompt)
@@ -73,6 +99,34 @@ export function listKonteksTools(): Tool[] {
             type: 'object',
         },
         name: surface.name,
+    }))
+}
+
+export function getKonteksToolRegistrations(): KonteksToolRegistration[] {
+    return KONTEKS_TOOL_SURFACE.map(surface => ({
+        annotations: surface.annotations,
+        description: surface.description,
+        inputSchema: surface.inputSchema,
+        name: surface.name,
+    }))
+}
+
+export function getKonteksPromptRegistrations(): KonteksPromptRegistration[] {
+    return getPromptTemplates().map(template => ({
+        args: template.prompt.arguments ?? [],
+        description: template.prompt.description,
+        name: template.prompt.name,
+        render: (args: Record<string, string>) => ({
+            messages: [
+                {
+                    content: {
+                        text: renderPromptTemplate(template, args),
+                        type: 'text',
+                    },
+                    role: 'user',
+                },
+            ],
+        }),
     }))
 }
 

@@ -3,6 +3,7 @@ import { RecallMemoryAction } from '@/actions/recall-memory-action'
 import { SaveMemoryAction } from '@/actions/save-memory-action'
 import { SearchMemoryAction } from '@/actions/search-memory-action'
 import { WarmUpAction } from '@/actions/warm-up-action'
+import type { StartMcpServerOptions } from '@/models/mcp'
 import type { ForgetResult, RecallPackage, SaveResult } from '@/models/memory'
 import { readWarmUpContext } from '@/providers/project/warm-up-context'
 import type {
@@ -12,7 +13,6 @@ import type {
     SearchInput,
     WarmUpInput,
 } from '@/providers/protocol/inputs'
-import type { StartMcpServerOptions } from '@/providers/protocol/types'
 import {
     loadMcpProjectContext,
     updateChangedProjectMemorySilently,

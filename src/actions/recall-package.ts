@@ -170,21 +170,3 @@ function countBy<T>(
     }
     return counts
 }
-
-export function graphEvidenceLines(graph: RecallGraphItem[]): string[] {
-    return graph
-        .slice(0, 6)
-        .map(
-            item =>
-                `${item.entityName} ${item.predicate} ${item.relatedEntityName} (depth=${item.depth})`,
-        )
-}
-
-export function historyEvidenceLines(history: RecallHistoryItem[]): string[] {
-    return history
-        .slice(0, 6)
-        .map(
-            item =>
-                `${item.subjectEntityName} ${item.predicate} ${item.objectEntityName} [${item.status}]`,
-        )
-}

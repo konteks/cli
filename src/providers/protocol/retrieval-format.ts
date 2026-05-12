@@ -1,9 +1,7 @@
-import {
-    graphEvidenceLines,
-    historyEvidenceLines,
-} from '@/actions/recall-package'
 import type {
     MemorySearchResult,
+    RecallGraphItem,
+    RecallHistoryItem,
     RecallPackage,
     WarmUpContext,
     WarmUpGuidance,
@@ -167,4 +165,22 @@ function toBullets(
 
 function inline(value: string): string {
     return value.trim().replaceAll(/\s+/gu, ' ')
+}
+
+function graphEvidenceLines(graph: RecallGraphItem[]): string[] {
+    return graph
+        .slice(0, 6)
+        .map(
+            item =>
+                `${item.entityName} ${item.predicate} ${item.relatedEntityName} (depth=${item.depth})`,
+        )
+}
+
+function historyEvidenceLines(history: RecallHistoryItem[]): string[] {
+    return history
+        .slice(0, 6)
+        .map(
+            item =>
+                `${item.subjectEntityName} ${item.predicate} ${item.objectEntityName} [${item.status}]`,
+        )
 }

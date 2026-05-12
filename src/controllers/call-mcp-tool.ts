@@ -4,8 +4,8 @@ import {
     listKonteksTools,
 } from '@/composition/mcp-tools'
 import type { GlobalCliOptions } from '@/models/cli'
-import { parseJsonInput } from '@/providers/cli/json-output'
-import { printMcpCallResult } from '@/providers/cli/mcp-call-output'
+import { parseJsonInput } from '@/support/cli/json-output'
+import { printMcpCallResult } from '@/support/cli/mcp-call-output'
 
 export async function callMcpToolCommand(
     options: GlobalCliOptions,

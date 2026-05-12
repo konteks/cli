@@ -1,4 +1,4 @@
-import { isRecord, printJson } from '@/providers/cli/json-output'
+import { isRecord, printJson } from '@/support/cli/json-output'
 import { terminal } from '@/support/terminal/service'
 
 export function printMcpCallResult(

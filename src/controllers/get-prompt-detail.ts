@@ -1,6 +1,6 @@
 import { getKonteksPrompt } from '@/composition/mcp-surface'
-import { printJson } from '@/providers/cli/json-output'
-import { parsePromptArguments } from '@/providers/cli/mcp-prompt-input'
+import { printJson } from '@/support/cli/json-output'
+import { parsePromptArguments } from '@/support/cli/mcp-prompt-input'
 
 export async function getPromptDetailCommand(
     name: string,

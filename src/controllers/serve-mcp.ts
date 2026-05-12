@@ -1,19 +1,13 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
-import { createToolHandlers } from '@/composition/mcp-surface'
 import {
-    getPromptTemplates,
-    renderPromptTemplate,
-} from '@/providers/protocol/prompt-templates'
-import {
-    KONTEKS_TOOL_SURFACE,
-    MCP_INSTRUCTIONS,
-} from '@/providers/protocol/tool-surface'
-import type {
-    KonteksMcpServer,
-    StartMcpServerOptions,
-} from '@/providers/protocol/types'
+    createToolHandlers,
+    getKonteksMcpInstructions,
+    getKonteksPromptRegistrations,
+    getKonteksToolRegistrations,
+} from '@/composition/mcp-surface'
+import type { StartMcpServerOptions } from '@/models/mcp'
 import { VERSION } from '@/support/version'
 
 export async function startMcpServer(
@@ -26,11 +20,11 @@ export async function startMcpServer(
 
 function registerKonteksTools(
     options: StartMcpServerOptions,
-    server: KonteksMcpServer,
+    server: McpServer,
 ): void {
     const handlers = createToolHandlers(options)
 
-    for (const surface of KONTEKS_TOOL_SURFACE) {
+    for (const surface of getKonteksToolRegistrations()) {
         server.registerTool(
             surface.name,
             {
@@ -51,7 +45,7 @@ function createMcpServer(options: StartMcpServerOptions): McpServer {
             version: VERSION,
         },
         {
-            instructions: MCP_INSTRUCTIONS,
+            instructions: getKonteksMcpInstructions(),
         },
     )
 
@@ -62,9 +56,9 @@ function createMcpServer(options: StartMcpServerOptions): McpServer {
 }
 
 function registerKonteksPrompts(server: McpServer): void {
-    for (const template of getPromptTemplates()) {
+    for (const template of getKonteksPromptRegistrations()) {
         const argsSchema: Record<string, z.ZodTypeAny> = {}
-        for (const arg of template.prompt.arguments ?? []) {
+        for (const arg of template.args) {
             let schema: z.ZodTypeAny = z
                 .string()
                 .describe(arg.description ?? '')
@@ -75,23 +69,13 @@ function registerKonteksPrompts(server: McpServer): void {
         }
 
         server.registerPrompt(
-            template.prompt.name,
+            template.name,
             {
                 // biome-ignore lint/suspicious/noExplicitAny: compatibility cast
                 argsSchema: argsSchema as any,
-                description: template.prompt.description,
+                description: template.description,
             },
-            (args: Record<string, string>) => ({
-                messages: [
-                    {
-                        content: {
-                            text: renderPromptTemplate(template, args),
-                            type: 'text' as const,
-                        },
-                        role: 'user' as const,
-                    },
-                ],
-            }),
+            (args: Record<string, string>) => template.render(args),
         )
     }
 }

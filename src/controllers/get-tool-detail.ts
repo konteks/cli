@@ -1,5 +1,5 @@
 import { listKonteksTools } from '@/composition/mcp-surface'
-import { printJson } from '@/providers/cli/json-output'
+import { printJson } from '@/support/cli/json-output'
 
 export async function getToolDetailCommand(name: string): Promise<void> {
     const tool = listKonteksTools().find(item => item.name === name)

@@ -1,14 +1,11 @@
 import { join } from 'node:path'
 import type { SaveOptions } from '@/contracts/repositories/memory-repository'
+import type { McpProjectContext, StartMcpServerOptions } from '@/models/mcp'
 import { readMineManifest } from '@/providers/extraction/engine/manifest'
 import { mineProject } from '@/providers/extraction/mine-project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import type { DatabaseService } from '@/providers/persistence/sqlite/db'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
-import type {
-    ProjectContext,
-    StartMcpServerOptions,
-} from '@/providers/protocol/types'
 
 type SaveProjectUpdate = NonNullable<SaveOptions['projectUpdate']>
 
@@ -16,7 +13,7 @@ export async function withProjectDatabase<T>(
     options: StartMcpServerOptions,
     operation: (
         service: DatabaseService,
-        context: ProjectContext,
+        context: McpProjectContext,
     ) => Promise<T>,
 ): Promise<T> {
     const context = await loadMcpProjectContext(options)
@@ -27,7 +24,7 @@ export async function withProjectDatabase<T>(
 
 export async function loadMcpProjectContext(
     options: StartMcpServerOptions,
-): Promise<ProjectContext> {
+): Promise<McpProjectContext> {
     const context = await loadProjectContext(options.project)
     if (!options.memoryDir) {
         return context
@@ -43,7 +40,7 @@ export async function loadMcpProjectContext(
 }
 
 export async function withProjectDatabaseContext<T>(
-    context: ProjectContext,
+    context: McpProjectContext,
     operation: (service: DatabaseService) => Promise<T>,
 ): Promise<T> {
     const service = await openProjectDatabase(context)
@@ -56,7 +53,7 @@ export async function withProjectDatabaseContext<T>(
 }
 
 export async function updateChangedProjectMemorySilently(
-    context: ProjectContext,
+    context: McpProjectContext,
 ): Promise<SaveProjectUpdate | undefined> {
     if (!context.configExists || !(await readMineManifest(context.memoryDir))) {
         return undefined
