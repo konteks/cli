@@ -1,4 +1,4 @@
-import type { SqliteRemoteDatabase } from '@/app/support/database'
+import type { SqliteRemoteDatabase } from 'drizzle-orm/sqlite-proxy'
 import type * as schema from './schema'
 
 type SqliteValue = Uint8Array | boolean | number | string | null

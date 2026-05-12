@@ -1,6 +1,6 @@
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathExists } from '@/app/providers/project/context'
-import { readFile } from '@/app/support/file-manager'
 import type { ScannedFile } from './file-scan'
 
 export type ProjectMetadata = {

@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'bun:test'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { getProjectStatus } from '@/app/actions/project-status-action'
-import { mkdir, mkdtemp, rm, writeFile } from '@/app/support/file-manager'
 import { createDefaultConfig, resolveProjectContext } from './context'
 
 const tempDirs: string[] = []

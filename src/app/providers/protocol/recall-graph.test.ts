@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
+import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { RecallMemoryAction } from '@/app/actions/recall-memory-action'
@@ -6,7 +7,6 @@ import { openProjectDatabase } from '@/app/providers/persistence/sqlite/database
 import { SQLiteMemoryRepository } from '@/app/providers/persistence/sqlite/sqlite-memory-repository'
 import { GraphStore } from '@/app/providers/persistence/sqlite/stores/graph-store'
 import { loadProjectContext } from '@/app/providers/project/context'
-import { mkdtemp, rm } from '@/app/support/file-manager'
 
 const tempDirs: string[] = []
 

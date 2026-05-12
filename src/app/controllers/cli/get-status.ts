@@ -1,11 +1,11 @@
 import { getProjectStatus } from '@/app/actions/project-status-action'
 import type { GlobalCliOptions } from '@/app/controllers/cli/types'
+import { formatInteger } from '@/app/support/format/number'
 import {
     type ColorPalette,
     createColorPalette,
-} from '@/app/support/color-palette'
-import { formatInteger } from '@/app/support/format'
-import { terminal } from '@/app/support/terminal'
+} from '@/app/support/terminal/color-palette'
+import { terminal } from '@/app/support/terminal/service'
 import { VERSION } from '@/app/support/version'
 
 export async function getStatusCommand(

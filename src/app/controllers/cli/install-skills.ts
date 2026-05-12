@@ -1,9 +1,9 @@
+import { mkdir, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { resolveProjectContext } from '@/app/providers/project/context'
-import { mkdir, writeFile } from '@/app/support/file-manager'
-import { getPromptTemplates } from '@/app/support/mcp-prompts'
-import { terminal } from '@/app/support/terminal'
+import { getPromptTemplates } from '@/app/providers/protocol/prompt-templates'
+import { terminal } from '@/app/support/terminal/service'
 
 type InstallSkillOptions = {
     global?: boolean

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test'
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { mkdtemp, readdir, readFile, rm } from '@/app/support/file-manager'
 import { installSkillsCommand } from './install-skills'
 
 const tempDirs: string[] = []

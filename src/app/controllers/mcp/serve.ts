@@ -1,3 +1,11 @@
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import type {
+    CallToolResult,
+    Prompt,
+    Tool,
+} from '@modelcontextprotocol/sdk/types.js'
+import { z } from 'zod'
 import {
     forgetInputSchema,
     recallInputSchema,
@@ -5,6 +13,11 @@ import {
     searchInputSchema,
     warmUpInputSchema,
 } from '@/app/providers/protocol/inputs'
+import type { PromptTemplate } from '@/app/providers/protocol/prompt-templates'
+import {
+    getPromptTemplates,
+    renderPromptTemplate,
+} from '@/app/providers/protocol/prompt-templates'
 import {
     KONTEKS_TOOL_SURFACE,
     MCP_INSTRUCTIONS,
@@ -13,14 +26,6 @@ import type {
     KonteksMcpServer,
     StartMcpServerOptions,
 } from '@/app/providers/protocol/types'
-import type { CallToolResult, Prompt, Tool } from '@/app/support/mcp'
-import { McpServer, StdioServerTransport } from '@/app/support/mcp'
-import type { PromptTemplate } from '@/app/support/mcp-prompts'
-import {
-    getPromptTemplates,
-    renderPromptTemplate,
-} from '@/app/support/mcp-prompts'
-import { z } from '@/app/support/validation'
 import { VERSION } from '@/app/support/version'
 import { handleForgetTool } from './tools/forget'
 import { handleRecallTool } from './tools/recall'

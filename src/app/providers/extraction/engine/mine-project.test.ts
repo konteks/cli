@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { unlink } from 'node:fs/promises'
+import {
+    mkdir,
+    mkdtemp,
+    readFile,
+    rm,
+    unlink,
+    writeFile,
+} from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { getProjectStatus } from '@/app/actions/project-status-action'
@@ -10,13 +17,6 @@ import { openProjectDatabase } from '@/app/providers/persistence/sqlite/database
 import { searchMemory } from '@/app/providers/persistence/sqlite/search-store'
 // import { TaxonomyStore } from '../persistence/sqli./taxonomy-store'
 import { loadProjectContext } from '@/app/providers/project/context'
-import {
-    mkdir,
-    mkdtemp,
-    readFile,
-    rm,
-    writeFile,
-} from '@/app/support/file-manager'
 import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
 import { getMiningFreshness, readMineManifest } from './manifest'
 import type { TreeSitterLanguage } from './tree-sitter-engine'

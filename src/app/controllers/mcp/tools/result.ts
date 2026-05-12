@@ -1,5 +1,5 @@
-import type { CallToolResult } from '@/app/support/mcp'
-import { encodeToon } from '@/app/support/serialization'
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
+import { encode as encodeToon } from '@toon-format/toon'
 
 export function formatToTextResult(value: string | object): CallToolResult {
     return {

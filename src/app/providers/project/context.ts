@@ -1,10 +1,10 @@
+import { access, readFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import type {
     KonteksConfig,
     LoadedProjectContext,
     ProjectContext,
 } from '@/app/models/project'
-import { access, readFile } from '@/app/support/file-manager'
 
 export type { LoadedProjectContext }
 

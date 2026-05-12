@@ -1,10 +1,10 @@
 import type { MineProgressEvent } from '@/app/contracts/services/progress'
+import { formatBytes } from '@/app/support/format/number'
 import {
     type ColorPalette,
     createColorPalette,
-} from '@/app/support/color-palette'
-import { formatBytes } from '@/app/support/format'
-import { terminal } from '@/app/support/terminal'
+} from '@/app/support/terminal/color-palette'
+import { terminal } from '@/app/support/terminal/service'
 
 export function createMineProgressReporter(): {
     done(): void

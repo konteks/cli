@@ -1,10 +1,10 @@
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { env, pipeline } from '@huggingface/transformers'
 import type { EmbeddingProviderContract } from '@/app/contracts/services/embedding-provider'
 import type { MineProgressReporter } from '@/app/contracts/services/progress'
-import { env, pipeline } from '@/app/support/embedding'
-import { mkdir, readFile, stat, writeFile } from '@/app/support/file-manager'
-import { formatBytes } from '@/app/support/format'
+import { formatBytes } from '@/app/support/format/number'
 
 export class HuggingFaceEmbeddingProvider implements EmbeddingProviderContract {
     readonly model = 'Xenova/all-MiniLM-L6-v2'

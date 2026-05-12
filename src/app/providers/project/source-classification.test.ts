@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import {
     classifySourceRole,
     detectLanguage,
-} from '@/app/support/source-classification'
+} from '@/app/providers/project/source-classification'
 
 describe('detectLanguage', () => {
     it('detects supported languages from extensions', () => {

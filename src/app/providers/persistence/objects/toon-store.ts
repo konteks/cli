@@ -1,5 +1,5 @@
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { mkdir, readFile, writeFile } from '@/app/support/file-manager'
 import { contentAddressPath, contentHash } from './content'
 
 type ToonObject = {

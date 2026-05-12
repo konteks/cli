@@ -1,5 +1,5 @@
-import { confirm } from '@/app/support/interactive-prompts'
-import { terminal } from './terminal'
+import { confirm } from '@inquirer/prompts'
+import { terminal } from '@/app/support/terminal/service'
 
 export async function confirmInteractive(
     message: string,

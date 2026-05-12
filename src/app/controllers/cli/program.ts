@@ -1,3 +1,4 @@
+import { Command } from 'commander'
 import { callMcpToolCommand } from '@/app/controllers/cli/call-mcp-tool'
 import { getPromptDetailCommand } from '@/app/controllers/cli/get-prompt-detail'
 import { getPromptsCommand } from '@/app/controllers/cli/get-prompts'
@@ -10,7 +11,6 @@ import { repairCommand } from '@/app/controllers/cli/repair'
 import type { GlobalCliOptions } from '@/app/controllers/cli/types'
 import { startMcpServer } from '@/app/controllers/mcp/serve'
 import { ensureCliProjectInitialized } from '@/app/middlewares/cli-initialization'
-import { Command } from '@/app/support/cli'
 import { VERSION } from '@/app/support/version'
 
 type McpCallOptions = {

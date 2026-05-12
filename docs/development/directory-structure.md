@@ -14,7 +14,12 @@ src/app
 │   ├── persistence/    # SQLite, query stores, migrations, and object payload storage.
 │   ├── project/        # Project context resolution helpers.
 │   └── protocol/       # MCP schemas, tool surface, and response formatting.
-└── support/            # Generic wrappers/helpers for SDKs, terminal, JSON, files, etc.
+└── support/            # Project-owned generic utilities only.
+    ├── format/         # Number and token formatting/estimation helpers.
+    ├── json/           # JSON parse/stringify helpers.
+    ├── object/         # Generic object/value helpers.
+    ├── terminal/       # Terminal output and color helpers.
+    └── version.ts      # Package version metadata.
 ```
 
 ## Code Flow
@@ -33,7 +38,9 @@ graph LR
     P --> EXT[external SDKs]
     A --> M[models]
     C --> M
-    P --> S[support]
+    P --> S[support utilities]
+    C --> S
+    S --> EXT
 ```
 
 Rules:
@@ -44,4 +51,5 @@ Rules:
 - Keep providers below actions/controllers/repositories; providers must not import those upper layers in production code.
 - Prefer direct imports over barrel files.
 - Import provider capabilities directly from their grouped provider paths, such as `@/app/providers/persistence/sqlite/database`.
+- Keep `support` for project-owned generic utilities; do not use it as a re-export layer for third-party packages or Node built-ins.
 - Preserve public CLI commands, MCP tool names, prompt names, and persisted database behavior during refactors.

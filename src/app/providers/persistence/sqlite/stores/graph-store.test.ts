@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'bun:test'
+import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { loadProjectContext } from '@/app/providers/project/context'
-import { mkdtemp, rm } from '@/app/support/file-manager'
 import { openProjectDatabase } from '../database'
 import { GraphStore } from './graph-store'
 

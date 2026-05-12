@@ -1,3 +1,7 @@
+import {
+    graphEvidenceLines,
+    historyEvidenceLines,
+} from '@/app/actions/recall-package'
 import type {
     MemorySearchResult,
     RecallPackage,
@@ -5,10 +9,6 @@ import type {
     WarmUpGuidance,
     WarmUpHighlight,
 } from '@/app/models/memory'
-import {
-    graphEvidenceLines,
-    historyEvidenceLines,
-} from '@/app/support/recall-service'
 
 export function formatWarmUpText(input: {
     warmUp: WarmUpContext

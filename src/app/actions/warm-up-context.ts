@@ -10,7 +10,7 @@ import type { SqliteAdapter } from '@/app/providers/persistence/sqlite/sqlite-ad
 import {
     estimateCharacterTokens,
     estimateTextTokens,
-} from '@/app/support/format'
+} from '@/app/support/format/tokens'
 import {
     guidanceFromObservations,
     recencyBoost,

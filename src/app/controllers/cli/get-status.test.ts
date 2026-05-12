@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, spyOn } from 'bun:test'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { mineProject } from '@/app/providers/extraction/mine-project'
 import { openProjectDatabase } from '@/app/providers/persistence/sqlite/database'
 import { saveKonteksInput } from '@/app/providers/persistence/sqlite/save-store'
 import { loadProjectContext } from '@/app/providers/project/context'
-import { mkdir, mkdtemp, rm, writeFile } from '@/app/support/file-manager'
 import { VERSION } from '@/app/support/version'
 import { getStatusCommand } from './get-status'
 

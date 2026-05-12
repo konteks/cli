@@ -4,8 +4,8 @@ import type {
 } from '@/app/contracts/repositories/memory-repository'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/app/contracts/services/embedding-provider'
 import type { MemorySearchResult } from '@/app/models/memory'
-import { estimateTextTokens } from '@/app/support/format'
-import { classifySourceRole } from '@/app/support/source-classification'
+import { classifySourceRole } from '@/app/providers/project/source-classification'
+import { estimateTextTokens } from '@/app/support/format/tokens'
 import type { DatabaseService } from './db'
 import {
     type DiaryRow,

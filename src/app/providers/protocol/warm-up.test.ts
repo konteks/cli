@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it } from 'bun:test'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { callMcpTool } from '@/app/controllers/mcp/serve'
 import { mineProject } from '@/app/providers/extraction/mine-project'
 import { loadProjectContext } from '@/app/providers/project/context'
-import { mkdir, mkdtemp, rm, writeFile } from '@/app/support/file-manager'
 import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
 
 describe('konteks_warm_up', () => {

@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { MineProgressReporter } from '@/app/contracts/services/progress'
 import type { Project } from '@/app/models/project'
@@ -12,13 +13,12 @@ import {
 } from '@/app/providers/persistence/sqlite/retrieval-documents'
 import { indexSearchDocument } from '@/app/providers/persistence/sqlite/search-index'
 import type { TaxonomyStore } from '@/app/providers/persistence/sqlite/stores/taxonomy-store'
-import { readFile } from '@/app/support/file-manager'
 import {
     classifySourceRole,
     detectLanguage,
     extractTopics,
-} from '@/app/support/source-classification'
-import { terminal } from '@/app/support/terminal'
+} from '@/app/providers/project/source-classification'
+import { terminal } from '@/app/support/terminal/service'
 import {
     clearMinedChunks,
     clearMinedChunksForPaths,

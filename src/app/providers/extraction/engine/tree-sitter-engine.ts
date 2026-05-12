@@ -1,4 +1,4 @@
-import { Language, type Node, Parser, Query } from '@/app/support/tree-sitter'
+import { Language, type Node, Parser, Query } from 'web-tree-sitter'
 import { getBundledGrammarForPath } from './grammar-loader'
 
 export type TreeSitterLanguage =

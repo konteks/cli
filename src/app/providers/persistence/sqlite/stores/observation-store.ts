@@ -1,4 +1,4 @@
-import { and, isNull, or, sql } from '@/app/support/database'
+import { and, isNull, or, sql } from 'drizzle-orm'
 import { observations } from '../schema'
 import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter'
 

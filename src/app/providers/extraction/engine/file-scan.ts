@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
+import { readdir, readFile, stat } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
-import { readdir, readFile, stat } from '@/app/support/file-manager'
 import {
     createIgnoreMatcher,
     defaultMaxMineFileBytes,

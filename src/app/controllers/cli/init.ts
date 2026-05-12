@@ -1,3 +1,4 @@
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createMiningAction } from '@/app/composition/mining'
 import type { EmbeddingProviderContract } from '@/app/contracts/services/embedding-provider'
@@ -10,8 +11,7 @@ import {
     createDefaultConfig,
     loadProjectContext,
 } from '@/app/providers/project/context'
-import { mkdir, readFile, writeFile } from '@/app/support/file-manager'
-import { terminal } from '@/app/support/terminal'
+import { terminal } from '@/app/support/terminal/service'
 
 type InitCommandOptions = GlobalCliOptions & {
     embeddingProvider?: EmbeddingProviderContract

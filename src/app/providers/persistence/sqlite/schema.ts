@@ -6,7 +6,7 @@ import {
     type SQLiteColumn,
     sqliteTable,
     text,
-} from '@/app/support/database'
+} from 'drizzle-orm/sqlite-core'
 
 export const sources = sqliteTable('sources', {
     createdAt: text('created_at').notNull(),

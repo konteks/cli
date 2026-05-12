@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it } from 'bun:test'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/app/providers/persistence/sqlite/database'
 import { upsertRetrievalDocument } from '@/app/providers/persistence/sqlite/retrieval-documents'
 import { loadProjectContext } from '@/app/providers/project/context'
-import { mkdir, mkdtemp, rm, writeFile } from '@/app/support/file-manager'
 import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
 import { generateTargetEmbeddings } from './embedding-pipeline'
 

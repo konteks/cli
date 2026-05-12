@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, spyOn } from 'bun:test'
+import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { callMcpTool } from '@/app/controllers/mcp/serve'
 import { mineProject } from '@/app/providers/extraction/mine-project'
 import { loadProjectContext } from '@/app/providers/project/context'
-import { mkdtemp, rm } from '@/app/support/file-manager'
 import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
 import { callMcpToolCommand } from './call-mcp-tool'
 

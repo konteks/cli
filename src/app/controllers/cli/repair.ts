@@ -1,10 +1,10 @@
 import { createMiningAction } from '@/app/composition/mining'
 import type { GlobalCliOptions } from '@/app/controllers/cli/types'
 import type { MineMode } from '@/app/models/mining'
+import { confirmInteractive } from '@/app/providers/cli/interactive-confirm'
 import { createMineProgressReporter } from '@/app/providers/extraction/progress-reporter'
-import { stringifyPretty } from '@/app/support/json'
-import { confirmInteractive } from '@/app/support/prompts'
-import { terminal } from '@/app/support/terminal'
+import { stringifyPretty } from '@/app/support/json/io'
+import { terminal } from '@/app/support/terminal/service'
 
 type MineOptions = {
     changed?: boolean

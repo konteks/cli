@@ -1,10 +1,10 @@
+import { cp, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { GlobalCliOptions } from '@/app/controllers/cli/types'
 import { callMcpTool, listMcpTools } from '@/app/controllers/mcp/serve'
 import { loadProjectContext, pathExists } from '@/app/providers/project/context'
-import { cp, mkdtemp, rm } from '@/app/support/file-manager'
-import { replaceStringDeep } from '@/app/support/object'
+import { replaceStringDeep } from '@/app/support/object/value'
 
 export { callMcpTool as callKonteksTool, listMcpTools as listKonteksTools }
 
