@@ -29,17 +29,25 @@ jobs:
         id: release
         shell: bash
         run: |
-          version="${GITHUB_REF_NAME}"
+          release_tag="${GITHUB_REF_NAME}"
+
+          if [[ ! "$release_tag" =~ ^v ]]; then
+            echo "Release tag must start with v, got: $release_tag" >&2
+            exit 1
+          fi
+
+          version="${release_tag#v}"
 
           if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             npm_tag="latest"
           elif [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-([0-9A-Za-z-]+)\.[0-9]+$ ]]; then
             npm_tag="${BASH_REMATCH[1]}"
           else
-            echo "Release tag must match x.x.x or x.x.x-{tag}.x, got: $version" >&2
+            echo "Release tag must match vx.x.x or vx.x.x-{tag}.x, got: $release_tag" >&2
             exit 1
           fi
 
+          echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "npm_tag=$npm_tag" >> "$GITHUB_OUTPUT"
 
