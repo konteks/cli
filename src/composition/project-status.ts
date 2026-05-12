@@ -1,7 +1,7 @@
-import { ProjectStatusAction } from '@/app/actions/project-status-action'
-import type { ProjectStatus } from '@/app/contracts/services/project-status-reader'
-import { loadProjectContext } from '@/app/providers/project/context'
-import { ProjectStatusReader } from '@/app/providers/project/status-reader'
+import { ProjectStatusAction } from '@/actions/project-status-action'
+import type { ProjectStatus } from '@/contracts/services/project-status-reader'
+import { loadProjectContext } from '@/providers/project/context'
+import { ProjectStatusReader } from '@/providers/project/status-reader'
 
 export async function readProjectStatus(
     projectOverride?: string,

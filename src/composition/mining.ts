@@ -1,10 +1,10 @@
-import { MineProjectAction } from '@/app/actions/mine-project-action'
-import type { EmbeddingProviderContract } from '@/app/contracts/services/embedding-provider'
-import type { MineProgressReporter } from '@/app/contracts/services/progress'
-import { HuggingFaceEmbeddingProvider } from '@/app/providers/embeddings/hugging-face-embedding-provider'
-import { KonteksMineEngine } from '@/app/providers/extraction/mine-project'
-import { loadProjectContext } from '@/app/providers/project/context'
+import { MineProjectAction } from '@/actions/mine-project-action'
+import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
+import type { MineProgressReporter } from '@/contracts/services/progress'
 import type { MineProjectRequest, MineProjectResponse } from '@/models/mining'
+import { HuggingFaceEmbeddingProvider } from '@/providers/embeddings/hugging-face-embedding-provider'
+import { KonteksMineEngine } from '@/providers/extraction/mine-project'
+import { loadProjectContext } from '@/providers/project/context'
 
 export function createMiningAction(options: {
     embeddingProvider?: EmbeddingProviderContract

@@ -1,5 +1,5 @@
-import type { EmbeddingProviderContract } from '@/app/contracts/services/embedding-provider'
 import { initializeProject } from '@/composition/project-initialization'
+import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
 import type { GlobalCliOptions } from '@/models/cli'
 import { terminal } from '@/support/terminal/service'
 

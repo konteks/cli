@@ -3,8 +3,8 @@ import { join } from 'node:path'
 import {
     type InstallKonteksSkillsResult,
     installKonteksSkills,
-} from '@/app/providers/cli/skill-installer'
-import { resolveProjectContext } from '@/app/providers/project/context'
+} from '@/providers/cli/skill-installer'
+import { resolveProjectContext } from '@/providers/project/context'
 
 export type InstallSkillOptions = {
     global?: boolean

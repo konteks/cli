@@ -1,4 +1,4 @@
-import type { EmbeddingProviderContract } from '@/app/contracts/services/embedding-provider'
+import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
 
 export class FakeEmbeddingProvider implements EmbeddingProviderContract {
     readonly model = 'fake/all-MiniLM-L6-v2'

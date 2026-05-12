@@ -1,6 +1,6 @@
-import { readMineManifest } from '@/app/providers/extraction/engine/manifest'
-import { projectDatabasePath } from '@/app/providers/persistence/sqlite/database'
-import { loadProjectContext, pathExists } from '@/app/providers/project/context'
+import { readMineManifest } from '@/providers/extraction/engine/manifest'
+import { projectDatabasePath } from '@/providers/persistence/sqlite/database'
+import { loadProjectContext, pathExists } from '@/providers/project/context'
 
 const uninitializedCliMessage =
     'Konteks memory is not initialized. Run `konteks init`.'

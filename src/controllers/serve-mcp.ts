@@ -1,19 +1,19 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
+import { createToolHandlers } from '@/composition/mcp-surface'
 import {
     getPromptTemplates,
     renderPromptTemplate,
-} from '@/app/providers/protocol/prompt-templates'
+} from '@/providers/protocol/prompt-templates'
 import {
     KONTEKS_TOOL_SURFACE,
     MCP_INSTRUCTIONS,
-} from '@/app/providers/protocol/tool-surface'
+} from '@/providers/protocol/tool-surface'
 import type {
     KonteksMcpServer,
     StartMcpServerOptions,
-} from '@/app/providers/protocol/types'
-import { createToolHandlers } from '@/composition/mcp-surface'
+} from '@/providers/protocol/types'
 import { VERSION } from '@/support/version'
 
 export async function startMcpServer(

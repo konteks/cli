@@ -1,6 +1,6 @@
-import { confirmInteractive } from '@/app/providers/cli/interactive-confirm'
-import { createMineProgressReporter } from '@/app/providers/extraction/progress-reporter'
 import type { MineMode, MineProjectResponse } from '@/models/mining'
+import { confirmInteractive } from '@/providers/cli/interactive-confirm'
+import { createMineProgressReporter } from '@/providers/extraction/progress-reporter'
 import { createMiningAction } from './mining'
 
 export type RepairMemoryOptions = {

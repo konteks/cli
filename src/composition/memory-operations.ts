@@ -1,18 +1,18 @@
-import { ForgetMemoryAction } from '@/app/actions/forget-memory-action'
-import { RecallMemoryAction } from '@/app/actions/recall-memory-action'
-import { SaveMemoryAction } from '@/app/actions/save-memory-action'
-import { SearchMemoryAction } from '@/app/actions/search-memory-action'
-import { WarmUpAction } from '@/app/actions/warm-up-action'
-import { readWarmUpContext } from '@/app/providers/project/warm-up-context'
+import { ForgetMemoryAction } from '@/actions/forget-memory-action'
+import { RecallMemoryAction } from '@/actions/recall-memory-action'
+import { SaveMemoryAction } from '@/actions/save-memory-action'
+import { SearchMemoryAction } from '@/actions/search-memory-action'
+import { WarmUpAction } from '@/actions/warm-up-action'
+import type { ForgetResult, RecallPackage, SaveResult } from '@/models/memory'
+import { readWarmUpContext } from '@/providers/project/warm-up-context'
 import type {
     ForgetInput,
     RecallInput,
     SaveInput,
     SearchInput,
     WarmUpInput,
-} from '@/app/providers/protocol/inputs'
-import type { StartMcpServerOptions } from '@/app/providers/protocol/types'
-import type { ForgetResult, RecallPackage, SaveResult } from '@/models/memory'
+} from '@/providers/protocol/inputs'
+import type { StartMcpServerOptions } from '@/providers/protocol/types'
 import {
     loadMcpProjectContext,
     updateChangedProjectMemorySilently,
