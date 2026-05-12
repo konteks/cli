@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, spyOn } from 'bun:test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { callMcpTool } from '@/app/controllers/mcp/serve'
+import { callKonteksTool } from '@/app/composition/mcp-surface'
 import { mineProject } from '@/app/providers/extraction/mine-project'
 import { loadProjectContext } from '@/app/providers/project/context'
 import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
@@ -42,7 +42,7 @@ describe('MCP call command', () => {
         expect(output).toContain('konteks: session saved')
         expect(output).toContain('1 durable memories')
 
-        const search = await callMcpTool(
+        const search = await callKonteksTool(
             { project: projectRoot },
             'konteks_search',
             { query: 'dry-run' },
@@ -74,7 +74,7 @@ describe('MCP call command', () => {
 
         expect(output).toContain('konteks: session saved')
 
-        const search = await callMcpTool(
+        const search = await callKonteksTool(
             { project: projectRoot },
             'konteks_search',
             { query: 'Apply mutations' },

@@ -1,8 +1,6 @@
-import {
-    assembleWarmUpContext,
-    limitWarmUpContext,
-} from '@/app/actions/warm-up-context'
+import { limitWarmUpContext } from '@/app/actions/warm-up-context'
 import type { MemoryRepositoryContract } from '@/app/contracts/repositories/memory-repository'
+import type { WarmUpContextReaderContract } from '@/app/contracts/services/warm-up-context-reader'
 import type { RecallPackage, WarmUpContext } from '@/app/models/memory'
 import type { Project } from '@/app/models/project'
 import { RecallMemoryAction } from './recall-memory-action'
@@ -21,10 +19,11 @@ export class WarmUpAction {
     constructor(
         private readonly project: Project,
         private readonly memoryRepository: MemoryRepositoryContract,
+        private readonly warmUpContextReader: WarmUpContextReaderContract,
     ) {}
 
     async execute(input: WarmUpInput): Promise<WarmUpResult> {
-        const rawWarmUp = await assembleWarmUpContext(this.project)
+        const rawWarmUp = await this.warmUpContextReader.read(this.project)
         const warmUp = limitWarmUpContext(rawWarmUp, input.maxTokens ?? 2000)
 
         let recall: RecallPackage | undefined

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { callMcpTool } from '@/app/controllers/mcp/serve'
+import { callKonteksTool } from '@/app/composition/mcp-surface'
 import { mineProject } from '@/app/providers/extraction/mine-project'
 import { loadProjectContext } from '@/app/providers/project/context'
 import { FakeEmbeddingProvider } from '@/test-support/fake-embedding-provider'
@@ -43,7 +43,7 @@ describe('konteks_warm_up', () => {
         })
 
         // Seed some durable memories
-        await callMcpTool({ project: projectRoot }, 'konteks_save', {
+        await callKonteksTool({ project: projectRoot }, 'konteks_save', {
             memories: [
                 {
                     content: 'Use Bun test for project verification.',
@@ -70,7 +70,7 @@ describe('konteks_warm_up', () => {
             type: 'memories',
         })
 
-        const result = await callMcpTool(
+        const result = await callKonteksTool(
             { project: projectRoot },
             'konteks_warm_up',
             { maxTokens: 500 },
@@ -112,7 +112,7 @@ describe('konteks_warm_up', () => {
             'export const later = true\n',
         )
 
-        const result = await callMcpTool(
+        const result = await callKonteksTool(
             { project: projectRoot },
             'konteks_warm_up',
             { maxTokens: 500 },
@@ -152,7 +152,7 @@ describe('konteks_warm_up', () => {
             embeddingProvider: new FakeEmbeddingProvider(),
         })
 
-        const result = await callMcpTool(
+        const result = await callKonteksTool(
             { project: projectRoot },
             'konteks_warm_up',
             { maxTokens: 500, topic: 'focused recall warm up' },

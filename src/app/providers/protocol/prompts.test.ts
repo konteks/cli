@@ -1,25 +1,25 @@
 import { describe, expect, it } from 'bun:test'
 import {
-    getMcpPrompt,
-    listMcpPrompts,
-    listMcpTools,
-} from '@/app/controllers/mcp/serve'
+    getKonteksPrompt,
+    listKonteksPrompts,
+    listKonteksTools,
+} from '@/app/composition/mcp-surface'
 
 function promptText(name: string, args: Record<string, string> = {}): string {
-    const result = getMcpPrompt(name, args)
+    const result = getKonteksPrompt(name, args)
     const content = result.messages[0]?.content
     return content?.type === 'text' ? content.text : ''
 }
 
 describe('MCP prompts', () => {
     it('does not expose a status tool', () => {
-        expect(listMcpTools().map(tool => tool.name)).not.toContain(
+        expect(listKonteksTools().map(tool => tool.name)).not.toContain(
             'konteks_status',
         )
     })
 
     it('exposes tools in the documented MCP API order', () => {
-        expect(listMcpTools().map(tool => tool.name)).toEqual([
+        expect(listKonteksTools().map(tool => tool.name)).toEqual([
             'konteks_warm_up',
             'konteks_recall',
             'konteks_save',
@@ -29,12 +29,12 @@ describe('MCP prompts', () => {
     })
 
     it('exposes lifecycle prompts with Konteks-prefixed names', () => {
-        expect(listMcpPrompts().map(prompt => prompt.name)).toEqual([
+        expect(listKonteksPrompts().map(prompt => prompt.name)).toEqual([
             'konteks-recall',
             'konteks-save',
             'konteks-warm-up',
         ])
-        expect(listMcpPrompts().map(prompt => prompt.title)).toEqual([
+        expect(listKonteksPrompts().map(prompt => prompt.title)).toEqual([
             'Konteks Recall',
             'Konteks Save',
             'Konteks Warm Up',
@@ -42,7 +42,7 @@ describe('MCP prompts', () => {
     })
 
     it('supports an optional warm-up focus prompt', () => {
-        const warmUpPrompt = listMcpPrompts().find(
+        const warmUpPrompt = listKonteksPrompts().find(
             prompt => prompt.name === 'konteks-warm-up',
         )
         const unfocused = promptText('konteks-warm-up')
@@ -67,7 +67,7 @@ describe('MCP prompts', () => {
     })
 
     it('guides save toward diary plus durable memory without refresh noise', () => {
-        const savePrompt = listMcpPrompts().find(
+        const savePrompt = listKonteksPrompts().find(
             prompt => prompt.name === 'konteks-save',
         )
         const save = promptText('konteks-save')

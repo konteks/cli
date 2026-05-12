@@ -1,12 +1,15 @@
 import { cp, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { GlobalCliOptions } from '@/app/controllers/cli/types'
-import { callMcpTool, listMcpTools } from '@/app/controllers/mcp/serve'
+import {
+    callKonteksTool,
+    listKonteksTools,
+} from '@/app/composition/mcp-surface'
+import type { GlobalCliOptions } from '@/app/models/cli'
 import { loadProjectContext, pathExists } from '@/app/providers/project/context'
 import { replaceStringDeep } from '@/app/support/object/value'
 
-export { callMcpTool as callKonteksTool, listMcpTools as listKonteksTools }
+export { callKonteksTool, listKonteksTools }
 
 export async function dryRunKonteksTool(
     options: GlobalCliOptions,
@@ -22,7 +25,7 @@ export async function dryRunKonteksTool(
             await cp(context.memoryDir, tempMemoryDir, { recursive: true })
         }
 
-        const result = await callMcpTool(
+        const result = await callKonteksTool(
             { memoryDir: tempMemoryDir, project: options.project },
             name,
             input,

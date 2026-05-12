@@ -1,8 +1,8 @@
-import { listMcpTools } from '@/app/controllers/mcp/serve'
+import { listKonteksTools } from '@/app/composition/mcp-surface'
 import { printJson } from '@/app/providers/cli/json-output'
 
 export async function getToolDetailCommand(name: string): Promise<void> {
-    const tool = listMcpTools().find(item => item.name === name)
+    const tool = listKonteksTools().find(item => item.name === name)
 
     if (!tool) {
         throw new Error(`Unknown Konteks tool: ${name}`)

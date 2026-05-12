@@ -3,9 +3,15 @@
 ```text
 src/app
 ├── actions/            # User workflow orchestration, such as recall/save/warm-up.
+├── assets/             # Packaged prompt templates and other static runtime assets.
 ├── composition/        # Concrete wiring between controllers, actions, and providers.
 ├── contracts/          # Service and persistence boundaries that need substitution.
+│   ├── repositories/   # Repository interfaces consumed by actions.
+│   └── services/       # Service interfaces, such as mining and embedding contracts.
 ├── controllers/        # Thin CLI and MCP entrypoints.
+│   ├── cli/            # CLI command handlers.
+│   └── mcp/            # MCP server transport and registration.
+├── middlewares/        # Cross-command guards such as CLI project initialization.
 ├── models/             # Core project and memory data shapes.
 ├── providers/          # Local runtime capabilities.
 │   ├── cli/            # CLI-specific input/output helpers.
@@ -24,24 +30,34 @@ src/app
 
 ## Code Flow
 
+The outer layers translate protocol concerns into application requests,
+composition wires concrete workflows, actions own workflow decisions, and
+providers contain concrete runtime details.
+
 ```mermaid
 graph LR
-    CLI[CLI command] --> C[controllers]
-    MCP[MCP server/tool] --> C
+    E[CLI and MCP entrypoints] --> C[controllers and middleware]
     C --> X[composition]
     X --> A[actions]
-    A --> K[contracts]
+    A --> K[contracts and models]
     X --> P[providers]
-    A --> P
-    P --> DB[(SQLite + object store)]
-    P --> FS[(project filesystem)]
-    P --> EXT[external SDKs]
-    A --> M[models]
-    C --> M
-    P --> S[support utilities]
-    C --> S
-    S --> EXT
+    P --> R[(filesystem, SQLite, assets, SDKs)]
+    C --> S[support]
+    P --> S
 ```
+
+Layer responsibilities:
+
+- Controllers should parse input, call one action or composed application
+  operation, and format output.
+- Composition should be the only place that chooses concrete providers for an
+  application workflow.
+- Actions should depend on contracts and models, not concrete providers.
+- Providers should implement contracts and own all filesystem, database, object
+  storage, embedding, protocol-template, and SDK details.
+- Middleware should handle cross-cutting entrypoint checks before controllers
+  run, without taking over workflow behavior.
+- Support utilities should stay generic and dependency-light.
 
 Rules:
 

@@ -1,6 +1,6 @@
-import { listMcpPrompts } from '@/app/controllers/mcp/serve'
+import { listKonteksPrompts } from '@/app/composition/mcp-surface'
 import { printJson } from '@/app/providers/cli/json-output'
 
 export async function getPromptsCommand(): Promise<void> {
-    printJson(listMcpPrompts())
+    printJson(listKonteksPrompts())
 }

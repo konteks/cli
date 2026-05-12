@@ -1,19 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
-import type {
-    CallToolResult,
-    Prompt,
-    Tool,
-} from '@modelcontextprotocol/sdk/types.js'
 import { z } from 'zod'
-import {
-    forgetInputSchema,
-    recallInputSchema,
-    saveInputSchema,
-    searchInputSchema,
-    warmUpInputSchema,
-} from '@/app/providers/protocol/inputs'
-import type { PromptTemplate } from '@/app/providers/protocol/prompt-templates'
+import { createToolHandlers } from '@/app/composition/mcp-surface'
 import {
     getPromptTemplates,
     renderPromptTemplate,
@@ -27,13 +15,6 @@ import type {
     StartMcpServerOptions,
 } from '@/app/providers/protocol/types'
 import { VERSION } from '@/app/support/version'
-import { handleForgetTool } from './tools/forget'
-import { handleRecallTool } from './tools/recall'
-import { handleSaveTool } from './tools/save'
-import { handleSearchTool } from './tools/search'
-import { handleWarmUpTool } from './tools/warm-up'
-
-type ToolHandlers = Record<string, (input: unknown) => Promise<CallToolResult>>
 
 export async function startMcpServer(
     options: StartMcpServerOptions,
@@ -41,61 +22,6 @@ export async function startMcpServer(
     const server = createMcpServer(options)
     const transport = new StdioServerTransport()
     await server.connect(transport)
-}
-
-export function listMcpPrompts(): Prompt[] {
-    return getPromptTemplates().map(template => template.prompt)
-}
-
-export function getMcpPrompt(
-    name: string,
-    args: Record<string, string> = {},
-): {
-    description?: string
-    messages: Array<{ content: { text: string; type: 'text' }; role: 'user' }>
-} {
-    const template = promptTemplateByName(name)
-
-    return {
-        description: template.prompt.description,
-        messages: [
-            {
-                content: {
-                    text: renderPromptTemplate(template, args),
-                    type: 'text',
-                },
-                role: 'user',
-            },
-        ],
-    }
-}
-
-export function listMcpTools(): Tool[] {
-    return KONTEKS_TOOL_SURFACE.map(surface => ({
-        description: surface.description,
-        inputSchema: {
-            properties: {},
-            type: 'object',
-        },
-        name: surface.name,
-    }))
-}
-
-export async function callMcpTool(
-    options: StartMcpServerOptions,
-    name: string,
-    input: unknown = {},
-): Promise<CallToolResult> {
-    const schema = inputSchemaForTool(name)
-    const validated = schema.parse(input)
-
-    const handlers = createToolHandlers(options)
-    const handler = handlers[name]
-    if (!handler) {
-        throw new Error(`Unknown Konteks tool: ${name}`)
-    }
-
-    return await handler(validated)
 }
 
 function registerKonteksTools(
@@ -115,38 +41,6 @@ function registerKonteksTools(
             },
             (input: unknown) => handlers[surface.name](input),
         )
-    }
-}
-
-function createToolHandlers(options: StartMcpServerOptions): ToolHandlers {
-    return {
-        konteks_forget: (input: unknown) =>
-            handleForgetTool(options, forgetInputSchema.parse(input)),
-        konteks_recall: (input: unknown) =>
-            handleRecallTool(options, recallInputSchema.parse(input)),
-        konteks_save: (input: unknown) =>
-            handleSaveTool(options, saveInputSchema.parse(input)),
-        konteks_search: (input: unknown) =>
-            handleSearchTool(options, searchInputSchema.parse(input)),
-        konteks_warm_up: (input: unknown) =>
-            handleWarmUpTool(options, warmUpInputSchema.parse(input)),
-    }
-}
-
-function inputSchemaForTool(name: string): z.ZodTypeAny {
-    switch (name) {
-        case 'konteks_warm_up':
-            return warmUpInputSchema
-        case 'konteks_recall':
-            return recallInputSchema
-        case 'konteks_save':
-            return saveInputSchema
-        case 'konteks_search':
-            return searchInputSchema
-        case 'konteks_forget':
-            return forgetInputSchema
-        default:
-            throw new Error(`Unknown tool: ${name}`)
     }
 }
 
@@ -200,14 +94,4 @@ function registerKonteksPrompts(server: McpServer): void {
             }),
         )
     }
-}
-
-function promptTemplateByName(name: string): PromptTemplate {
-    const template = getPromptTemplates().find(
-        item => item.prompt.name === name,
-    )
-    if (!template) {
-        throw new Error(`Unknown Konteks prompt: ${name}`)
-    }
-    return template
 }

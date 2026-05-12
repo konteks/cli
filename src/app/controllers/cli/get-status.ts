@@ -1,5 +1,6 @@
-import { getProjectStatus } from '@/app/actions/project-status-action'
-import type { GlobalCliOptions } from '@/app/controllers/cli/types'
+import { readProjectStatus } from '@/app/composition/project-status'
+import type { ProjectStatus } from '@/app/contracts/services/project-status-reader'
+import type { GlobalCliOptions } from '@/app/models/cli'
 import { formatInteger } from '@/app/support/format/number'
 import {
     type ColorPalette,
@@ -11,7 +12,7 @@ import { VERSION } from '@/app/support/version'
 export async function getStatusCommand(
     options: GlobalCliOptions,
 ): Promise<void> {
-    const status = await getProjectStatus(options.project)
+    const status = await readProjectStatus(options.project)
     terminal.log(
         formatStatus(status, {
             color: createColorPalette(terminal.stdoutSupportsColor()),
@@ -20,7 +21,6 @@ export async function getStatusCommand(
     )
 }
 
-type ProjectStatus = Awaited<ReturnType<typeof getProjectStatus>>
 type StatusColorPalette = Pick<ColorPalette, 'accent' | 'dim' | 'success'>
 
 function formatStatus(

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { getProjectStatus } from '@/app/actions/project-status-action'
+import { readProjectStatus } from '@/app/composition/project-status'
 import { createDefaultConfig, resolveProjectContext } from './context'
 
 const tempDirs: string[] = []
@@ -51,7 +51,7 @@ describe('project context', () => {
     it('reports missing memory when the project is not initialized', async () => {
         const projectRoot = await makeTempProject()
 
-        const status = await getProjectStatus(projectRoot)
+        const status = await readProjectStatus(projectRoot)
 
         expect(status.freshness).toEqual({
             changedFileCount: 0,
@@ -66,7 +66,7 @@ describe('project context', () => {
         await mkdir(join(projectRoot, '.konteks'), { recursive: true })
         await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
 
-        const status = await getProjectStatus(projectRoot)
+        const status = await readProjectStatus(projectRoot)
 
         expect(status.freshness.status).toBe('missing')
         expect(status.freshness.recommendedCommand).toBe('konteks repair')

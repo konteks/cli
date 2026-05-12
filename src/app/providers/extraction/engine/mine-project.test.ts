@@ -9,7 +9,7 @@ import {
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { getProjectStatus } from '@/app/actions/project-status-action'
+import { readProjectStatus } from '@/app/composition/project-status'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/app/contracts/services/embedding-provider'
 import { mineProject } from '@/app/providers/extraction/mine-project'
 import { createToonStore } from '@/app/providers/persistence/objects/toon-store'
@@ -337,7 +337,7 @@ where path = ? and anchor = ? and content_hash = ?
             'export const x = 1\n',
         )
 
-        const stale = await getProjectStatus(projectRoot)
+        const stale = await readProjectStatus(projectRoot)
         expect(stale.freshness.status).toBe('stale')
         expect(stale.freshness.recommendedCommand).toBe('konteks repair')
     })

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { callMcpTool } from '@/app/controllers/mcp/serve'
+import { callKonteksTool } from '@/app/composition/mcp-surface'
 import { readMineManifest } from '@/app/providers/extraction/engine/manifest'
 import { mineProject } from '@/app/providers/extraction/mine-project'
 import { openProjectDatabase } from '@/app/providers/persistence/sqlite/database'
@@ -47,7 +47,7 @@ describe('retrieval quality evals', () => {
             embeddingProvider: new FakeEmbeddingProvider(),
         })
 
-        const result = await callMcpTool(
+        const result = await callKonteksTool(
             { project: projectRoot },
             'konteks_recall',
             { task: 'packaging mcp registration package manager' },
@@ -71,7 +71,7 @@ describe('retrieval quality evals', () => {
         })
 
         await expect(
-            callMcpTool({ project: projectRoot }, 'konteks_save', {
+            callKonteksTool({ project: projectRoot }, 'konteks_save', {
                 type: 'diary',
             }),
         ).rejects.toThrow()
@@ -101,7 +101,7 @@ describe('retrieval quality evals', () => {
         )
 
         await expect(
-            callMcpTool({ project: projectRoot }, 'konteks_save', {
+            callKonteksTool({ project: projectRoot }, 'konteks_save', {
                 content: 'too short',
                 kind: 'note',
                 type: 'memory',
@@ -135,7 +135,7 @@ describe('retrieval quality evals', () => {
             'export const savedChange = true\n',
         )
 
-        const result = await callMcpTool(
+        const result = await callKonteksTool(
             { project: projectRoot },
             'konteks_save',
             {
@@ -188,7 +188,7 @@ limit 1
             embeddingProvider: new FakeEmbeddingProvider(),
         })
 
-        const result = await callMcpTool(
+        const result = await callKonteksTool(
             { project: projectRoot },
             'konteks_warm_up',
             { maxTokens: 600 },
@@ -218,7 +218,7 @@ limit 1
             embeddingProvider: new FakeEmbeddingProvider(),
         })
 
-        const result = await callMcpTool(
+        const result = await callKonteksTool(
             { project: projectRoot },
             'konteks_recall',
             { task: 'index function' },
@@ -261,7 +261,7 @@ limit 1
             embeddingProvider: new FakeEmbeddingProvider(),
         })
 
-        const result = await callMcpTool(
+        const result = await callKonteksTool(
             { project: projectRoot },
             'konteks_recall',
             { task: 'improve konteks_recall return shape' },
