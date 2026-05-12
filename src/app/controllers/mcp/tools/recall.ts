@@ -1,12 +1,12 @@
 import { RecallMemoryAction } from '@/app/actions/recall-memory-action'
-import { SQLiteMemoryRepository } from '@/app/providers/database/sqlite/sqlite-memory-repository'
-import type { RecallInput } from '@/app/providers/mcp/inputs'
+import { SQLiteMemoryRepository } from '@/app/providers/persistence/sqlite/sqlite-memory-repository'
+import type { RecallInput } from '@/app/providers/protocol/inputs'
 import {
     loadMcpProjectContext,
     withProjectDatabase,
-} from '@/app/providers/mcp/project-runtime'
-import { formatRecallText } from '@/app/providers/mcp/retrieval-format'
-import type { StartMcpServerOptions } from '@/app/providers/mcp/types'
+} from '@/app/providers/protocol/project-runtime'
+import { formatRecallText } from '@/app/providers/protocol/retrieval-format'
+import type { StartMcpServerOptions } from '@/app/providers/protocol/types'
 import { formatToTextResult } from './result'
 
 export async function handleRecallTool(

@@ -19,15 +19,14 @@ Konteks uses a Laravel-inspired TypeScript layout under `src/app`.
   - Grouped local capability implementations. These are runtime capabilities used by
     actions, controllers, repositories, and tests, not only bootstrapping service
     providers.
-  - `ai`: embedding providers and embedding pipeline behavior.
-  - `database`: SQLite schema, migrations, adapters, query stores, and persistence
-    helpers.
-  - `file-system`: project context resolution and project status checks.
-  - `mcp`: MCP runtime inputs, retrieval formatting, warm-up context, and related
-    tests.
-  - `mining`: project extraction orchestration, progress reporting, and mining
-    engine internals.
-  - `storage`: local object and TOON payload storage helpers.
+  - `embeddings`: embedding providers and embedding pipeline behavior.
+  - `extraction`: project extraction orchestration, progress reporting, and
+    extraction engine internals.
+  - `persistence`: SQLite schema, migrations, adapters, query stores, and local
+    object payload storage helpers.
+  - `project`: project context resolution and project status checks.
+  - `protocol`: MCP runtime inputs, retrieval formatting, warm-up context, and
+    related tests.
 - `support`
   - Generic wrappers and helpers for CLI libraries, JSON, formatting, terminal output,
     validation, prompts, version lookup, and external SDK re-exports.
@@ -41,5 +40,5 @@ Rules:
 - Keep controllers thin; do workflow orchestration in actions and feature modules.
 - Prefer direct imports over barrel files.
 - Import provider capabilities directly from their grouped provider paths, such as
-  `@/app/providers/database/sqlite/database`.
+  `@/app/providers/persistence/sqlite/database`.
 - Preserve public CLI commands, MCP tool names, prompt names, and persisted database behavior during refactors.
