@@ -42,7 +42,7 @@ Konteks uses specialized grammars for semantic extraction:
 Konteks runs on **Node.js (>=22)** or **Bun**. Start by initializing memory from your project root:
 
 ```bash
-npx -y @konteks/cli init
+npx -y konteks-cli init
 ```
 
 Continue with the [Quickstart](docs/getting-started/quickstart.md) for MCP setup and the Warm Up -> Build -> Save flow.

@@ -9,12 +9,12 @@ Set up Konteks once, then use the same [session](../reference/glossary.md#sessio
 Run one command from your project root:
 
 ```bash
-npx -y @konteks/cli init
+npx -y konteks-cli init
 
 # or your preferred package manager:
-bunx @konteks/cli init
-pnpm dlx @konteks/cli init
-yarn dlx @konteks/cli init
+bunx konteks-cli init
+pnpm dlx konteks-cli init
+yarn dlx konteks-cli init
 ```
 
 **What happens?**
@@ -36,7 +36,7 @@ Add Konteks to your MCP-compatible coding agent configuration before opening the
   "mcpServers": {
     "konteks": {
       "command": "npx",
-      "args": ["-y", "@konteks/cli", "mcp"]
+      "args": ["-y", "konteks-cli", "mcp"]
     }
   }
 }
