@@ -1,6 +1,6 @@
 {
     "bin": {
-        "konteks": "./dist/main.js"
+        "konteks": "dist/main.js"
     },
     "bugs": {
         "url": "https://github.com/dominosaurs/konteks/issues"
@@ -51,6 +51,7 @@
         "mcp",
         "model-context-protocol"
     ],
+    "license": "MIT",
     "name": "@konteks/cli",
     "packageManager": "bun@1.3.12",
     "repository": {
