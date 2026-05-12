@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-import { resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { Command } from 'commander'
 import { callMcpToolCommand } from '@/controllers/call-mcp-tool'
 import { getPromptDetailCommand } from '@/controllers/get-prompt-detail'
@@ -178,11 +176,4 @@ function createCliProgram(options: CreateCliProgramOptions = {}): Command {
     return program
 }
 
-function isCliEntrypoint(): boolean {
-    const entry = process.argv[1]
-    return Boolean(entry && resolve(entry) === fileURLToPath(import.meta.url))
-}
-
-if (isCliEntrypoint()) {
-    await createCliProgram().parseAsync(process.argv)
-}
+createCliProgram().parseAsync(process.argv)

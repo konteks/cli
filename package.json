@@ -1,7 +1,6 @@
 {
-    "bin": {
-        "konteks": "dist/main.js"
-    },
+    "$schema": "https://www.schemastore.org/package",
+    "bin": "bin/konteks.js",
     "bugs": {
         "url": "https://github.com/dominosaurs/konteks/issues"
     },
@@ -55,8 +54,7 @@
     "name": "konteks-cli",
     "packageManager": "bun@1.3.12",
     "publishConfig": {
-        "access": "public",
-        "tag": "beta"
+        "access": "public"
     },
     "repository": {
         "type": "git",
@@ -73,5 +71,5 @@
         "test": "bun test --reporter=dots > /dev/null 2>&1 || bun test --only-failures"
     },
     "type": "module",
-    "version": "0.0.0-beta.1"
+    "version": "0.0.2"
 }
