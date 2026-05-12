@@ -1,8 +1,8 @@
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { listCanonicalPromptFiles } from '@/app/controllers/mcp/serve'
 import { resolveProjectContext } from '@/app/providers/file-system/context'
 import { mkdir, writeFile } from '@/app/support/file-manager'
+import { getPromptTemplates } from '@/app/support/mcp-prompts'
 import { terminal } from '@/app/support/terminal'
 
 type InstallSkillOptions = {
@@ -23,9 +23,10 @@ export async function installSkillsCommand(
           )
     await mkdir(skillsDir, { recursive: true })
 
-    const skills = listCanonicalPromptFiles().map(file =>
-        promptFileToSkill(file.content, file.fileName),
+    const skills = getPromptTemplates().map(file =>
+        promptFileToSkill(file.raw, file.fileName),
     )
+
     for (const skill of skills) {
         const targetDir = join(skillsDir, skill.name)
         await mkdir(targetDir, { recursive: true })

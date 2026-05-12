@@ -16,10 +16,12 @@ import type {
 import type { CallToolResult, Prompt, Tool } from '@/app/support/mcp'
 import { McpServer, StdioServerTransport } from '@/app/support/mcp'
 import type { PromptTemplate } from '@/app/support/mcp-prompts'
-import { renderPromptTemplate } from '@/app/support/mcp-prompts'
+import {
+    getPromptTemplates,
+    renderPromptTemplate,
+} from '@/app/support/mcp-prompts'
 import { z } from '@/app/support/validation'
 import { VERSION } from '@/app/support/version'
-import promptTemplates from './prompts'
 import { handleForgetTool } from './tools/forget'
 import { handleRecallTool } from './tools/recall'
 import { handleSaveTool } from './tools/save'
@@ -37,17 +39,7 @@ export async function startMcpServer(
 }
 
 export function listMcpPrompts(): Prompt[] {
-    return promptTemplates.map(template => template.prompt)
-}
-
-export function listCanonicalPromptFiles(): Array<{
-    content: string
-    fileName: string
-}> {
-    return promptTemplates.map(template => ({
-        content: template.raw,
-        fileName: template.fileName,
-    }))
+    return getPromptTemplates().map(template => template.prompt)
 }
 
 export function getMcpPrompt(
@@ -171,7 +163,7 @@ function createMcpServer(options: StartMcpServerOptions): McpServer {
 }
 
 function registerKonteksPrompts(server: McpServer): void {
-    for (const template of promptTemplates) {
+    for (const template of getPromptTemplates()) {
         const argsSchema: Record<string, z.ZodTypeAny> = {}
         for (const arg of template.prompt.arguments ?? []) {
             let schema: z.ZodTypeAny = z
@@ -206,7 +198,9 @@ function registerKonteksPrompts(server: McpServer): void {
 }
 
 function promptTemplateByName(name: string): PromptTemplate {
-    const template = promptTemplates.find(item => item.prompt.name === name)
+    const template = getPromptTemplates().find(
+        item => item.prompt.name === name,
+    )
     if (!template) {
         throw new Error(`Unknown Konteks prompt: ${name}`)
     }

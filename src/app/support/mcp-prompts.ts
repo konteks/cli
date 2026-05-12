@@ -1,5 +1,10 @@
+import recallMd from '@/app/assets/prompts/konteks-recall.md?raw'
+import SaveMd from '@/app/assets/prompts/konteks-save.md?raw'
+import warmUpMd from '@/app/assets/prompts/konteks-warm-up.md?raw'
+import workOnExistingMd from '@/app/assets/prompts/konteks-work-on-existing.md?raw'
+import workOnNewMd from '@/app/assets/prompts/konteks-work-on-new.md?raw'
+
 import type { Prompt, PromptArgument } from '@/app/support/mcp'
-import FileManager from './file-manager'
 
 export type PromptTemplate = {
     body: string
@@ -8,25 +13,57 @@ export type PromptTemplate = {
     raw: string
 }
 
-export function readPromptMarkdown(fileName: string): PromptTemplate {
-    const fm = new FileManager()
-    const raw = fm.read(fileName)
+type RawPrompt = {
+    fileName: string
+    raw: string
+}
 
+const rawPrompts: RawPrompt[] = [
+    {
+        fileName: 'konteks-recall.md',
+        raw: recallMd,
+    },
+    {
+        fileName: 'konteks-save.md',
+        raw: SaveMd,
+    },
+    {
+        fileName: 'konteks-warm-up.md',
+        raw: warmUpMd,
+    },
+    {
+        fileName: 'work-on-existing.md',
+        raw: workOnExistingMd,
+    },
+    {
+        fileName: 'work-on-new.md',
+        raw: workOnNewMd,
+    },
+]
+
+export function getPromptTemplates(): PromptTemplate[] {
+    return rawPrompts.map(rawPrompt =>
+        readPromptMarkdown(rawPrompt.raw, rawPrompt.fileName),
+    )
+}
+
+function readPromptMarkdown(raw: string, fileName: string): PromptTemplate {
     const match =
         /^---\n(?<frontmatter>[\s\S]*?)\n---\n(?<body>[\s\S]*)$/u.exec(raw)
+
     if (!match?.groups) {
-        throw new Error(`Prompt file is missing frontmatter: ${fileName}`)
+        throw new Error(`Prompt file is missing frontmatter`)
     }
 
     const frontmatter = parseFrontmatter(match.groups.frontmatter)
-    const name = requiredField(frontmatter, 'name', fileName)
-    const title = requiredField(frontmatter, 'title', fileName)
-    const description = requiredField(frontmatter, 'description', fileName)
+    validateFontmatter(frontmatter)
+
     const prompt: Prompt = {
-        description,
-        name,
-        title,
+        description: frontmatter.description,
+        name: frontmatter.name,
+        title: frontmatter.title,
     }
+
     const args = readPromptArguments(frontmatter)
     if (args.length > 0) {
         prompt.arguments = args
@@ -37,6 +74,16 @@ export function readPromptMarkdown(fileName: string): PromptTemplate {
         fileName,
         prompt,
         raw,
+    }
+}
+
+function validateFontmatter(frontmatter: Record<string, string>): void {
+    const requiredFields = ['name', 'title', 'description']
+
+    for (const field of requiredFields) {
+        if (!frontmatter[field]) {
+            throw new Error(`Prompt file is missing "${field}"`)
+        }
     }
 }
 
@@ -94,16 +141,4 @@ function parseFrontmatter(value: string): Record<string, string> {
         fields[key] = fieldValue
     }
     return fields
-}
-
-function requiredField(
-    frontmatter: Record<string, string>,
-    key: string,
-    path: string,
-): string {
-    const value = frontmatter[key]
-    if (!value) {
-        throw new Error(`Prompt file is missing "${key}": ${path}`)
-    }
-    return value
 }
