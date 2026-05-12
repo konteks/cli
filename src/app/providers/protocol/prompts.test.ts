@@ -33,29 +33,12 @@ describe('MCP prompts', () => {
             'konteks-recall',
             'konteks-save',
             'konteks-warm-up',
-            'konteks-work-on-existing',
-            'konteks-work-on-new',
         ])
         expect(listMcpPrompts().map(prompt => prompt.title)).toEqual([
             'Konteks Recall',
             'Konteks Save',
             'Konteks Warm Up',
-            'Konteks Build Existing',
-            'Konteks Build New',
         ])
-    })
-
-    it('keeps recall supplemental during build prompts', () => {
-        const existing = promptText('konteks-work-on-existing', {
-            task: 'refactor auth session refresh',
-        })
-        const next = promptText('konteks-work-on-new', {
-            task: 'add notification center',
-        })
-
-        expect(existing).toContain('If known modules')
-        expect(existing).toContain('call `konteks_recall` first')
-        expect(next).toContain('Call `konteks_recall` only if')
     })
 
     it('supports an optional warm-up focus prompt', () => {

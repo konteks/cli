@@ -40,7 +40,7 @@ If your agent supports MCP but does not show MCP prompts in its autocomplete UI 
 konteks install-skills [--global]
 ```
 
-This writes the five Konteks lifecycle prompts (`warm-up`, `recall`, `work-on-existing`, `work-on-new`, `save`) as native skills into `.agents/skills` (local) or `~/.agents/skills` (global).
+This writes the Konteks lifecycle prompts (`warm-up`, `recall`, `save`) as native skills into `.agents/skills` (local) or `~/.agents/skills` (global).
 
 ## Global Options
 

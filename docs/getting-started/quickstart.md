@@ -70,16 +70,10 @@ You can also append an additional topic(s) to bring relevant memories during War
 
 ### 5. Build
 
-For an existing feature, module, or file:
+Give your agent the task directly. If the task needs context from known modules, constraints, or prior decisions, run Recall first:
 
 ```text
-/konteks-work-on-existing improve auth session and reduce token refresh race conditions.
-```
-
-For a new task:
-
-```text
-/konteks-work-on-new design and implement a lightweight notification center for failed background jobs.
+/konteks-recall improve auth session and reduce token refresh race conditions.
 ```
 
 ### 6. Save

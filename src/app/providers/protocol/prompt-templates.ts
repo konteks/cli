@@ -2,8 +2,6 @@ import type { Prompt, PromptArgument } from '@modelcontextprotocol/sdk/types.js'
 import recallMd from '@/app/assets/prompts/konteks-recall.md?raw'
 import SaveMd from '@/app/assets/prompts/konteks-save.md?raw'
 import warmUpMd from '@/app/assets/prompts/konteks-warm-up.md?raw'
-import workOnExistingMd from '@/app/assets/prompts/konteks-work-on-existing.md?raw'
-import workOnNewMd from '@/app/assets/prompts/konteks-work-on-new.md?raw'
 
 export type PromptTemplate = {
     body: string
@@ -29,14 +27,6 @@ const rawPrompts: RawPrompt[] = [
     {
         fileName: 'konteks-warm-up.md',
         raw: warmUpMd,
-    },
-    {
-        fileName: 'work-on-existing.md',
-        raw: workOnExistingMd,
-    },
-    {
-        fileName: 'work-on-new.md',
-        raw: workOnNewMd,
     },
 ]
 

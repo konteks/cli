@@ -23,13 +23,7 @@ describe('skills install command', () => {
 
         expect(
             (await readdir(join(projectRoot, '.agents', 'skills'))).sort(),
-        ).toEqual([
-            'konteks-recall',
-            'konteks-save',
-            'konteks-warm-up',
-            'konteks-work-on-existing',
-            'konteks-work-on-new',
-        ])
+        ).toEqual(['konteks-recall', 'konteks-save', 'konteks-warm-up'])
         const warmUp = await readFile(
             join(
                 projectRoot,

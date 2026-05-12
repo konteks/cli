@@ -29,30 +29,10 @@ Start a fresh session when the next work is unrelated, needs a different project
 
 ## Phase 2: Build
 
-This is where development happens. Because the agent already has project context, this phase depends on whether you are improving an existing feature or starting a new one.
-
-### Working on Existing Feature
-
-If you are modifying existing code, start with the existing-task workflow.
-
-```text
-/konteks-work-on-existing improve auth session and propose a safe refactor to reduce token refresh race conditions.
-```
-
-The `/konteks-work-on-existing` prompt helps the agent understand current constraints before it suggests changes.
-
-### Working on New Feature
-
-If you are starting a completely new task that Konteks hasn't seen before:
-
-```text
-/konteks-work-on-new design and implement a lightweight notification center for failed background jobs.
-```
-
-The `/konteks-work-on-new` prompt helps the agent discover new context during implementation and record durable findings during Save.
+This is where development happens. Because the agent already has project context, you can give it the task directly.
 
 > [!TIP]
-> Recall is a supplement during Build. If an existing or new feature touches known modules, constraints, or prior decisions, run `/konteks-recall` first to pull relevant context.
+> Recall is a supplement during Build. If the task touches known modules, constraints, or prior decisions, run `/konteks-recall` first to pull relevant context.
 
 ## Phase 3: Save
 
