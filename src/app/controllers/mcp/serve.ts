@@ -4,9 +4,15 @@ import {
     saveInputSchema,
     searchInputSchema,
     warmUpInputSchema,
-} from '@/app/mcp/inputs'
-import { KONTEKS_TOOL_SURFACE, MCP_INSTRUCTIONS } from '@/app/mcp/tool-surface'
-import type { KonteksMcpServer, StartMcpServerOptions } from '@/app/mcp/types'
+} from '@/app/providers/mcp/inputs'
+import {
+    KONTEKS_TOOL_SURFACE,
+    MCP_INSTRUCTIONS,
+} from '@/app/providers/mcp/tool-surface'
+import type {
+    KonteksMcpServer,
+    StartMcpServerOptions,
+} from '@/app/providers/mcp/types'
 import type { CallToolResult, Prompt, Tool } from '@/app/support/mcp'
 import { McpServer, StdioServerTransport } from '@/app/support/mcp'
 import type { PromptTemplate } from '@/app/support/mcp-prompts'

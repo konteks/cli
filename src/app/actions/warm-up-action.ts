@@ -1,11 +1,11 @@
 import type { MemoryRepositoryContract } from '@/app/contracts/repositories/memory-repository'
-import type { WarmUpContext } from '@/app/mcp/warm-up-context'
+import type { RecallPackage } from '@/app/models/memory'
+import type { Project } from '@/app/models/project'
+import type { WarmUpContext } from '@/app/providers/mcp/warm-up-context'
 import {
     assembleWarmUpContext,
     limitWarmUpContext,
-} from '@/app/mcp/warm-up-context'
-import type { RecallPackage } from '@/app/models/memory'
-import type { Project } from '@/app/models/project'
+} from '@/app/providers/mcp/warm-up-context'
 import { RecallMemoryAction } from './recall-memory-action'
 
 export type WarmUpInput = {

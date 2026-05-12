@@ -1,14 +1,14 @@
 import { WarmUpAction } from '@/app/actions/warm-up-action'
-import { SQLiteMemoryRepository } from '@/app/database/sqlite/sqlite-memory-repository'
-import type { WarmUpInput } from '@/app/mcp/inputs'
+import { SQLiteMemoryRepository } from '@/app/providers/database/sqlite/sqlite-memory-repository'
+import type { WarmUpInput } from '@/app/providers/mcp/inputs'
 import {
     loadMcpProjectContext,
     updateChangedProjectMemorySilently,
     validateMcpProjectHealth,
     withProjectDatabase,
-} from '@/app/mcp/project-runtime'
-import { formatWarmUpText } from '@/app/mcp/retrieval-format'
-import type { StartMcpServerOptions } from '@/app/mcp/types'
+} from '@/app/providers/mcp/project-runtime'
+import { formatWarmUpText } from '@/app/providers/mcp/retrieval-format'
+import type { StartMcpServerOptions } from '@/app/providers/mcp/types'
 import { formatToTextResult } from './result'
 
 export async function handleWarmUpTool(

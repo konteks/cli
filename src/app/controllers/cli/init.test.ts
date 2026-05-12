@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { FakeEmbeddingProvider } from '@/app/ai/hugging-face-embedding-provider'
+import { FakeEmbeddingProvider } from '@/app/providers/ai/hugging-face-embedding-provider'
 import {
     mkdir,
     mkdtemp,

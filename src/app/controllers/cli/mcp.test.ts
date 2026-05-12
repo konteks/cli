@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, spyOn } from 'bun:test'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { FakeEmbeddingProvider } from '@/app/ai/hugging-face-embedding-provider'
 import { callMcpTool } from '@/app/controllers/mcp/serve'
-import { loadProjectContext } from '@/app/file-system/context'
-import { mineProject } from '@/app/mining/mine-project'
+import { FakeEmbeddingProvider } from '@/app/providers/ai/hugging-face-embedding-provider'
+import { loadProjectContext } from '@/app/providers/file-system/context'
+import { mineProject } from '@/app/providers/mining/mine-project'
 import { mkdtemp, rm } from '@/app/support/file-manager'
 import { callMcpToolCommand } from './call-mcp-tool'
 

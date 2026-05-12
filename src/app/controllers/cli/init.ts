@@ -1,15 +1,15 @@
 import { join } from 'node:path'
 import type { EmbeddingProviderContract } from '@/app/contracts/services/embedding-provider'
-import { ensureProjectDatabase } from '@/app/database/sqlite/database'
 import type { MineProjectResponse } from '@/app/dto/application/mine-project'
 import type { GlobalCliOptions } from '@/app/dto/cli/options'
+import { ensureProjectDatabase } from '@/app/providers/database/sqlite/database'
 import {
     createDefaultConfig,
     loadProjectContext,
-} from '@/app/file-system/context'
-import { createMiningAction } from '@/app/mining/create-mining-action'
-import { readMineManifest } from '@/app/mining/engine/manifest'
-import { createMineProgressReporter } from '@/app/mining/progress-reporter'
+} from '@/app/providers/file-system/context'
+import { createMiningAction } from '@/app/providers/mining/create-mining-action'
+import { readMineManifest } from '@/app/providers/mining/engine/manifest'
+import { createMineProgressReporter } from '@/app/providers/mining/progress-reporter'
 import { mkdir, readFile, writeFile } from '@/app/support/file-manager'
 import { terminal } from '@/app/support/terminal'
 

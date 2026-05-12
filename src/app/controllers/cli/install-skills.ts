@@ -1,7 +1,7 @@
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { listCanonicalPromptFiles } from '@/app/controllers/mcp/serve'
-import { resolveProjectContext } from '@/app/file-system/context'
+import { resolveProjectContext } from '@/app/providers/file-system/context'
 import { mkdir, writeFile } from '@/app/support/file-manager'
 import { terminal } from '@/app/support/terminal'
 
