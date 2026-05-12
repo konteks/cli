@@ -1,6 +1,6 @@
 {
     "$schema": "https://www.schemastore.org/package",
-    "bin": "bin/konteks.js",
+    "bin": "dist/main.js",
     "bugs": {
         "url": "https://github.com/dominosaurs/konteks/issues"
     },
@@ -62,7 +62,7 @@
     },
     "scripts": {
         "build": "tsup",
-        "check": "bun --silent run lint && bun --silent run test && bun --silent run build",
+        "check": "bun --silent run build && bun --silent run lint && bun --silent run test",
         "dev": "bun src/main.ts",
         "format": "biome check --write --reporter=github",
         "lint": "bun --silent run format && knip -n --reporter compact && tsc --noEmit --pretty false",
@@ -71,5 +71,5 @@
         "test": "bun test --reporter=dots > /dev/null 2>&1 || bun test --only-failures"
     },
     "type": "module",
-    "version": "0.0.2"
+    "version": "0.0.0"
 }

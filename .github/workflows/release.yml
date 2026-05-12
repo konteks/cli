@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.12
+
+      - name: Set up npm
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Resolve release tag
+        id: release
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME}"
+
+          if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            npm_tag="latest"
+          elif [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-([0-9A-Za-z-]+)\.[0-9]+$ ]]; then
+            npm_tag="${BASH_REMATCH[1]}"
+          else
+            echo "Release tag must match x.x.x or x.x.x-{tag}.x, got: $version" >&2
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "npm_tag=$npm_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Set package version
+        shell: bash
+        run: |
+          npm version "${{ steps.release.outputs.version }}" --no-git-tag-version --allow-same-version
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run checks
+        run: bun run check
+
+      - name: Publish to npm
+        run: npm publish --access public --tag "${{ steps.release.outputs.npm_tag }}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
