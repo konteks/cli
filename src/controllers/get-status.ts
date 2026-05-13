@@ -42,6 +42,7 @@ function formatStatus(
             color,
             'Knowledge',
             [
+                compactStat('files', status.memoryStats.files, color),
                 compactStat('sections', status.memoryStats.sections, color),
                 compactStat('modules', status.memoryStats.modules, color),
             ].join(', '),

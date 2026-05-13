@@ -8,6 +8,7 @@ export type ProjectStatus = {
     databasePath: string
     databaseExists: boolean
     memoryStats: {
+        files: number
         sections: number
         modules: number
         memories: number

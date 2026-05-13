@@ -45,6 +45,7 @@ function emptyMemoryStats(): ProjectStatus['memoryStats'] {
         diaryEntries: 0,
         embeddings: 0,
         events: 0,
+        files: 0,
         memories: 0,
         modules: 0,
         retrievalDocuments: 0,
@@ -58,6 +59,7 @@ async function readMemoryStats(
     const service = await openProjectDatabase(context)
     try {
         const [
+            files,
             sections,
             modules,
             memories,
@@ -66,6 +68,10 @@ async function readMemoryStats(
             embeddings,
             events,
         ] = await Promise.all([
+            countRows(
+                service,
+                "select count(*) as count from sources where type = 'mined_file'",
+            ),
             countRows(
                 service,
                 'select count(*) as count from chunks where deleted_at is null and suppressed_at is null',
@@ -94,6 +100,7 @@ async function readMemoryStats(
             diaryEntries,
             embeddings,
             events,
+            files,
             memories,
             modules,
             retrievalDocuments,
