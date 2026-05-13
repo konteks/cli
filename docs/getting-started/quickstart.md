@@ -56,24 +56,18 @@ Open your coding agent in this repository after the MCP server is configured.
 
 ### 4. Warm Up
 
-Run the Warm Up prompt at the start of a fresh agent session:
+Run the Warm Up prompt at the start of a fresh agent session. The topic is optional: leave it blank for general project context, or add a topic to focus the memories loaded during Warm Up.
 
 ```text
-/konteks-warm-up
-```
-
-You can also append an additional topic(s) to bring relevant memories during Warm Up:
-
-```text
-/konteks-warm-up auth security
+/konteks-warm-up security, authentication, and authorization
 ```
 
 ### 5. Build
 
-Give your agent the task directly. If the task needs context from known modules, constraints, or prior decisions, run Recall first:
+Give your agent the task (prompt) directly. Recall is not required for every task, but it is a useful supplement when the work benefits from remembered modules, constraints, or prior decisions:
 
 ```text
-/konteks-recall improve auth session and reduce token refresh race conditions.
+/konteks-recall last attack, vulnerability, prevention and mitigation
 ```
 
 ### 6. Save
