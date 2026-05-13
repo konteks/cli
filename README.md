@@ -12,6 +12,7 @@ Memory artifacts are stored directly inside your repository, exposing compact, t
 
 * **Zero-Install**: Run anywhere via `npx` or `bunx` without native dependencies.
 * **Language-Aware**: Precise semantic parsing via Tree-sitter (not just regex).
+* **Broad Language Support**: [28 supported programming languages](src/assets/grammars/registry.json).
 * **Local-First**: Your project memory stays in your repo—no cloud, no accounts.
 * **Token-Efficient**: High-fidelity context synthesis designed for LLM economy.
 
@@ -23,16 +24,6 @@ For a deep dive into the philosophy, architecture, and usage, see the [Full Docu
 * [Session Lifecycle](docs/getting-started/lifecycle.md): How to work with Konteks (Warm Up -> Build -> Save).
 * [Architecture Overview](docs/core-concepts/overview.md): How the memory engine works under the hood.
 * [Glossary](docs/reference/glossary.md): Short definitions for Konteks terms.
-
-## 🛠 Supported Languages
-
-Konteks uses specialized grammars for semantic extraction:
-
-* TypeScript / JavaScript
-* HTML / JSDoc
-* JSON
-* PHP
-* *(More coming soon)*
 
 ## ⚡ Quickstart
 

@@ -1,14 +1,35 @@
 import { Language, type Node, Parser, Query } from 'web-tree-sitter'
-import { getBundledGrammarForPath } from './grammar-loader'
+import { getGrammarForPath } from './grammar-loader'
 
 export type TreeSitterLanguage =
+    | 'bash'
+    | 'c'
+    | 'cpp'
+    | 'csharp'
+    | 'css'
+    | 'dockerfile'
+    | 'go'
     | 'html'
+    | 'java'
     | 'javascript'
+    | 'jsx'
     | 'jsdoc'
     | 'json'
+    | 'kotlin'
+    | 'lua'
+    | 'markdown'
     | 'php'
+    | 'python'
+    | 'ruby'
+    | 'rust'
+    | 'scala'
+    | 'sql'
+    | 'swift'
+    | 'toml'
     | 'tsx'
     | 'typescript'
+    | 'xml'
+    | 'yaml'
 
 type CodeSymbol = {
     name: string
@@ -84,7 +105,7 @@ export class TreeSitterEngine {
     }
 
     private detectLanguage(path: string): TreeSitterLanguage | undefined {
-        return getBundledGrammarForPath(path)?.language
+        return getGrammarForPath(path)?.id
     }
 
     private extractMetadata(

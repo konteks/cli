@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { VERSION } from '@/support/version'
 
 const tempDirs: string[] = []
 
@@ -16,6 +17,7 @@ afterEach(async () => {
 describe('CLI initialization middleware', () => {
     for (const args of [
         ['status'],
+        ['config'],
         ['repair'],
         ['install-skills'],
         ['mcp'],
@@ -32,6 +34,9 @@ describe('CLI initialization middleware', () => {
             const result = await runKonteks(['--project', projectRoot, ...args])
 
             expect(result.exitCode).not.toBe(0)
+            if (!args[0]?.startsWith('mcp')) {
+                expect(result.output).toContain(`Konteks v${VERSION}`)
+            }
             expect(result.output).toContain('Konteks memory is not initialized')
             expect(result.output).toContain('Project memory is missing')
             expect(result.output).toContain('konteks init')
@@ -51,6 +56,7 @@ describe('CLI initialization middleware', () => {
         })
 
         expect(result.exitCode).not.toBe(0)
+        expect(result.output).toContain(`Konteks v${VERSION}`)
         expect(result.output).toContain('\u001b[31m')
         expect(result.output).toContain('╭─')
     })
