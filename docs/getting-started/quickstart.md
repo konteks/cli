@@ -36,7 +36,7 @@ Add Konteks to your MCP-compatible coding agent configuration before opening the
   "mcpServers": {
     "konteks": {
       "command": "npx",
-      "args": ["-y", "konteks-cli@latest", "mcp"]
+      "args": ["-y", "konteks-cli", "mcp"]
     }
   }
 }
