@@ -66,6 +66,7 @@ describe('status command', () => {
         expect(output).toContain('Knowledge')
         expect(output).toContain('Session Memory')
         expect(output).toContain('Retrieval')
+        expect(output).toContain('files')
         expect(output).toContain('sections')
         expect(output).toContain('memories')
         expect(output).toContain('diary entries')
