@@ -62,7 +62,10 @@ export async function saveMemory(
     input: SaveInput,
 ): Promise<SaveResult> {
     const context = await loadMcpProjectContext(options)
-    const projectUpdate = await updateChangedProjectMemorySilently(context)
+    const projectUpdate = await updateChangedProjectMemorySilently(
+        context,
+        options,
+    )
     return await withProjectDatabaseContext(context, service => {
         const repo = createMemoryRepository(service, context)
         const action = new SaveMemoryAction(repo)
@@ -75,7 +78,7 @@ export async function warmUpMemory(
     input: WarmUpInput,
 ) {
     const context = await loadMcpProjectContext(options)
-    await updateChangedProjectMemorySilently(context)
+    await updateChangedProjectMemorySilently(context, options)
 
     return await withProjectDatabase(options, service => {
         const repo = createMemoryRepository(service, context)

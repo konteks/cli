@@ -6,6 +6,7 @@ import { mineProject } from '@/providers/extraction/mine-project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import { saveKonteksInput } from '@/providers/persistence/sqlite/save-store'
 import { loadProjectContext } from '@/providers/project/context'
+import { FakeTreeSitterEngine } from '@/support/fake/fake-tree-sitter-engine'
 import { VERSION } from '@/support/version'
 import { getStatusCommand } from './get-status'
 
@@ -34,7 +35,9 @@ describe('status command', () => {
         )
 
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full')
+        await mineProject(context, 'full', {
+            treeSitterEngine: new FakeTreeSitterEngine() as never,
+        })
         const adapter = await openProjectDatabase(context)
         await saveKonteksInput(adapter, context, {
             content: 'Status command should include saved memory counts.',
@@ -94,7 +97,9 @@ describe('status command', () => {
         )
 
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full')
+        await mineProject(context, 'full', {
+            treeSitterEngine: new FakeTreeSitterEngine() as never,
+        })
         await writeFile(
             join(projectRoot, 'src', 'index.ts'),
             'export const statusFixture = false\n',
