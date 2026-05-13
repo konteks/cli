@@ -45,7 +45,9 @@ graph LR
 The system performs a multi-modal search across [Semantic Memory](memory-model.md#2-semantic-memory).
 
 * **Lexical Search**: Matching exact keywords in code and notes via SQLite FTS.
-* **Semantic Search**: Matching the "intent" of the task against section summaries.
+* **Semantic Search**: Matching the "intent" of the task against embedded retrieval documents.
+
+Semantic search works by embedding the recall query with the same provider used during extraction, then comparing that query vector against stored target vectors. This lets recall find relevant sections even when the task wording does not exactly match the code or notes. If query embedding fails, the provider is unavailable, the stored vector uses a different model, or dimensions do not match, recall continues with lexical and graph-based signals.
 
 ### Phase 2: Relational Expansion
 
@@ -78,9 +80,12 @@ Not all knowledge is equal. Konteks ranks candidates using a combined scoring al
 $$Score = Relevance + Importance + Recency - Complexity$$
 
 * **Relevance**: How well it matches the specific task.
+* **Vector Similarity**: How close an embedded memory target is to the embedded recall query.
 * **Importance**: High-level architectural decisions are boosted.
 * **Recency**: New knowledge is preferred.
 * **Complexity**: Very large sections are penalized to respect the token budget.
+
+In the current implementation, lexical matches remain the entry point for candidate gathering, while vector similarity reranks matching retrieval documents when compatible embeddings are available. This keeps recall useful even before embeddings are available and avoids returning vector-only results without textual grounding.
 
 ## 4. Context Assembly
 

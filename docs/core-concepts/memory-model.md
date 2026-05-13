@@ -6,8 +6,8 @@ Konteks represents a project not as a flat list of files, but as a multi-dimensi
 
 A fundamental distinction in the Konteks memory model is the difference between **Durable** and **Derived** knowledge.
 
-*   **Durable Memory**: Intentional knowledge created by users or agents during sessions. This includes observations, diary entries, and task handoffs. Durable memory is **authoritative** and is preserved across system repairs or re-indexing.
-*   **Derived Memory**: Knowledge automatically extracted from source code, documentation, and project structure. This includes entities, relations, and code chunks. Derived memory is **reproducible** and can be rebuilt by running a project "repair" operation.
+* **Durable Memory**: Intentional knowledge created by users or agents during sessions. This includes observations, diary entries, and task handoffs. Durable memory is **authoritative** and is preserved across system repairs or re-indexing.
+* **Derived Memory**: Knowledge automatically extracted from source code, documentation, and project structure. This includes entities, relations, and code chunks. Derived memory is **reproducible** and can be rebuilt by running a project "repair" operation.
 
 ```mermaid
 graph LR
@@ -36,10 +36,10 @@ Structural memory represents the "skeleton" of your project. It captures the ent
 
 ### Concepts
 
-*   **Entities**: The nodes of the graph. These include files, modules, classes, functions, and high-level features.
-*   **Relations**: The edges connecting entities (e.g., `Feature A` -> `implemented_in` -> `File B`).
-*   **Graph Expansion**: The ability to navigate these links during recall to find "hidden" context and dependencies.
-*   **Modules**: High-level groupings of files that define the project's macro-architecture.
+* **Entities**: The nodes of the graph. These include files, modules, classes, functions, and high-level features.
+* **Relations**: The edges connecting entities (e.g., `Feature A` -> `implemented_in` -> `File B`).
+* **Graph Expansion**: The ability to navigate these links during recall to find "hidden" context and dependencies.
+* **Modules**: High-level groupings of files that define the project's macro-architecture.
 
 ### Technical Specification
 
@@ -55,8 +55,10 @@ Semantic memory captures the "meaning" within your project. It stores atomic uni
 
 ### Concepts
 
-*   **Chunks (Derived)**: Atomic, semantic sections of code or text extracted from source files.
-*   **Observations (Durable)**: Facts, insights, or constraints captured during agent sessions.
+* **Chunks (Derived)**: Atomic, semantic sections of code or text extracted from source files.
+* **Observations (Durable)**: Facts, insights, or constraints captured during agent sessions.
+* **Retrieval Documents**: Search-oriented projections of chunks, modules, memories, and diary entries. They keep separate text for lexical search and embedding generation.
+* **Embeddings**: Numeric vectors derived from retrieval documents so semantically similar knowledge can be compared even when the words differ.
 
 ### Memory Kinds (Observations)
 
@@ -78,6 +80,8 @@ Durable observations are categorized by their intent:
 | :--- | :--- | :--- |
 | `chunks` | Atomic sections of code/text | `content_hash`, `summary`, `token_count`, `path`, `anchor` |
 | `observations` | Durable facts and insights | `kind`, `text_inline`, `payload_ref`, `confidence` |
+| `retrieval_documents` | Search projections for memory targets | `target_id`, `target_type`, `fts_text`, `embedding_text` |
+| `target_embeddings` | Vector index for retrieval documents | `target_id`, `target_type`, `model`, `dimensions`, `vector_blob` |
 
 ## 3. Temporal Memory (Durable)
 
@@ -85,8 +89,8 @@ Temporal memory tracks the "when." It provides the chronological context require
 
 ### Concepts
 
-*   **Diary Entries**: Structured summaries of work sessions, including tasks performed and status.
-*   **Memory Events**: An append-only audit log of every meaningful memory mutation (creation, deletion, suppression).
+* **Diary Entries**: Structured summaries of work sessions, including tasks performed and status.
+* **Memory Events**: An append-only audit log of every meaningful memory mutation (creation, deletion, suppression).
 
 ### Technical Specification
 
@@ -101,8 +105,8 @@ Taxonomic memory provides the "where." It organizes knowledge into project-speci
 
 ### Concepts
 
-*   **Taxonomy Nodes**: The labels in your ontology (e.g., `api`, `ui`, `database`).
-*   **Taxonomy Links**: Assignments of entities and chunks to specific nodes.
+* **Taxonomy Nodes**: The labels in your ontology (e.g., `api`, `ui`, `database`).
+* **Taxonomy Links**: Assignments of entities and chunks to specific nodes.
 
 ### Technical Specification
 
@@ -119,16 +123,16 @@ Memory in Konteks is not static; it is managed through explicit mutation tools t
 
 ### Save vs. Remember
 
-*   `konteks_save`: Used for **Full Session Handoffs**. It records a comprehensive summary of a task, its status, and any new diary entries.
-*   `konteks_remember`: Used for **Lightweight Observations**. It saves a single durable observation (e.g., a new `decision` or `preference`) without closing the session.
+* `konteks_save`: Used for **Full Session Handoffs**. It records a comprehensive summary of a task, its status, and any new diary entries.
+* `konteks_remember`: Used for **Lightweight Observations**. It saves a single durable observation (e.g., a new `decision` or `preference`) without closing the session.
 
 ### Forgetting and Suppression
 
 Knowledge can be removed or invalidated using `konteks_forget` with three distinct modes:
 
-1.  **Soft Delete** (`soft_delete`): Marks the memory as deleted. It will no longer appear in standard recall but remains in the database for audit and recovery.
-2.  **Invalidate** (`invalidate`): Marks the memory as "suppressed." Useful for knowledge that was once true but has been superseded.
-3.  **Hard Delete** (`hard_delete`): Completely removes the record from the database.
+1. **Soft Delete** (`soft_delete`): Marks the memory as deleted. It will no longer appear in standard recall but remains in the database for audit and recovery.
+2. **Invalidate** (`invalidate`): Marks the memory as "suppressed." Useful for knowledge that was once true but has been superseded.
+3. **Hard Delete** (`hard_delete`): Completely removes the record from the database.
 
 ---
 

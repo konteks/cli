@@ -31,7 +31,8 @@ The core of the storage layer is a single-file SQLite database (`memory.sqlite`)
 * **Runtime**: SQLite WebAssembly (WASM)
 * **File Path**: `.konteks/memory.sqlite`
 * **Primary Tables**: `entities`, `relations`, `chunks`, `observations`, `diary_entries`, `memory_events`.
-* **Indexing**: Uses B-trees for fast entity lookup and FTS5 for full-text search.
+* **Retrieval Tables**: `retrieval_documents` stores bounded search text, and `target_embeddings` stores model-specific vector blobs.
+* **Indexing**: Uses B-trees for fast entity lookup, FTS5 for full-text search, and stored vectors for semantic reranking.
 
 ## 2. The Object Substrate (TOON)
 
@@ -56,6 +57,8 @@ The behavior of the storage substrate is controlled by `.konteks/config.json`.
 
 * **`storage.inlinePayloadMaxBytes`**: The size threshold (in bytes) for storing content inline in SQLite vs. offloading to TOON.
 * **`storage.memoryDir`**: The directory where all Konteks artifacts are stored (default: `.konteks`).
+
+Embedding model files are not stored inside `.konteks/`. They are cached globally so multiple projects can reuse the same downloaded model. Set `KONTEKS_MODEL_CACHE_DIR` to choose a custom cache directory; otherwise Konteks uses `~/.cache/konteks/models`.
 
 ## 4. Data Integrity & Portability
 

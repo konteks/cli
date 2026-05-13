@@ -20,7 +20,11 @@ graph LR
     Chunker --> Blocks[Content Blocks]
     
     subgraph Persistence
+    Blocks --> Retrieval[Retrieval Documents]
+    Retrieval --> Embeddings[Embeddings]
     Blocks --> SQLite[(SQLite)]
+    Retrieval --> SQLite
+    Embeddings --> SQLite
     Blocks --> TOON[(TOON)]
     end
 ```
@@ -37,9 +41,9 @@ Extraction is the process of scanning a repository to capture its latent structu
 
 ### Technical Specification: The Indexer
 
-* **CLI Commands**: 
-    * `konteks init`: Initial full index of the project.
-    * `konteks repair`: Performs a manual recovery rebuild of all derived artifacts.
+* **CLI Commands**:
+  * `konteks init`: Initial full index of the project.
+  * `konteks repair`: Performs a manual recovery rebuild of all derived artifacts.
 * **Ignore Rules**: Respects `.gitignore`, `.ignore`, and built-in defaults (e.g., `node_modules`, `.git`).
 * **Metadata Extraction**: Ingests `package.json`, `README.md`, and configuration files to build the initial [Taxonomic Memory](memory-model.md#4-taxonomic-memory).
 
@@ -77,6 +81,28 @@ Different types of files require different extraction strategies to ensure high-
 
 * **Target**: Meaningful object paths.
 * **Structure**: Preserves the path hierarchy (e.g., `compilerOptions.target`) within the section metadata.
+
+## 4. Embedding Generation
+
+Sectioning creates the units of memory, but embeddings make those units searchable by meaning rather than exact wording. An embedding is a numeric representation of a retrieval document. Texts with related intent should land near each other in vector space, even when they use different keywords.
+
+Konteks builds two retrieval views for each searchable target:
+
+* **FTS Text**: A broader text surface used for lexical matching through SQLite FTS.
+* **Embedding Text**: A bounded, metadata-rich text surface optimized for semantic matching.
+
+The embedding input includes contextual metadata such as path, source role, language, anchor, topics, summary, and a content excerpt. This helps the model represent not just the raw text, but also where the text belongs in the project.
+
+### Technical Specification: Embeddings
+
+* **Default Provider**: `HuggingFaceEmbeddingProvider`.
+* **Default Model**: `Xenova/all-MiniLM-L6-v2`.
+* **Dimensions**: 384.
+* **Pooling**: Mean pooling.
+* **Normalization**: Enabled, so vectors can be compared with cosine similarity.
+* **Storage**: Vectors are written as `float32` blobs for targets such as chunks, modules, durable memories, and diary entries.
+* **Reuse**: Existing vectors are reused when the provider model and embedding hash are unchanged.
+* **Model Cache**: Model files are cached globally, using `KONTEKS_MODEL_CACHE_DIR` when set or `~/.cache/konteks/models` by default.
 
 ---
 
