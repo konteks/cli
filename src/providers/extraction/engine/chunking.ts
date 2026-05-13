@@ -1,4 +1,3 @@
-import { terminal } from '@/support/terminal/service'
 import type { ScannedFile } from './file-scan'
 import type { CodeMetadata, TreeSitterEngine } from './tree-sitter-engine'
 
@@ -37,18 +36,13 @@ export async function chunkFile(
     }
 
     if (isCode(file.path)) {
-        if (parsedMetadata && parsedMetadata.symbols.length > 0) {
-            return chunkCodeWithTreeSitter(file.path, parsedMetadata)
+        if (parsedMetadata) {
+            return chunkCodeWithTreeSitter(file.path, trimmed, parsedMetadata)
         }
         if (engine) {
-            try {
-                const metadata = await engine.parse(file.path, content)
-                if (metadata && metadata.symbols.length > 0) {
-                    return chunkCodeWithTreeSitter(file.path, metadata)
-                }
-            } catch (error) {
-                // Fallback to heuristic if engine fails
-                terminal.error(`Tree-sitter failed for ${file.path}:`, error)
+            const metadata = await engine.parse(file.path, content)
+            if (metadata) {
+                return chunkCodeWithTreeSitter(file.path, trimmed, metadata)
             }
         }
         return chunkCodeHeuristic(file.path, trimmed)
@@ -59,8 +53,18 @@ export async function chunkFile(
 
 function chunkCodeWithTreeSitter(
     path: string,
+    content: string,
     metadata: CodeMetadata,
 ): MinedChunk[] {
+    if (metadata.symbols.length === 0) {
+        return chunkByWords(path, content, 'code', {
+            metadata: {
+                parserEngine: 'tree_sitter',
+                parserStatus: 'ok',
+            },
+        })
+    }
+
     return metadata.symbols.flatMap(symbol => {
         return chunkByWords(path, symbol.content, 'code', {
             anchor: symbol.name,

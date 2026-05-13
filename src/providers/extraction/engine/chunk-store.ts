@@ -111,7 +111,7 @@ export async function mineChunks(
             context,
             { onProgress: progress },
         )
-        if (loaded.loaded.length === 0) {
+        if (loaded.loaded.length === 0 && !options.treeSitterEngine) {
             engine = undefined
         }
         for (const warning of loaded.warnings) {
@@ -323,19 +323,18 @@ async function prepareFileChunks(input: {
     let parserEngine = 'heuristic'
     let parserStatus = 'not_applicable'
     let parsedMetadata: CodeMetadata | undefined
+    const grammar = getGrammarForPath(input.file.path)
 
-    if (input.engine && getGrammarForPath(input.file.path)) {
-        parserEngine = 'tree_sitter'
-        try {
-            parsedMetadata = await input.engine.parse(input.file.path, content)
-            parserStatus = parsedMetadata ? 'ok' : 'unavailable'
-        } catch (error) {
-            parserStatus = 'failed'
-            terminal.error(
-                `Tree-sitter parse failed for ${input.file.path}, falling back to heuristic chunking:`,
-                error,
+    if (grammar) {
+        if (!input.engine?.hasLanguage(grammar.id)) {
+            throw new Error(
+                `Tree-sitter grammar "${grammar.id}" is required for ${input.file.path}. Select and cache the ${grammar.displayName} grammar before mining.`,
             )
         }
+
+        parserEngine = 'tree_sitter'
+        parsedMetadata = await input.engine.parse(input.file.path, content)
+        parserStatus = parsedMetadata ? 'ok' : 'unavailable'
     }
 
     const allChunks = await chunkFile(

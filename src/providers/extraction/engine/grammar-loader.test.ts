@@ -41,18 +41,21 @@ describe('grammar loader registry', () => {
         expect(ids).toContain('typescript')
         expect(ids).toContain('python')
         expect(ids).toContain('rust')
-        expect(ids).toContain('dockerfile')
+        expect(ids).toContain('javascript')
+        expect(ids).not.toContain('jsx')
+        expect(ids).not.toContain('dockerfile')
     })
 
     it('routes paths through the grammar registry', () => {
         expect(getGrammarForPath('src/index.ts')?.id).toBe('typescript')
         expect(getGrammarForPath('src/view.tsx')?.id).toBe('tsx')
         expect(getGrammarForPath('src/index.js')?.id).toBe('javascript')
+        expect(getGrammarForPath('src/component.jsx')?.id).toBe('javascript')
         expect(getGrammarForPath('public/index.html')?.id).toBe('html')
         expect(getGrammarForPath('composer.json')?.id).toBe('json')
         expect(getGrammarForPath('index.php')?.id).toBe('php')
         expect(getGrammarForPath('api.py')?.id).toBe('python')
-        expect(getGrammarForPath('Dockerfile')?.id).toBe('dockerfile')
+        expect(getGrammarForPath('Dockerfile')).toBeUndefined()
         expect(getGrammarForPath('Makefile')).toBeUndefined()
     })
 

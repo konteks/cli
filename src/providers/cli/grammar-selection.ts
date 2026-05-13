@@ -26,7 +26,8 @@ export async function promptForGrammars(selected: string[]): Promise<string[]> {
                 value: grammar.id,
             })),
         loop: true,
-        message: 'Select the programming languages used in this project',
+        message:
+            'Select the programming languages or file types used in this project',
     })
 }
 

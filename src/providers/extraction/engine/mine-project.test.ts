@@ -18,6 +18,7 @@ import { searchMemory } from '@/providers/persistence/sqlite/search-store'
 // import { TaxonomyStore } from '../persistence/sqli./taxonomy-store'
 import { loadProjectContext } from '@/providers/project/context'
 import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
+import { FakeTreeSitterEngine } from '@/support/fake/fake-tree-sitter-engine'
 import { getMiningFreshness, readMineManifest } from './manifest'
 import type { TreeSitterLanguage } from './tree-sitter-engine'
 
@@ -28,9 +29,24 @@ class FailingTreeSitterEngine {
 
     async loadLanguage(_: TreeSitterLanguage, __: string) {}
 
+    hasLanguage() {
+        return true
+    }
+
     async parse(): Promise<never> {
         throw new Error('forced parser failure')
     }
+}
+
+async function mineTestProject(
+    context: Awaited<ReturnType<typeof loadProjectContext>>,
+    mode: Parameters<typeof mineProject>[1],
+    options: Parameters<typeof mineProject>[2] = {},
+) {
+    return await mineProject(context, mode, {
+        treeSitterEngine: new FakeTreeSitterEngine() as never,
+        ...options,
+    })
 }
 
 const throwingEmbeddingProvider: EmbeddingProvider = {
@@ -96,7 +112,7 @@ describe('mineProject', () => {
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
 
-        const result = await mineProject(context, 'reindex')
+        const result = await mineTestProject(context, 'reindex')
         const manifest = await readMineManifest(context.memoryDir)
         const summary = await createToonStore(context.memoryDir).read(
             result.summaryRef,
@@ -134,7 +150,7 @@ describe('mineProject', () => {
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
 
-        await mineProject(context, 'reindex')
+        await mineTestProject(context, 'reindex')
 
         const service = await openProjectDatabase(context)
         const adapter = service.adapter
@@ -212,7 +228,7 @@ order by target_type, source_role
         const context = await loadProjectContext(projectRoot)
         const embeddingProvider = new FakeEmbeddingProvider()
 
-        await mineProject(context, 'reindex', { embeddingProvider })
+        await mineTestProject(context, 'reindex', { embeddingProvider })
 
         const service = await openProjectDatabase(context)
         const vectorResults = await searchMemory(
@@ -261,7 +277,7 @@ order by target_type, source_role
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
 
-        await mineProject(context, 'reindex')
+        await mineTestProject(context, 'reindex')
 
         const service = await openProjectDatabase(context)
         const chunks = await service.adapter.query<{
@@ -295,7 +311,7 @@ where path = ? and anchor = ? and content_hash = ?
         )
         await service.close()
 
-        await mineProject(context, 'reindex')
+        await mineTestProject(context, 'reindex')
 
         const reindexedService = await openProjectDatabase(context)
         const restored = await reindexedService.adapter.query<{
@@ -327,7 +343,7 @@ where path = ? and anchor = ? and content_hash = ?
     it('reports fresh status after mining and stale after a file change', async () => {
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'reindex')
+        await mineTestProject(context, 'reindex')
 
         const fresh = await getMiningFreshness(context)
         expect(fresh.status).toBe('fresh')
@@ -353,7 +369,7 @@ where path = ? and anchor = ? and content_hash = ?
         )
         const context = await loadProjectContext(projectRoot)
 
-        await mineProject(context, 'reindex')
+        await mineTestProject(context, 'reindex')
 
         const service = await openProjectDatabase(context)
         const chunks = await service.adapter.query<{ count: number }>(
@@ -371,7 +387,7 @@ where path = ? and anchor = ? and content_hash = ?
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
 
-        await mineProject(context, 'changed')
+        await mineTestProject(context, 'changed')
 
         const rawManifest = await readFile(
             join(projectRoot, '.konteks', 'mine-manifest.json'),
@@ -380,12 +396,21 @@ where path = ? and anchor = ? and content_hash = ?
         expect(JSON.parse(rawManifest).mode).toBe('changed')
     })
 
+    it('fails when a supported file grammar is not loaded', async () => {
+        const projectRoot = await makeTempProject()
+        const context = await loadProjectContext(projectRoot)
+
+        await expect(mineProject(context, 'reindex')).rejects.toThrow(
+            'Tree-sitter grammar "json" is required for package.json',
+        )
+    })
+
     it('stores reindex mode in manifest', async () => {
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
 
-        await mineProject(context, 'reindex')
-        await mineProject(context, 'reindex')
+        await mineTestProject(context, 'reindex')
+        await mineTestProject(context, 'reindex')
 
         const rawManifest = await readFile(
             join(projectRoot, '.konteks', 'mine-manifest.json'),
@@ -406,14 +431,14 @@ where path = ? and anchor = ? and content_hash = ?
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
 
-        await mineProject(context, 'reindex')
+        await mineTestProject(context, 'reindex')
 
         await unlink(join(projectRoot, 'README.md'))
         await writeFile(
             join(projectRoot, 'src', 'new.ts'),
             'export const n = 1\n',
         )
-        await mineProject(context, 'changed')
+        await mineTestProject(context, 'changed')
 
         const service = await openProjectDatabase(context)
         const readmeChunks = await service.adapter.query<{ count: number }>(
@@ -443,7 +468,7 @@ where path = ? and anchor = ? and content_hash = ?
         )
         const context = await loadProjectContext(projectRoot)
 
-        await mineProject(context, 'reindex')
+        await mineTestProject(context, 'reindex')
 
         const service = await openProjectDatabase(context)
         const readmeChunks = await service.adapter.query<{ count: number }>(
@@ -455,18 +480,14 @@ where path = ? and anchor = ? and content_hash = ?
         expect(readmeChunks[0]?.count).toBe(2)
     })
 
-    it('falls back deterministically when parser fails', async () => {
+    it('fails when a required Tree-sitter parser fails', async () => {
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
 
-        const result = await mineProject(context, 'reindex', {
-            treeSitterEngine: new FailingTreeSitterEngine() as never,
-        })
-        const manifest = await readMineManifest(context.memoryDir)
-
-        expect(result.ok).toBe(true)
-        expect(result.chunkCount).toBeGreaterThan(0)
-        expect(manifest?.diagnostics?.parserFallbackFiles).toBeGreaterThan(0)
-        expect(manifest?.diagnostics?.parserUsedFiles).toBe(0)
+        await expect(
+            mineProject(context, 'reindex', {
+                treeSitterEngine: new FailingTreeSitterEngine() as never,
+            }),
+        ).rejects.toThrow('forced parser failure')
     })
 })

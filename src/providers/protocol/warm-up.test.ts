@@ -6,6 +6,21 @@ import { callKonteksTool } from '@/composition/mcp-surface'
 import { mineProject } from '@/providers/extraction/mine-project'
 import { loadProjectContext } from '@/providers/project/context'
 import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
+import { FakeTreeSitterEngine } from '@/support/fake/fake-tree-sitter-engine'
+
+function mcpOptions(project: string) {
+    return {
+        project,
+        treeSitterEngine: new FakeTreeSitterEngine() as never,
+    }
+}
+
+function miningOptions() {
+    return {
+        embeddingProvider: new FakeEmbeddingProvider(),
+        treeSitterEngine: new FakeTreeSitterEngine() as never,
+    }
+}
 
 describe('konteks_warm_up', () => {
     let tempDirs: string[] = []
@@ -38,12 +53,10 @@ describe('konteks_warm_up', () => {
         )
 
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
-            embeddingProvider: new FakeEmbeddingProvider(),
-        })
+        await mineProject(context, 'full', miningOptions())
 
         // Seed some durable memories
-        await callKonteksTool({ project: projectRoot }, 'konteks_save', {
+        await callKonteksTool(mcpOptions(projectRoot), 'konteks_save', {
             memories: [
                 {
                     content: 'Use Bun test for project verification.',
@@ -71,7 +84,7 @@ describe('konteks_warm_up', () => {
         })
 
         const result = await callKonteksTool(
-            { project: projectRoot },
+            mcpOptions(projectRoot),
             'konteks_warm_up',
             { maxTokens: 500 },
         )
@@ -104,16 +117,14 @@ describe('konteks_warm_up', () => {
         )
 
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
-            embeddingProvider: new FakeEmbeddingProvider(),
-        })
+        await mineProject(context, 'full', miningOptions())
         await writeFile(
             join(projectRoot, 'src', 'later.ts'),
             'export const later = true\n',
         )
 
         const result = await callKonteksTool(
-            { project: projectRoot },
+            mcpOptions(projectRoot),
             'konteks_warm_up',
             { maxTokens: 500 },
         )
@@ -148,12 +159,10 @@ describe('konteks_warm_up', () => {
         )
 
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
-            embeddingProvider: new FakeEmbeddingProvider(),
-        })
+        await mineProject(context, 'full', miningOptions())
 
         const result = await callKonteksTool(
-            { project: projectRoot },
+            mcpOptions(projectRoot),
             'konteks_warm_up',
             { maxTokens: 500, topic: 'focused recall warm up' },
         )

@@ -54,12 +54,15 @@ export async function withProjectDatabaseContext<T>(
 
 export async function updateChangedProjectMemorySilently(
     context: McpProjectContext,
+    options: StartMcpServerOptions = {},
 ): Promise<SaveProjectUpdate | undefined> {
     if (!context.configExists || !(await readMineManifest(context.memoryDir))) {
         return undefined
     }
 
-    const result = await mineProject(context, 'changed')
+    const result = await mineProject(context, 'changed', {
+        treeSitterEngine: options.treeSitterEngine,
+    })
     return {
         deletedFilePaths: result.deletedFilePaths,
         updatedFilePaths: result.updatedFilePaths,

@@ -7,28 +7,22 @@ export type TreeSitterLanguage =
     | 'cpp'
     | 'csharp'
     | 'css'
-    | 'dockerfile'
     | 'go'
     | 'html'
     | 'java'
     | 'javascript'
-    | 'jsx'
     | 'jsdoc'
     | 'json'
     | 'kotlin'
     | 'lua'
-    | 'markdown'
     | 'php'
     | 'python'
     | 'ruby'
     | 'rust'
     | 'scala'
-    | 'sql'
-    | 'swift'
     | 'toml'
     | 'tsx'
     | 'typescript'
-    | 'xml'
     | 'yaml'
 
 type CodeSymbol = {
@@ -69,6 +63,10 @@ export class TreeSitterEngine {
         this.languages.set(lang, language)
     }
 
+    hasLanguage(lang: TreeSitterLanguage): boolean {
+        return this.languages.has(lang)
+    }
+
     async parse(
         path: string,
         content: string,
@@ -84,7 +82,9 @@ export class TreeSitterEngine {
 
         const language = this.languages.get(lang)
         if (!language) {
-            return undefined
+            throw new Error(
+                `Tree-sitter grammar is not loaded for ${lang} (${path})`,
+            )
         }
 
         this.parser?.setLanguage(language)
@@ -114,8 +114,8 @@ export class TreeSitterEngine {
         metadata: CodeMetadata,
         lang: TreeSitterLanguage,
     ) {
-        // Structural symbol extraction is currently implemented only for JS/TS.
         if (lang !== 'javascript' && lang !== 'typescript' && lang !== 'tsx') {
+            this.extractGenericMetadata(root, metadata)
             return
         }
 
@@ -168,6 +168,84 @@ export class TreeSitterEngine {
             lang === 'typescript' || lang === 'tsx' ? tsQueries : baseQueries
 
         return new Query(language, queryStr)
+    }
+
+    private extractGenericMetadata(root: Node, metadata: CodeMetadata) {
+        const visit = (node: Node) => {
+            const kind = this.genericSymbolKind(node.type)
+            const nameNode = kind ? this.findNameNode(node) : undefined
+            if (kind) {
+                metadata.symbols.push({
+                    content: node.text,
+                    endLine: node.endPosition.row,
+                    isExported: this.isExported(node),
+                    kind,
+                    name: nameNode?.text || this.fallbackSymbolName(kind, node),
+                    startLine: node.startPosition.row,
+                })
+            }
+
+            for (const child of node.namedChildren) {
+                visit(child)
+            }
+        }
+
+        visit(root)
+    }
+
+    private genericSymbolKind(type: string): string | undefined {
+        const normalized = type.toLowerCase()
+        if (normalized.includes('function')) {
+            return 'function'
+        }
+        if (normalized.includes('method')) {
+            return 'method'
+        }
+        if (normalized.includes('class')) {
+            return 'class'
+        }
+        if (normalized.includes('interface')) {
+            return 'interface'
+        }
+        if (normalized.includes('struct')) {
+            return 'struct'
+        }
+        if (normalized.includes('enum')) {
+            return 'enum'
+        }
+        if (normalized.includes('trait')) {
+            return 'trait'
+        }
+        if (normalized.includes('module')) {
+            return 'module'
+        }
+        if (normalized.includes('type')) {
+            return 'type'
+        }
+        if (
+            normalized.includes('declaration') ||
+            normalized.includes('definition')
+        ) {
+            return 'declaration'
+        }
+        return undefined
+    }
+
+    private findNameNode(node: Node): Node | undefined {
+        const fieldNameNode = node.childForFieldName('name')
+        if (fieldNameNode) {
+            return fieldNameNode
+        }
+
+        return node.namedChildren.find(child =>
+            /^(identifier|type_identifier|field_identifier|property_identifier|constant|word)$/u.test(
+                child.type,
+            ),
+        )
+    }
+
+    private fallbackSymbolName(kind: string, node: Node): string {
+        return `${kind}_${node.startPosition.row + 1}_${node.startPosition.column + 1}`
     }
 
     private isExported(node: Node): boolean {

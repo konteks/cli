@@ -10,7 +10,7 @@ const tempDirs: string[] = []
 async function makeTempProject(): Promise<string> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-init-test-'))
     tempDirs.push(projectRoot)
-    await writeFile(join(projectRoot, 'package.json'), '{"name":"fixture"}\n')
+    await writeFile(join(projectRoot, 'README.md'), '# Fixture\n')
     return projectRoot
 }
 

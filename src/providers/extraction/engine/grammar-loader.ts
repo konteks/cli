@@ -17,6 +17,7 @@ export type GrammarDefinition = {
     displayName: string
     extensions: string[]
     fallbackVersion: string
+    gitRepoUrl: string
     id: TreeSitterLanguage
     latestUrl?: string
     package: string
@@ -270,7 +271,7 @@ function grammarDownloadUrl(
 async function downloadBytes(url: string): Promise<Uint8Array> {
     const response = await fetch(url)
     if (!response.ok) {
-        throw new Error(`Failed to download grammar: HTTP ${response.status}`)
+        throw new Error(`Failed to download ${url}: HTTP ${response.status}`)
     }
     return new Uint8Array(await response.arrayBuffer())
 }

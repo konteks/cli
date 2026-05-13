@@ -8,8 +8,23 @@ import { mineProject } from '@/providers/extraction/mine-project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import { loadProjectContext } from '@/providers/project/context'
 import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
+import { FakeTreeSitterEngine } from '@/support/fake/fake-tree-sitter-engine'
 
 const tempDirs: string[] = []
+
+function mcpOptions(project: string) {
+    return {
+        project,
+        treeSitterEngine: new FakeTreeSitterEngine() as never,
+    }
+}
+
+function miningOptions() {
+    return {
+        embeddingProvider: new FakeEmbeddingProvider(),
+        treeSitterEngine: new FakeTreeSitterEngine() as never,
+    }
+}
 
 afterEach(async () => {
     await Promise.all(
@@ -43,12 +58,10 @@ describe('retrieval quality evals', () => {
             'export const run = () => "ok"\n',
         )
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
-            embeddingProvider: new FakeEmbeddingProvider(),
-        })
+        await mineProject(context, 'full', miningOptions())
 
         const result = await callKonteksTool(
-            { project: projectRoot },
+            mcpOptions(projectRoot),
             'konteks_recall',
             { task: 'packaging mcp registration package manager' },
         )
@@ -66,12 +79,10 @@ describe('retrieval quality evals', () => {
         )
         tempDirs.push(projectRoot)
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
-            embeddingProvider: new FakeEmbeddingProvider(),
-        })
+        await mineProject(context, 'full', miningOptions())
 
         await expect(
-            callKonteksTool({ project: projectRoot }, 'konteks_save', {
+            callKonteksTool(mcpOptions(projectRoot), 'konteks_save', {
                 type: 'diary',
             }),
         ).rejects.toThrow()
@@ -92,16 +103,14 @@ describe('retrieval quality evals', () => {
             'export const first = true\n',
         )
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
-            embeddingProvider: new FakeEmbeddingProvider(),
-        })
+        await mineProject(context, 'full', miningOptions())
         await writeFile(
             join(projectRoot, 'src', 'should-not-refresh.ts'),
             'export const shouldNotRefresh = true\n',
         )
 
         await expect(
-            callKonteksTool({ project: projectRoot }, 'konteks_save', {
+            callKonteksTool(mcpOptions(projectRoot), 'konteks_save', {
                 content: 'too short',
                 kind: 'note',
                 type: 'memory',
@@ -127,16 +136,14 @@ describe('retrieval quality evals', () => {
             'export const first = true\n',
         )
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
-            embeddingProvider: new FakeEmbeddingProvider(),
-        })
+        await mineProject(context, 'full', miningOptions())
         await writeFile(
             join(projectRoot, 'src', 'saved-change.ts'),
             'export const savedChange = true\n',
         )
 
         const result = await callKonteksTool(
-            { project: projectRoot },
+            mcpOptions(projectRoot),
             'konteks_save',
             {
                 summary:
@@ -184,12 +191,10 @@ limit 1
             'export const serve = () => true\n',
         )
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
-            embeddingProvider: new FakeEmbeddingProvider(),
-        })
+        await mineProject(context, 'full', miningOptions())
 
         const result = await callKonteksTool(
-            { project: projectRoot },
+            mcpOptions(projectRoot),
             'konteks_warm_up',
             { maxTokens: 600 },
         )
@@ -214,12 +219,10 @@ limit 1
             'export const f = () => 1\n',
         )
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
-            embeddingProvider: new FakeEmbeddingProvider(),
-        })
+        await mineProject(context, 'full', miningOptions())
 
         const result = await callKonteksTool(
-            { project: projectRoot },
+            mcpOptions(projectRoot),
             'konteks_recall',
             { task: 'index function' },
         )
@@ -257,12 +260,10 @@ limit 1
             '# Build\nUse recall during the build phase.\n',
         )
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
-            embeddingProvider: new FakeEmbeddingProvider(),
-        })
+        await mineProject(context, 'full', miningOptions())
 
         const result = await callKonteksTool(
-            { project: projectRoot },
+            mcpOptions(projectRoot),
             'konteks_recall',
             { task: 'improve konteks_recall return shape' },
         )
@@ -292,9 +293,7 @@ limit 1
             'export const storage = "sqlite wasm local storage"\n',
         )
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
-            embeddingProvider: new FakeEmbeddingProvider(),
-        })
+        await mineProject(context, 'full', miningOptions())
         const adapter = await openProjectDatabase(context)
         const rows = await adapter.adapter.query<{ count: number }>(
             'select count(*) as count from retrieval_documents',
