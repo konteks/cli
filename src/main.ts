@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
 import { callMcpToolCommand } from '@/controllers/call-mcp-tool'
+import { configCommand } from '@/controllers/config'
 import { getPromptDetailCommand } from '@/controllers/get-prompt-detail'
 import { getPromptsCommand } from '@/controllers/get-prompts'
 import { getStatusCommand } from '@/controllers/get-status'
@@ -13,6 +14,7 @@ import { startMcpServer } from '@/controllers/serve-mcp'
 import { ensureCliProjectInitialized } from '@/middlewares/cli-initialization'
 import type { GlobalCliOptions } from '@/models/cli'
 import { printCliError } from '@/support/cli/error-output'
+import { terminal } from '@/support/terminal/service'
 import { VERSION } from '@/support/version'
 
 type McpCallOptions = {
@@ -22,6 +24,10 @@ type McpCallOptions = {
 
 type InstallSkillOptions = GlobalCliOptions & {
     global?: boolean
+}
+
+type InitOptions = GlobalCliOptions & {
+    grammar?: string[]
 }
 
 type CliCommandHandlers = {
@@ -36,7 +42,7 @@ type CliCommandHandlers = {
     getStatus: (options: GlobalCliOptions) => Promise<void>
     getToolDetail: (name: string) => Promise<void>
     getTools: () => Promise<void>
-    init: (options: GlobalCliOptions) => Promise<void>
+    init: (options: InitOptions) => Promise<void>
     installSkills: (options: InstallSkillOptions) => Promise<void>
     repair: (options: GlobalCliOptions) => Promise<void>
     startMcpServer: (options: GlobalCliOptions) => Promise<void>
@@ -73,6 +79,10 @@ function createCliProgram(options: CreateCliProgramOptions = {}): Command {
         .option('--project <path>', 'Project root override')
 
     program.hook('preAction', async (_command, actionCommand) => {
+        if (shouldPrintCliHeader(actionCommand.name())) {
+            terminal.log(`Konteks v${VERSION}`)
+        }
+
         if (actionCommand.name() === 'init') {
             return
         }
@@ -85,8 +95,20 @@ function createCliProgram(options: CreateCliProgramOptions = {}): Command {
         .description(
             'Initialize memory, section the project, and build indexes.',
         )
+        .option(
+            '--grammar <id>',
+            'Select a Tree-sitter grammar during non-interactive init; repeatable.',
+            collectValues,
+        )
+        .action(async (initOptions: { grammar?: string[] }) => {
+            await handlers.init({ ...program.opts(), ...initOptions })
+        })
+
+    program
+        .command('config')
+        .description('Configure project-local Konteks settings.')
         .action(async () => {
-            await handlers.init(program.opts())
+            await configCommand(program.opts())
         })
 
     program
@@ -175,6 +197,20 @@ function createCliProgram(options: CreateCliProgramOptions = {}): Command {
         })
 
     return program
+}
+
+function collectValues(value: string, previous: string[]): string[] {
+    return [...previous, value]
+}
+
+function shouldPrintCliHeader(commandName: string): boolean {
+    return new Set([
+        'config',
+        'init',
+        'install-skills',
+        'repair',
+        'status',
+    ]).has(commandName)
 }
 
 createCliProgram()

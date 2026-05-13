@@ -149,6 +149,21 @@ function compactMessage(event: MineProgressEvent): string {
     const message = event.message ?? phaseTitle(event.phase)
 
     if (event.phase === 'preparation') {
+        if (/Tree-sitter grammars ready/u.test(message)) {
+            return 'Grammars ready'
+        }
+        if (/^Preparing \d+ Tree-sitter grammars/u.test(message)) {
+            return 'Preparing grammars'
+        }
+        if (/^Downloading .+ grammar/u.test(message)) {
+            return 'Downloading grammar'
+        }
+        if (/^Loaded .+ grammar/u.test(message)) {
+            return 'Loading grammar'
+        }
+        if (/^Using cached .+ grammar/u.test(message)) {
+            return 'Using cached grammar'
+        }
         if (event.downloadPercent !== undefined) {
             return 'Loading model files'
         }
@@ -253,6 +268,9 @@ function phaseTitle(phase: MineProgressEvent['phase']): string {
 
 function stepTitle(event: MineProgressEvent): string {
     if (event.phase === 'preparation') {
+        if (/grammar/iu.test(event.message ?? '')) {
+            return 'Preparation: Tree-sitter Grammars'
+        }
         return 'Preparation: Model Load'
     }
 

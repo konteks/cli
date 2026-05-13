@@ -37,6 +37,12 @@ describe('project context', () => {
 
     it('creates default config for the project-local memory directory', () => {
         expect(createDefaultConfig('/repo')).toEqual({
+            extraction: {
+                grammars: {
+                    selected: [],
+                    updateTtlHours: 24,
+                },
+            },
             projectRoot: '/repo',
             recall: {
                 maxTokens: 2000,

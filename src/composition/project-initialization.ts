@@ -13,6 +13,7 @@ import { createMiningAction } from './mining'
 
 export type InitializeProjectOptions = {
     embeddingProvider?: EmbeddingProviderContract
+    grammars?: string[]
     project?: string
 }
 
@@ -41,9 +42,22 @@ export async function initializeProject(
     await mkdir(context.memoryDir, { recursive: true })
     await mkdir(join(context.memoryDir, 'objects'), { recursive: true })
 
+    const defaultConfig = createDefaultConfig(context.projectRoot)
     await writeFile(
         context.configPath,
-        `${JSON.stringify(createDefaultConfig(context.projectRoot), null, 2)}\n`,
+        `${JSON.stringify(
+            {
+                ...defaultConfig,
+                extraction: {
+                    grammars: {
+                        ...defaultConfig.extraction.grammars,
+                        selected: options.grammars ?? [],
+                    },
+                },
+            },
+            null,
+            2,
+        )}\n`,
         { flag: 'wx' },
     ).catch(async error => {
         if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {

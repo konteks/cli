@@ -26,7 +26,10 @@ import {
 } from './chunk-cleanup'
 import { chunkFile } from './chunking'
 import type { ScannedFile } from './file-scan'
-import { initTreeSitterWithBundledGrammars } from './grammar-loader'
+import {
+    getGrammarForPath,
+    initTreeSitterWithSelectedGrammars,
+} from './grammar-loader'
 import type { ProjectMetadata } from './metadata'
 import { rebuildModuleArtifacts } from './module-store'
 import type { CodeMetadata } from './tree-sitter-engine'
@@ -102,26 +105,23 @@ export async function mineChunks(
             phase: 'chunks',
             status: 'start',
         })
-        try {
-            engine = options.treeSitterEngine ?? new TreeSitterEngine()
-            await initTreeSitterWithBundledGrammars(engine)
-            progress?.({
-                message: 'Tree-sitter grammars ready',
-                phase: 'chunks',
-                status: 'progress',
-            })
-        } catch (error) {
-            terminal.error(
-                'Tree-sitter initialization failed, using heuristic chunking fallback:',
-                error,
-            )
+        engine = options.treeSitterEngine ?? new TreeSitterEngine()
+        const loaded = await initTreeSitterWithSelectedGrammars(
+            engine,
+            context,
+            { onProgress: progress },
+        )
+        if (loaded.loaded.length === 0) {
             engine = undefined
-            progress?.({
-                message: 'Tree-sitter unavailable; using heuristic fallback',
-                phase: 'chunks',
-                status: 'progress',
-            })
         }
+        for (const warning of loaded.warnings) {
+            terminal.error(warning)
+        }
+        progress?.({
+            message: 'Tree-sitter grammars ready',
+            phase: 'chunks',
+            status: 'progress',
+        })
     }
 
     let chunkCount = 0
@@ -324,7 +324,7 @@ async function prepareFileChunks(input: {
     let parserStatus = 'not_applicable'
     let parsedMetadata: CodeMetadata | undefined
 
-    if (input.engine && isTreeSitterLanguage(language)) {
+    if (input.engine && getGrammarForPath(input.file.path)) {
         parserEngine = 'tree_sitter'
         try {
             parsedMetadata = await input.engine.parse(input.file.path, content)
@@ -469,16 +469,4 @@ function chunkIdFor(
     hash: string,
 ): string {
     return `chunk_${contentHash(`${path}:${index}:${anchor}:${hash}`).slice(0, 32)}`
-}
-
-function isTreeSitterLanguage(language: string): boolean {
-    return (
-        language === 'html' ||
-        language === 'javascript' ||
-        language === 'jsdoc' ||
-        language === 'json' ||
-        language === 'php' ||
-        language === 'typescript' ||
-        language === 'tsx'
-    )
 }

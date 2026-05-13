@@ -1,0 +1,254 @@
+[
+    {
+        "aliases": ["ts", "mts", "cts"],
+        "displayName": "TypeScript",
+        "extensions": [".ts", ".mts", ".cts"],
+        "fallbackVersion": "0.23.2",
+        "id": "typescript",
+        "package": "tree-sitter-typescript",
+        "wasmFile": "tree-sitter-typescript.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "TSX",
+        "extensions": [".tsx"],
+        "fallbackVersion": "0.23.2",
+        "id": "tsx",
+        "package": "tree-sitter-typescript",
+        "wasmFile": "tree-sitter-tsx.wasm"
+    },
+    {
+        "aliases": ["js"],
+        "displayName": "JavaScript",
+        "extensions": [".js", ".mjs", ".cjs"],
+        "fallbackVersion": "0.25.0",
+        "id": "javascript",
+        "package": "tree-sitter-javascript",
+        "wasmFile": "tree-sitter-javascript.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "JSX",
+        "extensions": [".jsx"],
+        "fallbackVersion": "0.25.0",
+        "id": "jsx",
+        "package": "tree-sitter-javascript",
+        "wasmFile": "tree-sitter-javascript.wasm"
+    },
+    {
+        "aliases": ["jsonc"],
+        "displayName": "JSON",
+        "extensions": [".json", ".jsonc"],
+        "fallbackVersion": "0.24.8",
+        "id": "json",
+        "package": "tree-sitter-json",
+        "wasmFile": "tree-sitter-json.wasm"
+    },
+    {
+        "aliases": ["htm"],
+        "displayName": "HTML",
+        "extensions": [".html", ".htm"],
+        "fallbackVersion": "0.23.2",
+        "id": "html",
+        "package": "tree-sitter-html",
+        "wasmFile": "tree-sitter-html.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "CSS",
+        "extensions": [".css"],
+        "fallbackVersion": "0.23.2",
+        "id": "css",
+        "package": "tree-sitter-css",
+        "wasmFile": "tree-sitter-css.wasm"
+    },
+    {
+        "aliases": ["md", "mdx"],
+        "displayName": "Markdown",
+        "extensions": [".md", ".mdx"],
+        "fallbackVersion": "0.3.2",
+        "id": "markdown",
+        "package": "tree-sitter-markdown",
+        "wasmFile": "tree-sitter-markdown.wasm"
+    },
+    {
+        "aliases": ["yml"],
+        "displayName": "YAML",
+        "extensions": [".yaml", ".yml"],
+        "fallbackVersion": "0.7.1",
+        "id": "yaml",
+        "package": "tree-sitter-yaml",
+        "wasmFile": "tree-sitter-yaml.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "TOML",
+        "extensions": [".toml"],
+        "fallbackVersion": "0.7.0",
+        "id": "toml",
+        "package": "tree-sitter-toml",
+        "wasmFile": "tree-sitter-toml.wasm"
+    },
+    {
+        "aliases": ["phtml"],
+        "displayName": "PHP",
+        "extensions": [".php", ".phtml"],
+        "fallbackVersion": "0.24.2",
+        "id": "php",
+        "package": "tree-sitter-php",
+        "wasmFile": "tree-sitter-php.wasm"
+    },
+    {
+        "aliases": ["py"],
+        "displayName": "Python",
+        "extensions": [".py"],
+        "fallbackVersion": "0.23.6",
+        "id": "python",
+        "package": "tree-sitter-python",
+        "wasmFile": "tree-sitter-python.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "Go",
+        "extensions": [".go"],
+        "fallbackVersion": "0.23.4",
+        "id": "go",
+        "package": "tree-sitter-go",
+        "wasmFile": "tree-sitter-go.wasm"
+    },
+    {
+        "aliases": ["rs"],
+        "displayName": "Rust",
+        "extensions": [".rs"],
+        "fallbackVersion": "0.24.0",
+        "id": "rust",
+        "package": "tree-sitter-rust",
+        "wasmFile": "tree-sitter-rust.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "Java",
+        "extensions": [".java"],
+        "fallbackVersion": "0.23.5",
+        "id": "java",
+        "package": "tree-sitter-java",
+        "wasmFile": "tree-sitter-java.wasm"
+    },
+    {
+        "aliases": ["kt"],
+        "displayName": "Kotlin",
+        "extensions": [".kt", ".kts"],
+        "fallbackVersion": "0.3.8",
+        "id": "kotlin",
+        "package": "tree-sitter-kotlin",
+        "wasmFile": "tree-sitter-kotlin.wasm"
+    },
+    {
+        "aliases": ["rb"],
+        "displayName": "Ruby",
+        "extensions": [".rb"],
+        "fallbackVersion": "0.23.1",
+        "id": "ruby",
+        "package": "tree-sitter-ruby",
+        "wasmFile": "tree-sitter-ruby.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "C",
+        "extensions": [".c", ".h"],
+        "fallbackVersion": "0.23.6",
+        "id": "c",
+        "package": "tree-sitter-c",
+        "wasmFile": "tree-sitter-c.wasm"
+    },
+    {
+        "aliases": ["c++"],
+        "displayName": "C++",
+        "extensions": [".cc", ".cpp", ".cxx", ".hpp", ".hh", ".hxx"],
+        "fallbackVersion": "0.23.4",
+        "id": "cpp",
+        "package": "tree-sitter-cpp",
+        "wasmFile": "tree-sitter-cpp.wasm"
+    },
+    {
+        "aliases": ["cs"],
+        "displayName": "C#",
+        "extensions": [".cs"],
+        "fallbackVersion": "0.23.1",
+        "id": "csharp",
+        "package": "tree-sitter-c-sharp",
+        "wasmFile": "tree-sitter-c_sharp.wasm"
+    },
+    {
+        "aliases": ["sh"],
+        "displayName": "Bash",
+        "extensions": [".sh", ".bash", ".zsh"],
+        "fallbackVersion": "0.23.3",
+        "id": "bash",
+        "package": "tree-sitter-bash",
+        "wasmFile": "tree-sitter-bash.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "SQL",
+        "extensions": [".sql"],
+        "fallbackVersion": "0.3.7",
+        "id": "sql",
+        "package": "tree-sitter-sql",
+        "wasmFile": "tree-sitter-sql.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "Lua",
+        "extensions": [".lua"],
+        "fallbackVersion": "0.2.0",
+        "id": "lua",
+        "package": "tree-sitter-lua",
+        "wasmFile": "tree-sitter-lua.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "Swift",
+        "extensions": [".swift"],
+        "fallbackVersion": "0.7.1",
+        "id": "swift",
+        "package": "tree-sitter-swift",
+        "wasmFile": "tree-sitter-swift.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "Scala",
+        "extensions": [".scala", ".sc"],
+        "fallbackVersion": "0.24.0",
+        "id": "scala",
+        "package": "tree-sitter-scala",
+        "wasmFile": "tree-sitter-scala.wasm"
+    },
+    {
+        "aliases": ["docker"],
+        "displayName": "Dockerfile",
+        "extensions": ["dockerfile", ".dockerfile"],
+        "fallbackVersion": "0.2.0",
+        "id": "dockerfile",
+        "package": "tree-sitter-dockerfile",
+        "wasmFile": "tree-sitter-dockerfile.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "XML",
+        "extensions": [".xml"],
+        "fallbackVersion": "0.7.0",
+        "id": "xml",
+        "package": "tree-sitter-xml",
+        "wasmFile": "tree-sitter-xml.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "JSDoc",
+        "extensions": [".jsdoc"],
+        "fallbackVersion": "0.25.0",
+        "id": "jsdoc",
+        "package": "tree-sitter-jsdoc",
+        "wasmFile": "tree-sitter-jsdoc.wasm"
+    }
+]

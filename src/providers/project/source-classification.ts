@@ -11,18 +11,36 @@ type SourceRole =
     | 'unknown'
 
 type MinedLanguage =
+    | 'bash'
+    | 'c'
+    | 'cpp'
+    | 'csharp'
+    | 'css'
+    | 'dockerfile'
+    | 'go'
     | 'html'
+    | 'java'
     | 'javascript'
     | 'jsdoc'
     | 'json'
     | 'jsx'
+    | 'kotlin'
+    | 'lua'
     | 'markdown'
     | 'tsx'
     | 'typescript'
     | 'typescript_declaration'
-    | 'unknown'
-    | 'yaml'
     | 'php'
+    | 'python'
+    | 'ruby'
+    | 'rust'
+    | 'scala'
+    | 'sql'
+    | 'swift'
+    | 'toml'
+    | 'unknown'
+    | 'xml'
+    | 'yaml'
 
 const packageConfigFiles = new Set([
     'package.json',
@@ -68,6 +86,60 @@ export function detectLanguage(path: string): MinedLanguage {
     }
     if (/\.(php|phtml)$/u.test(lowerPath)) {
         return 'php'
+    }
+    if (lowerPath.endsWith('.css')) {
+        return 'css'
+    }
+    if (lowerPath.endsWith('.toml')) {
+        return 'toml'
+    }
+    if (lowerPath.endsWith('.py')) {
+        return 'python'
+    }
+    if (lowerPath.endsWith('.go')) {
+        return 'go'
+    }
+    if (lowerPath.endsWith('.rs')) {
+        return 'rust'
+    }
+    if (lowerPath.endsWith('.java')) {
+        return 'java'
+    }
+    if (/\.(kt|kts)$/u.test(lowerPath)) {
+        return 'kotlin'
+    }
+    if (lowerPath.endsWith('.rb')) {
+        return 'ruby'
+    }
+    if (/\.(c|h)$/u.test(lowerPath)) {
+        return 'c'
+    }
+    if (/\.(cc|cpp|cxx|hpp|hh|hxx)$/u.test(lowerPath)) {
+        return 'cpp'
+    }
+    if (lowerPath.endsWith('.cs')) {
+        return 'csharp'
+    }
+    if (/\.(sh|bash|zsh)$/u.test(lowerPath)) {
+        return 'bash'
+    }
+    if (lowerPath.endsWith('.sql')) {
+        return 'sql'
+    }
+    if (lowerPath.endsWith('.lua')) {
+        return 'lua'
+    }
+    if (lowerPath.endsWith('.swift')) {
+        return 'swift'
+    }
+    if (/\.(scala|sc)$/u.test(lowerPath)) {
+        return 'scala'
+    }
+    if (lowerPath.endsWith('dockerfile') || lowerPath.endsWith('.dockerfile')) {
+        return 'dockerfile'
+    }
+    if (lowerPath.endsWith('.xml')) {
+        return 'xml'
     }
     if (lowerPath.endsWith('.jsdoc')) {
         return 'jsdoc'

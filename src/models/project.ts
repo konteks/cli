@@ -5,6 +5,12 @@ export type ProjectContext = {
 }
 
 export type KonteksConfig = {
+    extraction: {
+        grammars: {
+            selected: string[]
+            updateTtlHours: number
+        }
+    }
     projectRoot: string
     storage: {
         inlinePayloadMaxBytes: number

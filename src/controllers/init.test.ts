@@ -108,4 +108,19 @@ describe('init command', () => {
             resumedManifest.diagnostics.embeddingReusedCount,
         ).toBeGreaterThan(0)
     })
+
+    it('rejects unknown grammar ids before init runs', async () => {
+        const projectRoot = await makeTempProject()
+
+        await expect(
+            initCommand({
+                embeddingProvider: new FakeEmbeddingProvider(),
+                grammar: ['not-real'],
+                project: projectRoot,
+            }),
+        ).rejects.toThrow('Unknown grammar id: not-real')
+        await expect(
+            readFile(join(projectRoot, '.konteks', 'config.json'), 'utf8'),
+        ).rejects.toThrow()
+    })
 })

@@ -246,7 +246,7 @@ function isJson(path: string): boolean {
 }
 
 function isCode(path: string): boolean {
-    return /\.(ts|tsx|js|jsx|mjs|cjs|mts|cts|py|go|rs|java|kt|rb|php)$/iu.test(
+    return /\.(ts|tsx|js|jsx|mjs|cjs|mts|cts|py|go|rs|java|kt|kts|rb|php|c|h|cc|cpp|cxx|hpp|hh|hxx|cs|sh|bash|zsh|sql|lua|swift|scala|sc)$/iu.test(
         path,
     )
 }

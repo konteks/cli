@@ -1,4 +1,4 @@
-import { access, readFile } from 'node:fs/promises'
+import { access, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import type {
     KonteksConfig,
@@ -10,6 +10,12 @@ export type { LoadedProjectContext }
 
 export function createDefaultConfig(projectRoot: string): KonteksConfig {
     return {
+        extraction: {
+            grammars: {
+                selected: [],
+                updateTtlHours: 24,
+            },
+        },
         projectRoot,
         recall: {
             maxTokens: 2000,
@@ -19,6 +25,13 @@ export function createDefaultConfig(projectRoot: string): KonteksConfig {
             memoryDir: '.konteks',
         },
     }
+}
+
+export async function writeProjectConfig(
+    context: Pick<LoadedProjectContext, 'config' | 'configPath'>,
+    config: KonteksConfig,
+): Promise<void> {
+    await writeFile(context.configPath, `${JSON.stringify(config, null, 2)}\n`)
 }
 
 export async function resolveProjectContext(
@@ -102,6 +115,20 @@ function mergeConfig(
     config: Partial<KonteksConfig>,
 ): KonteksConfig {
     return {
+        extraction: {
+            grammars: {
+                selected: Array.isArray(config.extraction?.grammars?.selected)
+                    ? config.extraction.grammars.selected.filter(
+                          value => typeof value === 'string',
+                      )
+                    : defaults.extraction.grammars.selected,
+                updateTtlHours:
+                    typeof config.extraction?.grammars?.updateTtlHours ===
+                    'number'
+                        ? config.extraction.grammars.updateTtlHours
+                        : defaults.extraction.grammars.updateTtlHours,
+            },
+        },
         projectRoot: config.projectRoot ?? defaults.projectRoot,
         recall: {
             maxTokens: config.recall?.maxTokens ?? defaults.recall.maxTokens,
