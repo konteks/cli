@@ -1,108 +1,119 @@
 # Extraction & Sectioning: Semantic Extraction
 
-The journey of project knowledge begins with **Semantic Extraction**. This process transforms raw source code and documentation into the **Content Blocks** (technically known as *chunks*) that populate the [Memory Model](memory-model.md).
+Every project begins as a forest of files: source code, documentation, configuration, notes, and generated noise. Extraction is the pass where Konteks walks that forest and turns the parts worth remembering into derived memory.
+
+This is not execution. Konteks does not run the project or interpret business behavior at runtime. It reads the repository, keeps the useful artifacts, divides them into meaningful sections, and prepares them so future recall can find the right context.
 
 ```mermaid
 graph LR
-    subgraph Ingestion
-    Source[Source Artifacts] --> Scanner(File Scanner)
-    end
-
-    Scanner -- "Ignore" --> Filtered[Filtered Files]
-    
-    subgraph Transformation
-    Filtered --> Parser{Language Parser}
-    Parser --> TS[Tree-sitter AST]
-    Parser --> H[Heuristic]
-    TS & H --> Chunker(Block Chunker)
-    end
-
-    Chunker --> Blocks[Content Blocks]
-    
-    subgraph Persistence
-    Blocks --> Retrieval[Retrieval Documents]
-    Retrieval --> Embeddings[Embeddings]
-    Blocks --> SQLite[(SQLite)]
-    Retrieval --> SQLite
-    Embeddings --> SQLite
-    Blocks --> TOON[(TOON)]
-    end
+    Source[Repository Files] --> Scan[Scan and Filter]
+    Scan --> Select[Select Files]
+    Select --> Metadata[Project Metadata]
+    Select --> Section[Section Files]
+    Section --> Chunks[Content Chunks]
+    Chunks --> Retrieval[Retrieval Text]
+    Retrieval --> Index[Search Index]
+    Retrieval --> Embed[Embeddings]
+    Chunks --> Modules[Module Summaries]
+    Modules --> Index
+    Modules --> Embed
+    Index --> Memory[(Derived Memory)]
+    Embed --> Memory
 ```
 
-## 1. The Extraction Lifecycle
+## 1. The Gate: Scan and Filter
 
-Extraction is the process of scanning a repository to capture its latent structure and meaning. This is the primary source of **Derived Memory**—knowledge that can be automatically rebuilt from the source files.
+Extraction starts at the project root. Konteks walks the repository and records enough about each included file to know what exists now and what changed since the last extraction.
 
-### Concepts
+Before anything becomes memory, it passes through a gate. Files and directories that are likely to be noisy, unsafe, or wasteful are left outside:
 
-* **Static Analysis**: Konteks examines code without executing it, identifying patterns and relationships.
-* **Incremental Extraction**: To maintain efficiency, the system identifies and processes only the files that have changed since the last extraction operation.
-* **Mining**: The process of deep-scanning a project to build the semantic graph.
+* Version-control, dependency, build, cache, and generated directories.
+* Lockfiles, local databases, debug logs, and environment files.
+* Binary, archive, media, certificate, and key files.
+* Large files and minified files.
+* Files excluded by `.gitignore` or `.konteksignore`.
 
-### Technical Specification: The Indexer
+What remains is the working set: text-like project files that are safe and useful enough to mine.
 
-* **CLI Commands**:
-  * `konteks init`: Initial full index of the project.
-  * `konteks repair`: Performs a manual recovery rebuild of all derived artifacts.
-* **Ignore Rules**: Respects `.gitignore`, `.ignore`, and built-in defaults (e.g., `node_modules`, `.git`).
-* **Metadata Extraction**: Ingests `package.json`, `README.md`, and configuration files to build the initial [Taxonomic Memory](memory-model.md#4-taxonomic-memory).
+## 2. The Ledger: Select What Needs Work
 
-## 2. Language-Aware Parsing (Tree-sitter)
+Konteks does not always need to re-read the whole project. It keeps a record of the previous extraction and uses that record to decide what should happen next.
 
-Traditional tools often split code into arbitrary fixed-size sections (e.g., every 1000 characters). This breaks the "Semantic Integrity" of the code. Konteks uses **Tree-sitter** to understand the actual structure of the code.
+* A full extraction mines the current included files.
+* A changed extraction mines files whose content changed and removes memory for files that disappeared.
+* A resume extraction skips paths that are already present in memory.
+* A reindex extraction rebuilds derived artifacts from the current included files.
 
-### Concepts
+This is the boundary between derived and durable memory. Derived memory can be rebuilt from the repository; durable memories saved from agent sessions are not treated as throwaway extraction output.
 
-* **Abstract Syntax Trees (AST)**: By parsing code into a tree structure, Konteks understands what is a function, a class, or a variable.
-* **Content Blocks**: Instead of character counts, Konteks sections code by its logical boundaries (e.g., one block = one function). These are **indexed for semantic search** to allow for high-fidelity retrieval.
+## 3. The Project Portrait: Read Metadata
 
-### Technical Specification: The Parser
+Before Konteks studies individual files, it builds a small portrait of the project. It looks for package information, entry points, scripts, dependencies, workspace hints, README-derived description, and broad technology signals.
 
-* **Engine**: Web-Tree-Sitter (WASM)
-* **Supported Languages**: TypeScript, JavaScript, HTML, JSON, and more.
-* **Rationale**: We use WASM builds to maintain our "Zero-Install" promise while gaining the accuracy of a full compiler-grade parser.
+This portrait gives later memory a frame. A chunk from a file is more useful when the system also understands the package, workspace, and technology context around it.
 
-## 3. Sectioning Strategies
+## 4. The Sectioning: Split Files into Chunks
 
-Different types of files require different extraction strategies to ensure high-fidelity [Recall](recall.md).
+A file is often too large and too mixed to be useful as one memory unit. Sectioning turns each included file into chunks, which are the derived memory units Konteks expects to retrieve directly.
 
-### Code Sectioning
+Konteks chooses the sectioning path from the file shape:
 
-* **Target**: One logical unit (Function/Class/Component).
-* **Size**: Typically 300–900 tokens.
-* **Metadata**: Each block is tagged with its parent file, module name, and symbol signature.
+* Code files are sectioned by symbols when parser metadata is available.
+* Code parser fallback uses recognizable symbol declarations when parser metadata is unavailable.
+* Markdown files are sectioned by headings.
+* JSON files are sectioned by top-level object keys when possible.
+* Other text files are sectioned into bounded word groups.
 
-### Markdown & Prose
+Empty files produce no chunks. Very large sections are split into smaller ones, and each file has a chunk limit so one unusually large file cannot crowd out the rest of the project.
 
-* **Target**: Heading-based sections.
-* **Overlap**: Minimal overlap is used to preserve context at the boundaries of sections.
+## 5. The Name and Place: Attach Context
 
-### Data & Config (JSON/YAML)
+A chunk is not just text. It needs a name, a place, and enough surrounding detail to be useful later.
 
-* **Target**: Meaningful object paths.
-* **Structure**: Preserves the path hierarchy (e.g., `compilerOptions.target`) within the section metadata.
+Konteks attaches context such as:
 
-## 4. Embedding Generation
+* Its path, anchor, heading, symbol, or JSON path.
+* Its content kind: code, markdown, JSON, or text.
+* How it was parsed: parser-backed or fallback sectioning.
+* Topics inferred from the path, summary, and content.
+* Its content, either stored directly when small enough or referenced separately when larger.
 
-Sectioning creates the units of memory, but embeddings make those units searchable by meaning rather than exact wording. An embedding is a numeric representation of a retrieval document. Texts with related intent should land near each other in vector space, even when they use different keywords.
+Konteks also records the file as a source and links chunks into a path-based taxonomy. That gives recall a way to move from one matched section to the surrounding project area.
 
-Konteks builds two retrieval views for each searchable target:
+## 6. The Search Voice: Build Retrieval Text
 
-* **FTS Text**: A broader text surface used for lexical matching through SQLite FTS.
-* **Embedding Text**: A bounded, metadata-rich text surface optimized for semantic matching.
+The raw chunk body is not always the best search surface. A section often needs its path, role, language, anchor, topics, and summary beside it before it can be found reliably.
 
-The embedding input includes contextual metadata such as path, source role, language, anchor, topics, summary, and a content excerpt. This helps the model represent not just the raw text, but also where the text belongs in the project.
+Konteks therefore prepares retrieval text for each searchable target:
 
-### Technical Specification: Embeddings
+* Lexical text favors exact matching and broad keyword coverage.
+* Embedding text is shorter and more focused so semantic matching captures the core meaning.
 
-* **Default Provider**: `HuggingFaceEmbeddingProvider`.
-* **Default Model**: `Xenova/all-MiniLM-L6-v2`.
-* **Dimensions**: 384.
-* **Pooling**: Mean pooling.
-* **Normalization**: Enabled, so vectors can be compared with cosine similarity.
-* **Storage**: Vectors are written as `float32` blobs for targets such as chunks, modules, durable memories, and diary entries.
-* **Reuse**: Existing vectors are reused when the provider model and embedding hash are unchanged.
-* **Model Cache**: Model files are cached globally, using `KONTEKS_MODEL_CACHE_DIR` when set or `~/.cache/konteks/models` by default.
+This gives recall two voices for the same memory: one for exact project terms, and one for meaning.
+
+## 7. The Map: Rebuild Module Artifacts
+
+Once chunks are in place, Konteks rebuilds module artifacts from the current chunk set.
+
+A module artifact is a higher-level map of a project area. It summarizes a top-level path by file count, section count, source role, path-derived topics, and package metadata when available.
+
+Modules matter because an agent often needs orientation before details. Recall can surface a project area first, then narrow into individual chunks.
+
+## 8. The Meaning Trace: Generate Embeddings
+
+After retrieval text exists, Konteks can generate embeddings for mined chunks and module artifacts.
+
+An embedding is a compact representation of what a chunk or module is about. It lets recall compare related meanings even when the task and the project use different words.
+
+Konteks reuses an existing embedding when the retrieval text and embedding model are unchanged. When the text changes, the target is embedded again so semantic recall follows the current repository state.
+
+## 9. The Seal: Write Summary and Manifest
+
+At the end, Konteks writes a project summary and an extraction manifest.
+
+The summary captures the broad project picture from the scan and metadata. The manifest records what was mined, when it was mined, which mode was used, and diagnostic counts such as extracted sections, parser usage, skipped files, and embedding reuse.
+
+The manifest is the seal on the extraction run. It lets the next run know what has already been seen, what changed, and how to continue without starting from nothing.
 
 ---
 
