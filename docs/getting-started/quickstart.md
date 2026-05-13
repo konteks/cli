@@ -43,7 +43,7 @@ Add Konteks to your MCP-compatible coding agent configuration before opening the
 ```
 
 > [!IMPORTANT]
-> **Agent Support**: If your agent supports MCP Tools but does not show MCP Prompts in its autocomplete UI, run `konteks install-skills` once after initialization to use the lifecycle prompts as native skills. See [Compatibility](../api/cli.md#Compatibility-Skills).
+> Konteks exposes its lifecycle workflows as [MCP Prompts](https://modelcontextprotocol.io/docs/concepts/prompts). If your agent does not show MCP Prompts in its autocomplete UI, run `konteks install-skills` once after initialization to use the lifecycle prompts as native skills. See [Compatibility](../api/cli.md#Compatibility-Skills).
 
 ## From This Point On
 
