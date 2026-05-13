@@ -1,135 +1,161 @@
 # Memory Model: The Surfaces of Project Knowledge
 
-Konteks represents a project not as a flat list of files, but as a multi-dimensional **semantic graph**. This model allows the system to store and retrieve knowledge across four distinct surfaces, each serving a specific role in the [Knowledge Journey](overview.md).
+Konteks memory is not one long note. It is a set of connected surfaces that help an agent answer different questions about the same project: what exists, what matters, where it belongs, what changed, and what should be remembered.
 
-## Durable vs. Derived Data
+The model has two sources of truth:
 
-A fundamental distinction in the Konteks memory model is the difference between **Durable** and **Derived** knowledge.
+* **Derived memory** comes from the repository. It is rebuilt from files, metadata, chunks, modules, retrieval text, and embeddings.
+* **Durable memory** comes from agent sessions. It is saved intentionally as observations, decisions, constraints, preferences, blockers, code insights, and diary entries.
 
-*   **Durable Memory**: Intentional knowledge created by users or agents during sessions. This includes observations, diary entries, and task handoffs. Durable memory is **authoritative** and is preserved across system repairs or re-indexing.
-*   **Derived Memory**: Knowledge automatically extracted from source code, documentation, and project structure. This includes entities, relations, and code chunks. Derived memory is **reproducible** and can be rebuilt by running a project "repair" operation.
+Derived memory is allowed to change when the project changes. Durable memory is preserved until it is explicitly forgotten or suppressed.
 
 ```mermaid
 graph LR
-    subgraph "Sources"
-    Code[Code/Docs]
-    Agent[Agent Sessions]
-    end
+    Repo[Repository] --> Derived[Derived Memory]
+    Agent[Agent Session] --> Durable[Durable Memory]
 
-    Code --> Derived[Derived]
-    Agent --> Durable[Durable]
+    Derived --> Content[Content Surface]
+    Derived --> Map[Map Surface]
+    Derived --> Retrieval[Retrieval Surface]
+    Durable --> Notes[Observation Surface]
+    Durable --> Timeline[Timeline Surface]
 
-    subgraph "Surfaces"
-    Derived --> Structural["Structural"]
-    Derived --> Taxonomic["Taxonomic"]
-    Derived & Durable --> Semantic["Semantic"]
-    Durable --> Temporal["Temporal"]
-    end
+    Content --> Recall[Recall]
+    Map --> Recall
+    Retrieval --> Recall
+    Notes --> Recall
+    Timeline --> Recall
 
-    Structural & Taxonomic & Semantic & Temporal --> SQLite[(SQLite)]
-    Semantic --> TOON[(TOON)]
+    Save[Save] --> Durable
+    Forget[Forget] --> Durable
+    Forget --> Derived
 ```
 
-## 1. Structural Memory (Derived)
+## 1. The Content Surface
 
-Structural memory represents the "skeleton" of your project. It captures the entities and the rigid relationships that define your architecture.
+The first surface is made from the repository itself. During extraction, Konteks reads included files and divides them into chunks.
 
-### Concepts
+A chunk is the smallest derived memory unit Konteks expects to retrieve directly. It carries the content plus the clues that make the content useful later: path, anchor, kind, summary, topics, and parser context when available.
 
-*   **Entities**: The nodes of the graph. These include files, modules, classes, functions, and high-level features.
-*   **Relations**: The edges connecting entities (e.g., `Feature A` -> `implemented_in` -> `File B`).
-*   **Graph Expansion**: The ability to navigate these links during recall to find "hidden" context and dependencies.
-*   **Modules**: High-level groupings of files that define the project's macro-architecture.
+This surface answers:
 
-### Technical Specification
+* Which part of the project contains the relevant code or prose?
+* What is the smallest useful section to inspect?
+* Where should an agent look next?
 
-| Table | Purpose | Key Fields |
-| :--- | :--- | :--- |
-| `entities` | Stores unique project artifacts | `id`, `type`, `name`, `canonical_name` |
-| `relations` | Stores typed links between entities | `subject_id`, `predicate`, `object_id`, `confidence` |
-| `modules` | Stores architectural module summaries | `path`, `summary`, `exported_symbols_json` |
+Content memory is rebuildable. If a file changes, the affected chunks can be replaced. If a file disappears, stale chunks can be removed.
 
-## 2. Semantic Memory (Durable & Derived)
+## 2. The Map Surface
 
-Semantic memory captures the "meaning" within your project. It stores atomic units of knowledge and high-level observations.
+Chunks are useful, but an agent also needs orientation. Konteks builds a map above individual chunks.
 
-### Concepts
+The current map is shaped mainly by:
 
-*   **Chunks (Derived)**: Atomic, semantic sections of code or text extracted from source files.
-*   **Observations (Durable)**: Facts, insights, or constraints captured during agent sessions.
+* **Sources**: the files that produced chunks.
+* **Path taxonomy**: a directory-shaped grouping of chunks.
+* **Modules**: summaries of top-level project areas, including file and section counts.
+* **Project metadata**: package, workspace, dependency, entry point, README, and technology signals when available.
 
-### Memory Kinds (Observations)
+This surface answers:
 
-Durable observations are categorized by their intent:
+* What are the major areas of the project?
+* Which files belong together?
+* Which project areas are likely important before reading a specific chunk?
 
-| Kind | Usage |
-| :--- | :--- |
-| `fact` | Objective truths about the project (e.g., "The production DB is PostgreSQL"). |
-| `decision` | Architectural or design choices (e.g., "We use Vitest for all new tests"). |
-| `constraint` | Hard requirements or limitations (e.g., "Must support Node 18+"). |
-| `preference` | Style or workflow preferences (e.g., "Prefer functional components"). |
-| `code_insight` | Non-obvious logic details (e.g., "The retry logic has an exponential backoff"). |
-| `blocker` | Known issues preventing progress. |
-| `note` | General-purpose ephemeral notes. |
+Konteks also has a graph layer for named entities and relations. Recall can search those entities, traverse nearby relations, and include historical relations when a task asks about prior decisions or changes. In the current extraction flow, the strongest automatically rebuilt map comes from files, paths, modules, and metadata.
 
-### Technical Specification
+## 3. The Retrieval Surface
 
-| Table | Purpose | Key Fields |
-| :--- | :--- | :--- |
-| `chunks` | Atomic sections of code/text | `content_hash`, `summary`, `token_count`, `path`, `anchor` |
-| `observations` | Durable facts and insights | `kind`, `text_inline`, `payload_ref`, `confidence` |
+The retrieval surface is the search-facing version of memory. It is built from chunks, modules, saved observations, and diary entries.
 
-## 3. Temporal Memory (Durable)
+Konteks does not rely only on raw content. It prepares retrieval text that includes both the content and the context around it. This lets recall match a task against what a section means, where it lives, and why it may matter.
 
-Temporal memory tracks the "when." It provides the chronological context required to understand how a project has evolved and what decisions are currently active.
+There are two retrieval voices:
 
-### Concepts
+* **Lexical matching** favors exact terms, names, paths, and project vocabulary.
+* **Semantic matching** uses embeddings to compare meaning when the wording differs.
 
-*   **Diary Entries**: Structured summaries of work sessions, including tasks performed and status.
-*   **Memory Events**: An append-only audit log of every meaningful memory mutation (creation, deletion, suppression).
+This surface answers:
 
-### Technical Specification
+* Which memories match the task text?
+* Which memories are semantically close to the task?
+* Which candidates should be ranked higher before recall assembles the final context?
 
-| Table | Purpose | Key Fields |
-| :--- | :--- | :--- |
-| `diary_entries` | Saved summaries of agent sessions | `subject`, `summary`, `tags_json`, `created_at` |
-| `memory_events` | The master chronological audit log | `event_type`, `subject_id`, `summary`, `actor` |
+During extraction, chunks and module artifacts receive embeddings. Saved observations and diary entries receive retrieval text when they are saved, so they can also participate in recall and warm-up flows.
 
-## 4. Taxonomic Memory (Derived)
+## 4. The Observation Surface
 
-Taxonomic memory provides the "where." It organizes knowledge into project-specific scopes to ensure that retrieval is always contextually relevant.
+The observation surface is durable memory saved from agent work. These are not mined from source files; they are deliberately recorded because future sessions should know them.
 
-### Concepts
+Observation kinds describe why a memory matters:
 
-*   **Taxonomy Nodes**: The labels in your ontology (e.g., `api`, `ui`, `database`).
-*   **Taxonomy Links**: Assignments of entities and chunks to specific nodes.
+* **Decision**: a chosen direction.
+* **Constraint**: a rule or limit that must be followed.
+* **Preference**: a style or workflow convention.
+* **Code insight**: a useful fact about how implementation works.
+* **Blocker**: an unresolved problem.
+* **Fact**: stable project knowledge.
+* **Note**: useful lower-specificity context.
 
-### Technical Specification
+This surface answers:
 
-| Table | Purpose | Key Fields |
-| :--- | :--- | :--- |
-| `taxonomy_nodes` | The labels in your ontology | `name`, `parent_id`, `summary` |
-| `taxonomy_links` | Assignments of targets to nodes | `target_id`, `target_type`, `node_id` |
+* What did the user or agent decide?
+* What rules should future work respect?
+* What implementation knowledge is not obvious from reading one file?
+
+Observations are deduplicated by content. Low-quality or sensitive content is rejected before it becomes memory.
+
+## 5. The Timeline Surface
+
+The timeline surface preserves the order of meaningful work.
+
+It has two parts:
+
+* **Diary entries** summarize completed or partial sessions.
+* **Memory events** record meaningful mutations such as saves, diary writes, forgetting, suppression, and extraction events.
+
+This surface answers:
+
+* What happened recently?
+* What was completed, blocked, or left for later?
+* Why did memory change?
+
+Diary entries are for handoff and continuity. Memory events are for traceability.
+
+## 6. The Warm-Up View
+
+Warm Up reads across the model to build a stable project briefing.
+
+It draws from the extraction manifest, project metadata, module summaries, retrieval highlights, and recent durable guidance. The goal is not to return every memory. The goal is to give the agent enough stable context to start a session without making the user re-explain the project.
+
+This view favors:
+
+* Project summary and technologies.
+* Entry points and key files.
+* Important modules and highlighted chunks.
+* Recent durable decisions, constraints, and conventions.
+
+## 7. The Recall View
+
+Recall is the task-shaped view of memory.
+
+When an agent asks for context about a task, Konteks searches retrieval memory, looks for matching entities, expands nearby graph relations when available, and includes historical relation evidence when the task asks for prior or superseded context.
+
+Recall returns a compact package rather than a raw dump. It includes a brief, primary targets, selected memories, graph evidence, history evidence, and a quality signal.
+
+## 8. Forgetting and Hygiene
+
+Memory can be wrong, stale, sensitive, or no longer useful. Konteks treats forgetting as part of the model rather than an afterthought.
+
+There are three ways memory can be changed:
+
+* **Soft delete** hides memory from normal recall while keeping a trace.
+* **Invalidate** suppresses memory that should no longer guide future work.
+* **Hard delete** removes memory when it should not remain.
+
+Forgetting can target saved observations, diary entries, mined chunks, and graph relations depending on how it is requested. Each successful change is recorded as a memory event.
 
 ---
 
-## Memory Mutation and Hygiene
-
-Memory in Konteks is not static; it is managed through explicit mutation tools to ensure reliability and privacy.
-
-### Save vs. Remember
-
-*   `konteks_save`: Used for **Full Session Handoffs**. It records a comprehensive summary of a task, its status, and any new diary entries.
-*   `konteks_remember`: Used for **Lightweight Observations**. It saves a single durable observation (e.g., a new `decision` or `preference`) without closing the session.
-
-### Forgetting and Suppression
-
-Knowledge can be removed or invalidated using `konteks_forget` with three distinct modes:
-
-1.  **Soft Delete** (`soft_delete`): Marks the memory as deleted. It will no longer appear in standard recall but remains in the database for audit and recovery.
-2.  **Invalidate** (`invalidate`): Marks the memory as "suppressed." Useful for knowledge that was once true but has been superseded.
-3.  **Hard Delete** (`hard_delete`): Completely removes the record from the database.
-
----
-
-**How is this knowledge acquired?** Read about [Semantic Extraction](extraction.md).
+**How is this knowledge acquired?** Read about [Semantic Extraction](extraction.md).  
+**How is it used?** Read about [Recall & Contextual Synthesis](recall.md).

@@ -1,108 +1,96 @@
 # Recall & Retrieval: Contextual Synthesis
 
-The "Awakening" of project knowledge occurs during **Contextual Synthesis**. This is the process of retrieving disparate signals from the [Storage Substrate](storage.md) and compiling them into a token-efficient package for an AI agent.
+Recall is the moment Konteks turns stored memory back into working context. The user gives a task, and Konteks gathers the most relevant project evidence into a compact package an agent can use immediately.
 
-## 1. The Recall Goal
-
-Unlike a simple search engine that returns a list of documents, Konteks aims for **Recall**.
-
-* **Search**: Finding documents that match keywords.
-* **Recall**: Synthesizing the *exact* context needed to perform a specific task.
-
-## 2. The Retrieval Pipeline
-
-When an agent requests `recall(task)`, Konteks executes a multi-stage pipeline to synthesize the most relevant context.
+Recall is not the same thing as search. Search finds matching records. Recall chooses, ranks, trims, and explains context for a specific task.
 
 ```mermaid
 graph LR
-    Task([Task]) --> P1[Phase 1: Gathering]
-    
-    subgraph "Semantic Memory"
-    P1 --> Lexical[Lexical]
-    P1 --> Semantic[Vector]
-    end
-    
-    Lexical & Semantic --> P2[Phase 2: Expansion]
-    
-    subgraph "Structural Memory"
-    P2 --> Graph[Graph Hops]
-    end
-    
-    Graph --> P3[Phase 3: Filtering]
-    
-    subgraph "Temporal Memory"
-    P3 --> Recency[Recency]
-    P3 --> Validity[Validity]
-    end
-    
-    Recency & Validity --> Score[Scoring]
-    Score --> Assembly[Assembly]
-    Assembly --> Package([Recall Package])
+    Task[Task] --> Terms[Read the Task]
+    Terms --> Retrieval[Search Retrieval Memory]
+    Retrieval --> Score[Score and Rank]
+    Terms --> Entities[Find Matching Entities]
+    Entities --> Graph[Expand Relations]
+    Entities --> History[Historical Context]
+    Score --> Prune[Prune and Budget]
+    Graph --> Package[Recall Package]
+    History --> Package
+    Prune --> Package
 ```
 
-### Phase 1: Candidate Gathering
+## 1. The Request: Read the Task
 
-The system performs a multi-modal search across [Semantic Memory](memory-model.md#2-semantic-memory).
+Recall begins with the task text. Konteks breaks the task into searchable terms and uses those terms to infer intent.
 
-* **Lexical Search**: Matching exact keywords in code and notes via SQLite FTS.
-* **Semantic Search**: Matching the "intent" of the task against section summaries.
+Intent matters because not every task needs the same shape of context. A question about documentation, package setup, implementation code, tests, prior decisions, or historical changes should not pull the same evidence with the same priority.
 
-### Phase 2: Relational Expansion
+If the task has no useful searchable terms, recall returns no evidence instead of guessing.
 
-Konteks uses its [Structural Memory](memory-model.md#1-structural-memory) to find "hidden" context.
+## 2. The First Pass: Search Retrieval Memory
 
-* **Graph Navigation**: If a entity is matched, Konteks expands the graph to find its parent class, its dependencies, and any related architectural decisions.
-* **Hops**: By default, the system explores 1-2 "hops" from the primary candidates to build a complete mental model.
+Konteks first searches retrieval memory. This is the search-facing layer built from chunks, modules, saved observations, and diary entries.
 
-### Phase 3: Chronological Filtering
+The first pass favors text-grounded candidates. It looks for exact project vocabulary such as symbols, paths, modules, commands, decisions, and topic words. When compatible embeddings are available, semantic similarity can improve the rank of those text-grounded candidates.
 
-Using [Temporal Memory](memory-model.md#3-temporal-memory), the system filters the candidates.
+This means embeddings help recall judge meaning, but they do not replace grounded project evidence. If embedding support is unavailable or incompatible for a candidate, recall continues with lexical and structural signals.
 
-* **Recency Bias**: Newer decisions and diary entries are prioritized over stale ones.
-* **Validity Check**: Superseded relations or invalidated observations are pruned from the result set.
+## 3. The Safety Net: Fallback Search
 
-## 3. Scoring & Quality Labels
+If retrieval memory does not produce results, Konteks falls back to older search surfaces when they are available.
 
-Not all knowledge is equal. Konteks ranks candidates using a combined scoring algorithm and provides a **Quality Label** to help the agent understand the reliability of the recall.
+If that still produces nothing, it searches saved observations and diary entries directly. This keeps durable session knowledge discoverable even when the richer retrieval surface is missing, stale, or incomplete.
 
-### Quality Labels
+The fallback path is intentionally conservative: return useful memory when possible, but avoid inventing context when the project has no matching evidence.
 
-| Label | Meaning |
-| :--- | :--- |
-| `strong` | High-confidence matches found in primary project code or authoritative docs. |
-| `partial` | Some relevant signals found, but may lack depth or direct implementation hits. |
-| `weak` | Low-confidence or no direct matches; the agent should proceed with caution and verify. |
+## 4. The Weighing: Score and Rank
 
-### Scoring Factors
+Every candidate is weighed before it reaches the final package.
 
-$$Score = Relevance + Importance + Recency - Complexity$$
+The score reflects several signals:
 
-* **Relevance**: How well it matches the specific task.
-* **Importance**: High-level architectural decisions are boosted.
-* **Recency**: New knowledge is preferred.
-* **Complexity**: Very large sections are penalized to respect the token budget.
+* **Lexical match**: whether the task terms appear in the candidate.
+* **Semantic closeness**: whether compatible embeddings suggest related meaning.
+* **Confidence**: how trustworthy the memory is.
+* **Recency**: whether the memory is fresh enough to matter.
+* **Size cost**: whether the candidate is too large for the available context budget.
+* **Role and intent fit**: whether the candidate type fits what the task appears to need.
 
-## 4. Context Assembly
+Konteks then prunes candidates so one group of similar results does not drown out the rest. The goal is a useful spread of evidence, not a long list of near-duplicates.
 
-The final step is the construction of the **Recall Package**.
+## 5. The Map: Expand Relations
 
-### Concepts
+Recall also asks whether the task matches known entities. If it does, Konteks can expand from those entities to nearby relations.
 
-* **Token Budgeting**: Konteks respects a strict token limit (default: 2000 tokens) to ensure the agent has room to think.
-* **Content Compression**: Large code sections are often returned as "summaries" first, with full bodies loaded only if the agent requests them.
+This is the map layer of recall. It helps the agent see surrounding context: related components, connected concepts, and nearby decisions. When graph data is sparse, recall still works from retrieval memory alone.
 
-### Technical Specification: The Recall Package
+If the task asks about prior work, replacements, migrations, or why something changed, recall can also include historical relation evidence.
 
-The package is a compact structured object containing:
+## 6. The Assembly: Build the Recall Package
 
-1. **Brief**: A short task-oriented summary of the returned evidence (including the quality label).
-2. **Primary Targets**: The files, modules, or records the agent should inspect first.
-3. **Memories**: The highest-scoring content blocks, modules, durable memories, and diary entries.
-4. **Graph and History Evidence**: Active and historical relations when they add context.
-5. **Quality**: The calculated `strong`, `partial`, or `weak` signal.
+The final package is compact by design. Konteks deduplicates memories, applies the token budget, selects primary targets, and labels the quality of the result.
 
-By default, recall favors concise output. Set `includeSources: true` when you need record IDs, scores, score details, or specific timestamps for debugging.
+A recall package contains:
+
+* **Brief**: a short summary of the recall strength and evidence.
+* **Primary targets**: files, modules, or records to inspect first.
+* **Memories**: selected chunks, modules, observations, and diary entries.
+* **Graph evidence**: active relation context when available.
+* **History evidence**: superseded or invalidated relation context when relevant.
+* **Quality**: `strong`, `partial`, or `weak`.
+
+By default, recall keeps the package compact. When source detail is requested, it can include fuller scoring and relation evidence.
+
+## 7. The Quality Signal
+
+The quality label tells the agent how much trust to place in the returned context.
+
+* **Strong** means the package has high-scoring evidence across more than one target.
+* **Partial** means there is useful evidence, but the match may need verification.
+* **Weak** means recall found little or no direct support.
+
+The label is not a claim that the answer is correct. It is a warning light for how much the agent should verify before acting.
 
 ---
 
-**Back to the beginning?** Return to the [Architecture Overview](overview.md) or start with the [Quickstart](../getting-started/quickstart.md).
+**Where does recall get its memory?** Read [Memory Model](memory-model.md).  
+**How is that memory created?** Read [Semantic Extraction](extraction.md).

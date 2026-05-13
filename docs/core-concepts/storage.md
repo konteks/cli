@@ -1,70 +1,93 @@
-# Storage Substrate: The Persistence of Knowledge
+# Storage & Persistence: Keeping Memory Local
 
-To fulfill the [Local-First Philosophy](../getting-started/overview.md), Konteks uses a self-contained storage substrate. This layer is responsible for the durable preservation of the project's [Memory Model](memory-model.md) without relying on external cloud services or complex host installations.
+Konteks memory lives with the project. Storage is the quiet layer that keeps extracted knowledge, saved observations, diary entries, retrieval text, and larger payloads available across agent sessions.
+
+The storage model has one central promise: project memory should be local, portable, and rebuildable where possible.
 
 ```mermaid
 graph LR
-    Artifacts[Project Knowledge] --> Check{Size Check}
-    
-    subgraph "Relational Store"
-    Check -- "< 2KB" --> SQLite[(SQLite)]
-    end
-    
-    subgraph "Object Store"
-    Check -- "> 2KB" --> TOON[(TOON)]
-    end
-    
-    SQLite -- "payload_ref" --> TOON
+    Memory[Project Memory] --> Small[Small Structured Records]
+    Memory --> Large[Large Text Payloads]
+    Memory --> Manifest[Extraction Manifest]
+    Memory --> Config[Project Config]
+
+    Small --> LocalStore[(Local Memory Store)]
+    Large --> Objects[Object Files]
+    Manifest --> Files[Memory Directory]
+    Config --> Files
+    LocalStore --> Files
+    Objects --> Files
+
+    Models[Embedding Model Cache] -. outside project memory .-> GlobalCache[Global Cache]
 ```
 
-## 1. The Relational Substrate (SQLite WASM)
+## 1. The Home: Project Memory Directory
 
-The core of the storage layer is a single-file SQLite database (`memory.sqlite`). It serves as the source of truth for all structured knowledge, relationships, and metadata.
+Konteks keeps project memory under the repository memory directory. By default, that directory is `.konteks/`.
 
-### Concepts
+This directory holds the project configuration, local memory database, object payloads, extraction manifest, and project summary. Because it lives beside the repository, the memory can be backed up, ignored, copied, or rebuilt with the project.
 
-* **Zero-Install Persistence**: By using the WASM build of SQLite, Konteks runs entirely within the JavaScript runtime. No native database installation is required on the host machine.
-* **Relational Integrity**: SQLite ensures that the complex links in our semantic graph remain consistent and queryable via standard SQL.
+The project config controls the memory directory location, the threshold for storing content inline, and recall defaults.
 
-### Technical Specification: The Database
+## 2. The Ledger: Structured Memory
 
-* **Runtime**: SQLite WebAssembly (WASM)
-* **File Path**: `.konteks/memory.sqlite`
-* **Primary Tables**: `entities`, `relations`, `chunks`, `observations`, `diary_entries`, `memory_events`.
-* **Indexing**: Uses B-trees for fast entity lookup and FTS5 for full-text search.
+Most memory starts as structured records. These records describe the durable and derived parts of the memory model:
 
-## 2. The Object Substrate (TOON)
+* Sources and chunks from extraction.
+* Module summaries.
+* Retrieval text and embedding records.
+* Durable observations.
+* Diary entries.
+* Memory events.
+* Taxonomy and graph information when available.
 
-Larger payloads, such as full session summaries or extracted code bodies, are offloaded to the **TOON (Tagged Object Oriented Notation)** object store.
+Structured storage is the ledger. It gives Konteks a reliable way to count memory, search it, filter deleted or suppressed items, connect records, and assemble recall packages.
 
-### Concepts
+## 3. The Archive: Larger Payloads
 
-* **Content-Addressing**: Objects are stored based on the cryptographic hash of their content. This ensures that identical knowledge units are only stored once, regardless of where they appear in the project.
-* **Payload Threshold**: Small payloads (default < 2KB) are stored "inline" within the SQLite database for maximum speed. Larger payloads are moved to the TOON store, with the database holding only a reference (`payload_ref`).
-* **Database Leanness**: By offloading large text bodies to TOON files, the SQLite database remains small and fast, focusing only on indexes and relationships.
+Not all memory should be kept directly inside structured records. Large extracted sections, long saved content, and larger session payloads are stored separately and referenced from the ledger.
 
-### Technical Specification: TOON Store
+Small content stays inline for quick access. Larger content goes into content-addressed object files. Content addressing means identical payloads can point to the same stored object, and each object can be found from its content identity.
 
-* **Storage Model**: Content-Addressed Storage (CAS)
-* **Directory**: `.konteks/objects/`
-* **File Format**: `.toon` (Plaintext with structured metadata)
-* **Deduplication**: Content is hashed using SHA-256; if the hash exists, the write is skipped.
+This keeps the ledger lean while preserving the full text when Konteks needs it later.
 
-## 3. Configuration
+## 4. The Index: Retrieval Surfaces
 
-The behavior of the storage substrate is controlled by `.konteks/config.json`.
+Recall needs memory to be searchable. Storage therefore keeps search-oriented projections beside the original memory.
 
-* **`storage.inlinePayloadMaxBytes`**: The size threshold (in bytes) for storing content inline in SQLite vs. offloading to TOON.
-* **`storage.memoryDir`**: The directory where all Konteks artifacts are stored (default: `.konteks`).
+Those projections include:
 
-## 4. Data Integrity & Portability
+* Text for exact matching.
+* Text shaped for semantic matching.
+* Embedding records when semantic search has been prepared.
+* Older fallback search records for saved memory and mined content.
 
-The storage substrate is designed to be as portable as the code itself.
+This is why search and recall can continue to work even when one retrieval path is incomplete. The storage layer keeps multiple doors into the same memory.
 
-* **Durable vs. Derived**: The system distinguishes between authoritative user knowledge and reproducible mined artifacts. For more details, see the [Memory Model](memory-model.md#durable-vs-derived-data).
-* **Atomic Transactions**: SQLite ensures that even if a session is interrupted, the memory remains in a consistent state.
-* **Repository Centricity**: Because all files live within the `.konteks/` folder, your project's memory can be shared, backed up, or ignored using standard version control practices.
+## 5. The Seal: Manifest and Summary
+
+Extraction writes two important project-level artifacts:
+
+* **Manifest**: records what was scanned, what mode ran, when extraction happened, and diagnostic counts.
+* **Summary**: records the broad project picture from files and metadata.
+
+The manifest lets future extraction runs know what has already been seen. It powers changed and resume behavior. The summary gives warm-up a stable project-level starting point.
+
+## 6. The Boundary: What Is Not Project Memory
+
+Embedding model files are cached outside the project memory directory. They are shared across projects so the same model does not need to be downloaded for every repository.
+
+This keeps `.konteks/` focused on project memory: the facts, summaries, retrieval data, events, and payloads that belong to this repository.
+
+## 7. The Hygiene: Deletion, Suppression, and Rebuilds
+
+Storage preserves the difference between removing a memory and marking it inactive.
+
+Soft-deleted and suppressed items are hidden from normal recall without pretending they never existed. Hard-deleted items are removed. Successful changes are recorded as memory events so the project has a trace of meaningful memory mutations.
+
+Derived memory can also be rebuilt from the repository. Durable memories are preserved unless the user explicitly asks to forget or suppress them.
 
 ---
 
-**How does information enter this substrate?** Read about [Semantic Extraction](extraction.md).
+**What is stored here?** Read [Memory Model](memory-model.md).  
+**How does memory enter storage?** Read [Semantic Extraction](extraction.md).
