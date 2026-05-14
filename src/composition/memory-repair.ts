@@ -1,10 +1,10 @@
+import { createProjectExtractor } from '@/extraction/extract'
 import type {
     ExtractionMode,
     ExtractProjectResponse,
 } from '@/models/extraction'
 import { confirmInteractive } from '@/providers/cli/interactive-confirm'
 import { createExtractionProgressReporter } from '@/providers/extraction/progress-reporter'
-import { createExtractionAction } from './extraction'
 
 export type RepairMemoryOptions = {
     project?: string
@@ -29,11 +29,11 @@ export async function repairMemory(
 
     const progress = createExtractionProgressReporter()
     try {
-        const action = createExtractionAction({
+        const extractor = createProjectExtractor({
             onProgress: progress.report,
         })
 
-        const result = await action.execute({
+        const result = await extractor.execute({
             mode: 'reindex' as ExtractionMode,
             projectRoot: options.project || process.cwd(),
         })
