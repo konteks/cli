@@ -14,6 +14,7 @@ import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts
 import { mineProject } from '@/providers/extraction/mine-project'
 import { createToonStore } from '@/providers/persistence/objects/toon-store'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
+import { saveKonteksInput } from '@/providers/persistence/sqlite/save-store'
 import { searchMemory } from '@/providers/persistence/sqlite/search-store'
 // import { TaxonomyStore } from '../persistence/sqli./taxonomy-store'
 import { loadProjectContext } from '@/providers/project/context'
@@ -338,6 +339,89 @@ where path = ? and anchor = ? and content_hash = ?
 
         expect(restored[0]?.count).toBe(0)
         expect(suppressions[0]?.count).toBe(1)
+    })
+
+    it('preserves durable memories, diaries, and retrieval indexes across reindex', async () => {
+        const projectRoot = await makeTempProject()
+        const context = await loadProjectContext(projectRoot)
+
+        await mineTestProject(context, 'reindex')
+
+        const service = await openProjectDatabase(context)
+        const savedMemory = await saveKonteksInput(service, context, {
+            content:
+                'Repair must preserve durable observations during reindex operations.',
+            kind: 'constraint',
+            type: 'memory',
+        })
+        const savedDiary = await saveKonteksInput(service, context, {
+            subject: 'repair durability',
+            summary:
+                'Verified repair keeps durable diary entries and retrieval indexes available.',
+            tags: ['repair'],
+            type: 'diary',
+        })
+        await service.close()
+
+        await mineTestProject(context, 'reindex')
+
+        const repairedService = await openProjectDatabase(context)
+        const durableRows = await repairedService.adapter.query<{
+            count: number
+        }>(
+            `
+select count(*) as count
+from (
+    select id from observations where id = ?
+    union all
+    select id from diary_entries where id = ?
+)
+`,
+            [savedMemory.id, savedDiary.id],
+        )
+        const retrievalRows = await repairedService.adapter.query<{
+            count: number
+        }>(
+            `
+select count(*) as count
+from retrieval_documents
+where (target_type = 'memory' and target_id = ?)
+   or (target_type = 'diary' and target_id = ?)
+`,
+            [savedMemory.id, savedDiary.id],
+        )
+        const retrievalFtsRows = await repairedService.adapter.query<{
+            count: number
+        }>(
+            `
+select count(*) as count
+from retrieval_documents_fts
+where (target_type = 'memory' and target_id = ?)
+   or (target_type = 'diary' and target_id = ?)
+`,
+            [savedMemory.id, savedDiary.id],
+        )
+        const memoryFtsRows = await repairedService.adapter.query<{
+            count: number
+        }>(
+            `
+select count(*) as count
+from memory_fts
+where id in (?, ?)
+`,
+            [savedMemory.id, savedDiary.id],
+        )
+        const results = await searchMemory(repairedService, {
+            limit: 5,
+            query: 'repair preserve durable',
+        })
+        await repairedService.close()
+
+        expect(durableRows[0]?.count).toBe(2)
+        expect(retrievalRows[0]?.count).toBe(2)
+        expect(retrievalFtsRows[0]?.count).toBe(2)
+        expect(memoryFtsRows[0]?.count).toBe(2)
+        expect(results.some(result => result.id === savedMemory.id)).toBe(true)
     })
 
     it('reports fresh status after mining and stale after a file change', async () => {

@@ -147,7 +147,6 @@ select
     anchor,
     fts_text
 from retrieval_documents
-where target_type in ('chunk', 'module');
 `)
 }
 
