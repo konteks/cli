@@ -5,22 +5,16 @@ export const warmUpInputSchema = z.object({
     topic: z.string().optional(),
 })
 
-export type WarmUpInput = z.infer<typeof warmUpInputSchema>
-
 export const recallInputSchema = z.object({
     includeSources: z.boolean().optional(),
     maxTokens: z.number().int().min(1).max(8000).optional(),
     task: z.string().min(1, 'task is required'),
 })
 
-export type RecallInput = z.infer<typeof recallInputSchema>
-
 export const searchInputSchema = z.object({
     limit: z.number().int().min(1).max(50).optional(),
     query: z.string().min(1, 'query is required'),
 })
-
-export type SearchInput = z.infer<typeof searchInputSchema>
 
 const memoryKindSchema = z.enum([
     'blocker',
@@ -84,8 +78,6 @@ export const saveInputSchema = z.discriminatedUnion('type', [
     }),
 ])
 
-export type SaveInput = z.infer<typeof saveInputSchema>
-
 export const forgetInputSchema = z
     .object({
         id: z.string().optional(),
@@ -96,5 +88,3 @@ export const forgetInputSchema = z
     .refine(data => data.id || data.query, {
         message: 'Either id or query is required.',
     })
-
-export type ForgetInput = z.infer<typeof forgetInputSchema>

@@ -1,11 +1,106 @@
 import type {
+    MemoryRecallInput,
+    MemoryRepositoryContract,
+} from '@/contracts/repositories/memory-repository'
+import type { StartMcpServerOptions } from '@/models/mcp'
+import type {
+    MemoryEntity,
     MemorySearchResult,
     RecallGraphItem,
     RecallHistoryItem,
     RecallPackage,
 } from '@/models/memory'
+import { createMemoryRepository } from './repository'
+import { loadMcpProjectContext, withProjectDatabaseContext } from './runtime'
 
-export function assembleRecallPackage(input: {
+export async function recallMemory(
+    options: StartMcpServerOptions,
+    input: MemoryRecallInput,
+): Promise<RecallPackage> {
+    const context = await loadMcpProjectContext(options)
+    return await withProjectDatabaseContext(context, service =>
+        recallRepositoryMemory(createMemoryRepository(service, context), input),
+    )
+}
+
+export async function recallRepositoryMemory(
+    memoryRepository: MemoryRepositoryContract,
+    input: MemoryRecallInput,
+): Promise<RecallPackage> {
+    const memories = await memoryRepository.search({
+        limit: 20,
+        query: input.task,
+    })
+    const rawEntities = await memoryRepository.searchEntities(input.task, 4)
+    const entities = dedupeEntities(rawEntities)
+
+    const graphItems: RecallGraphItem[] = []
+    const historyItems: RecallHistoryItem[] = []
+
+    if (needsHistory(input.task)) {
+        const seenRelations = new Set<string>()
+        for (const entity of entities) {
+            const relations = await memoryRepository.historicalRelations(
+                entity.id,
+                6,
+            )
+            for (const relation of relations) {
+                if (seenRelations.has(relation.relationId)) continue
+                seenRelations.add(relation.relationId)
+
+                historyItems.push({
+                    objectEntityId: relation.object.id,
+                    objectEntityName: relation.object.name,
+                    predicate: relation.predicate,
+                    reason: `Included because task asks for historical or superseded context.`,
+                    relationId: relation.relationId,
+                    status: relation.status,
+                    subjectEntityId: relation.subject.id,
+                    subjectEntityName: relation.subject.name,
+                    validFrom: relation.validFrom,
+                    validTo: relation.validTo,
+                })
+            }
+        }
+    }
+
+    const seenNeighbors = new Set<string>()
+    for (const entity of entities) {
+        const neighbors = await memoryRepository.traverseNeighbors(entity.id, {
+            limit: 8,
+            maxDepth: 2,
+        })
+        for (const neighbor of neighbors) {
+            if (seenNeighbors.has(neighbor.relationId)) continue
+            seenNeighbors.add(neighbor.relationId)
+
+            graphItems.push({
+                depth: neighbor.depth,
+                direction: neighbor.direction,
+                entityId: entity.id,
+                entityName: entity.name,
+                entityType: entity.type,
+                predicate: neighbor.predicate,
+                relatedEntityId: neighbor.entity.id,
+                relatedEntityName: neighbor.entity.name,
+                relatedEntityType: neighbor.entity.type,
+                relationId: neighbor.relationId,
+                score: Math.max(1, 10 - neighbor.depth * 2),
+            })
+        }
+    }
+
+    return assembleRecallPackage({
+        graph: graphItems,
+        history: historyItems,
+        includeSources: input.includeSources ?? false,
+        maxTokens: input.maxTokens ?? 2000,
+        memories,
+        task: input.task,
+    })
+}
+
+function assembleRecallPackage(input: {
     graph: RecallGraphItem[]
     history: RecallHistoryItem[]
     includeSources: boolean
@@ -40,6 +135,21 @@ export function assembleRecallPackage(input: {
     }
 }
 
+function needsHistory(task: string): boolean {
+    return /\b(history|historical|previous|prior|old|before|changed|why|superseded|invalidated|replaced|migration|attempt|rollback|decision)\b/iu.test(
+        task,
+    )
+}
+
+function dedupeEntities(entities: MemoryEntity[]): MemoryEntity[] {
+    const seen = new Set<string>()
+    return entities.filter(e => {
+        if (seen.has(e.id)) return false
+        seen.add(e.id)
+        return true
+    })
+}
+
 function applyTokenBudget(
     memories: MemorySearchResult[],
     maxTokens: number,
@@ -48,7 +158,6 @@ function applyTokenBudget(
     let usedTokens = 0
 
     for (const memory of memories) {
-        // We use a heuristic for token cost if not provided
         const tokenCost =
             (memory.metadata?.tokenCost as number) ?? memory.excerpt.length / 4
         if (selected.length > 0 && usedTokens + tokenCost > maxTokens) {

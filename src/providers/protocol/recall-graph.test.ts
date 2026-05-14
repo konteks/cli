@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { RecallMemoryAction } from '@/actions/recall-memory-action'
+import { recallRepositoryMemory } from '@/memory/recall'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import { SQLiteMemoryRepository } from '@/providers/persistence/sqlite/sqlite-memory-repository'
 import { GraphStore } from '@/providers/persistence/sqlite/stores/graph-store'
@@ -59,8 +59,9 @@ describe('recallGraph', () => {
         })
 
         const repo = new SQLiteMemoryRepository(adapter, context)
-        const action = new RecallMemoryAction(repo)
-        const recall = await action.execute({ task: 'memory system runtime' })
+        const recall = await recallRepositoryMemory(repo, {
+            task: 'memory system runtime',
+        })
         const items = recall.graph
 
         expect(items.map(item => item.relatedEntityName)).toContain('Bun')
@@ -101,14 +102,12 @@ describe('recallGraph', () => {
         })
 
         const repo = new SQLiteMemoryRepository(adapter, context)
-        const action = new RecallMemoryAction(repo)
-
-        const normalRecall = await action.execute({
+        const normalRecall = await recallRepositoryMemory(repo, {
             task: 'work on memory system',
         })
         const normal = normalRecall.history
 
-        const historicalRecall = await action.execute({
+        const historicalRecall = await recallRepositoryMemory(repo, {
             task: 'why did the previous memory system storage decision change',
         })
         const historical = historicalRecall.history
