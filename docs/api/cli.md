@@ -11,8 +11,34 @@ For terms, see the [Glossary](../reference/glossary.md).
 | `konteks init` | Initialize | Prepare a project for local memory storage. |
 | `konteks repair` | Repair | Rebuild project memory artifacts from scratch. |
 | `konteks status` | Status | Check memory health and freshness. |
+| `konteks memory export <file>` | Export | Write portable durable memories and diary entries to JSON. |
+| `konteks memory import <file>` | Import | Merge portable durable memories and diary entries from JSON. |
+| `konteks backup <file>` | Backup | Create a full `.konteks` `.tar.gz` archive. |
+| `konteks restore <file>` | Restore | Restore a full `.konteks` archive. |
 | `konteks mcp` | Serve | Start the MCP server for an agent client. |
 | `konteks install-skills` | Compatibility | Install Konteks skills for agents without MCP prompt support. |
+
+## Memory Portability
+
+Durable memory export/import is the portable path. It includes saved observations and diary entries, then rebuilds local retrieval indexes on import:
+
+```bash
+konteks memory export memories.konteks.json
+konteks memory import memories.konteks.json
+```
+
+By default, export includes only active durable memory. Use `--include-inactive` to include soft-deleted or suppressed records. Use `konteks memory import --dry-run <file>` to validate and preview import counts without writing.
+
+## Full Backups
+
+Full backups are exact operational snapshots of the project memory directory:
+
+```bash
+konteks backup konteks-backup.tar.gz
+konteks restore konteks-backup.tar.gz
+```
+
+Restore refuses to replace a non-empty memory directory unless `--force` is provided. Forced restore creates a safety backup archive before replacing existing memory.
 
 ## MCP Debugging
 
