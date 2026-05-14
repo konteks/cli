@@ -1,5 +1,5 @@
 import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
-import type { MineProgressReporter } from '@/contracts/services/progress'
+import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import { contentHash } from '@/providers/persistence/objects/content'
 import type { DatabaseService } from '@/providers/persistence/sqlite/db'
 
@@ -32,7 +32,7 @@ export async function generateTargetEmbeddings(
     targetTypes: TargetType[],
     createdAt: string,
     options: {
-        onProgress?: MineProgressReporter
+        onProgress?: ExtractionProgressReporter
     } = {},
 ): Promise<EmbeddingRunResult> {
     const adapter = db.adapter

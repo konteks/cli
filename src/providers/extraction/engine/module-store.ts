@@ -15,7 +15,7 @@ type ModuleSummaryRow = {
 
 export async function rebuildModuleArtifacts(
     db: DatabaseService,
-    minedAt: string,
+    extractedAt: string,
     metadata?: ProjectMetadata,
 ): Promise<void> {
     const adapter = db.adapter
@@ -78,7 +78,7 @@ insert into modules (
                 JSON.stringify([]),
                 JSON.stringify(topics),
                 JSON.stringify([]),
-                minedAt,
+                extractedAt,
             ],
         )
 
@@ -98,12 +98,12 @@ insert into modules (
             summary,
             targetId: moduleId,
             targetType: 'module',
-            updatedAt: minedAt,
+            updatedAt: extractedAt,
         })
     }
 
     if (metadata) {
-        await insertPackageModule(db, metadata, minedAt)
+        await insertPackageModule(db, metadata, extractedAt)
     }
 }
 
@@ -122,7 +122,7 @@ function moduleTopics(path: string): string[] {
 async function insertPackageModule(
     db: DatabaseService,
     metadata: ProjectMetadata,
-    minedAt: string,
+    extractedAt: string,
 ): Promise<void> {
     const adapter = db.adapter
     const dependencyNames = [
@@ -171,7 +171,7 @@ insert into modules (
             JSON.stringify(dependencyNames),
             JSON.stringify(topics),
             JSON.stringify([]),
-            minedAt,
+            extractedAt,
         ],
     )
 
@@ -205,6 +205,6 @@ insert into modules (
         summary,
         targetId: moduleId,
         targetType: 'module',
-        updatedAt: minedAt,
+        updatedAt: extractedAt,
     })
 }

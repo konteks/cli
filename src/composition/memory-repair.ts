@@ -1,7 +1,10 @@
-import type { MineMode, MineProjectResponse } from '@/models/mining'
+import type {
+    ExtractionMode,
+    ExtractProjectResponse,
+} from '@/models/extraction'
 import { confirmInteractive } from '@/providers/cli/interactive-confirm'
-import { createMineProgressReporter } from '@/providers/extraction/progress-reporter'
-import { createMiningAction } from './mining'
+import { createExtractionProgressReporter } from '@/providers/extraction/progress-reporter'
+import { createExtractionAction } from './extraction'
 
 export type RepairMemoryOptions = {
     project?: string
@@ -13,7 +16,7 @@ export type RepairMemoryResult =
           ok: false
           skipped: true
       }
-    | (Omit<MineProjectResponse, 'mode'> & {
+    | (Omit<ExtractProjectResponse, 'mode'> & {
           mode: 'repair'
       })
 
@@ -24,14 +27,14 @@ export async function repairMemory(
         return { mode: 'repair', ok: false, skipped: true }
     }
 
-    const progress = createMineProgressReporter()
+    const progress = createExtractionProgressReporter()
     try {
-        const action = createMiningAction({
+        const action = createExtractionAction({
             onProgress: progress.report,
         })
 
         const result = await action.execute({
-            mode: 'reindex' as MineMode,
+            mode: 'reindex' as ExtractionMode,
             projectRoot: options.project || process.cwd(),
         })
 

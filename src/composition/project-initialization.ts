@@ -1,15 +1,15 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
-import type { MineProjectResponse } from '@/models/mining'
-import { readMineManifest } from '@/providers/extraction/engine/manifest'
-import { createMineProgressReporter } from '@/providers/extraction/progress-reporter'
+import type { ExtractProjectResponse } from '@/models/extraction'
+import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
+import { createExtractionProgressReporter } from '@/providers/extraction/progress-reporter'
 import { ensureProjectDatabase } from '@/providers/persistence/sqlite/database'
 import {
     createDefaultConfig,
     loadProjectContext,
 } from '@/providers/project/context'
-import { createMiningAction } from './mining'
+import { createExtractionAction } from './extraction'
 
 export type InitializeProjectOptions = {
     embeddingProvider?: EmbeddingProviderContract
@@ -24,7 +24,7 @@ export type InitializeProjectResult =
       }
     | {
           alreadyInitialized: false
-          extraction: MineProjectResponse
+          extraction: ExtractProjectResponse
           memoryDir: string
       }
 
@@ -32,7 +32,10 @@ export async function initializeProject(
     options: InitializeProjectOptions,
 ): Promise<InitializeProjectResult> {
     const context = await loadProjectContext(options.project)
-    if (context.configExists && (await readMineManifest(context.memoryDir))) {
+    if (
+        context.configExists &&
+        (await readExtractionManifest(context.memoryDir))
+    ) {
         return {
             alreadyInitialized: true,
             memoryDir: context.memoryDir,
@@ -67,9 +70,9 @@ export async function initializeProject(
     await ensureProjectDatabase(await loadProjectContext(options.project))
     await ensureKonteksGitignore(context.projectRoot)
 
-    const progress = createMineProgressReporter()
+    const progress = createExtractionProgressReporter()
     try {
-        const action = createMiningAction({
+        const action = createExtractionAction({
             embeddingProvider: options.embeddingProvider,
             onProgress: progress.report,
         })

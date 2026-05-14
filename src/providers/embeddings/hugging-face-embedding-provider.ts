@@ -3,20 +3,20 @@ import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { env, pipeline } from '@huggingface/transformers'
 import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
-import type { MineProgressReporter } from '@/contracts/services/progress'
+import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import { formatBytes } from '@/support/format/number'
 
 export class HuggingFaceEmbeddingProvider implements EmbeddingProviderContract {
     readonly model = 'Xenova/all-MiniLM-L6-v2'
     readonly dimensions = 384
 
-    private readonly onProgress?: MineProgressReporter
+    private readonly onProgress?: ExtractionProgressReporter
 
     private extractor:
         | ((text: string, options: Record<string, unknown>) => Promise<unknown>)
         | undefined
 
-    constructor(options: { onProgress?: MineProgressReporter } = {}) {
+    constructor(options: { onProgress?: ExtractionProgressReporter } = {}) {
         this.onProgress = options.onProgress
     }
 

@@ -1,12 +1,13 @@
 import type { DatabaseService } from '@/providers/persistence/sqlite/db'
 import { deleteRetrievalDocuments } from '@/providers/persistence/sqlite/retrieval-documents'
 
-export async function isMinedChunkSuppressed(
+export async function isExtractedChunkSuppressed(
     db: DatabaseService,
     path: string,
     anchor: string,
     contentHashValue: string,
 ): Promise<boolean> {
+    // "Mined" is legacy terminology; current code calls this extraction, but the persisted table stays stable.
     const rows = await db.adapter.query<{ content_hash: string }>(
         `
 select content_hash
@@ -22,9 +23,9 @@ limit 1
     return rows.length > 0
 }
 
-export async function clearMinedChunks(db: DatabaseService): Promise<void> {
+export async function clearExtractedChunks(db: DatabaseService): Promise<void> {
     const adapter = db.adapter
-    await recordMinedSuppressions(db)
+    await recordExtractedSuppressions(db)
     await adapter.execute(`
 delete from memory_fts_indexed
 where id in (select id from chunks where source_id in (select id from sources where type = 'mined_file'));
@@ -67,7 +68,7 @@ where type = 'mined_file';
 `)
 }
 
-export async function clearMinedChunksForPaths(
+export async function clearExtractedChunksForPaths(
     db: DatabaseService,
     paths: string[],
 ): Promise<void> {
@@ -79,7 +80,7 @@ export async function clearMinedChunksForPaths(
 
     const placeholders = uniquePaths.map(() => '?').join(', ')
 
-    await recordMinedSuppressions(db, uniquePaths)
+    await recordExtractedSuppressions(db, uniquePaths)
     const chunkIds = await adapter.query<{ id: string }>(
         `
 select id
@@ -157,7 +158,7 @@ where type = 'mined_file'
     )
 }
 
-async function recordMinedSuppressions(
+async function recordExtractedSuppressions(
     db: DatabaseService,
     paths?: string[],
 ): Promise<void> {

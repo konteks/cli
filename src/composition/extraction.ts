@@ -1,27 +1,30 @@
-import { MineProjectAction } from '@/actions/mine-project-action'
+import { ExtractProjectAction } from '@/actions/extract-project-action'
 import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
-import type { MineProgressReporter } from '@/contracts/services/progress'
-import type { MineProjectRequest, MineProjectResponse } from '@/models/mining'
+import type { ExtractionProgressReporter } from '@/contracts/services/progress'
+import type {
+    ExtractProjectRequest,
+    ExtractProjectResponse,
+} from '@/models/extraction'
 import { HuggingFaceEmbeddingProvider } from '@/providers/embeddings/hugging-face-embedding-provider'
-import { KonteksMineEngine } from '@/providers/extraction/mine-project'
+import { KonteksExtractionEngine } from '@/providers/extraction/extract-project'
 import { loadProjectContext } from '@/providers/project/context'
 
-export function createMiningAction(options: {
+export function createExtractionAction(options: {
     embeddingProvider?: EmbeddingProviderContract
-    onProgress?: MineProgressReporter
+    onProgress?: ExtractionProgressReporter
 }): {
-    execute(request: MineProjectRequest): Promise<MineProjectResponse>
+    execute(request: ExtractProjectRequest): Promise<ExtractProjectResponse>
 } {
     const embeddingProvider =
         options.embeddingProvider ??
         new HuggingFaceEmbeddingProvider({
             onProgress: options.onProgress,
         })
-    const mineEngine = new KonteksMineEngine({
+    const extractionEngine = new KonteksExtractionEngine({
         embeddingProvider,
         onProgress: options.onProgress,
     })
-    const action = new MineProjectAction(mineEngine)
+    const action = new ExtractProjectAction(extractionEngine)
 
     return {
         async execute(request) {

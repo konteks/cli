@@ -1,4 +1,4 @@
-import type { MineProgressEvent } from '@/contracts/services/progress'
+import type { ExtractionProgressEvent } from '@/contracts/services/progress'
 import { formatBytes } from '@/support/format/number'
 import {
     type ColorPalette,
@@ -6,9 +6,9 @@ import {
 } from '@/support/terminal/color-palette'
 import { terminal } from '@/support/terminal/service'
 
-export function createMineProgressReporter(): {
+export function createExtractionProgressReporter(): {
     done(): void
-    report(event: MineProgressEvent): void
+    report(event: ExtractionProgressEvent): void
 } {
     let activeStep = ''
     let lastInlineLength = 0
@@ -107,7 +107,7 @@ export function createMineProgressReporter(): {
     }
 }
 
-function formatPlainEvent(event: MineProgressEvent): string {
+function formatPlainEvent(event: ExtractionProgressEvent): string {
     const progress = formatPercentAndCount(event)
     return [phaseTitle(event.phase), progress, compactMessage(event)]
         .filter(Boolean)
@@ -115,14 +115,14 @@ function formatPlainEvent(event: MineProgressEvent): string {
 }
 
 function formatStepHeader(
-    event: MineProgressEvent,
+    event: ExtractionProgressEvent,
     color: ColorPalette,
 ): string {
     return `${color.dim('┌')} ${color.accent(stepTitle(event))}`
 }
 
 function formatInlineProgress(
-    event: MineProgressEvent,
+    event: ExtractionProgressEvent,
     spinnerIndex: number,
     color: ColorPalette,
 ): string {
@@ -134,18 +134,21 @@ function formatInlineProgress(
     return `  ${spinner} ${progress} ${action}${detail ? color.dim(`  ${detail}`) : ''}`
 }
 
-function formatDoneLine(event: MineProgressEvent, color: ColorPalette): string {
+function formatDoneLine(
+    event: ExtractionProgressEvent,
+    color: ColorPalette,
+): string {
     return `  ${color.success('✓')} ${event.message ?? `${phaseTitle(event.phase)} done`}`
 }
 
 function formatFinalLine(
-    event: MineProgressEvent,
+    event: ExtractionProgressEvent,
     color: ColorPalette,
 ): string {
     return `${color.success('✓')} ${event.message ?? 'Extraction complete'}`
 }
 
-function compactMessage(event: MineProgressEvent): string {
+function compactMessage(event: ExtractionProgressEvent): string {
     const message = event.message ?? phaseTitle(event.phase)
 
     if (event.phase === 'preparation') {
@@ -210,7 +213,7 @@ function compactMessage(event: MineProgressEvent): string {
     return message
 }
 
-function formatInlineDetail(event: MineProgressEvent): string {
+function formatInlineDetail(event: ExtractionProgressEvent): string {
     if (event.phase === 'chunks' && event.path) {
         return ''
     }
@@ -230,7 +233,7 @@ function formatInlineDetail(event: MineProgressEvent): string {
     return ''
 }
 
-function formatPercentAndCount(event: MineProgressEvent): string {
+function formatPercentAndCount(event: ExtractionProgressEvent): string {
     if (event.downloadPercent !== undefined) {
         return `${event.downloadPercent.toFixed(1).padStart(5)}% ${formatBytes(
             event.downloadLoadedBytes ?? 0,
@@ -247,8 +250,8 @@ function formatPercentAndCount(event: MineProgressEvent): string {
     return ''
 }
 
-function phaseTitle(phase: MineProgressEvent['phase']): string {
-    const labels: Record<MineProgressEvent['phase'], string> = {
+function phaseTitle(phase: ExtractionProgressEvent['phase']): string {
+    const labels: Record<ExtractionProgressEvent['phase'], string> = {
         chunks: 'Extracting files',
         database: 'Database',
         done: 'Complete',
@@ -266,7 +269,7 @@ function phaseTitle(phase: MineProgressEvent['phase']): string {
     return labels[phase]
 }
 
-function stepTitle(event: MineProgressEvent): string {
+function stepTitle(event: ExtractionProgressEvent): string {
     if (event.phase === 'preparation') {
         if (/grammar/iu.test(event.message ?? '')) {
             return 'Preparation: Tree-sitter Grammars'
@@ -281,7 +284,7 @@ function stepTitle(event: MineProgressEvent): string {
     return phaseTitle(event.phase)
 }
 
-function stepKey(event: MineProgressEvent): string {
+function stepKey(event: ExtractionProgressEvent): string {
     return `${event.phase}:${event.stage ?? 'default'}`
 }
 

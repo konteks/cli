@@ -3,12 +3,14 @@ import type {
     ProjectStatusReaderContract,
 } from '@/contracts/services/project-status-reader'
 import type { Project } from '@/models/project'
-import { getMiningFreshness } from '@/providers/extraction/engine/manifest'
+import { getExtractionFreshness } from '@/providers/extraction/engine/manifest'
+import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
 import {
     openProjectDatabase,
     projectDatabasePath,
 } from '@/providers/persistence/sqlite/database'
 import type { DatabaseService } from '@/providers/persistence/sqlite/db'
+import type { SqliteParams } from '@/providers/persistence/sqlite/sqlite-adapter'
 import { pathExists } from '@/providers/project/context'
 
 export class ProjectStatusReader implements ProjectStatusReaderContract {
@@ -23,7 +25,7 @@ export class ProjectStatusReader implements ProjectStatusReaderContract {
             databaseExists,
             databasePath,
             freshness: initialized
-                ? await getMiningFreshness(context)
+                ? await getExtractionFreshness(context)
                 : {
                       changedFileCount: 0,
                       reason: 'Konteks project memory is not initialized.',
@@ -70,7 +72,8 @@ async function readMemoryStats(
         ] = await Promise.all([
             countRows(
                 service,
-                "select count(*) as count from sources where type = 'mined_file'",
+                'select count(*) as count from sources where type = ?',
+                [EXTRACTED_FILE_SOURCE_TYPE],
             ),
             countRows(
                 service,
@@ -114,7 +117,8 @@ async function readMemoryStats(
 async function countRows(
     service: DatabaseService,
     sql: string,
+    params: SqliteParams = [],
 ): Promise<number> {
-    const rows = await service.adapter.query<{ count: number }>(sql)
+    const rows = await service.adapter.query<{ count: number }>(sql, params)
     return rows[0]?.count ?? 0
 }

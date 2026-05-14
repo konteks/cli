@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { MineProgressReporter } from '@/contracts/services/progress'
+import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
 import { storePayload } from '@/providers/persistence/objects/payload'
@@ -20,9 +20,9 @@ import {
 } from '@/providers/project/source-classification'
 import { terminal } from '@/support/terminal/service'
 import {
-    clearMinedChunks,
-    clearMinedChunksForPaths,
-    isMinedChunkSuppressed,
+    clearExtractedChunks,
+    clearExtractedChunksForPaths,
+    isExtractedChunkSuppressed,
 } from './chunk-cleanup'
 import { chunkFile } from './chunking'
 import type { ScannedFile } from './file-scan'
@@ -32,10 +32,11 @@ import {
 } from './grammar-loader'
 import type { ProjectMetadata } from './metadata'
 import { rebuildModuleArtifacts } from './module-store'
+import { EXTRACTED_FILE_SOURCE_TYPE } from './source-types'
 import type { CodeMetadata } from './tree-sitter-engine'
 import { TreeSitterEngine } from './tree-sitter-engine'
 
-type MineChunksResult = {
+type ExtractChunksResult = {
     chunkCount: number
     filesTruncatedByChunkLimit: number
     parserFallbackFiles: number
@@ -81,19 +82,19 @@ type PreparedFile = {
 
 const defaultMaxChunksPerFile = 200
 
-export async function mineChunks(
+export async function extractChunks(
     db: DatabaseService,
     context: Project,
     files: ScannedFile[],
-    minedAt: string,
+    extractedAt: string,
     options: {
         deletedPaths?: string[]
         metadata?: ProjectMetadata
         mode?: 'changed' | 'full' | 'reindex' | 'resume'
-        onProgress?: MineProgressReporter
+        onProgress?: ExtractionProgressReporter
         treeSitterEngine?: TreeSitterEngine
     } = {},
-): Promise<MineChunksResult> {
+): Promise<ExtractChunksResult> {
     const progress = options.onProgress
     const toonStore = createToonStore(context.memoryDir)
     const taxonomy = db.taxonomy
@@ -137,12 +138,12 @@ export async function mineChunks(
     })
     await db.transaction(async tx => {
         if (options.mode === 'changed') {
-            await clearMinedChunksForPaths(tx, [
+            await clearExtractedChunksForPaths(tx, [
                 ...files.map(file => file.path),
                 ...(options.deletedPaths ?? []),
             ])
         } else if (options.mode !== 'resume') {
-            await clearMinedChunks(tx)
+            await clearExtractedChunks(tx)
         }
         const rootNode = await taxonomy.upsertNode({
             name: 'Project Files',
@@ -193,7 +194,7 @@ export async function mineChunks(
                 metadata_json: JSON.stringify(preparedFile.sourceMetadata),
                 source_role: preparedFile.sourceRole,
                 topics_json: JSON.stringify(preparedFile.sourceTopics),
-                type: 'mined_file',
+                type: EXTRACTED_FILE_SOURCE_TYPE,
                 uri: preparedFile.path,
             })
 
@@ -235,7 +236,7 @@ export async function mineChunks(
                 })
                 await indexSearchDocument(db.adapter, {
                     content: chunk.contentInline ?? chunk.summary,
-                    createdAt: minedAt,
+                    createdAt: extractedAt,
                     id: chunk.id,
                     kind: chunk.kind,
                     task: chunk.path,
@@ -251,7 +252,7 @@ export async function mineChunks(
                     summary: chunk.summary,
                     targetId: chunk.id,
                     targetType: 'chunk',
-                    updatedAt: minedAt,
+                    updatedAt: extractedAt,
                 })
                 chunkCount += 1
             }
@@ -282,13 +283,13 @@ export async function mineChunks(
         status: 'start',
     })
     await db.transaction(async tx => {
-        await rebuildModuleArtifacts(tx, minedAt, options.metadata)
+        await rebuildModuleArtifacts(tx, extractedAt, options.metadata)
         await reindexRetrievalDocumentFts(tx)
 
         await tx.events.append({
             actor: 'cli',
             eventType: 'project_mined',
-            id: `event_${contentHash(`${context.projectRoot}:${minedAt}`).slice(0, 32)}`,
+            id: `event_${contentHash(`${context.projectRoot}:${extractedAt}`).slice(0, 32)}`,
             subjectType: 'project',
             summary: `Extracted ${files.length} files into ${chunkCount} sections.`,
         })
@@ -328,7 +329,7 @@ async function prepareFileChunks(input: {
     if (grammar) {
         if (!input.engine?.hasLanguage(grammar.id)) {
             throw new Error(
-                `Tree-sitter grammar "${grammar.id}" is required for ${input.file.path}. Select and cache the ${grammar.displayName} grammar before mining.`,
+                `Tree-sitter grammar "${grammar.id}" is required for ${input.file.path}. Select and cache the ${grammar.displayName} grammar before extraction.`,
             )
         }
 
@@ -366,7 +367,7 @@ async function prepareFileChunks(input: {
             toonStore: input.toonStore,
         })
         if (
-            await isMinedChunkSuppressed(
+            await isExtractedChunkSuppressed(
                 input.db,
                 input.file.path,
                 chunk.anchor,

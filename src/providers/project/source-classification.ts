@@ -10,7 +10,7 @@ type SourceRole =
     | 'tooling_config'
     | 'unknown'
 
-type MinedLanguage =
+type ExtractedLanguage =
     | 'bash'
     | 'c'
     | 'cpp'
@@ -57,7 +57,7 @@ const toolingConfigFiles = new Set([
     'tsup.config.ts',
 ])
 
-export function detectLanguage(path: string): MinedLanguage {
+export function detectLanguage(path: string): ExtractedLanguage {
     const lowerPath = path.toLowerCase()
 
     if (lowerPath.endsWith('.d.ts')) {

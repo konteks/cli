@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { callKonteksTool } from '@/composition/mcp-surface'
-import { mineProject } from '@/providers/extraction/mine-project'
+import { extractProject } from '@/providers/extraction/extract-project'
 import { loadProjectContext } from '@/providers/project/context'
 import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
 import { callMcpToolCommand } from './call-mcp-tool'
@@ -22,7 +22,7 @@ describe('MCP call command', () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-mcp-call-'))
         tempDirs.push(projectRoot)
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
+        await extractProject(context, 'full', {
             embeddingProvider: new FakeEmbeddingProvider(),
         })
 
@@ -54,7 +54,7 @@ describe('MCP call command', () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-mcp-call-'))
         tempDirs.push(projectRoot)
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
+        await extractProject(context, 'full', {
             embeddingProvider: new FakeEmbeddingProvider(),
         })
 
@@ -95,7 +95,7 @@ describe('MCP call command', () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-mcp-json-'))
         tempDirs.push(projectRoot)
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
+        await extractProject(context, 'full', {
             embeddingProvider: new FakeEmbeddingProvider(),
         })
 

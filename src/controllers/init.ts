@@ -10,7 +10,7 @@ import {
     getGrammarDefinition,
     getGrammarForPath,
 } from '@/providers/extraction/engine/grammar-loader'
-import { readMineManifest } from '@/providers/extraction/engine/manifest'
+import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { loadProjectContext } from '@/providers/project/context'
 import { terminal } from '@/support/terminal/service'
 
@@ -22,7 +22,8 @@ type InitCommandOptions = GlobalCliOptions & {
 export async function initCommand(options: InitCommandOptions): Promise<void> {
     const context = await loadProjectContext(options.project)
     const alreadyInitialized =
-        context.configExists && (await readMineManifest(context.memoryDir))
+        context.configExists &&
+        (await readExtractionManifest(context.memoryDir))
     const grammars = alreadyInitialized
         ? undefined
         : await resolveInitialGrammars(context.projectRoot, options.grammar)

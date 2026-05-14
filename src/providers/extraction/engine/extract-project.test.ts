@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { readProjectStatus } from '@/composition/project-status'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
-import { mineProject } from '@/providers/extraction/mine-project'
+import { extractProject } from '@/providers/extraction/extract-project'
 import { createToonStore } from '@/providers/persistence/objects/toon-store'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import { saveKonteksInput } from '@/providers/persistence/sqlite/save-store'
@@ -20,7 +20,7 @@ import { searchMemory } from '@/providers/persistence/sqlite/search-store'
 import { loadProjectContext } from '@/providers/project/context'
 import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
 import { FakeTreeSitterEngine } from '@/support/fake/fake-tree-sitter-engine'
-import { getMiningFreshness, readMineManifest } from './manifest'
+import { getExtractionFreshness, readExtractionManifest } from './manifest'
 import type { TreeSitterLanguage } from './tree-sitter-engine'
 
 const tempDirs: string[] = []
@@ -39,12 +39,12 @@ class FailingTreeSitterEngine {
     }
 }
 
-async function mineTestProject(
+async function extractTestProject(
     context: Awaited<ReturnType<typeof loadProjectContext>>,
-    mode: Parameters<typeof mineProject>[1],
-    options: Parameters<typeof mineProject>[2] = {},
+    mode: Parameters<typeof extractProject>[1],
+    options: Parameters<typeof extractProject>[2] = {},
 ) {
-    return await mineProject(context, mode, {
+    return await extractProject(context, mode, {
         treeSitterEngine: new FakeTreeSitterEngine() as never,
         ...options,
     })
@@ -67,7 +67,7 @@ const mismatchedEmbeddingProvider: EmbeddingProvider = {
 }
 
 async function makeTempProject(): Promise<string> {
-    const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-mine-test-'))
+    const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-extract-test-'))
     tempDirs.push(projectRoot)
     await mkdir(join(projectRoot, 'src'), { recursive: true })
     await mkdir(join(projectRoot, '.konteks'), { recursive: true })
@@ -108,13 +108,13 @@ afterEach(async () => {
     )
 })
 
-describe('mineProject', () => {
+describe('extractProject', () => {
     it('writes a manifest and TOON project summary', async () => {
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
 
-        const result = await mineTestProject(context, 'reindex')
-        const manifest = await readMineManifest(context.memoryDir)
+        const result = await extractTestProject(context, 'reindex')
+        const manifest = await readExtractionManifest(context.memoryDir)
         const summary = await createToonStore(context.memoryDir).read(
             result.summaryRef,
         )
@@ -147,11 +147,11 @@ describe('mineProject', () => {
         expect(summary).not.toContain('.env.local')
     })
 
-    it('stores mined chunks, search index entries, taxonomy links, and chronology events', async () => {
+    it('stores extracted chunks, search index entries, taxonomy links, and chronology events', async () => {
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
 
-        await mineTestProject(context, 'reindex')
+        await extractTestProject(context, 'reindex')
 
         const service = await openProjectDatabase(context)
         const adapter = service.adapter
@@ -229,7 +229,7 @@ order by target_type, source_role
         const context = await loadProjectContext(projectRoot)
         const embeddingProvider = new FakeEmbeddingProvider()
 
-        await mineTestProject(context, 'reindex', { embeddingProvider })
+        await extractTestProject(context, 'reindex', { embeddingProvider })
 
         const service = await openProjectDatabase(context)
         const vectorResults = await searchMemory(
@@ -274,11 +274,11 @@ order by target_type, source_role
         expect(mismatchedResults[0]?.vectorScore).toBeUndefined()
     })
 
-    it('preserves suppressed mined chunks across reindex', async () => {
+    it('preserves suppressed extracted chunks across reindex', async () => {
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
 
-        await mineTestProject(context, 'reindex')
+        await extractTestProject(context, 'reindex')
 
         const service = await openProjectDatabase(context)
         const chunks = await service.adapter.query<{
@@ -312,7 +312,7 @@ where path = ? and anchor = ? and content_hash = ?
         )
         await service.close()
 
-        await mineTestProject(context, 'reindex')
+        await extractTestProject(context, 'reindex')
 
         const reindexedService = await openProjectDatabase(context)
         const restored = await reindexedService.adapter.query<{
@@ -345,7 +345,7 @@ where path = ? and anchor = ? and content_hash = ?
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
 
-        await mineTestProject(context, 'reindex')
+        await extractTestProject(context, 'reindex')
 
         const service = await openProjectDatabase(context)
         const savedMemory = await saveKonteksInput(service, context, {
@@ -363,7 +363,7 @@ where path = ? and anchor = ? and content_hash = ?
         })
         await service.close()
 
-        await mineTestProject(context, 'reindex')
+        await extractTestProject(context, 'reindex')
 
         const repairedService = await openProjectDatabase(context)
         const durableRows = await repairedService.adapter.query<{
@@ -424,12 +424,12 @@ where id in (?, ?)
         expect(results.some(result => result.id === savedMemory.id)).toBe(true)
     })
 
-    it('reports fresh status after mining and stale after a file change', async () => {
+    it('reports fresh status after extraction and stale after a file change', async () => {
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
-        await mineTestProject(context, 'reindex')
+        await extractTestProject(context, 'reindex')
 
-        const fresh = await getMiningFreshness(context)
+        const fresh = await getExtractionFreshness(context)
         expect(fresh.status).toBe('fresh')
 
         await writeFile(
@@ -453,7 +453,7 @@ where id in (?, ?)
         )
         const context = await loadProjectContext(projectRoot)
 
-        await mineTestProject(context, 'reindex')
+        await extractTestProject(context, 'reindex')
 
         const service = await openProjectDatabase(context)
         const chunks = await service.adapter.query<{ count: number }>(
@@ -461,7 +461,7 @@ where id in (?, ?)
             ['src/many.ts'],
         )
         await service.close()
-        const manifest = await readMineManifest(context.memoryDir)
+        const manifest = await readExtractionManifest(context.memoryDir)
 
         expect(chunks[0]?.count).toBe(200)
         expect(manifest?.diagnostics?.filesTruncatedByChunkLimit).toBe(1)
@@ -471,7 +471,7 @@ where id in (?, ?)
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
 
-        await mineTestProject(context, 'changed')
+        await extractTestProject(context, 'changed')
 
         const rawManifest = await readFile(
             join(projectRoot, '.konteks', 'mine-manifest.json'),
@@ -484,7 +484,7 @@ where id in (?, ?)
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
 
-        await expect(mineProject(context, 'reindex')).rejects.toThrow(
+        await expect(extractProject(context, 'reindex')).rejects.toThrow(
             'Tree-sitter grammar "json" is required for package.json',
         )
     })
@@ -493,8 +493,8 @@ where id in (?, ?)
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
 
-        await mineTestProject(context, 'reindex')
-        await mineTestProject(context, 'reindex')
+        await extractTestProject(context, 'reindex')
+        await extractTestProject(context, 'reindex')
 
         const rawManifest = await readFile(
             join(projectRoot, '.konteks', 'mine-manifest.json'),
@@ -515,14 +515,14 @@ where id in (?, ?)
         const projectRoot = await makeTempProject()
         const context = await loadProjectContext(projectRoot)
 
-        await mineTestProject(context, 'reindex')
+        await extractTestProject(context, 'reindex')
 
         await unlink(join(projectRoot, 'README.md'))
         await writeFile(
             join(projectRoot, 'src', 'new.ts'),
             'export const n = 1\n',
         )
-        await mineTestProject(context, 'changed')
+        await extractTestProject(context, 'changed')
 
         const service = await openProjectDatabase(context)
         const readmeChunks = await service.adapter.query<{ count: number }>(
@@ -544,7 +544,7 @@ where id in (?, ?)
         expect(newChunks[0]?.count).toBeGreaterThan(0)
     })
 
-    it('mines repeated anchors with identical content without chunk ID collisions', async () => {
+    it('extracts repeated anchors with identical content without chunk ID collisions', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(
             join(projectRoot, 'README.md'),
@@ -552,7 +552,7 @@ where id in (?, ?)
         )
         const context = await loadProjectContext(projectRoot)
 
-        await mineTestProject(context, 'reindex')
+        await extractTestProject(context, 'reindex')
 
         const service = await openProjectDatabase(context)
         const readmeChunks = await service.adapter.query<{ count: number }>(
@@ -569,7 +569,7 @@ where id in (?, ?)
         const context = await loadProjectContext(projectRoot)
 
         await expect(
-            mineProject(context, 'reindex', {
+            extractProject(context, 'reindex', {
                 treeSitterEngine: new FailingTreeSitterEngine() as never,
             }),
         ).rejects.toThrow('forced parser failure')

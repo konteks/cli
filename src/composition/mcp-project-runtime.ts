@@ -1,8 +1,8 @@
 import { join } from 'node:path'
 import type { SaveOptions } from '@/contracts/repositories/memory-repository'
 import type { McpProjectContext, StartMcpServerOptions } from '@/models/mcp'
-import { readMineManifest } from '@/providers/extraction/engine/manifest'
-import { mineProject } from '@/providers/extraction/mine-project'
+import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
+import { extractProject } from '@/providers/extraction/extract-project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import type { DatabaseService } from '@/providers/persistence/sqlite/db'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
@@ -56,11 +56,14 @@ export async function updateChangedProjectMemorySilently(
     context: McpProjectContext,
     options: StartMcpServerOptions = {},
 ): Promise<SaveProjectUpdate | undefined> {
-    if (!context.configExists || !(await readMineManifest(context.memoryDir))) {
+    if (
+        !context.configExists ||
+        !(await readExtractionManifest(context.memoryDir))
+    ) {
         return undefined
     }
 
-    const result = await mineProject(context, 'changed', {
+    const result = await extractProject(context, 'changed', {
         treeSitterEngine: options.treeSitterEngine,
     })
     return {

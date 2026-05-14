@@ -1,16 +1,16 @@
-export type MineMode = 'reindex' | 'changed' | 'resume' | 'full'
+export type ExtractionMode = 'reindex' | 'changed' | 'resume' | 'full'
 
-export type MineProjectRequest = {
+export type ExtractProjectRequest = {
     projectRoot: string
-    mode: MineMode
+    mode: ExtractionMode
 }
 
-export type MineProjectResponse = {
+export type ExtractProjectResponse = {
     ok: boolean
-    mode: MineMode
+    mode: ExtractionMode
     projectRoot: string
     fileCount: number
-    minedAt: string
+    extractedAt: string
     summaryRef: string
     chunkCount: number
     embeddedCount: number
