@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
+import { createProjectExtractor } from '@/extraction/extract'
 import type { ExtractProjectResponse } from '@/models/extraction'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { createExtractionProgressReporter } from '@/providers/extraction/progress-reporter'
@@ -9,7 +10,6 @@ import {
     createDefaultConfig,
     loadProjectContext,
 } from '@/providers/project/context'
-import { createExtractionAction } from './extraction'
 
 export type InitializeProjectOptions = {
     embeddingProvider?: EmbeddingProviderContract
@@ -72,12 +72,12 @@ export async function initializeProject(
 
     const progress = createExtractionProgressReporter()
     try {
-        const action = createExtractionAction({
+        const extractor = createProjectExtractor({
             embeddingProvider: options.embeddingProvider,
             onProgress: progress.report,
         })
 
-        const extraction = await action.execute({
+        const extraction = await extractor.execute({
             mode: context.configExists ? 'resume' : 'full',
             projectRoot: context.projectRoot,
         })
