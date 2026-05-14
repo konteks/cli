@@ -9,19 +9,6 @@ import { loadProjectContext, pathExists } from '@/providers/project/context'
 
 type SaveProjectUpdate = NonNullable<SaveOptions['projectUpdate']>
 
-export async function withProjectDatabase<T>(
-    options: StartMcpServerOptions,
-    operation: (
-        service: DatabaseService,
-        context: McpProjectContext,
-    ) => Promise<T>,
-): Promise<T> {
-    const context = await loadMcpProjectContext(options)
-    return withProjectDatabaseContext(context, service =>
-        operation(service, context),
-    )
-}
-
 export async function loadMcpProjectContext(
     options: StartMcpServerOptions,
 ): Promise<McpProjectContext> {

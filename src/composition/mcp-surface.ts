@@ -4,13 +4,11 @@ import type {
     Tool,
 } from '@modelcontextprotocol/sdk/types.js'
 import type { z } from 'zod'
-import {
-    forgetMemory,
-    recallMemory,
-    saveMemory,
-    searchMemory,
-    warmUpMemory,
-} from '@/composition/memory-operations'
+import { forgetMemory } from '@/memory/forget'
+import { recallMemory } from '@/memory/recall'
+import { saveMemory } from '@/memory/save'
+import { searchMemory } from '@/memory/search'
+import { warmUpMemory } from '@/memory/warm-up'
 import type { StartMcpServerOptions } from '@/models/mcp'
 import {
     forgetInputSchema,
