@@ -1,4 +1,4 @@
-import { listKonteksTools } from '@/composition/mcp-surface'
+import { listKonteksTools } from '@/mcp/tools'
 import { printJson } from '@/support/cli/json-output'
 
 export async function getToolsCommand(): Promise<void> {

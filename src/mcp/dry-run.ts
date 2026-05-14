@@ -1,28 +1,37 @@
 import { cp, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { callKonteksTool, listKonteksTools } from '@/composition/mcp-surface'
 import type { GlobalCliOptions } from '@/models/cli'
+import type { StartMcpServerOptions } from '@/models/mcp'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
 import { replaceStringDeep } from '@/support/object/value'
+import { callKonteksTool } from './handlers'
 
-export { callKonteksTool, listKonteksTools }
+export type DryRunKonteksToolDependencies = {
+    callTool?: (
+        options: StartMcpServerOptions,
+        name: string,
+        input: unknown,
+    ) => Promise<unknown>
+}
 
 export async function dryRunKonteksTool(
     options: GlobalCliOptions,
     name: string,
     input: unknown,
+    dependencies: DryRunKonteksToolDependencies = {},
 ): Promise<unknown> {
     const context = await loadProjectContext(options.project)
     const tempRoot = await mkdtemp(join(tmpdir(), 'konteks-mcp-dry-run-'))
     const tempMemoryDir = join(tempRoot, '.konteks')
+    const callTool = dependencies.callTool ?? callKonteksTool
 
     try {
         if (await pathExists(context.memoryDir)) {
             await cp(context.memoryDir, tempMemoryDir, { recursive: true })
         }
 
-        const result = await callKonteksTool(
+        const result = await callTool(
             { memoryDir: tempMemoryDir, project: options.project },
             name,
             input,

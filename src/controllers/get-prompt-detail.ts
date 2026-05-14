@@ -1,4 +1,4 @@
-import { getKonteksPrompt } from '@/composition/mcp-surface'
+import { getKonteksPrompt } from '@/mcp/prompts'
 import { printJson } from '@/support/cli/json-output'
 import { parsePromptArguments } from '@/support/cli/mcp-prompt-input'
 

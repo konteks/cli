@@ -1,8 +1,6 @@
-import {
-    callKonteksTool,
-    dryRunKonteksTool,
-    listKonteksTools,
-} from '@/composition/mcp-tools'
+import { dryRunKonteksTool } from '@/mcp/dry-run'
+import { callKonteksTool } from '@/mcp/handlers'
+import { listKonteksTools } from '@/mcp/tools'
 import type { GlobalCliOptions } from '@/models/cli'
 import { parseJsonInput } from '@/support/cli/json-output'
 import { printMcpCallResult } from '@/support/cli/mcp-call-output'
