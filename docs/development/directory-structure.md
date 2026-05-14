@@ -3,17 +3,17 @@
 ```text
 src
 ├── main.ts             # Commander CLI entrypoint and command registration.
-├── actions/            # Non-memory user workflow orchestration.
 ├── assets/             # Packaged prompt templates and other static runtime assets.
-├── composition/        # Concrete wiring between controllers, actions, and providers.
+├── composition/        # MCP, skill installation, and memory transfer composition.
 ├── contracts/          # Service and persistence boundaries that need substitution.
-│   ├── repositories/   # Repository interfaces consumed by actions.
+│   ├── repositories/   # Repository interfaces consumed by workflows.
 │   └── services/       # Service interfaces, such as extraction and embedding contracts.
 ├── controllers/        # Thin CLI command handlers and MCP server registration.
 ├── extraction/         # Extraction workflow orchestration and runtime wiring.
 ├── middlewares/        # Cross-command guards such as CLI project initialization.
 ├── memory/             # Memory feature workflows: recall, search, save, forget, warm-up, runtime wiring.
 ├── models/             # Core project, CLI, and memory data shapes.
+├── project/            # Project lifecycle workflows: init, status, repair, grammar selection.
 ├── providers/          # Local runtime capabilities.
 │   ├── cli/            # CLI-specific input/output helpers.
 │   ├── embeddings/     # Embedding providers and embedding pipeline behavior.
@@ -33,23 +33,24 @@ src
 ## Code Flow
 
 The outer layers translate protocol concerns into application requests.
-Memory and extraction workflows live in dedicated feature folders. Other
-composed workflows still use `composition` and `actions`. Providers contain
-concrete runtime details.
+Memory, extraction, and project lifecycle workflows live in dedicated feature
+folders. MCP, skill installation, and memory transfer still use `composition`.
+Providers contain concrete runtime details.
 
 ```mermaid
 graph LR
     E[entrypoint] --> C[controllers]
     C --> X[composition]
-    X --> A[actions]
-    X --> G[extraction]
+    C --> J[project]
     X --> M[memory]
-    A --> K[contracts and models]
+    J --> G
     G --> K
     M --> K
+    J --> K
     X --> P[providers]
     G --> P
     M --> P
+    J --> P
     P --> R[(filesystem, SQLite, assets, SDKs)]
     C --> S[support]
     P --> S
@@ -59,10 +60,10 @@ Layer responsibilities:
 
 - `main.ts` owns Commander registration and delegates to controllers.
 - Controllers adapt CLI or MCP input/output and call composed operations.
-- Composition wires non-memory actions to concrete providers for each workflow.
+- Composition owns MCP, skill installation, and memory transfer wiring.
 - Extraction owns project extraction workflow orchestration and project context loading.
 - Memory owns recall, search, save, forget, warm-up, and MCP project/database runtime helpers.
-- Actions express non-memory workflow behavior against contracts and models.
+- Project owns init, status, repair, and grammar selection workflows.
 - Providers implement contracts and own filesystem, database, object storage, embedding, protocol-template, and SDK details.
 - Middleware handles cross-cutting entrypoint checks before controllers run.
 - Support stays generic, dependency-light, and reusable across layers.
@@ -70,9 +71,9 @@ Layer responsibilities:
 Rules:
 
 - Do not put workflow or provider selection logic in controllers.
-- Do not import concrete providers from actions.
 - Keep memory workflow code in `src/memory`; do not split recall/save/search orchestration across actions and composition.
 - Keep extraction workflow code in `src/extraction`; do not split extraction orchestration across actions and composition.
+- Keep project lifecycle workflow code in `src/project`; do not split init/status/repair orchestration across actions and composition.
 - Providers must not import actions, controllers, or composition modules in production code.
 - Run `bun scripts/check-architecture-boundaries.ts` after refactors that move workflow ownership.
 - Prefer direct imports over barrel files, for example `@/providers/persistence/sqlite/database`.

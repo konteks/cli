@@ -1,29 +1,21 @@
 import { describe, expect, it } from 'bun:test'
-import type {
-    InitializeProjectOptions,
-    InitializeProjectResult,
-} from './project-initialization'
-import { initializeProject } from './project-initialization'
+import type { InitializeProjectOptions, InitializeProjectResult } from './init'
+import { initializeProject } from './init'
 
 type CoveredTypes = [InitializeProjectOptions, InitializeProjectResult]
 
-describe('composition/project-initialization', () => {
+describe('project/init', () => {
     it('matches the public runtime contract', () => {
-        const cases = [
-            ['initializeProject', initializeProject, 'function'],
-        ] as const
-
-        expect(cases.map(([name]) => name)).toEqual(['initializeProject'])
-        for (const [name, value, kind] of cases) {
-            expect(typeof value, name).toBe(kind)
-        }
+        expect(typeof initializeProject).toBe('function')
     })
+
     it('compiles representative type contracts', () => {
         type _Covered = CoveredTypes
         const typeNames = [
             'InitializeProjectOptions',
             'InitializeProjectResult',
         ] as const
+
         expect(typeNames).toEqual([
             'InitializeProjectOptions',
             'InitializeProjectResult',

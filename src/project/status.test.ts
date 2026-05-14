@@ -1,0 +1,88 @@
+import { describe, expect, it } from 'bun:test'
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import type { ProjectStatusReaderContract } from '@/contracts/services/project-status-reader'
+import type { Project } from '@/models/project'
+import {
+    type ProjectStatus,
+    type ReadProjectStatusOptions,
+    readProjectStatus,
+} from './status'
+
+type CoveredTypes = [ProjectStatus, ReadProjectStatusOptions]
+
+describe('project/status', () => {
+    it('loads the requested project and returns the status reader output', async () => {
+        const projectRoot = await createConfiguredProject()
+        const status: ProjectStatus = {
+            configExists: true,
+            databaseExists: true,
+            databasePath: join(projectRoot, '.konteks/memory.db'),
+            freshness: {
+                changedFileCount: 0,
+                reason: 'fresh',
+                status: 'fresh',
+            },
+            memoryDir: join(projectRoot, '.konteks'),
+            memoryDirExists: true,
+            memoryStats: {
+                diaryEntries: 0,
+                embeddings: 0,
+                events: 0,
+                files: 0,
+                memories: 0,
+                modules: 0,
+                retrievalDocuments: 0,
+                sections: 0,
+            },
+            projectRoot,
+        }
+        const calls: Project[] = []
+        const statusReader: ProjectStatusReaderContract = {
+            async read(project) {
+                calls.push(project)
+                return status
+            },
+        }
+
+        await expect(
+            readProjectStatus(projectRoot, { statusReader }),
+        ).resolves.toBe(status)
+        expect(calls).toEqual([
+            {
+                config: {
+                    extraction: {
+                        grammars: { selected: [], updateTtlHours: 24 },
+                    },
+                    projectRoot,
+                    recall: { maxTokens: 2000 },
+                    storage: {
+                        inlinePayloadMaxBytes: 2048,
+                        memoryDir: '.konteks',
+                    },
+                },
+                configExists: true,
+                configPath: join(projectRoot, '.konteks/config.json'),
+                memoryDir: join(projectRoot, '.konteks'),
+                projectRoot,
+            },
+        ])
+    })
+
+    it('compiles representative type contracts', () => {
+        type _Covered = CoveredTypes
+        const typeNames = ['ProjectStatus', 'ReadProjectStatusOptions'] as const
+
+        expect(typeNames).toEqual(['ProjectStatus', 'ReadProjectStatusOptions'])
+    })
+})
+
+async function createConfiguredProject(): Promise<string> {
+    const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-status-'))
+    const memoryDir = join(projectRoot, '.konteks')
+    await writeFile(join(projectRoot, 'package.json'), '{"type":"module"}\n')
+    await mkdir(memoryDir, { recursive: true })
+    await writeFile(join(memoryDir, 'config.json'), '{}\n')
+    return projectRoot
+}
