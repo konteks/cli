@@ -50,7 +50,7 @@ const ignoredExtensions = new Set([
     '.zip',
 ])
 
-export const defaultMaxMineFileBytes = 512 * 1024
+export const defaultMaxExtractFileBytes = 512 * 1024
 
 export type IgnoreMatcher = {
     explain(relativePath: string): IgnoreReason | undefined

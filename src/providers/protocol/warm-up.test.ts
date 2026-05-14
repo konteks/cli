@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { callKonteksTool } from '@/composition/mcp-surface'
-import { mineProject } from '@/providers/extraction/mine-project'
+import { extractProject } from '@/providers/extraction/extract-project'
 import { loadProjectContext } from '@/providers/project/context'
 import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
 import { FakeTreeSitterEngine } from '@/support/fake/fake-tree-sitter-engine'
@@ -15,7 +15,7 @@ function mcpOptions(project: string) {
     }
 }
 
-function miningOptions() {
+function extractionOptions() {
     return {
         embeddingProvider: new FakeEmbeddingProvider(),
         treeSitterEngine: new FakeTreeSitterEngine() as never,
@@ -53,7 +53,7 @@ describe('konteks_warm_up', () => {
         )
 
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', miningOptions())
+        await extractProject(context, 'full', extractionOptions())
 
         // Seed some durable memories
         await callKonteksTool(mcpOptions(projectRoot), 'konteks_save', {
@@ -117,7 +117,7 @@ describe('konteks_warm_up', () => {
         )
 
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', miningOptions())
+        await extractProject(context, 'full', extractionOptions())
         await writeFile(
             join(projectRoot, 'src', 'later.ts'),
             'export const later = true\n',
@@ -131,7 +131,7 @@ describe('konteks_warm_up', () => {
         const text = result.content.find(
             item => item.type === 'text' && 'text' in item,
         )?.text
-        const manifest = await readMineManifest(context.memoryDir)
+        const manifest = await readExtractionManifest(context.memoryDir)
 
         expect(manifest?.mode).toBe('changed')
         expect(manifest?.files.map(file => file.path)).toContain('src/later.ts')
@@ -159,7 +159,7 @@ describe('konteks_warm_up', () => {
         )
 
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', miningOptions())
+        await extractProject(context, 'full', extractionOptions())
 
         const result = await callKonteksTool(
             mcpOptions(projectRoot),
@@ -176,8 +176,8 @@ describe('konteks_warm_up', () => {
     })
 })
 
-async function readMineManifest(memoryDir: string) {
-    const { readMineManifest: read } = await import(
+async function readExtractionManifest(memoryDir: string) {
+    const { readExtractionManifest: read } = await import(
         '@/providers/extraction/engine/manifest'
     )
     return read(memoryDir)

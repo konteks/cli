@@ -1,4 +1,4 @@
-type MineProgressPhase =
+type ExtractionProgressPhase =
     | 'chunks'
     | 'database'
     | 'done'
@@ -12,9 +12,9 @@ type MineProgressPhase =
     | 'start'
     | 'summary'
 
-type MineProgressStatus = 'done' | 'progress' | 'start'
+type ExtractionProgressStatus = 'done' | 'progress' | 'start'
 
-export type MineProgressEvent = {
+export type ExtractionProgressEvent = {
     chunkCount?: number
     current?: number
     downloadFile?: string
@@ -24,11 +24,13 @@ export type MineProgressEvent = {
     embeddedCount?: number
     message?: string
     path?: string
-    phase: MineProgressPhase
+    phase: ExtractionProgressPhase
     stage?: 'embed' | 'prepare'
     reusedCount?: number
-    status: MineProgressStatus
+    status: ExtractionProgressStatus
     total?: number
 }
 
-export type MineProgressReporter = (event: MineProgressEvent) => void
+export type ExtractionProgressReporter = (
+    event: ExtractionProgressEvent,
+) => void

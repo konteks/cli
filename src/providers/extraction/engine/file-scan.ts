@@ -3,7 +3,7 @@ import { readdir, readFile, stat } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
 import {
     createIgnoreMatcher,
-    defaultMaxMineFileBytes,
+    defaultMaxExtractFileBytes,
     type IgnoreMatcher,
     type IgnoreReason,
 } from './ignore-rules'
@@ -53,7 +53,7 @@ export async function scanProjectFilesWithDiagnostics(
     options: ScanProjectOptions = {},
 ): Promise<ScanProjectResult> {
     const files: ScannedFile[] = []
-    const maxFileBytes = options.maxFileBytes ?? defaultMaxMineFileBytes
+    const maxFileBytes = options.maxFileBytes ?? defaultMaxExtractFileBytes
     const ignoreMatcher = await loadIgnoreMatcher(projectRoot)
     const diagnostics = createScanDiagnostics()
 

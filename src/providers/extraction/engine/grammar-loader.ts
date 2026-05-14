@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import registryJson from '@/assets/grammars/registry.json' with { type: 'json' }
-import type { MineProgressReporter } from '@/contracts/services/progress'
+import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import type { Project } from '@/models/project'
 import { pathExists } from '@/providers/project/context'
 import type { TreeSitterLanguage } from './tree-sitter-engine'
@@ -78,7 +78,7 @@ export async function initTreeSitterWithSelectedGrammars(
     project: Project,
     options: {
         forceUpdate?: boolean
-        onProgress?: MineProgressReporter
+        onProgress?: ExtractionProgressReporter
     } = {},
 ): Promise<{ loaded: TreeSitterLanguage[]; warnings: string[] }> {
     const selected = normalizeSelectedGrammars(
@@ -157,7 +157,7 @@ export async function initTreeSitterWithSelectedGrammars(
 export async function updateSelectedGrammarCache(
     project: Project,
     options: {
-        onProgress?: MineProgressReporter
+        onProgress?: ExtractionProgressReporter
     } = {},
 ): Promise<{ updated: number; reused: number }> {
     const selected = normalizeSelectedGrammars(
@@ -195,7 +195,7 @@ async function ensureCachedGrammar(
     cache: GrammarCacheManifest,
     options: {
         forceUpdate?: boolean
-        onProgress?: MineProgressReporter
+        onProgress?: ExtractionProgressReporter
         updateTtlHours: number
     },
 ): Promise<string> {

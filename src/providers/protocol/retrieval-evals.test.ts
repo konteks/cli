@@ -3,8 +3,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { callKonteksTool } from '@/composition/mcp-surface'
-import { readMineManifest } from '@/providers/extraction/engine/manifest'
-import { mineProject } from '@/providers/extraction/mine-project'
+import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
+import { extractProject } from '@/providers/extraction/extract-project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import { loadProjectContext } from '@/providers/project/context'
 import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
@@ -19,7 +19,7 @@ function mcpOptions(project: string) {
     }
 }
 
-function miningOptions() {
+function extractionOptions() {
     return {
         embeddingProvider: new FakeEmbeddingProvider(),
         treeSitterEngine: new FakeTreeSitterEngine() as never,
@@ -58,7 +58,7 @@ describe('retrieval quality evals', () => {
             'export const run = () => "ok"\n',
         )
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', miningOptions())
+        await extractProject(context, 'full', extractionOptions())
 
         const result = await callKonteksTool(
             mcpOptions(projectRoot),
@@ -79,7 +79,7 @@ describe('retrieval quality evals', () => {
         )
         tempDirs.push(projectRoot)
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', miningOptions())
+        await extractProject(context, 'full', extractionOptions())
 
         await expect(
             callKonteksTool(mcpOptions(projectRoot), 'konteks_save', {
@@ -103,7 +103,7 @@ describe('retrieval quality evals', () => {
             'export const first = true\n',
         )
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', miningOptions())
+        await extractProject(context, 'full', extractionOptions())
         await writeFile(
             join(projectRoot, 'src', 'should-not-refresh.ts'),
             'export const shouldNotRefresh = true\n',
@@ -116,7 +116,7 @@ describe('retrieval quality evals', () => {
                 type: 'memory',
             }),
         ).rejects.toThrow()
-        const manifest = await readMineManifest(context.memoryDir)
+        const manifest = await readExtractionManifest(context.memoryDir)
 
         expect(manifest?.files.map(file => file.path)).not.toContain(
             'src/should-not-refresh.ts',
@@ -136,7 +136,7 @@ describe('retrieval quality evals', () => {
             'export const first = true\n',
         )
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', miningOptions())
+        await extractProject(context, 'full', extractionOptions())
         await writeFile(
             join(projectRoot, 'src', 'saved-change.ts'),
             'export const savedChange = true\n',
@@ -154,7 +154,7 @@ describe('retrieval quality evals', () => {
         const text = result.content.find(
             item => item.type === 'text' && 'text' in item,
         )?.text
-        const manifest = await readMineManifest(context.memoryDir)
+        const manifest = await readExtractionManifest(context.memoryDir)
         const adapter = await openProjectDatabase(context)
         const diaryRows = await adapter.adapter.query<{ summary: string }>(
             `
@@ -191,7 +191,7 @@ limit 1
             'export const serve = () => true\n',
         )
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', miningOptions())
+        await extractProject(context, 'full', extractionOptions())
 
         const result = await callKonteksTool(
             mcpOptions(projectRoot),
@@ -219,7 +219,7 @@ limit 1
             'export const f = () => 1\n',
         )
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', miningOptions())
+        await extractProject(context, 'full', extractionOptions())
 
         const result = await callKonteksTool(
             mcpOptions(projectRoot),
@@ -260,7 +260,7 @@ limit 1
             '# Build\nUse recall during the build phase.\n',
         )
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', miningOptions())
+        await extractProject(context, 'full', extractionOptions())
 
         const result = await callKonteksTool(
             mcpOptions(projectRoot),
@@ -293,7 +293,7 @@ limit 1
             'export const storage = "sqlite wasm local storage"\n',
         )
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', miningOptions())
+        await extractProject(context, 'full', extractionOptions())
         const adapter = await openProjectDatabase(context)
         const rows = await adapter.adapter.query<{ count: number }>(
             'select count(*) as count from retrieval_documents',

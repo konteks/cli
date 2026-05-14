@@ -110,7 +110,7 @@ describe('MCP prompts', () => {
         expect(save).not.toContain('current Konteks task')
         expect(save).not.toContain('focus on')
         expect(`${save}\n${warmUp}`).not.toMatch(
-            /\b(extract|index|refresh|mine|repair|changed)\b/iu,
+            /\b(extract|index|refresh|repair|changed)\b/iu,
         )
     })
 })

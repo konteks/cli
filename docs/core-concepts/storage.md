@@ -60,7 +60,7 @@ Those projections include:
 * Text for exact matching.
 * Text shaped for semantic matching.
 * Embedding records when semantic search has been prepared.
-* Older fallback search records for saved memory and mined content.
+* Older fallback search records for saved memory and extracted content.
 
 This is why search and recall can continue to work even when one retrieval path is incomplete. The storage layer keeps multiple doors into the same memory.
 

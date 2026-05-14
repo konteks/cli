@@ -1,7 +1,7 @@
 import type { ScannedFile } from './file-scan'
 import type { CodeMetadata, TreeSitterEngine } from './tree-sitter-engine'
 
-type MinedChunk = {
+type ExtractedChunk = {
     anchor: string
     anchorType: 'file' | 'heading' | 'json_path' | 'symbol'
     content: string
@@ -21,7 +21,7 @@ export async function chunkFile(
     content: string,
     engine?: TreeSitterEngine,
     parsedMetadata?: CodeMetadata,
-): Promise<MinedChunk[]> {
+): Promise<ExtractedChunk[]> {
     const trimmed = content.trim()
     if (!trimmed) {
         return []
@@ -55,7 +55,7 @@ function chunkCodeWithTreeSitter(
     path: string,
     content: string,
     metadata: CodeMetadata,
-): MinedChunk[] {
+): ExtractedChunk[] {
     if (metadata.symbols.length === 0) {
         return chunkByWords(path, content, 'code', {
             metadata: {
@@ -82,9 +82,9 @@ function chunkCodeWithTreeSitter(
     })
 }
 
-function chunkCodeHeuristic(path: string, content: string): MinedChunk[] {
+function chunkCodeHeuristic(path: string, content: string): ExtractedChunk[] {
     const lines = content.split('\n')
-    const chunks: MinedChunk[] = []
+    const chunks: ExtractedChunk[] = []
     let current: string[] = []
     let currentSymbol: string | undefined
 
@@ -118,7 +118,7 @@ function chunkCodeHeuristic(path: string, content: string): MinedChunk[] {
     return chunks.length > 0 ? chunks : chunkByWords(path, content, 'code')
 }
 
-function chunkMarkdown(path: string, content: string): MinedChunk[] {
+function chunkMarkdown(path: string, content: string): ExtractedChunk[] {
     const sections = content.split(/(?=^#{1,6}\s+)/gmu).filter(Boolean)
     const chunks = sections.length > 0 ? sections : [content]
 
@@ -133,7 +133,7 @@ function chunkMarkdown(path: string, content: string): MinedChunk[] {
     })
 }
 
-function chunkJson(path: string, content: string): MinedChunk[] {
+function chunkJson(path: string, content: string): ExtractedChunk[] {
     try {
         const parsed = JSON.parse(content) as unknown
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
@@ -164,7 +164,7 @@ function chunkByWords(
     kind: string,
     metadata: {
         anchor?: string
-        anchorType?: MinedChunk['anchorType']
+        anchorType?: ExtractedChunk['anchorType']
         heading?: string
         jsonPath?: string
         symbol?: string
@@ -172,7 +172,7 @@ function chunkByWords(
         endLine?: number
         metadata?: Record<string, unknown>
     } = {},
-): MinedChunk[] {
+): ExtractedChunk[] {
     const words = content.split(/\s+/u).filter(Boolean)
     const maxWords = 650
     const anchor = metadata.anchor ?? 'file'
@@ -196,7 +196,7 @@ function chunkByWords(
         ]
     }
 
-    const chunks: MinedChunk[] = []
+    const chunks: ExtractedChunk[] = []
     for (let index = 0; index < words.length; index += maxWords) {
         const body = words.slice(index, index + maxWords).join(' ')
         const chunkAnchor = `${anchor}-${Math.floor(index / maxWords) + 1}`

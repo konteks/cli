@@ -33,14 +33,14 @@ Before anything becomes memory, it passes through a gate. Files and directories 
 * Large files and minified files.
 * Files excluded by `.gitignore` or `.konteksignore`.
 
-What remains is the working set: text-like project files that are safe and useful enough to mine.
+What remains is the working set: text-like project files that are safe and useful enough to extract.
 
 ## 2. The Ledger: Select What Needs Work
 
 Konteks does not always need to re-read the whole project. It keeps a record of the previous extraction and uses that record to decide what should happen next.
 
-* A full extraction mines the current included files.
-* A changed extraction mines files whose content changed and removes memory for files that disappeared.
+* A full extraction extracts the current included files.
+* A changed extraction extracts files whose content changed and removes memory for files that disappeared.
 * A resume extraction skips paths that are already present in memory.
 * A reindex extraction rebuilds derived artifacts from the current included files.
 
@@ -101,7 +101,7 @@ Modules matter because an agent often needs orientation before details. Recall c
 
 ## 8. The Meaning Trace: Generate Embeddings
 
-After retrieval text exists, Konteks can generate embeddings for mined chunks and module artifacts.
+After retrieval text exists, Konteks can generate embeddings for extracted chunks and module artifacts.
 
 An embedding is a compact representation of what a chunk or module is about. It lets recall compare related meanings even when the task and the project use different words.
 
@@ -111,7 +111,7 @@ Konteks reuses an existing embedding when the retrieval text and embedding model
 
 At the end, Konteks writes a project summary and an extraction manifest.
 
-The summary captures the broad project picture from the scan and metadata. The manifest records what was mined, when it was mined, which mode was used, and diagnostic counts such as extracted sections, parser usage, skipped files, and embedding reuse.
+The summary captures the broad project picture from the scan and metadata. The manifest records what was extracted, when it was extracted, which mode was used, and diagnostic counts such as extracted sections, parser usage, skipped files, and embedding reuse.
 
 The manifest is the seal on the extraction run. It lets the next run know what has already been seen, what changed, and how to continue without starting from nothing.
 

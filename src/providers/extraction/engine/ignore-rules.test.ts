@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { createIgnoreMatcher } from './ignore-rules'
 
-describe('mining ignore rules', () => {
+describe('extraction ignore rules', () => {
     it('skips dependency, build, memory, secret, and binary paths', () => {
         const matcher = createIgnoreMatcher({})
 

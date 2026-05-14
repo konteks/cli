@@ -1,4 +1,4 @@
-import { readMineManifest } from '@/providers/extraction/engine/manifest'
+import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { projectDatabasePath } from '@/providers/persistence/sqlite/database'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
 import { CliUserError } from '@/support/cli/errors'
@@ -23,7 +23,7 @@ export async function ensureCliProjectInitialized(
         throw createUninitializedCliError()
     }
 
-    if (!(await readMineManifest(context.memoryDir))) {
+    if (!(await readExtractionManifest(context.memoryDir))) {
         throw createUninitializedCliError()
     }
 

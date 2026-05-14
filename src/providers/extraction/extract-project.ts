@@ -1,57 +1,61 @@
 import { mkdir } from 'node:fs/promises'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
-import type { MineEngineContract } from '@/contracts/services/mine-engine'
-import type { MineProgressReporter } from '@/contracts/services/progress'
-import type { MineProjectRequest, MineProjectResponse } from '@/models/mining'
+import type { ExtractionEngineContract } from '@/contracts/services/extraction-engine'
+import type { ExtractionProgressReporter } from '@/contracts/services/progress'
+import type {
+    ExtractProjectRequest,
+    ExtractProjectResponse,
+} from '@/models/extraction'
 import type { Project } from '@/models/project'
 import { generateTargetEmbeddings } from '@/providers/embeddings/embedding-pipeline'
-import { mineChunks } from '@/providers/extraction/engine/chunk-store'
+import { extractChunks } from '@/providers/extraction/engine/chunk-store'
 import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import { scanProjectFilesWithDiagnostics } from '@/providers/extraction/engine/file-scan'
 import type {
-    MineManifest,
-    MineMode,
+    ExtractionManifest,
+    ExtractionMode,
 } from '@/providers/extraction/engine/manifest'
 import {
-    readMineManifest,
-    writeMineManifest,
+    readExtractionManifest,
+    writeExtractionManifest,
 } from '@/providers/extraction/engine/manifest'
 import { extractProjectMetadata } from '@/providers/extraction/engine/metadata'
+import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
 import { formatProjectSummaryToon } from '@/providers/extraction/engine/toon-summary'
 import type { TreeSitterEngine } from '@/providers/extraction/engine/tree-sitter-engine'
 import { createToonStore } from '@/providers/persistence/objects/toon-store'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import type { DatabaseService } from '@/providers/persistence/sqlite/db'
 
-export async function mineProject(
+export async function extractProject(
     project: Project,
-    mode: MineMode,
+    mode: ExtractionMode,
     options: {
         embeddingProvider?: EmbeddingProvider
-        onProgress?: MineProgressReporter
+        onProgress?: ExtractionProgressReporter
         treeSitterEngine?: TreeSitterEngine
     } = {},
-): Promise<MineProjectResponse> {
-    const engine = new KonteksMineEngine(options)
-    return await engine.mine(project, {
+): Promise<ExtractProjectResponse> {
+    const engine = new KonteksExtractionEngine(options)
+    return await engine.extract(project, {
         mode,
         projectRoot: project.projectRoot,
     })
 }
 
-export class KonteksMineEngine implements MineEngineContract {
+export class KonteksExtractionEngine implements ExtractionEngineContract {
     constructor(
         private readonly options: {
             embeddingProvider?: EmbeddingProvider
-            onProgress?: MineProgressReporter
+            onProgress?: ExtractionProgressReporter
             treeSitterEngine?: TreeSitterEngine
         } = {},
     ) {}
 
-    async mine(
+    async extract(
         project: Project,
-        request: MineProjectRequest,
-    ): Promise<MineProjectResponse> {
+        request: ExtractProjectRequest,
+    ): Promise<ExtractProjectResponse> {
         const { mode } = request
         const context = project
         const options = this.options
@@ -78,7 +82,7 @@ export class KonteksMineEngine implements MineEngineContract {
         })
         const previousManifest =
             mode === 'changed'
-                ? await readMineManifest(context.memoryDir)
+                ? await readExtractionManifest(context.memoryDir)
                 : undefined
         progress?.({
             message: 'Extracting project metadata',
@@ -94,7 +98,7 @@ export class KonteksMineEngine implements MineEngineContract {
             phase: 'metadata',
             status: 'done',
         })
-        const minedAt = new Date().toISOString()
+        const extractedAt = new Date().toISOString()
         progress?.({
             message: 'Opening local memory database',
             phase: 'database',
@@ -108,23 +112,23 @@ export class KonteksMineEngine implements MineEngineContract {
         })
         const alreadyExtractedPaths =
             mode === 'resume' ? await readExtractedPaths(db) : undefined
-        const { deletedPaths, filesToMine } = selectFilesForMode(
+        const { deletedPaths, filesToExtract } = selectFilesForMode(
             files,
             previousManifest,
             mode,
             alreadyExtractedPaths,
         )
         progress?.({
-            message: `Selected ${filesToMine.length} files to extract`,
+            message: `Selected ${filesToExtract.length} files to extract`,
             phase: 'select',
             status: 'done',
-            total: filesToMine.length,
+            total: filesToExtract.length,
         })
-        const minedChunks = await mineChunks(
+        const extractedChunks = await extractChunks(
             db,
             context,
-            filesToMine,
-            minedAt,
+            filesToExtract,
+            extractedAt,
             {
                 deletedPaths,
                 metadata,
@@ -138,7 +142,7 @@ export class KonteksMineEngine implements MineEngineContract {
                   db,
                   options.embeddingProvider,
                   ['chunk', 'module'],
-                  minedAt,
+                  extractedAt,
                   { onProgress: progress },
               )
             : { embeddedCount: 0, reusedCount: 0 }
@@ -155,7 +159,7 @@ export class KonteksMineEngine implements MineEngineContract {
                 fileCount: files.length,
                 files,
                 metadata,
-                minedAt,
+                minedAt: extractedAt,
                 mode,
                 projectRoot: context.projectRoot,
             }),
@@ -166,21 +170,21 @@ export class KonteksMineEngine implements MineEngineContract {
             status: 'done',
         })
 
-        const manifest: MineManifest = {
+        const manifest: ExtractionManifest = {
             diagnostics: {
                 ...scan.diagnostics,
                 chunkCount: totalChunkCount,
                 embeddedCount: embeddingRun.embeddedCount,
                 embeddingReusedCount: embeddingRun.reusedCount,
                 filesTruncatedByChunkLimit:
-                    minedChunks.filesTruncatedByChunkLimit,
-                parserFallbackFiles: minedChunks.parserFallbackFiles,
-                parserUsedFiles: minedChunks.parserUsedFiles,
+                    extractedChunks.filesTruncatedByChunkLimit,
+                parserFallbackFiles: extractedChunks.parserFallbackFiles,
+                parserUsedFiles: extractedChunks.parserUsedFiles,
             },
             fileCount: files.length,
             files,
             metadata,
-            minedAt,
+            minedAt: extractedAt,
             mode,
             summaryHash: summary.hash,
             summaryRef: summary.ref,
@@ -191,9 +195,9 @@ export class KonteksMineEngine implements MineEngineContract {
             phase: 'manifest',
             status: 'start',
         })
-        await writeMineManifest(context.memoryDir, manifest)
+        await writeExtractionManifest(context.memoryDir, manifest)
         progress?.({
-            chunkCount: minedChunks.chunkCount,
+            chunkCount: extractedChunks.chunkCount,
             embeddedCount: embeddingRun.embeddedCount,
             message: `Extraction complete: ${totalChunkCount} sections, ${embeddingRun.embeddedCount} indexed, ${embeddingRun.reusedCount} unchanged`,
             phase: 'done',
@@ -206,39 +210,39 @@ export class KonteksMineEngine implements MineEngineContract {
             deletedFilePaths: deletedPaths,
             embeddedCount: embeddingRun.embeddedCount,
             embeddingReusedCount: embeddingRun.reusedCount,
+            extractedAt,
             fileCount: files.length,
-            minedAt,
             mode,
             ok: true,
             projectRoot: context.projectRoot,
             summaryRef: summary.ref,
             technologies: metadata.technologies,
-            updatedFilePaths: filesToMine.map(file => file.path),
+            updatedFilePaths: filesToExtract.map(file => file.path),
         }
     }
 }
 
 function selectFilesForMode(
     currentFiles: ScannedFile[],
-    previousManifest: MineManifest | undefined,
-    mode: MineMode,
+    previousManifest: ExtractionManifest | undefined,
+    mode: ExtractionMode,
     alreadyExtractedPaths?: Set<string>,
-): { deletedPaths: string[]; filesToMine: ScannedFile[] } {
+): { deletedPaths: string[]; filesToExtract: ScannedFile[] } {
     if (mode === 'reindex') {
-        return { deletedPaths: [], filesToMine: currentFiles }
+        return { deletedPaths: [], filesToExtract: currentFiles }
     }
 
     if (mode === 'resume') {
         return {
             deletedPaths: [],
-            filesToMine: currentFiles.filter(
+            filesToExtract: currentFiles.filter(
                 file => !alreadyExtractedPaths?.has(file.path),
             ),
         }
     }
 
     if (mode !== 'changed' || !previousManifest) {
-        return { deletedPaths: [], filesToMine: currentFiles }
+        return { deletedPaths: [], filesToExtract: currentFiles }
     }
 
     const previousByPath = new Map(
@@ -246,7 +250,7 @@ function selectFilesForMode(
     )
     const currentByPath = new Map(currentFiles.map(file => [file.path, file]))
 
-    const filesToMine = currentFiles.filter(file => {
+    const filesToExtract = currentFiles.filter(file => {
         const previous = previousByPath.get(file.path)
         if (!previous) {
             return true
@@ -258,7 +262,7 @@ function selectFilesForMode(
         .filter(file => !currentByPath.has(file.path))
         .map(file => file.path)
 
-    return { deletedPaths, filesToMine }
+    return { deletedPaths, filesToExtract }
 }
 
 async function readExtractedPaths(db: DatabaseService): Promise<Set<string>> {
@@ -267,9 +271,10 @@ async function readExtractedPaths(db: DatabaseService): Promise<Set<string>> {
 select distinct sources.uri as path
 from sources
 inner join chunks on chunks.source_id = sources.id
-where sources.type = 'mined_file'
+where sources.type = ?
   and sources.uri is not null
 `,
+        [EXTRACTED_FILE_SOURCE_TYPE],
     )
 
     return new Set(rows.map(row => row.path))

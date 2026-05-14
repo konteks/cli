@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { MineMode } from '@/models/mining'
+import type { ExtractionMode } from '@/models/extraction'
 import type { Project } from '@/models/project'
 import { pathExists } from '@/providers/project/context'
 import {
@@ -10,22 +10,23 @@ import {
 } from './file-scan'
 import type { ProjectMetadata } from './metadata'
 
-export type { MineMode }
+export type { ExtractionMode }
 
-export type MineManifest = {
+export type ExtractionManifest = {
     version: 1
+    // "Mined" is legacy terminology; current code calls this extraction, but the persisted field stays stable.
     minedAt: string
-    mode: MineMode
+    mode: ExtractionMode
     fileCount: number
     chunkCount?: number
     files: ScannedFile[]
     metadata: ProjectMetadata
     summaryRef: string
     summaryHash: string
-    diagnostics?: MineDiagnostics
+    diagnostics?: ExtractionDiagnostics
 }
 
-type MineDiagnostics = ScanDiagnostics & {
+type ExtractionDiagnostics = ScanDiagnostics & {
     chunkCount: number
     embeddedCount: number
     embeddingReusedCount: number
@@ -34,7 +35,7 @@ type MineDiagnostics = ScanDiagnostics & {
     parserUsedFiles: number
 }
 
-type MiningFreshness = {
+type ExtractionFreshness = {
     status: 'missing' | 'fresh' | 'stale'
     reason: string
     changedFileCount: number
@@ -42,35 +43,36 @@ type MiningFreshness = {
     lastExtractedAt?: string
 }
 
-function mineManifestPath(memoryDir: string): string {
+function legacyExtractionManifestPath(memoryDir: string): string {
+    // Keep the old filename so existing project memory remains readable.
     return join(memoryDir, 'mine-manifest.json')
 }
 
-export async function readMineManifest(
+export async function readExtractionManifest(
     memoryDir: string,
-): Promise<MineManifest | undefined> {
-    const path = mineManifestPath(memoryDir)
+): Promise<ExtractionManifest | undefined> {
+    const path = legacyExtractionManifestPath(memoryDir)
     if (!(await pathExists(path))) {
         return undefined
     }
 
-    return JSON.parse(await readFile(path, 'utf8')) as MineManifest
+    return JSON.parse(await readFile(path, 'utf8')) as ExtractionManifest
 }
 
-export async function writeMineManifest(
+export async function writeExtractionManifest(
     memoryDir: string,
-    manifest: MineManifest,
+    manifest: ExtractionManifest,
 ): Promise<void> {
     await writeFile(
-        mineManifestPath(memoryDir),
+        legacyExtractionManifestPath(memoryDir),
         `${JSON.stringify(manifest, null, 2)}\n`,
     )
 }
 
-export async function getMiningFreshness(
+export async function getExtractionFreshness(
     context: Project,
-): Promise<MiningFreshness> {
-    const manifest = await readMineManifest(context.memoryDir)
+): Promise<ExtractionFreshness> {
+    const manifest = await readExtractionManifest(context.memoryDir)
     if (!manifest) {
         return {
             changedFileCount: 0,

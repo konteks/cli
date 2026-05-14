@@ -85,7 +85,7 @@ During extraction, chunks and module artifacts receive embeddings. Saved observa
 
 ## 4. The Observation Surface
 
-The observation surface is durable memory saved from agent work. These are not mined from source files; they are deliberately recorded because future sessions should know them.
+The observation surface is durable memory saved from agent work. These are not extracted from source files; they are deliberately recorded because future sessions should know them.
 
 Observation kinds describe why a memory matters:
 
@@ -153,7 +153,7 @@ There are three ways memory can be changed:
 * **Invalidate** suppresses memory that should no longer guide future work.
 * **Hard delete** removes memory when it should not remain.
 
-Forgetting can target saved observations, diary entries, mined chunks, and graph relations depending on how it is requested. Each successful change is recorded as a memory event.
+Forgetting can target saved observations, diary entries, extracted chunks, and graph relations depending on how it is requested. Each successful change is recorded as a memory event.
 
 ---
 

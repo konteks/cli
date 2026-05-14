@@ -8,7 +8,7 @@ src
 ├── composition/        # Concrete wiring between controllers, actions, and providers.
 ├── contracts/          # Service and persistence boundaries that need substitution.
 │   ├── repositories/   # Repository interfaces consumed by actions.
-│   └── services/       # Service interfaces, such as mining and embedding contracts.
+│   └── services/       # Service interfaces, such as extraction and embedding contracts.
 ├── controllers/        # Thin CLI command handlers and MCP server registration.
 ├── middlewares/        # Cross-command guards such as CLI project initialization.
 ├── models/             # Core project, CLI, and memory data shapes.

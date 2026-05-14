@@ -3,7 +3,7 @@ import {
     listGrammarDefinitions,
     updateSelectedGrammarCache,
 } from '@/providers/extraction/engine/grammar-loader'
-import { createMineProgressReporter } from '@/providers/extraction/progress-reporter'
+import { createExtractionProgressReporter } from '@/providers/extraction/progress-reporter'
 import {
     loadProjectContext,
     writeProjectConfig,
@@ -64,7 +64,7 @@ export async function openConfigTui(project?: string): Promise<void> {
         return
     }
 
-    const progress = createMineProgressReporter()
+    const progress = createExtractionProgressReporter()
     try {
         const result = await updateSelectedGrammarCache(context, {
             onProgress: progress.report,

@@ -12,7 +12,7 @@ The second lifecycle phase. Use Build prompts to continue existing tasks or star
 
 ## Content Block
 
-A logically bounded section of code or text mined from a project artifact (technically known as a *chunk*). Content Blocks are the fine-grained units of knowledge used for semantic search.
+A logically bounded section of code or text extracted from a project artifact (technically known as a *chunk*). Content Blocks are the fine-grained units of knowledge used for semantic search.
 
 ## Context
 
@@ -20,7 +20,7 @@ Relevant project knowledge given to an agent so it can work without rediscoverin
 
 ## Derived Memory
 
-Knowledge automatically extracted (mined) from source code, documentation, and project structure. It is reproducible and can be rebuilt via a `repair` operation.
+Knowledge automatically extracted from source code, documentation, and project structure. It is reproducible and can be rebuilt via a `repair` operation.
 
 ## Diary
 
@@ -56,7 +56,7 @@ The Konteks system that extracts, stores, retrieves, and updates project memory.
 
 ## Module
 
-A high-level project area or architectural grouping identified from mined files.
+A high-level project area or architectural grouping identified from project files.
 
 ## Quality Label
 

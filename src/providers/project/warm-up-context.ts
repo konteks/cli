@@ -1,6 +1,6 @@
 import type { WarmUpContext, WarmUpHighlight } from '@/models/memory'
 import type { Project } from '@/models/project'
-import { readMineManifest } from '@/providers/extraction/engine/manifest'
+import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import type { SqliteAdapter } from '@/providers/persistence/sqlite/sqlite-adapter'
 import { estimateTextTokens } from '@/support/format/tokens'
@@ -15,7 +15,7 @@ import {
 export async function readWarmUpContext(
     context: Project,
 ): Promise<WarmUpContext> {
-    const manifest = await readMineManifest(context.memoryDir)
+    const manifest = await readExtractionManifest(context.memoryDir)
     if (!manifest) {
         return {
             architecture: [],
@@ -209,7 +209,7 @@ limit 40
 }
 
 function stableProjectSummary(
-    manifest: NonNullable<Awaited<ReturnType<typeof readMineManifest>>>,
+    manifest: NonNullable<Awaited<ReturnType<typeof readExtractionManifest>>>,
 ): string {
     const name = manifest.metadata.name ?? 'This project'
     const description = manifest.metadata.description

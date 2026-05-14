@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, spyOn } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { mineProject } from '@/providers/extraction/mine-project'
+import { extractProject } from '@/providers/extraction/extract-project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import { saveKonteksInput } from '@/providers/persistence/sqlite/save-store'
 import { loadProjectContext } from '@/providers/project/context'
@@ -35,7 +35,7 @@ describe('status command', () => {
         )
 
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
+        await extractProject(context, 'full', {
             treeSitterEngine: new FakeTreeSitterEngine() as never,
         })
         const adapter = await openProjectDatabase(context)
@@ -98,7 +98,7 @@ describe('status command', () => {
         )
 
         const context = await loadProjectContext(projectRoot)
-        await mineProject(context, 'full', {
+        await extractProject(context, 'full', {
             treeSitterEngine: new FakeTreeSitterEngine() as never,
         })
         await writeFile(

@@ -18,7 +18,7 @@ Konteks includes active measures to prevent sensitive information from entering 
 The `konteks_save` and `konteks_remember` tools perform a "Secret Check" before persisting any durable memory. If the content appears to contain patterns matching API keys, secrets, or common authentication tokens, the operation is blocked to prevent accidental leakage into the semantic graph.
 
 ### Respecting Ignore Rules
-Konteks rigorously respects your project's ignore rules. Files and directories listed in `.gitignore` or `.ignore` are skipped during the mining process, ensuring that environment files (like `.env`) or temporary artifacts are never indexed.
+Konteks rigorously respects your project's ignore rules. Files and directories listed in `.gitignore` or `.ignore` are skipped during the extraction process, ensuring that environment files (like `.env`) or temporary artifacts are never indexed.
 
 ## 3. Auditability: Transparency in Memory
 
