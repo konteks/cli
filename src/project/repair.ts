@@ -1,4 +1,7 @@
-import { createProjectExtractor } from '@/extraction/extract'
+import {
+    createProjectExtractor,
+    type ProjectExtractor,
+} from '@/extraction/extract'
 import type {
     ExtractionMode,
     ExtractProjectResponse,
@@ -8,6 +11,11 @@ import { createExtractionProgressReporter } from '@/providers/extraction/progres
 
 export type RepairMemoryOptions = {
     project?: string
+}
+
+export type RepairMemoryDependencies = {
+    confirmRepair?: () => Promise<boolean>
+    extractor?: ProjectExtractor
 }
 
 export type RepairMemoryResult =
@@ -22,16 +30,20 @@ export type RepairMemoryResult =
 
 export async function repairMemory(
     options: RepairMemoryOptions,
+    dependencies: RepairMemoryDependencies = {},
 ): Promise<RepairMemoryResult> {
+    const confirmRepair = dependencies.confirmRepair ?? confirmRepairPrompt
     if (!(await confirmRepair())) {
         return { mode: 'repair', ok: false, skipped: true }
     }
 
     const progress = createExtractionProgressReporter()
     try {
-        const extractor = createProjectExtractor({
-            onProgress: progress.report,
-        })
+        const extractor =
+            dependencies.extractor ??
+            createProjectExtractor({
+                onProgress: progress.report,
+            })
 
         const result = await extractor.execute({
             mode: 'reindex' as ExtractionMode,
@@ -47,7 +59,7 @@ export async function repairMemory(
     }
 }
 
-async function confirmRepair(): Promise<boolean> {
+async function confirmRepairPrompt(): Promise<boolean> {
     return await confirmInteractive(
         'Repair Konteks memory by rebuilding artifacts for this project?',
         true,

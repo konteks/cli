@@ -1,6 +1,6 @@
-import { readProjectStatus } from '@/composition/project-status'
 import type { ProjectStatus } from '@/contracts/services/project-status-reader'
 import type { GlobalCliOptions } from '@/models/cli'
+import { readProjectStatus } from '@/project/status'
 import { formatInteger } from '@/support/format/number'
 import {
     type ColorPalette,
