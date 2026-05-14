@@ -19,6 +19,9 @@ describe('CLI initialization middleware', () => {
         ['status'],
         ['config'],
         ['repair'],
+        ['backup', 'backup.tar.gz'],
+        ['memory', 'export', 'memory.json'],
+        ['memory', 'import', 'memory.json'],
         ['install-skills'],
         ['mcp'],
         ['mcp', 'tools'],
@@ -85,3 +88,19 @@ async function runKonteks(
         output: `${stdout}\n${stderr}`,
     }
 }
+
+it('allows restore to run before project memory is initialized', async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-cli-'))
+    tempDirs.push(projectRoot)
+
+    const result = await runKonteks([
+        '--project',
+        projectRoot,
+        'restore',
+        'missing.tar.gz',
+    ])
+
+    expect(result.exitCode).not.toBe(0)
+    expect(result.output).toContain(`Konteks v${VERSION}`)
+    expect(result.output).not.toContain('Konteks memory is not initialized')
+})

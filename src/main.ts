@@ -9,6 +9,12 @@ import { getToolDetailCommand } from '@/controllers/get-tool-detail'
 import { getToolsCommand } from '@/controllers/get-tools'
 import { initCommand } from '@/controllers/init'
 import { installSkillsCommand } from '@/controllers/install-skills'
+import {
+    backupMemoryCommand,
+    exportMemoryCommand,
+    importMemoryCommand,
+    restoreMemoryCommand,
+} from '@/controllers/memory-transfer'
 import { repairCommand } from '@/controllers/repair'
 import { startMcpServer } from '@/controllers/serve-mcp'
 import { ensureCliProjectInitialized } from '@/middlewares/cli-initialization'
@@ -30,21 +36,46 @@ type InitOptions = GlobalCliOptions & {
     grammar?: string[]
 }
 
+type MemoryExportOptions = GlobalCliOptions & {
+    includeInactive?: boolean
+}
+
+type MemoryImportOptions = GlobalCliOptions & {
+    dryRun?: boolean
+}
+
+type RestoreOptions = GlobalCliOptions & {
+    force?: boolean
+}
+
 type CliCommandHandlers = {
+    backupMemory: (
+        options: GlobalCliOptions,
+        outputPath: string,
+    ) => Promise<void>
     callMcpTool: (
         options: GlobalCliOptions,
         name: string,
         jsonInput?: string,
         callOptions?: McpCallOptions,
     ) => Promise<void>
+    exportMemory: (
+        options: MemoryExportOptions,
+        outputPath: string,
+    ) => Promise<void>
     getPromptDetail: (name: string, input?: string) => Promise<void>
     getPrompts: () => Promise<void>
     getStatus: (options: GlobalCliOptions) => Promise<void>
     getToolDetail: (name: string) => Promise<void>
     getTools: () => Promise<void>
+    importMemory: (
+        options: MemoryImportOptions,
+        inputPath: string,
+    ) => Promise<void>
     init: (options: InitOptions) => Promise<void>
     installSkills: (options: InstallSkillOptions) => Promise<void>
     repair: (options: GlobalCliOptions) => Promise<void>
+    restoreMemory: (options: RestoreOptions, inputPath: string) => Promise<void>
     startMcpServer: (options: GlobalCliOptions) => Promise<void>
 }
 
@@ -55,15 +86,19 @@ type CreateCliProgramOptions = {
 
 function createCliProgram(options: CreateCliProgramOptions = {}): Command {
     const handlers = {
+        backupMemory: backupMemoryCommand,
         callMcpTool: callMcpToolCommand,
+        exportMemory: exportMemoryCommand,
         getPromptDetail: getPromptDetailCommand,
         getPrompts: getPromptsCommand,
         getStatus: getStatusCommand,
         getToolDetail: getToolDetailCommand,
         getTools: getToolsCommand,
+        importMemory: importMemoryCommand,
         init: initCommand,
         installSkills: installSkillsCommand,
         repair: repairCommand,
+        restoreMemory: restoreMemoryCommand,
         startMcpServer,
         ...options.handlers,
     }
@@ -83,7 +118,7 @@ function createCliProgram(options: CreateCliProgramOptions = {}): Command {
             terminal.log(`Konteks v${VERSION}`)
         }
 
-        if (actionCommand.name() === 'init') {
+        if (new Set(['init', 'restore']).has(actionCommand.name())) {
             return
         }
 
@@ -126,6 +161,66 @@ function createCliProgram(options: CreateCliProgramOptions = {}): Command {
         .action(async () => {
             await handlers.repair(program.opts())
         })
+
+    const memory = program
+        .command('memory')
+        .description('Import or export portable durable memory.')
+
+    memory
+        .command('export')
+        .description('Export durable memories and diary entries to JSON.')
+        .argument('<file>', 'Output JSON file')
+        .option(
+            '--include-inactive',
+            'Include soft-deleted or suppressed durable memory.',
+        )
+        .action(
+            async (
+                outputPath: string,
+                memoryOptions: { includeInactive?: boolean },
+            ) => {
+                await handlers.exportMemory(
+                    { ...program.opts(), ...memoryOptions },
+                    outputPath,
+                )
+            },
+        )
+
+    memory
+        .command('import')
+        .description('Import durable memories and diary entries from JSON.')
+        .argument('<file>', 'Input JSON file')
+        .option('--dry-run', 'Validate and report counts without writing.')
+        .action(
+            async (inputPath: string, memoryOptions: { dryRun?: boolean }) => {
+                await handlers.importMemory(
+                    { ...program.opts(), ...memoryOptions },
+                    inputPath,
+                )
+            },
+        )
+
+    program
+        .command('backup')
+        .description('Create a full .konteks backup archive.')
+        .argument('<file>', 'Output .tar.gz file')
+        .action(async (outputPath: string) => {
+            await handlers.backupMemory(program.opts(), outputPath)
+        })
+
+    program
+        .command('restore')
+        .description('Restore a full .konteks backup archive.')
+        .argument('<file>', 'Input .tar.gz file')
+        .option('--force', 'Replace a non-empty memory directory.')
+        .action(
+            async (inputPath: string, restoreOptions: { force?: boolean }) => {
+                await handlers.restoreMemory(
+                    { ...program.opts(), ...restoreOptions },
+                    inputPath,
+                )
+            },
+        )
 
     const mcp = program
         .command('mcp')
@@ -205,10 +300,14 @@ function collectValues(value: string, previous: string[]): string[] {
 
 function shouldPrintCliHeader(commandName: string): boolean {
     return new Set([
+        'backup',
         'config',
+        'export',
+        'import',
         'init',
         'install-skills',
         'repair',
+        'restore',
         'status',
     ]).has(commandName)
 }

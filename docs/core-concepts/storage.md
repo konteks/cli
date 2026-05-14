@@ -87,6 +87,13 @@ Soft-deleted and suppressed items are hidden from normal recall without pretendi
 
 Derived memory can also be rebuilt from the repository. Durable memories are preserved unless the user explicitly asks to forget or suppress them.
 
+## 8. Portability and Backups
+
+Konteks supports two different ways to move memory:
+
+* **Durable memory export/import** writes observations and diary entries to a portable JSON file. Import merges those records into another project memory store and rebuilds retrieval indexes.
+* **Full backup/restore** creates an exact `.tar.gz` snapshot of the `.konteks/` directory. This is for local recovery and is more version-sensitive than durable export/import.
+
 ---
 
 **What is stored here?** Read [Memory Model](memory-model.md).  
