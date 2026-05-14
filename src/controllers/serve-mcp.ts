@@ -1,12 +1,12 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
+import { createToolHandlers } from '@/mcp/handlers'
+import { getKonteksPromptRegistrations } from '@/mcp/prompts'
 import {
-    createToolHandlers,
     getKonteksMcpInstructions,
-    getKonteksPromptRegistrations,
     getKonteksToolRegistrations,
-} from '@/composition/mcp-surface'
+} from '@/mcp/tools'
 import type { StartMcpServerOptions } from '@/models/mcp'
 import { VERSION } from '@/support/version'
 

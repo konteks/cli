@@ -4,7 +4,7 @@
 src
 ├── main.ts             # Commander CLI entrypoint and command registration.
 ├── assets/             # Packaged prompt templates and other static runtime assets.
-├── composition/        # MCP, skill installation, and memory transfer composition.
+├── composition/        # Skill installation and memory transfer composition.
 ├── contracts/          # Service and persistence boundaries that need substitution.
 │   ├── repositories/   # Repository interfaces consumed by workflows.
 │   └── services/       # Service interfaces, such as extraction and embedding contracts.
@@ -12,6 +12,7 @@ src
 ├── extraction/         # Extraction workflow orchestration and runtime wiring.
 ├── middlewares/        # Cross-command guards such as CLI project initialization.
 ├── memory/             # Memory feature workflows: recall, search, save, forget, warm-up, runtime wiring.
+├── mcp/                # MCP tool, prompt, handler, and dry-run orchestration.
 ├── models/             # Core project, CLI, and memory data shapes.
 ├── project/            # Project lifecycle workflows: init, status, repair, grammar selection.
 ├── providers/          # Local runtime capabilities.
@@ -33,23 +34,27 @@ src
 ## Code Flow
 
 The outer layers translate protocol concerns into application requests.
-Memory, extraction, and project lifecycle workflows live in dedicated feature
-folders. MCP, skill installation, and memory transfer still use `composition`.
-Providers contain concrete runtime details.
+Memory, extraction, MCP, and project lifecycle workflows live in dedicated
+feature folders. Skill installation and memory transfer still use
+`composition`. Providers contain concrete runtime details.
 
 ```mermaid
 graph LR
     E[entrypoint] --> C[controllers]
     C --> X[composition]
+    C --> Q[mcp]
     C --> J[project]
     X --> M[memory]
-    J --> G
+    Q --> M
+    J --> G[extraction]
+    Q --> K[contracts and models]
     G --> K
     M --> K
     J --> K
     X --> P[providers]
     G --> P
     M --> P
+    Q --> P
     J --> P
     P --> R[(filesystem, SQLite, assets, SDKs)]
     C --> S[support]
@@ -60,9 +65,10 @@ Layer responsibilities:
 
 - `main.ts` owns Commander registration and delegates to controllers.
 - Controllers adapt CLI or MCP input/output and call composed operations.
-- Composition owns MCP, skill installation, and memory transfer wiring.
+- Composition owns skill installation and memory transfer wiring.
 - Extraction owns project extraction workflow orchestration and project context loading.
 - Memory owns recall, search, save, forget, warm-up, and MCP project/database runtime helpers.
+- MCP owns tool/prompt listing, tool dispatch, response formatting, and dry-run orchestration.
 - Project owns init, status, repair, and grammar selection workflows.
 - Providers implement contracts and own filesystem, database, object storage, embedding, protocol-template, and SDK details.
 - Middleware handles cross-cutting entrypoint checks before controllers run.
@@ -73,6 +79,7 @@ Rules:
 - Do not put workflow or provider selection logic in controllers.
 - Keep memory workflow code in `src/memory`; do not split recall/save/search orchestration across actions and composition.
 - Keep extraction workflow code in `src/extraction`; do not split extraction orchestration across actions and composition.
+- Keep MCP tool, prompt, handler, and dry-run code in `src/mcp`; do not split MCP orchestration across composition.
 - Keep project lifecycle workflow code in `src/project`; do not split init/status/repair orchestration across actions and composition.
 - Providers must not import actions, controllers, or composition modules in production code.
 - Run `bun scripts/check-architecture-boundaries.ts` after refactors that move workflow ownership.

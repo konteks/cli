@@ -56,6 +56,17 @@ const rules = [
         ],
         root: 'src/project/',
     },
+    {
+        forbidden: [
+            '@/actions/',
+            '@/composition/',
+            '@/controllers/',
+            '../actions/',
+            '../composition/',
+            '../controllers/',
+        ],
+        root: 'src/mcp/',
+    },
 ] as const
 
 const offenders = productionFiles.flatMap(path => {

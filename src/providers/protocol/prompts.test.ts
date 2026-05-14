@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'bun:test'
-import {
-    getKonteksPrompt,
-    listKonteksPrompts,
-    listKonteksTools,
-} from '@/composition/mcp-surface'
+import { getKonteksPrompt, listKonteksPrompts } from '@/mcp/prompts'
+import { listKonteksTools } from '@/mcp/tools'
 
 function promptText(name: string, args: Record<string, string> = {}): string {
     const result = getKonteksPrompt(name, args)
