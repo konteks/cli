@@ -1,5 +1,6 @@
-import { afterEach, describe, expect, it } from 'bun:test'
+import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import * as os from 'node:os'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { loadProjectContext } from '@/providers/project/context'
@@ -27,6 +28,7 @@ class MockTreeSitterEngine {
 }
 
 afterEach(async () => {
+    mock.restore()
     await Promise.all(
         tempDirs
             .splice(0)
@@ -69,7 +71,17 @@ describe('grammar loader registry', () => {
     it('loads selected grammars from cache without downloading', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-grammar-'))
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, '.konteks', 'cache', 'grammars'), {
+        spyOn(os, 'homedir').mockReturnValue(projectRoot)
+        const grammarCacheDir = join(
+            projectRoot,
+            '.cache',
+            'konteks',
+            'grammars',
+        )
+        await mkdir(grammarCacheDir, {
+            recursive: true,
+        })
+        await mkdir(join(projectRoot, '.konteks'), {
             recursive: true,
         })
         await writeFile(
@@ -83,18 +95,9 @@ describe('grammar loader registry', () => {
                 },
             }),
         )
+        await writeFile(join(grammarCacheDir, 'typescript.wasm'), 'fake wasm')
         await writeFile(
-            join(
-                projectRoot,
-                '.konteks',
-                'cache',
-                'grammars',
-                'typescript.wasm',
-            ),
-            'fake wasm',
-        )
-        await writeFile(
-            join(projectRoot, '.konteks', 'cache', 'grammars', 'manifest.json'),
+            join(grammarCacheDir, 'manifest.json'),
             JSON.stringify({
                 grammars: {
                     typescript: {
@@ -119,13 +122,7 @@ describe('grammar loader registry', () => {
         expect(engine.loaded).toEqual([
             {
                 lang: 'typescript',
-                path: join(
-                    projectRoot,
-                    '.konteks',
-                    'cache',
-                    'grammars',
-                    'typescript.wasm',
-                ),
+                path: join(grammarCacheDir, 'typescript.wasm'),
             },
         ])
     })
