@@ -75,7 +75,7 @@ The manifest lets future extraction runs know what has already been seen. It pow
 
 ## 6. The Boundary: What Is Not Project Memory
 
-Embedding model files are cached outside the project memory directory. They are shared across projects so the same model does not need to be downloaded for every repository.
+Embedding model files and Tree-sitter grammar WASM files are cached outside the project memory directory. They are shared across projects so the same model or grammar does not need to be downloaded for every repository.
 
 This keeps `.konteks/` focused on project memory: the facts, summaries, retrieval data, events, and payloads that belong to this repository.
 

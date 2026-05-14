@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import * as os from 'node:os'
 import { basename, join } from 'node:path'
 import registryJson from '@/assets/grammars/registry.json' with { type: 'json' }
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
@@ -95,7 +96,7 @@ export async function initTreeSitterWithSelectedGrammars(
         total: selected.length,
     })
     await engine.init()
-    const cache = await readCacheManifest(project)
+    const cache = await readCacheManifest()
     const warnings: string[] = []
     const loaded: TreeSitterLanguage[] = []
 
@@ -105,18 +106,12 @@ export async function initTreeSitterWithSelectedGrammars(
             throw new Error(`Unknown Tree-sitter grammar selected: ${id}`)
         }
 
-        const loadedPath = await ensureCachedGrammar(
-            project,
-            definition,
-            cache,
-            {
-                forceUpdate: options.forceUpdate,
-                onProgress: options.onProgress,
-                updateTtlHours:
-                    project.config.extraction.grammars.updateTtlHours,
-            },
-        ).catch(async error => {
-            const cached = cachedGrammarPath(project, definition)
+        const loadedPath = await ensureCachedGrammar(definition, cache, {
+            forceUpdate: options.forceUpdate,
+            onProgress: options.onProgress,
+            updateTtlHours: project.config.extraction.grammars.updateTtlHours,
+        }).catch(async error => {
+            const cached = cachedGrammarPath(definition)
             if (await pathExists(cached)) {
                 const message = `Using cached ${definition.displayName} grammar; update failed: ${errorMessage(error)}`
                 warnings.push(message)
@@ -143,7 +138,7 @@ export async function initTreeSitterWithSelectedGrammars(
         })
     }
 
-    await writeCacheManifest(project, cache)
+    await writeCacheManifest(cache)
     options.onProgress?.({
         message: `Tree-sitter grammars ready: ${loaded.length} loaded`,
         phase: 'preparation',
@@ -163,7 +158,7 @@ export async function updateSelectedGrammarCache(
     const selected = normalizeSelectedGrammars(
         project.config.extraction.grammars.selected,
     )
-    const cache = await readCacheManifest(project)
+    const cache = await readCacheManifest()
     let updated = 0
     let reused = 0
 
@@ -173,7 +168,7 @@ export async function updateSelectedGrammarCache(
             throw new Error(`Unknown Tree-sitter grammar selected: ${id}`)
         }
         const before = cache.grammars[id]?.sha256
-        await ensureCachedGrammar(project, definition, cache, {
+        await ensureCachedGrammar(definition, cache, {
             forceUpdate: true,
             onProgress: options.onProgress,
             updateTtlHours: 0,
@@ -185,12 +180,11 @@ export async function updateSelectedGrammarCache(
         }
     }
 
-    await writeCacheManifest(project, cache)
+    await writeCacheManifest(cache)
     return { reused, updated }
 }
 
 async function ensureCachedGrammar(
-    project: Project,
     definition: GrammarDefinition,
     cache: GrammarCacheManifest,
     options: {
@@ -199,7 +193,7 @@ async function ensureCachedGrammar(
         updateTtlHours: number
     },
 ): Promise<string> {
-    const cachedPath = cachedGrammarPath(project, definition)
+    const cachedPath = cachedGrammarPath(definition)
     const entry = cache.grammars[definition.id]
     const cacheExists = await pathExists(cachedPath)
     const shouldCheck =
@@ -221,7 +215,7 @@ async function ensureCachedGrammar(
     })
     const bytes = await downloadBytes(url)
     const sha256 = sha256Hex(bytes)
-    await mkdir(grammarCacheDir(project), { recursive: true })
+    await mkdir(grammarCacheDir(), { recursive: true })
     await writeFile(cachedPath, bytes)
     cache.grammars[definition.id] = {
         checkedAt: new Date().toISOString(),
@@ -276,10 +270,8 @@ async function downloadBytes(url: string): Promise<Uint8Array> {
     return new Uint8Array(await response.arrayBuffer())
 }
 
-async function readCacheManifest(
-    project: Project,
-): Promise<GrammarCacheManifest> {
-    const path = grammarCacheManifestPath(project)
+async function readCacheManifest(): Promise<GrammarCacheManifest> {
+    const path = grammarCacheManifestPath()
     if (!(await pathExists(path))) {
         return { grammars: {}, version: 1 }
     }
@@ -297,30 +289,24 @@ async function readCacheManifest(
     }
 }
 
-async function writeCacheManifest(
-    project: Project,
-    cache: GrammarCacheManifest,
-): Promise<void> {
-    await mkdir(grammarCacheDir(project), { recursive: true })
+async function writeCacheManifest(cache: GrammarCacheManifest): Promise<void> {
+    await mkdir(grammarCacheDir(), { recursive: true })
     await writeFile(
-        grammarCacheManifestPath(project),
+        grammarCacheManifestPath(),
         `${JSON.stringify(cache, null, 2)}\n`,
     )
 }
 
-function cachedGrammarPath(
-    project: Project,
-    definition: GrammarDefinition,
-): string {
-    return join(grammarCacheDir(project), `${definition.id}.wasm`)
+function cachedGrammarPath(definition: GrammarDefinition): string {
+    return join(grammarCacheDir(), `${definition.id}.wasm`)
 }
 
-function grammarCacheManifestPath(project: Project): string {
-    return join(grammarCacheDir(project), 'manifest.json')
+function grammarCacheManifestPath(): string {
+    return join(grammarCacheDir(), 'manifest.json')
 }
 
-function grammarCacheDir(project: Project): string {
-    return join(project.memoryDir, 'cache', 'grammars')
+function grammarCacheDir(): string {
+    return join(os.homedir(), '.cache', 'konteks', 'grammars')
 }
 
 function normalizeSelectedGrammars(values: string[]): TreeSitterLanguage[] {
