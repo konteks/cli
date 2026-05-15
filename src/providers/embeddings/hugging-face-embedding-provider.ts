@@ -6,7 +6,9 @@ import type { EmbeddingProviderContract } from '@/contracts/services/embedding-p
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import { formatBytes } from '@/support/format/number'
 
-export class HuggingFaceEmbeddingProvider implements EmbeddingProviderContract {
+export default class HuggingFaceEmbeddingProvider
+    implements EmbeddingProviderContract
+{
     readonly model = 'Xenova/all-MiniLM-L6-v2'
     readonly dimensions = 384
 

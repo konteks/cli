@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { ObservationRow } from './observation-store'
-import { ObservationStore } from './observation-store'
+import ObservationStore from './observation-store'
 
 type CoveredTypes = [ObservationRow]
 

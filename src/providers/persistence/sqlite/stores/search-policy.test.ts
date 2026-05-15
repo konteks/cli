@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { loadProjectContext } from '@/providers/project/context'
 import { openProjectDatabase } from '../database'
-import { searchMemory } from '../search-store'
+import searchMemory from '../search-memory'
 
 const tempDirs: string[] = []
 

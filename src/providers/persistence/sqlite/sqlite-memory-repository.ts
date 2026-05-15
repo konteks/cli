@@ -15,12 +15,14 @@ import type {
     SaveResult,
 } from '@/models/memory'
 import type { Project } from '@/models/project'
-import type { DatabaseService } from './db'
-import { forgetMemory } from './forget-store'
-import { saveKonteksInput } from './save-store'
-import { searchMemory } from './search-store'
+import type DatabaseService from './database-service'
+import forgetMemory from './forget-memory'
+import saveKonteksInput from './save-konteks-input'
+import searchMemory from './search-memory'
 
-export class SQLiteMemoryRepository implements MemoryRepositoryContract {
+export default class SQLiteMemoryRepository
+    implements MemoryRepositoryContract
+{
     constructor(
         private readonly db: DatabaseService,
         private readonly project: Project,

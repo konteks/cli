@@ -1,21 +1,21 @@
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
-import { createToonStore } from '@/providers/persistence/objects/toon-store'
-import type { DatabaseService } from '@/providers/persistence/sqlite/db'
+import createToonStore from '@/providers/persistence/objects/create-toon-store'
+import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 import { reindexRetrievalDocumentFts } from '@/providers/persistence/sqlite/retrieval-documents'
 import { terminal } from '@/support/terminal/service'
+import type { ProjectMetadata } from './extract-project-metadata'
 import type { ScannedFile } from './file-scan'
 import { initTreeSitterWithSelectedGrammars } from './grammar-loader'
-import type { ProjectMetadata } from './metadata'
-import { rebuildModuleArtifacts } from './module-store'
 import persistPreparedFileSections from './persist-prepared-file-sections'
 import prepareFileSections from './prepare-file-sections'
+import rebuildModuleArtifacts from './rebuild-module-artifacts'
 import {
     clearExtractedSections,
     clearExtractedSectionsForPaths,
 } from './section-cleanup'
-import { TreeSitterEngine } from './tree-sitter-engine'
+import TreeSitterEngine from './tree-sitter-engine'
 
 type ExtractSectionsResult = {
     chunkCount: number

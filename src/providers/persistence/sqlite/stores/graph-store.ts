@@ -102,7 +102,7 @@ type HistoricalRelationRow = {
     object_summary: string | null
 }
 
-export class GraphStore {
+export default class GraphStore {
     private readonly adapter: SqliteAdapter
 
     constructor(

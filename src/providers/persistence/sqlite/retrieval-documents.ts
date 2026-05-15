@@ -1,5 +1,5 @@
 import { contentHash } from '@/providers/persistence/objects/content'
-import type { DatabaseService } from '@/providers/persistence/sqlite/db'
+import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 
 const maxChunkContentChars = 3000
 const maxEmbeddingTextChars = 2500

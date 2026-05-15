@@ -4,7 +4,7 @@ import type { McpProjectContext, StartMcpServerOptions } from '@/models/mcp'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import type { DatabaseService } from '@/providers/persistence/sqlite/db'
+import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
 
 type SaveProjectUpdate = NonNullable<SaveOptions['projectUpdate']>

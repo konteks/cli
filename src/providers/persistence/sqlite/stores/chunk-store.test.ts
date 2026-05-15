@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { ChunkRow } from './chunk-store'
-import { ChunkStore } from './chunk-store'
+import ChunkStore from './chunk-store'
 
 type CoveredTypes = [ChunkRow]
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { SourceRow } from './source-store'
-import { SourceStore } from './source-store'
+import SourceStore from './source-store'
 
 type CoveredTypes = [SourceRow]
 

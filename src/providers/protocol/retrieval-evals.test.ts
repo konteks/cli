@@ -7,8 +7,8 @@ import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import { loadProjectContext } from '@/providers/project/context'
-import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
-import { FakeTreeSitterEngine } from '@/support/fake/fake-tree-sitter-engine'
+import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
+import FakeTreeSitterEngine from '@/support/fake/fake-tree-sitter-engine'
 
 const tempDirs: string[] = []
 

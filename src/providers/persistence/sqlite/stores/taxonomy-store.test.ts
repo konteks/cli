@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { loadProjectContext } from '@/providers/project/context'
 import { openProjectDatabase } from '../database'
-import { TaxonomyStore } from './taxonomy-store'
+import TaxonomyStore from './taxonomy-store'
 
 const tempDirs: string[] = []
 

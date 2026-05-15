@@ -5,8 +5,8 @@ import { join } from 'node:path'
 import { callKonteksTool } from '@/mcp/handlers'
 import { extractProject } from '@/providers/extraction/extract-project'
 import { loadProjectContext } from '@/providers/project/context'
-import { FakeEmbeddingProvider } from '@/support/fake/fake-embedding-provider'
-import { FakeTreeSitterEngine } from '@/support/fake/fake-tree-sitter-engine'
+import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
+import FakeTreeSitterEngine from '@/support/fake/fake-tree-sitter-engine'
 
 function mcpOptions(project: string) {
     return {

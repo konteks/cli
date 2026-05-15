@@ -10,7 +10,7 @@ export type ObservationRow = {
     created_at: string
 }
 
-export class ObservationStore {
+export default class ObservationStore {
     constructor(
         private readonly adapter: SqliteAdapter,
         private readonly db?: KonteksDatabase,

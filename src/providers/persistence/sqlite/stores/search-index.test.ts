@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { loadProjectContext } from '@/providers/project/context'
 import { openProjectDatabase } from '../database'
 import { ensureSearchIndex, hasSearchIndex } from '../search-index'
-import { searchMemory } from '../search-store'
+import searchMemory from '../search-memory'
 
 const tempDirs: string[] = []
 

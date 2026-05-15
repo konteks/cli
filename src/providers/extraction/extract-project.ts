@@ -7,10 +7,12 @@ import type {
     ExtractProjectResponse,
 } from '@/models/extraction'
 import type { Project } from '@/models/project'
-import { generateTargetEmbeddings } from '@/providers/embeddings/embedding-pipeline'
+import generateTargetEmbeddings from '@/providers/embeddings/generate-target-embeddings'
+import extractProjectMetadata from '@/providers/extraction/engine/extract-project-metadata'
 import extractSections from '@/providers/extraction/engine/extract-sections'
 import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import { scanProjectFilesWithDiagnostics } from '@/providers/extraction/engine/file-scan'
+import formatProjectSummaryToon from '@/providers/extraction/engine/format-project-summary-toon'
 import type {
     ExtractionManifest,
     ExtractionMode,
@@ -19,13 +21,11 @@ import {
     readExtractionManifest,
     writeExtractionManifest,
 } from '@/providers/extraction/engine/manifest'
-import { extractProjectMetadata } from '@/providers/extraction/engine/metadata'
 import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
-import { formatProjectSummaryToon } from '@/providers/extraction/engine/toon-summary'
-import type { TreeSitterEngine } from '@/providers/extraction/engine/tree-sitter-engine'
-import { createToonStore } from '@/providers/persistence/objects/toon-store'
+import type TreeSitterEngine from '@/providers/extraction/engine/tree-sitter-engine'
+import createToonStore from '@/providers/persistence/objects/create-toon-store'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import type { DatabaseService } from '@/providers/persistence/sqlite/db'
+import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 
 export async function extractProject(
     project: Project,

@@ -1,4 +1,4 @@
-import type { DatabaseService } from '@/providers/persistence/sqlite/db'
+import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 import { deleteRetrievalDocuments } from '@/providers/persistence/sqlite/retrieval-documents'
 
 /**

@@ -1,7 +1,7 @@
-import type { DatabaseService } from '@/providers/persistence/sqlite/db'
+import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 import { upsertRetrievalDocument } from '@/providers/persistence/sqlite/retrieval-documents'
 import { indexSearchDocument } from '@/providers/persistence/sqlite/search-index'
-import type { TaxonomyStore } from '@/providers/persistence/sqlite/stores/taxonomy-store'
+import type TaxonomyStore from '@/providers/persistence/sqlite/stores/taxonomy-store'
 import type { PreparedFile } from './prepare-file-sections'
 import { EXTRACTED_FILE_SOURCE_TYPE } from './source-types'
 

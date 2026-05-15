@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { FakeEmbeddingProvider } from './fake-embedding-provider'
+import FakeEmbeddingProvider from './fake-embedding-provider'
 
 describe('support/fake/fake-embedding-provider', () => {
     it('returns deterministic normalized vectors with the configured dimensions', async () => {

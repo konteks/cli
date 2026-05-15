@@ -2,11 +2,11 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { drizzle } from 'drizzle-orm/sqlite-proxy'
 import type { Project } from '@/models/project'
-import { DatabaseService } from './db'
-import { runMigrations } from './migrations'
+import DatabaseService from './database-service'
+import openWasmSqliteAdapter from './open-wasm-sqlite-adapter'
+import runMigrations from './run-migrations'
 import * as schema from './schema'
 import { ensureSearchIndex } from './search-index'
-import { openWasmSqliteAdapter } from './wasm-sqlite-adapter'
 
 export function projectDatabasePath(context: Project): string {
     return join(context.memoryDir, 'memory.sqlite')

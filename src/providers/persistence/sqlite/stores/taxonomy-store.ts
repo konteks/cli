@@ -51,7 +51,7 @@ type PathRow = {
     name_path: string
 }
 
-export class TaxonomyStore {
+export default class TaxonomyStore {
     constructor(private readonly adapter: SqliteAdapter) {}
 
     async upsertNode(input: TaxonomyNodeInput): Promise<TaxonomyNode> {
