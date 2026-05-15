@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { chunkFile } from './chunking'
+import sectionFile from './section-file'
 
 const file = {
     contentHash: 'hash',
@@ -8,9 +8,9 @@ const file = {
     sizeBytes: 100,
 }
 
-describe('chunkFile', () => {
-    it('creates stable symbol anchors for heuristic code chunks', async () => {
-        const chunks = await chunkFile(
+describe('sectionFile', () => {
+    it('creates stable symbol anchors for heuristic code sections', async () => {
+        const sections = await sectionFile(
             file,
             `
 export function alpha() {
@@ -21,40 +21,51 @@ export const beta = 2
 `,
         )
 
-        expect(chunks.map(chunk => chunk.anchor)).toEqual(['alpha', 'beta'])
-        expect(chunks.every(chunk => chunk.anchorType === 'symbol')).toBe(true)
+        expect(sections.map(section => section.anchor)).toEqual([
+            'alpha',
+            'beta',
+        ])
+        expect(sections.every(section => section.anchorType === 'symbol')).toBe(
+            true,
+        )
     })
 
     it('creates heading and JSON path anchors', async () => {
-        const markdown = await chunkFile(
+        const markdown = await sectionFile(
             { ...file, path: 'README.md' },
             '# Intro\nHello\n\n## Usage\nRun it\n',
         )
-        const json = await chunkFile(
+        const json = await sectionFile(
             { ...file, path: 'package.json' },
             '{"name":"fixture","scripts":{"test":"bun test"}}',
         )
 
-        expect(markdown.map(chunk => chunk.anchor)).toEqual(['intro', 'usage'])
-        expect(json.map(chunk => chunk.anchor)).toEqual(['name', 'scripts'])
+        expect(markdown.map(section => section.anchor)).toEqual([
+            'intro',
+            'usage',
+        ])
+        expect(json.map(section => section.anchor)).toEqual(['name', 'scripts'])
     })
 
-    it('chunks Markdown without a loaded Tree-sitter grammar', async () => {
-        const chunks = await chunkFile(
+    it('sections Markdown without a loaded Tree-sitter grammar', async () => {
+        const sections = await sectionFile(
             { ...file, path: 'README.md' },
             '# Intro\nHello\n\n## Usage\nRun it\n',
         )
 
-        expect(chunks).toHaveLength(2)
-        expect(chunks.map(chunk => chunk.kind)).toEqual([
+        expect(sections).toHaveLength(2)
+        expect(sections.map(section => section.kind)).toEqual([
             'markdown',
             'markdown',
         ])
-        expect(chunks.map(chunk => chunk.heading)).toEqual(['Intro', 'Usage'])
+        expect(sections.map(section => section.heading)).toEqual([
+            'Intro',
+            'Usage',
+        ])
     })
 
-    it('chunks non-JS Tree-sitter symbols from parsed metadata', async () => {
-        const chunks = await chunkFile(
+    it('sections non-JS Tree-sitter symbols from parsed metadata', async () => {
+        const sections = await sectionFile(
             { ...file, path: 'main.py' },
             'def build_user():\n    return {}\n',
             undefined,
@@ -75,8 +86,8 @@ export const beta = 2
             },
         )
 
-        expect(chunks.map(chunk => chunk.anchor)).toEqual(['build_user'])
-        expect(chunks[0]?.metadata).toMatchObject({
+        expect(sections.map(section => section.anchor)).toEqual(['build_user'])
+        expect(sections[0]?.metadata).toMatchObject({
             nodeKind: 'function',
             parserEngine: 'tree_sitter',
             parserStatus: 'ok',
@@ -84,7 +95,7 @@ export const beta = 2
     })
 
     it('marks supported code as Tree-sitter processed when no symbols are found', async () => {
-        const chunks = await chunkFile(
+        const sections = await sectionFile(
             { ...file, path: 'src/empty.ts' },
             'export {}\n',
             undefined,
@@ -96,9 +107,9 @@ export const beta = 2
             },
         )
 
-        expect(chunks).toHaveLength(1)
-        expect(chunks[0]?.anchor).toBe('file')
-        expect(chunks[0]?.metadata).toMatchObject({
+        expect(sections).toHaveLength(1)
+        expect(sections[0]?.anchor).toBe('file')
+        expect(sections[0]?.metadata).toMatchObject({
             parserEngine: 'tree_sitter',
             parserStatus: 'ok',
         })

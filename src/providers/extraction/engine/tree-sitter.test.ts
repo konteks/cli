@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { chunkFile } from './chunking'
+import sectionFile from './section-file'
 import { TreeSitterEngine } from './tree-sitter-engine'
 
 describe('TreeSitterEngine', () => {
@@ -14,7 +14,7 @@ describe('TreeSitterEngine', () => {
 
     it('falls back to heuristic when no parsed metadata is provided', async () => {
         const code = 'export const x = 1\nexport const y = 2'
-        const chunks = await chunkFile(
+        const sections = await sectionFile(
             {
                 contentHash: 'hash',
                 mtimeMs: 0,
@@ -24,8 +24,8 @@ describe('TreeSitterEngine', () => {
             code,
         )
 
-        expect(chunks.length).toBe(2)
-        expect(chunks[0].anchor).toBe('x')
-        expect(chunks[1].anchor).toBe('y')
+        expect(sections.length).toBe(2)
+        expect(sections[0].anchor).toBe('x')
+        expect(sections[1].anchor).toBe('y')
     })
 })

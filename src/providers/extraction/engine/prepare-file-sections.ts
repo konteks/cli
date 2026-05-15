@@ -11,13 +11,13 @@ import {
     detectLanguage,
     extractTopics,
 } from '@/providers/project/source-classification'
-import { isExtractedChunkSuppressed } from './chunk-cleanup'
-import { chunkFile } from './chunking'
 import type { ScannedFile } from './file-scan'
 import { getGrammarForPath } from './grammar-loader'
+import { isExtractedSectionSuppressed } from './section-cleanup'
+import sectionFile from './section-file'
 import type { CodeMetadata, TreeSitterEngine } from './tree-sitter-engine'
 
-type PreparedChunk = {
+type PreparedSection = {
     anchor: string
     anchorType: string
     contentInline?: string
@@ -42,7 +42,7 @@ type PreparedChunk = {
 }
 
 export type PreparedFile = {
-    chunks: PreparedChunk[]
+    sections: PreparedSection[]
     language: string
     parserEngine: string
     parserStatus: string
@@ -54,9 +54,9 @@ export type PreparedFile = {
     truncated: boolean
 }
 
-const defaultMaxChunksPerFile = 200
+const defaultMaxSectionsPerFile = 200
 
-export async function prepareFileChunks(input: {
+export default async function prepareFileSections(input: {
     db: DatabaseService
     context: Project
     engine?: TreeSitterEngine
@@ -86,39 +86,39 @@ export async function prepareFileChunks(input: {
         parserStatus = parsedMetadata ? 'ok' : 'unavailable'
     }
 
-    const allChunks = await chunkFile(
+    const allSections = await sectionFile(
         input.file,
         content,
         input.engine,
         parsedMetadata,
     )
-    const chunks = allChunks
-        .map(chunk => ({
-            ...chunk,
+    const sections = allSections
+        .map(section => ({
+            ...section,
             metadata: {
                 parserEngine,
                 parserStatus,
-                ...chunk.metadata,
+                ...section.metadata,
             },
         }))
-        .slice(0, defaultMaxChunksPerFile)
+        .slice(0, defaultMaxSectionsPerFile)
 
     const sourceTopics = extractTopics(
         input.file.path,
-        chunks.map(chunk => chunk.summary).join('\n'),
+        sections.map(section => section.summary).join('\n'),
     )
-    const preparedChunks: PreparedChunk[] = []
+    const preparedSections: PreparedSection[] = []
 
-    for (const [index, chunk] of chunks.entries()) {
-        const stored = await storePayload(chunk.content, {
+    for (const [index, section] of sections.entries()) {
+        const stored = await storePayload(section.content, {
             inlineMaxBytes: input.context.config.storage.inlinePayloadMaxBytes,
             toonStore: input.toonStore,
         })
         if (
-            await isExtractedChunkSuppressed(
+            await isExtractedSectionSuppressed(
                 input.db,
                 input.file.path,
-                chunk.anchor,
+                section.anchor,
                 stored.contentHash,
             )
         ) {
@@ -126,50 +126,50 @@ export async function prepareFileChunks(input: {
         }
 
         const topics = extractTopics(
-            `${input.file.path} ${chunk.anchor}`,
-            `${chunk.summary}\n${chunk.content}`,
+            `${input.file.path} ${section.anchor}`,
+            `${section.summary}\n${section.content}`,
         )
-        preparedChunks.push({
-            anchor: chunk.anchor,
-            anchorType: chunk.anchorType,
+        preparedSections.push({
+            anchor: section.anchor,
+            anchorType: section.anchorType,
             contentHash: stored.contentHash,
             contentInline: stored.contentInline,
-            endLine: chunk.endLine,
-            heading: chunk.heading,
+            endLine: section.endLine,
+            heading: section.heading,
             id: chunkIdFor(
                 input.file.path,
                 index,
-                chunk.anchor,
+                section.anchor,
                 stored.contentHash,
             ),
-            jsonPath: chunk.jsonPath,
-            kind: chunk.kind,
-            metadata: chunk.metadata ?? {},
-            path: chunk.path,
+            jsonPath: section.jsonPath,
+            kind: section.kind,
+            metadata: section.metadata ?? {},
+            path: section.path,
             payloadRef: stored.payloadRef,
             retrievalTexts: buildChunkRetrievalTexts({
-                anchor: chunk.anchor,
-                content: chunk.content,
+                anchor: section.anchor,
+                content: section.content,
                 language,
-                path: chunk.path,
+                path: section.path,
                 sourceRole,
-                summary: chunk.summary,
+                summary: section.summary,
                 topics,
             }),
-            startLine: chunk.startLine,
-            summary: chunk.summary,
-            symbol: chunk.symbol,
+            startLine: section.startLine,
+            summary: section.summary,
+            symbol: section.symbol,
             tokenCount: stored.tokenCount,
             topics,
         })
     }
 
     return {
-        chunks: preparedChunks,
         language,
         parserEngine,
         parserStatus,
         path: input.file.path,
+        sections: preparedSections,
         sourceId: sourceIdForPath(input.file.path),
         sourceMetadata: {
             exports: parsedMetadata?.exports ?? [],
@@ -179,7 +179,7 @@ export async function prepareFileChunks(input: {
         },
         sourceRole,
         sourceTopics,
-        truncated: allChunks.length > chunks.length,
+        truncated: allSections.length > sections.length,
     }
 }
 
@@ -193,5 +193,6 @@ function chunkIdFor(
     anchor: string,
     hash: string,
 ): string {
+    // Compatibility: extracted sections are still persisted with legacy `chunk_*` IDs.
     return `chunk_${contentHash(`${path}:${index}:${anchor}:${hash}`).slice(0, 32)}`
 }

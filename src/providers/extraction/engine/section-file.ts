@@ -1,7 +1,7 @@
 import type { ScannedFile } from './file-scan'
 import type { CodeMetadata, TreeSitterEngine } from './tree-sitter-engine'
 
-type ExtractedChunk = {
+type ExtractedSection = {
     anchor: string
     anchorType: 'file' | 'heading' | 'json_path' | 'symbol'
     content: string
@@ -16,48 +16,48 @@ type ExtractedChunk = {
     metadata?: Record<string, unknown>
 }
 
-export async function chunkFile(
+export default async function sectionFile(
     file: ScannedFile,
     content: string,
     engine?: TreeSitterEngine,
     parsedMetadata?: CodeMetadata,
-): Promise<ExtractedChunk[]> {
+): Promise<ExtractedSection[]> {
     const trimmed = content.trim()
     if (!trimmed) {
         return []
     }
 
     if (isMarkdown(file.path)) {
-        return chunkMarkdown(file.path, trimmed)
+        return sectionMarkdown(file.path, trimmed)
     }
 
     if (isJson(file.path)) {
-        return chunkJson(file.path, trimmed)
+        return sectionJson(file.path, trimmed)
     }
 
     if (isCode(file.path)) {
         if (parsedMetadata) {
-            return chunkCodeWithTreeSitter(file.path, trimmed, parsedMetadata)
+            return sectionCodeWithTreeSitter(file.path, trimmed, parsedMetadata)
         }
         if (engine) {
             const metadata = await engine.parse(file.path, content)
             if (metadata) {
-                return chunkCodeWithTreeSitter(file.path, trimmed, metadata)
+                return sectionCodeWithTreeSitter(file.path, trimmed, metadata)
             }
         }
-        return chunkCodeHeuristic(file.path, trimmed)
+        return sectionCodeHeuristic(file.path, trimmed)
     }
 
-    return chunkByWords(file.path, trimmed, 'text')
+    return sectionByWords(file.path, trimmed, 'text')
 }
 
-function chunkCodeWithTreeSitter(
+function sectionCodeWithTreeSitter(
     path: string,
     content: string,
     metadata: CodeMetadata,
-): ExtractedChunk[] {
+): ExtractedSection[] {
     if (metadata.symbols.length === 0) {
-        return chunkByWords(path, content, 'code', {
+        return sectionByWords(path, content, 'code', {
             metadata: {
                 parserEngine: 'tree_sitter',
                 parserStatus: 'ok',
@@ -66,7 +66,7 @@ function chunkCodeWithTreeSitter(
     }
 
     return metadata.symbols.flatMap(symbol => {
-        return chunkByWords(path, symbol.content, 'code', {
+        return sectionByWords(path, symbol.content, 'code', {
             anchor: symbol.name,
             anchorType: 'symbol',
             endLine: symbol.endLine,
@@ -82,17 +82,20 @@ function chunkCodeWithTreeSitter(
     })
 }
 
-function chunkCodeHeuristic(path: string, content: string): ExtractedChunk[] {
+function sectionCodeHeuristic(
+    path: string,
+    content: string,
+): ExtractedSection[] {
     const lines = content.split('\n')
-    const chunks: ExtractedChunk[] = []
+    const sections: ExtractedSection[] = []
     let current: string[] = []
     let currentSymbol: string | undefined
 
     for (const line of lines) {
         const symbol = extractCodeSymbol(line)
         if (symbol && current.length > 0) {
-            chunks.push(
-                ...chunkByWords(path, current.join('\n'), 'code', {
+            sections.push(
+                ...sectionByWords(path, current.join('\n'), 'code', {
                     anchor: currentSymbol,
                     anchorType: currentSymbol ? 'symbol' : 'file',
                     symbol: currentSymbol,
@@ -106,8 +109,8 @@ function chunkCodeHeuristic(path: string, content: string): ExtractedChunk[] {
     }
 
     if (current.length > 0) {
-        chunks.push(
-            ...chunkByWords(path, current.join('\n'), 'code', {
+        sections.push(
+            ...sectionByWords(path, current.join('\n'), 'code', {
                 anchor: currentSymbol,
                 anchorType: currentSymbol ? 'symbol' : 'file',
                 symbol: currentSymbol,
@@ -115,16 +118,18 @@ function chunkCodeHeuristic(path: string, content: string): ExtractedChunk[] {
         )
     }
 
-    return chunks.length > 0 ? chunks : chunkByWords(path, content, 'code')
+    return sections.length > 0
+        ? sections
+        : sectionByWords(path, content, 'code')
 }
 
-function chunkMarkdown(path: string, content: string): ExtractedChunk[] {
+function sectionMarkdown(path: string, content: string): ExtractedSection[] {
     const sections = content.split(/(?=^#{1,6}\s+)/gmu).filter(Boolean)
-    const chunks = sections.length > 0 ? sections : [content]
+    const sectionTexts = sections.length > 0 ? sections : [content]
 
-    return chunks.flatMap(section => {
+    return sectionTexts.flatMap(section => {
         const heading = section.match(/^#{1,6}\s+(.+)$/mu)?.[1]?.trim()
-        return chunkByWords(path, section, 'markdown', {
+        return sectionByWords(path, section, 'markdown', {
             anchor: heading ? slugify(heading) : undefined,
             anchorType: heading ? 'heading' : 'file',
             heading,
@@ -133,12 +138,12 @@ function chunkMarkdown(path: string, content: string): ExtractedChunk[] {
     })
 }
 
-function chunkJson(path: string, content: string): ExtractedChunk[] {
+function sectionJson(path: string, content: string): ExtractedSection[] {
     try {
         const parsed = JSON.parse(content) as unknown
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
             return Object.entries(parsed).flatMap(([key, value]) =>
-                chunkByWords(
+                sectionByWords(
                     path,
                     JSON.stringify({ [key]: value }, null, 2),
                     'json',
@@ -152,19 +157,19 @@ function chunkJson(path: string, content: string): ExtractedChunk[] {
             )
         }
     } catch {
-        return chunkByWords(path, content, 'json')
+        return sectionByWords(path, content, 'json')
     }
 
-    return chunkByWords(path, content, 'json')
+    return sectionByWords(path, content, 'json')
 }
 
-function chunkByWords(
+function sectionByWords(
     path: string,
     content: string,
     kind: string,
     metadata: {
         anchor?: string
-        anchorType?: ExtractedChunk['anchorType']
+        anchorType?: ExtractedSection['anchorType']
         heading?: string
         jsonPath?: string
         symbol?: string
@@ -172,7 +177,7 @@ function chunkByWords(
         endLine?: number
         metadata?: Record<string, unknown>
     } = {},
-): ExtractedChunk[] {
+): ExtractedSection[] {
     const words = content.split(/\s+/u).filter(Boolean)
     const maxWords = 650
     const anchor = metadata.anchor ?? 'file'
@@ -196,12 +201,12 @@ function chunkByWords(
         ]
     }
 
-    const chunks: ExtractedChunk[] = []
+    const sections: ExtractedSection[] = []
     for (let index = 0; index < words.length; index += maxWords) {
         const body = words.slice(index, index + maxWords).join(' ')
-        const chunkAnchor = `${anchor}-${Math.floor(index / maxWords) + 1}`
-        chunks.push({
-            anchor: chunkAnchor,
+        const sectionAnchor = `${anchor}-${Math.floor(index / maxWords) + 1}`
+        sections.push({
+            anchor: sectionAnchor,
             anchorType,
             content: body,
             endLine: metadata.endLine,
@@ -216,7 +221,7 @@ function chunkByWords(
         })
     }
 
-    return chunks
+    return sections
 }
 
 function extractCodeSymbol(line: string): string | undefined {
@@ -238,7 +243,7 @@ function summarize(
         ?.trim()
     const label = symbol ? `${path}#${symbol}` : path
     const preview = firstLine ? `: ${firstLine.slice(0, 120)}` : ''
-    return `${kind} chunk from ${label}${preview}`
+    return `${kind} section from ${label}${preview}`
 }
 
 function isMarkdown(path: string): boolean {

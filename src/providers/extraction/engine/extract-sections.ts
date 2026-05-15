@@ -5,26 +5,26 @@ import { createToonStore } from '@/providers/persistence/objects/toon-store'
 import type { DatabaseService } from '@/providers/persistence/sqlite/db'
 import { reindexRetrievalDocumentFts } from '@/providers/persistence/sqlite/retrieval-documents'
 import { terminal } from '@/support/terminal/service'
-import {
-    clearExtractedChunks,
-    clearExtractedChunksForPaths,
-} from './chunk-cleanup'
-import { persistPreparedFileChunks } from './chunk-persistence'
-import { prepareFileChunks } from './chunk-preparation'
 import type { ScannedFile } from './file-scan'
 import { initTreeSitterWithSelectedGrammars } from './grammar-loader'
 import type { ProjectMetadata } from './metadata'
 import { rebuildModuleArtifacts } from './module-store'
+import persistPreparedFileSections from './persist-prepared-file-sections'
+import prepareFileSections from './prepare-file-sections'
+import {
+    clearExtractedSections,
+    clearExtractedSectionsForPaths,
+} from './section-cleanup'
 import { TreeSitterEngine } from './tree-sitter-engine'
 
-type ExtractChunksResult = {
+type ExtractSectionsResult = {
     chunkCount: number
     filesTruncatedByChunkLimit: number
     parserFallbackFiles: number
     parserUsedFiles: number
 }
 
-export async function extractChunks(
+export default async function extractSections(
     db: DatabaseService,
     context: Project,
     files: ScannedFile[],
@@ -36,7 +36,7 @@ export async function extractChunks(
         onProgress?: ExtractionProgressReporter
         treeSitterEngine?: TreeSitterEngine
     } = {},
-): Promise<ExtractChunksResult> {
+): Promise<ExtractSectionsResult> {
     const progress = options.onProgress
     const toonStore = createToonStore(context.memoryDir)
     let engine: TreeSitterEngine | undefined
@@ -66,7 +66,7 @@ export async function extractChunks(
         })
     }
 
-    let chunkCount = 0
+    let sectionCount = 0
     let filesTruncatedByChunkLimit = 0
     let parserFallbackFiles = 0
     let parserUsedFiles = 0
@@ -79,12 +79,12 @@ export async function extractChunks(
     })
     await db.transaction(async tx => {
         if (options.mode === 'changed') {
-            await clearExtractedChunksForPaths(tx, [
+            await clearExtractedSectionsForPaths(tx, [
                 ...files.map(file => file.path),
                 ...(options.deletedPaths ?? []),
             ])
         } else if (options.mode !== 'resume') {
-            await clearExtractedChunks(tx)
+            await clearExtractedSections(tx)
         }
         const rootNode = await tx.taxonomy.upsertNode({
             name: 'Project Files',
@@ -102,7 +102,7 @@ export async function extractChunks(
         })
     }
     for (const [fileIndex, file] of files.entries()) {
-        const preparedFile = await prepareFileChunks({
+        const preparedFile = await prepareFileSections({
             context,
             db,
             engine,
@@ -115,19 +115,21 @@ export async function extractChunks(
             preparedFile.parserStatus === 'ok'
         ) {
             parserUsedFiles += 1
-        } else if (preparedFile.chunks.some(chunk => chunk.kind === 'code')) {
+        } else if (
+            preparedFile.sections.some(section => section.kind === 'code')
+        ) {
             parserFallbackFiles += 1
         }
 
         if (preparedFile.truncated) {
             filesTruncatedByChunkLimit += 1
         }
-        if (preparedFile.chunks.length === 0) {
+        if (preparedFile.sections.length === 0) {
             continue
         }
 
         await db.transaction(async tx => {
-            chunkCount += await persistPreparedFileChunks({
+            sectionCount += await persistPreparedFileSections({
                 db: tx,
                 extractedAt,
                 preparedFile,
@@ -136,9 +138,9 @@ export async function extractChunks(
             })
         })
         progress?.({
-            chunkCount,
+            chunkCount: sectionCount,
             current: fileIndex + 1,
-            message: `Extracted ${file.path} (${preparedFile.chunks.length} sections)`,
+            message: `Extracted ${file.path} (${preparedFile.sections.length} sections)`,
             path: file.path,
             phase: 'chunks',
             status: 'progress',
@@ -148,8 +150,8 @@ export async function extractChunks(
 
     if (files.length > 0) {
         progress?.({
-            chunkCount,
-            message: `Extracted ${chunkCount} sections`,
+            chunkCount: sectionCount,
+            message: `Extracted ${sectionCount} sections`,
             phase: 'chunks',
             status: 'done',
             total: files.length,
@@ -169,7 +171,7 @@ export async function extractChunks(
             eventType: 'project_mined',
             id: `event_${contentHash(`${context.projectRoot}:${extractedAt}`).slice(0, 32)}`,
             subjectType: 'project',
-            summary: `Extracted ${files.length} files into ${chunkCount} sections.`,
+            summary: `Extracted ${files.length} files into ${sectionCount} sections.`,
         })
     })
     progress?.({
@@ -179,7 +181,7 @@ export async function extractChunks(
     })
 
     return {
-        chunkCount,
+        chunkCount: sectionCount,
         filesTruncatedByChunkLimit,
         parserFallbackFiles,
         parserUsedFiles,

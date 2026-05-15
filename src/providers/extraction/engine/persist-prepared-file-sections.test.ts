@@ -5,8 +5,8 @@ import { join } from 'node:path'
 import type { Project } from '@/models/project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import type { DatabaseService } from '@/providers/persistence/sqlite/db'
-import { persistPreparedFileChunks } from './chunk-persistence'
-import type { PreparedFile } from './chunk-preparation'
+import persistPreparedFileSections from './persist-prepared-file-sections'
+import type { PreparedFile } from './prepare-file-sections'
 
 const tempDirs: string[] = []
 
@@ -18,15 +18,15 @@ afterEach(async () => {
     )
 })
 
-describe('providers/extraction/engine/chunk-persistence', () => {
-    it('stores source, chunk, taxonomy, search, and retrieval rows', async () => {
+describe('providers/extraction/engine/persist-prepared-file-sections', () => {
+    it('stores source, section, taxonomy, search, and retrieval rows', async () => {
         const { db } = await createProject()
         try {
             const rootNode = await db.taxonomy.upsertNode({
                 name: 'Project Files',
             })
 
-            const count = await persistPreparedFileChunks({
+            const count = await persistPreparedFileSections({
                 db,
                 extractedAt: '2026-01-01T00:00:00.000Z',
                 preparedFile: preparedFile(),
@@ -98,7 +98,11 @@ async function createProject(): Promise<{
 
 function preparedFile(): PreparedFile {
     return {
-        chunks: [
+        language: 'typescript',
+        parserEngine: 'heuristic',
+        parserStatus: 'not_applicable',
+        path: 'src/example.ts',
+        sections: [
             {
                 anchor: 'alpha',
                 anchorType: 'symbol',
@@ -112,15 +116,11 @@ function preparedFile(): PreparedFile {
                     embeddingText: 'embedding text',
                     ftsText: 'fts text',
                 },
-                summary: 'code chunk from src/example.ts#alpha',
+                summary: 'code section from src/example.ts#alpha',
                 tokenCount: 5,
                 topics: ['example'],
             },
         ],
-        language: 'typescript',
-        parserEngine: 'heuristic',
-        parserStatus: 'not_applicable',
-        path: 'src/example.ts',
         sourceId: 'source_fixture',
         sourceMetadata: { parserEngine: 'heuristic' },
         sourceRole: 'source',
