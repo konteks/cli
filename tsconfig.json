@@ -13,12 +13,12 @@
             "@/*": ["./src/*"]
         },
         "resolveJsonModule": true,
-        "rootDir": "src",
+        "rootDir": ".",
         "skipLibCheck": true,
         "strict": true,
         "target": "es2022",
         "types": ["bun"],
         "verbatimModuleSyntax": true
     },
-    "include": ["src/**/*.ts"]
+    "include": ["src/**/*.ts", "tests/**/*.ts"]
 }

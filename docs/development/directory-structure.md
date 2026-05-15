@@ -29,6 +29,10 @@ src
     ├── object/         # Generic object/value helpers.
     ├── terminal/       # Terminal output and color helpers.
     └── version.ts      # Package version metadata.
+
+tests
+├── features/           # Comprehensive behavior, integration, CLI, MCP, storage, and workflow tests.
+└── units/              # Focused important unit tests for small policies, mappers, schemas, and helpers.
 ```
 
 ## Code Flow
@@ -79,6 +83,11 @@ Layer responsibilities:
 
 Rules:
 
+- Tests live under `tests/features` or `tests/units`; do not place `*.test.ts` files under `src`.
+- Prefer feature tests for user-visible behavior, MCP protocol behavior, CLI flows, persistence workflows, extraction, and memory lifecycle behavior.
+- Group feature tests by behavior or workflow instead of mirroring one test file per source file.
+- Use unit tests only for important pure logic that is cheaper and clearer to verify directly than through a feature test.
+- Do not add placeholder tests that only assert exports, type compilation, static command metadata, or `typeof` contracts.
 - Command files should default-export their main command class, and the filename should reflect that class.
 - Place subcommands under a folder named after the parent command.
 - Command files that configure Commander arguments/options should import the `Command` type from `@/commands/_base-command`, not directly from `commander`.
