@@ -12,7 +12,7 @@ src
 ├── extraction/         # Extraction workflow orchestration and runtime wiring.
 ├── middlewares/        # Cross-command guards such as CLI project initialization.
 ├── memory/             # Memory feature workflows: recall, search, save, forget, warm-up, runtime wiring.
-├── mcp/                # MCP tool, prompt, handler, and dry-run orchestration.
+├── mcp/                # MCP tools, prompts, handler dispatch, and dry-run orchestration.
 ├── models/             # Core project, CLI, and memory data shapes.
 ├── project/            # Project lifecycle workflows: init, status, repair, grammar selection.
 ├── providers/          # Local runtime capabilities.
@@ -21,7 +21,7 @@ src
 │   ├── extraction/     # Project extraction orchestration and engine internals.
 │   ├── persistence/    # SQLite, query stores, migrations, and object payload storage.
 │   ├── project/        # Project context resolution helpers.
-│   └── protocol/       # MCP schemas, tool surface, and response formatting.
+│   └── protocol/       # Prompt templates and protocol-facing prompt fixtures.
 └── support/            # Project-owned generic utilities and test support.
     ├── fake/           # Test doubles shared across provider/command tests.
     ├── format/         # Number and token formatting/estimation helpers.
@@ -71,7 +71,7 @@ Layer responsibilities:
 - Composition owns skill installation and memory transfer wiring.
 - Extraction owns project extraction workflow orchestration and project context loading.
 - Memory owns recall, search, save, forget, warm-up, and MCP project/database runtime helpers.
-- MCP owns tool/prompt listing, tool dispatch, response formatting, and dry-run orchestration.
+- MCP owns tool classes, schemas, tool output formatting, prompt listing, tool dispatch, and dry-run orchestration.
 - Project owns init, status, repair, and grammar selection workflows.
 - Providers implement contracts and own filesystem, database, object storage, embedding, protocol-template, and SDK details.
 - Middleware handles cross-cutting entrypoint checks before command handlers run.
@@ -86,6 +86,9 @@ Rules:
 - Keep memory workflow code in `src/memory`; do not split recall/save/search orchestration across command classes and composition.
 - Keep extraction workflow code in `src/extraction`; do not split extraction orchestration across command classes and composition.
 - Keep MCP tool, prompt, handler, and dry-run code in `src/mcp`; do not split MCP orchestration across composition.
+- MCP tools live as one default-export class per file under `src/mcp/tools`; each tool owns its name, description, annotations, input schema, validation, execution, and output formatting.
+- `src/mcp/tools/index.ts` should stay a simple ordered registry of tool instances.
+- Shared MCP tool utilities should live under `src/mcp/tools/utils` only when reused by multiple tool classes.
 - Keep project lifecycle workflow code in `src/project`; do not split init/status/repair orchestration across command classes and composition.
 - Providers must not import commands or composition modules in production code.
 - Run `bun scripts/check-architecture-boundaries.ts` after refactors that move workflow ownership.

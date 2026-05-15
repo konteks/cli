@@ -54,6 +54,9 @@ bun run test
 - Command files should default-export their main command class, and filenames should reflect that class.
 - Place subcommands under a folder named after the parent command, such as `src/commands/mcp`.
 - Import the Commander `Command` type from `@/commands/_base-command` inside command classes.
+- MCP tools should live as one default-export class per file under `src/mcp/tools`.
+- Each MCP tool class should own its name, description, annotations, input schema, execution, and output formatting.
+- Keep `src/mcp/tools/index.ts` as the simple ordered MCP tool registry.
 - Do not add provider barrel files. Import provider modules directly.
 - Providers should not import commands or composition modules.
 - Commands should call feature workflows or composition modules instead of concrete providers.
