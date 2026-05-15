@@ -1,20 +1,4 @@
-import { z } from 'zod'
-
-export const warmUpInputSchema = z.object({
-    maxTokens: z.number().int().min(1).max(8000).optional(),
-    topic: z.string().optional(),
-})
-
-export const recallInputSchema = z.object({
-    includeSources: z.boolean().optional(),
-    maxTokens: z.number().int().min(1).max(8000).optional(),
-    task: z.string().min(1, 'task is required'),
-})
-
-export const searchInputSchema = z.object({
-    limit: z.number().int().min(1).max(50).optional(),
-    query: z.string().min(1, 'query is required'),
-})
+import z from 'zod'
 
 const memoryKindSchema = z.enum([
     'blocker',
@@ -62,7 +46,7 @@ const saveBatchMemorySchema = saveMemorySchema.extend({
     type: z.literal('memory').default('memory'),
 })
 
-export const saveInputSchema = z.discriminatedUnion('type', [
+const SAVE_INPUT_SCHEMA = z.discriminatedUnion('type', [
     saveMemorySchema,
     z.object({
         memories: z
@@ -78,13 +62,4 @@ export const saveInputSchema = z.discriminatedUnion('type', [
     }),
 ])
 
-export const forgetInputSchema = z
-    .object({
-        id: z.string().optional(),
-        mode: z.enum(['hard_delete', 'invalidate', 'soft_delete']).optional(),
-        query: z.string().optional(),
-        reason: z.string().optional(),
-    })
-    .refine(data => data.id || data.query, {
-        message: 'Either id or query is required.',
-    })
+export default SAVE_INPUT_SCHEMA

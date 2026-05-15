@@ -1,6 +1,6 @@
 import type { BaseCommandInput } from '@/commands/_base-command'
 import BaseCommand from '@/commands/_base-command'
-import { listKonteksTools } from '@/mcp/tools'
+import mcpTools from '@/mcp/tools'
 import printJson from '@/support/cli/print-json'
 
 export default class ToolsCommand extends BaseCommand {
@@ -12,6 +12,6 @@ export default class ToolsCommand extends BaseCommand {
     }
 
     override async handle(_input: BaseCommandInput): Promise<void> {
-        printJson(listKonteksTools())
+        printJson(mcpTools)
     }
 }

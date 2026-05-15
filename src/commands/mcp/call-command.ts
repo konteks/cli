@@ -2,7 +2,7 @@ import type { BaseCommandInput, Command } from '@/commands/_base-command'
 import BaseCommand from '@/commands/_base-command'
 import dryRunKonteksTool from '@/mcp/dry-run-konteks-tool'
 import { callKonteksTool } from '@/mcp/handlers'
-import { listKonteksTools } from '@/mcp/tools'
+import mcpTools from '@/mcp/tools'
 import { parseJsonInput } from '@/support/cli/print-json'
 import printMcpCallResult from '@/support/cli/print-mcp-call-result'
 
@@ -39,7 +39,7 @@ export default class CallCommand extends BaseCommand<
         McpCallOptions
     >): Promise<void> {
         const input = parseJsonInput(args[1])
-        const tool = listKonteksTools().find(item => item.name === args[0])
+        const tool = mcpTools.find(item => item.name === args[0])
 
         if (!tool) {
             throw new Error(`Unknown Konteks tool: ${args[0]}`)

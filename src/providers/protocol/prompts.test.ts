@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { getKonteksPrompt, listKonteksPrompts } from '@/mcp/prompts'
-import { listKonteksTools } from '@/mcp/tools'
+import mcpTools from '@/mcp/tools'
 
 function promptText(name: string, args: Record<string, string> = {}): string {
     const result = getKonteksPrompt(name, args)
@@ -10,13 +10,11 @@ function promptText(name: string, args: Record<string, string> = {}): string {
 
 describe('MCP prompts', () => {
     it('does not expose a status tool', () => {
-        expect(listKonteksTools().map(tool => tool.name)).not.toContain(
-            'konteks_status',
-        )
+        expect(mcpTools.map(tool => tool.name)).not.toContain('konteks_status')
     })
 
     it('exposes tools in the documented MCP API order', () => {
-        expect(listKonteksTools().map(tool => tool.name)).toEqual([
+        expect(mcpTools.map(tool => tool.name)).toEqual([
             'konteks_warm_up',
             'konteks_recall',
             'konteks_save',
