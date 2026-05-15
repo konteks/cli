@@ -42,7 +42,9 @@ bun run test
 ## Code Guidelines
 
 - Keep changes small and focused.
-- Put tests next to the code they cover using the existing `*.test.ts` pattern.
+- Put behavior and integration coverage under `tests/features`.
+- Put focused important unit coverage under `tests/units`.
+- Do not add `*.test.ts` files under `src`.
 - Follow the current module boundaries:
   - `src/main.ts` owns the Commander entrypoint and command registration loop.
   - `src/commands` holds CLI command classes, nested subcommands, `BaseCommand`, and command registry lists.

@@ -2,12 +2,18 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 const forbiddenPatterns = [
+    /declares the public CLI metadata/u,
+    /exposes (the|its) .*entrypoint/u,
     /exposes its runtime exports/u,
     /exposes type exports/u,
+    /matches the public runtime contract/u,
+    /compiles .*type/u,
+    /compiles representative .*contracts/u,
+    /type exports/u,
     /expect\(true\)\.toBe\(true\)/u,
 ]
 
-const offenders = walk('src')
+const offenders = walk('tests')
     .filter(path => path.endsWith('.test.ts'))
     .flatMap(path => {
         const content = readFileSync(path, 'utf8')
