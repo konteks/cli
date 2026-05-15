@@ -7,7 +7,7 @@ import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import type { DatabaseService } from '@/providers/persistence/sqlite/db'
-import { extractChunks } from './chunk-store'
+import extractSections from './extract-sections'
 import type { ScannedFile } from './file-scan'
 
 const tempDirs: string[] = []
@@ -20,8 +20,8 @@ afterEach(async () => {
     )
 })
 
-describe('providers/extraction/engine/chunk-store', () => {
-    it('extracts markdown chunks and reports progress totals', async () => {
+describe('providers/extraction/engine/extract-sections', () => {
+    it('extracts markdown sections and reports progress totals', async () => {
         const text = '# Intro\nHello\n\n## Usage\nRun it\n'
         const { context, db } = await createProject({
             path: 'README.md',
@@ -29,7 +29,7 @@ describe('providers/extraction/engine/chunk-store', () => {
         })
         const events: ExtractionProgressEvent[] = []
         try {
-            const result = await extractChunks(
+            const result = await extractSections(
                 db,
                 context,
                 [scannedFile('README.md', text)],
@@ -59,15 +59,15 @@ describe('providers/extraction/engine/chunk-store', () => {
         }
     })
 
-    it('does not clear existing extracted chunks in resume mode', async () => {
+    it('does not clear existing extracted sections in resume mode', async () => {
         const { context, db } = await createProject({
             path: 'README.md',
             text: '# Intro\nHello\n',
         })
         try {
-            await seedExtractedChunk(db, 'README.md')
+            await seedExtractedSection(db, 'README.md')
 
-            await extractChunks(db, context, [], '2026-01-01T00:00:00.000Z', {
+            await extractSections(db, context, [], '2026-01-01T00:00:00.000Z', {
                 mode: 'resume',
             })
 
@@ -87,9 +87,9 @@ describe('providers/extraction/engine/chunk-store', () => {
             text: '# Intro\nHello\n',
         })
         try {
-            await seedExtractedChunk(db, 'src/deleted.ts')
+            await seedExtractedSection(db, 'src/deleted.ts')
 
-            await extractChunks(db, context, [], '2026-01-01T00:00:00.000Z', {
+            await extractSections(db, context, [], '2026-01-01T00:00:00.000Z', {
                 deletedPaths: ['src/deleted.ts'],
                 mode: 'changed',
             })
@@ -144,7 +144,7 @@ function scannedFile(path: string, text: string): ScannedFile {
     }
 }
 
-async function seedExtractedChunk(
+async function seedExtractedSection(
     db: DatabaseService,
     path: string,
 ): Promise<void> {
@@ -177,7 +177,7 @@ async function seedExtractedChunk(
         source_id: 'source_existing',
         source_role: 'source',
         start_line: null,
-        summary: 'existing chunk',
+        summary: 'existing section',
         symbol: null,
         token_count: 1,
         topics_json: JSON.stringify([]),

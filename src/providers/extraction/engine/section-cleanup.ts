@@ -1,13 +1,18 @@
 import type { DatabaseService } from '@/providers/persistence/sqlite/db'
 import { deleteRetrievalDocuments } from '@/providers/persistence/sqlite/retrieval-documents'
 
-export async function isExtractedChunkSuppressed(
+/**
+ * Compatibility cleanup: extraction code calls these units "sections", but
+ * existing storage still records them in `chunks` and related `target_type =
+ * 'chunk'` rows. These deletes intentionally use the legacy storage names.
+ */
+export async function isExtractedSectionSuppressed(
     db: DatabaseService,
     path: string,
     anchor: string,
     contentHashValue: string,
 ): Promise<boolean> {
-    // "Mined" is legacy terminology; current code calls this extraction, but the persisted table stays stable.
+    // "Mined" is legacy terminology; persisted compatibility keeps the table name stable.
     const rows = await db.adapter.query<{ content_hash: string }>(
         `
 select content_hash
@@ -23,7 +28,9 @@ limit 1
     return rows.length > 0
 }
 
-export async function clearExtractedChunks(db: DatabaseService): Promise<void> {
+export async function clearExtractedSections(
+    db: DatabaseService,
+): Promise<void> {
     const adapter = db.adapter
     await recordExtractedSuppressions(db)
     await adapter.execute(`
@@ -68,7 +75,7 @@ where type = 'mined_file';
 `)
 }
 
-export async function clearExtractedChunksForPaths(
+export async function clearExtractedSectionsForPaths(
     db: DatabaseService,
     paths: string[],
 ): Promise<void> {

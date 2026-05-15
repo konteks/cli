@@ -8,8 +8,8 @@ import { createToonStore } from '@/providers/persistence/objects/toon-store'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import type { DatabaseService } from '@/providers/persistence/sqlite/db'
 import { FakeTreeSitterEngine } from '@/support/fake/fake-tree-sitter-engine'
-import { prepareFileChunks } from './chunk-preparation'
 import type { ScannedFile } from './file-scan'
+import prepareFileSections from './prepare-file-sections'
 
 const tempDirs: string[] = []
 
@@ -21,14 +21,14 @@ afterEach(async () => {
     )
 })
 
-describe('providers/extraction/engine/chunk-preparation', () => {
-    it('prepares source metadata and stable chunk identifiers', async () => {
+describe('providers/extraction/engine/prepare-file-sections', () => {
+    it('prepares source metadata and stable section identifiers', async () => {
         const { context, db } = await createProject({
             path: 'src/example.ts',
             text: 'export const alpha = 1\n',
         })
         try {
-            const prepared = await prepareFileChunks({
+            const prepared = await prepareFileSections({
                 context,
                 db,
                 engine: new FakeTreeSitterEngine() as never,
@@ -41,13 +41,13 @@ describe('providers/extraction/engine/chunk-preparation', () => {
                 parserEngine: 'tree_sitter',
                 parserStatus: 'ok',
             })
-            expect(prepared.chunks).toHaveLength(1)
-            expect(prepared.chunks[0]?.id).toMatch(/^chunk_/u)
-            expect(prepared.chunks[0]?.metadata).toMatchObject({
+            expect(prepared.sections).toHaveLength(1)
+            expect(prepared.sections[0]?.id).toMatch(/^chunk_/u)
+            expect(prepared.sections[0]?.metadata).toMatchObject({
                 parserEngine: 'tree_sitter',
                 parserStatus: 'ok',
             })
-            expect(prepared.chunks[0]?.retrievalTexts.ftsText).toContain(
+            expect(prepared.sections[0]?.retrievalTexts.ftsText).toContain(
                 'src/example.ts',
             )
         } finally {
@@ -55,7 +55,7 @@ describe('providers/extraction/engine/chunk-preparation', () => {
         }
     })
 
-    it('stores large chunk content out of line when inline limit is small', async () => {
+    it('stores large section content out of line when inline limit is small', async () => {
         const text = `# Large\n${'large content '.repeat(80)}`
         const { context, db } = await createProject({
             inlinePayloadMaxBytes: 16,
@@ -63,34 +63,34 @@ describe('providers/extraction/engine/chunk-preparation', () => {
             text,
         })
         try {
-            const prepared = await prepareFileChunks({
+            const prepared = await prepareFileSections({
                 context,
                 db,
                 file: scannedFile('README.md', text),
                 toonStore: createToonStore(context.memoryDir),
             })
 
-            expect(prepared.chunks[0]?.contentInline).toBeUndefined()
-            expect(prepared.chunks[0]?.payloadRef).toMatch(/^objects\//u)
+            expect(prepared.sections[0]?.contentInline).toBeUndefined()
+            expect(prepared.sections[0]?.payloadRef).toMatch(/^objects\//u)
         } finally {
             await db.close()
         }
     })
 
-    it('skips chunks that match stored suppressions', async () => {
+    it('skips sections that match stored suppressions', async () => {
         const text = '# Suppressed\nDo not index this section.\n'
         const { context, db } = await createProject({
             path: 'README.md',
             text,
         })
         try {
-            const first = await prepareFileChunks({
+            const first = await prepareFileSections({
                 context,
                 db,
                 file: scannedFile('README.md', text),
                 toonStore: createToonStore(context.memoryDir),
             })
-            expect(first.chunks).toHaveLength(1)
+            expect(first.sections).toHaveLength(1)
 
             await db.adapter.execute(
                 `
@@ -111,14 +111,14 @@ insert into mined_suppressions (
                 ],
             )
 
-            const suppressed = await prepareFileChunks({
+            const suppressed = await prepareFileSections({
                 context,
                 db,
                 file: scannedFile('README.md', text),
                 toonStore: createToonStore(context.memoryDir),
             })
 
-            expect(suppressed.chunks).toEqual([])
+            expect(suppressed.sections).toEqual([])
         } finally {
             await db.close()
         }
@@ -130,7 +130,7 @@ async function createProject(input: {
     path: string
     text: string
 }): Promise<{ context: Project; db: DatabaseService }> {
-    const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-chunks-'))
+    const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-sections-'))
     tempDirs.push(projectRoot)
     await mkdir(join(projectRoot, '.konteks'), { recursive: true })
     await mkdir(join(projectRoot, input.path, '..'), { recursive: true })

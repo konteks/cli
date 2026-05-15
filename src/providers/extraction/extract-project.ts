@@ -8,7 +8,7 @@ import type {
 } from '@/models/extraction'
 import type { Project } from '@/models/project'
 import { generateTargetEmbeddings } from '@/providers/embeddings/embedding-pipeline'
-import { extractChunks } from '@/providers/extraction/engine/chunk-store'
+import extractSections from '@/providers/extraction/engine/extract-sections'
 import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import { scanProjectFilesWithDiagnostics } from '@/providers/extraction/engine/file-scan'
 import type {
@@ -124,7 +124,7 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
             status: 'done',
             total: filesToExtract.length,
         })
-        const extractedChunks = await extractChunks(
+        const extractedSections = await extractSections(
             db,
             context,
             filesToExtract,
@@ -146,7 +146,7 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
                   { onProgress: progress },
               )
             : { embeddedCount: 0, reusedCount: 0 }
-        const totalChunkCount = await readTotalChunkCount(db)
+        const totalSectionCount = await readTotalSectionCount(db)
         await db.close()
         const toonStore = createToonStore(context.memoryDir)
         progress?.({
@@ -173,13 +173,13 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
         const manifest: ExtractionManifest = {
             diagnostics: {
                 ...scan.diagnostics,
-                chunkCount: totalChunkCount,
+                chunkCount: totalSectionCount,
                 embeddedCount: embeddingRun.embeddedCount,
                 embeddingReusedCount: embeddingRun.reusedCount,
                 filesTruncatedByChunkLimit:
-                    extractedChunks.filesTruncatedByChunkLimit,
-                parserFallbackFiles: extractedChunks.parserFallbackFiles,
-                parserUsedFiles: extractedChunks.parserUsedFiles,
+                    extractedSections.filesTruncatedByChunkLimit,
+                parserFallbackFiles: extractedSections.parserFallbackFiles,
+                parserUsedFiles: extractedSections.parserUsedFiles,
             },
             fileCount: files.length,
             files,
@@ -197,16 +197,16 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
         })
         await writeExtractionManifest(context.memoryDir, manifest)
         progress?.({
-            chunkCount: extractedChunks.chunkCount,
+            chunkCount: extractedSections.chunkCount,
             embeddedCount: embeddingRun.embeddedCount,
-            message: `Extraction complete: ${totalChunkCount} sections, ${embeddingRun.embeddedCount} indexed, ${embeddingRun.reusedCount} unchanged`,
+            message: `Extraction complete: ${totalSectionCount} sections, ${embeddingRun.embeddedCount} indexed, ${embeddingRun.reusedCount} unchanged`,
             phase: 'done',
             reusedCount: embeddingRun.reusedCount,
             status: 'done',
         })
 
         return {
-            chunkCount: totalChunkCount,
+            chunkCount: totalSectionCount,
             deletedFilePaths: deletedPaths,
             embeddedCount: embeddingRun.embeddedCount,
             embeddingReusedCount: embeddingRun.reusedCount,
@@ -280,7 +280,8 @@ where sources.type = ?
     return new Set(rows.map(row => row.path))
 }
 
-async function readTotalChunkCount(db: DatabaseService): Promise<number> {
+async function readTotalSectionCount(db: DatabaseService): Promise<number> {
+    // Compatibility: extracted sections are persisted in the legacy `chunks` table.
     const rows = await db.adapter.query<{ count: number }>(
         'select count(*) as count from chunks',
     )

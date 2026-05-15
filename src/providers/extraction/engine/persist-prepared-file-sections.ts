@@ -2,10 +2,16 @@ import type { DatabaseService } from '@/providers/persistence/sqlite/db'
 import { upsertRetrievalDocument } from '@/providers/persistence/sqlite/retrieval-documents'
 import { indexSearchDocument } from '@/providers/persistence/sqlite/search-index'
 import type { TaxonomyStore } from '@/providers/persistence/sqlite/stores/taxonomy-store'
-import type { PreparedFile } from './chunk-preparation'
+import type { PreparedFile } from './prepare-file-sections'
 import { EXTRACTED_FILE_SOURCE_TYPE } from './source-types'
 
-export async function persistPreparedFileChunks(input: {
+/**
+ * Compatibility boundary: extraction code calls these units "sections", but
+ * persisted storage still uses the legacy "chunk" term. Do not rename the
+ * `chunks` table, `chunk_*` IDs, `targetType: 'chunk'`, or manifest fields
+ * without an explicit migration and compatibility plan.
+ */
+export default async function persistPreparedFileSections(input: {
     db: DatabaseService
     extractedAt: string
     preparedFile: PreparedFile
@@ -32,59 +38,59 @@ export async function persistPreparedFileChunks(input: {
         preparedFile.path,
     )
 
-    for (const chunk of preparedFile.chunks) {
+    for (const section of preparedFile.sections) {
         await db.chunks.insert({
-            anchor: chunk.anchor,
-            anchor_type: chunk.anchorType,
-            content_hash: chunk.contentHash,
-            content_inline: chunk.contentInline ?? null,
-            end_line: chunk.endLine ?? null,
+            anchor: section.anchor,
+            anchor_type: section.anchorType,
+            content_hash: section.contentHash,
+            content_inline: section.contentInline ?? null,
+            end_line: section.endLine ?? null,
             entities_json: JSON.stringify([]),
-            heading: chunk.heading ?? null,
-            id: chunk.id,
-            json_path: chunk.jsonPath ?? null,
-            kind: chunk.kind,
+            heading: section.heading ?? null,
+            id: section.id,
+            json_path: section.jsonPath ?? null,
+            kind: section.kind,
             language: preparedFile.language,
-            metadata_json: JSON.stringify(chunk.metadata ?? {}),
-            path: chunk.path,
-            payload_ref: chunk.payloadRef ?? null,
+            metadata_json: JSON.stringify(section.metadata ?? {}),
+            path: section.path,
+            payload_ref: section.payloadRef ?? null,
             source_id: preparedFile.sourceId,
             source_role: preparedFile.sourceRole,
-            start_line: chunk.startLine ?? null,
-            summary: chunk.summary,
-            symbol: chunk.symbol ?? null,
-            token_count: chunk.tokenCount,
-            topics_json: JSON.stringify(chunk.topics),
+            start_line: section.startLine ?? null,
+            summary: section.summary,
+            symbol: section.symbol ?? null,
+            token_count: section.tokenCount,
+            topics_json: JSON.stringify(section.topics),
         })
 
         await taxonomy.linkTarget({
             nodeId: taxonomyNode.id,
-            targetId: chunk.id,
+            targetId: section.id,
             targetType: 'chunk',
         })
         await indexSearchDocument(db.adapter, {
-            content: chunk.contentInline ?? chunk.summary,
+            content: section.contentInline ?? section.summary,
             createdAt: extractedAt,
-            id: chunk.id,
-            kind: chunk.kind,
-            task: chunk.path,
+            id: section.id,
+            kind: section.kind,
+            task: section.path,
             type: 'chunk',
         })
         await upsertRetrievalDocument(db, {
-            anchor: chunk.anchor,
-            embeddingText: chunk.retrievalTexts.embeddingText,
-            ftsText: chunk.retrievalTexts.ftsText,
-            path: chunk.path,
+            anchor: section.anchor,
+            embeddingText: section.retrievalTexts.embeddingText,
+            ftsText: section.retrievalTexts.ftsText,
+            path: section.path,
             sourceId: preparedFile.sourceId,
             sourceRole: preparedFile.sourceRole,
-            summary: chunk.summary,
-            targetId: chunk.id,
+            summary: section.summary,
+            targetId: section.id,
             targetType: 'chunk',
             updatedAt: extractedAt,
         })
     }
 
-    return preparedFile.chunks.length
+    return preparedFile.sections.length
 }
 
 async function ensurePathTaxonomy(
