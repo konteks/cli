@@ -1,14 +1,13 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import z from 'zod'
-import { createToolHandlers } from '@/mcp/handlers'
 import { getKonteksPromptRegistrations } from '@/mcp/prompts'
-import {
-    getKonteksMcpInstructions,
-    getKonteksToolRegistrations,
-} from '@/mcp/tools'
+import mcpTools from '@/mcp/tools'
 import type { StartMcpServerOptions } from '@/models/mcp'
 import { VERSION } from '@/support/version'
+
+const MCP_INSTRUCTIONS =
+    'Use prompts for the Warm Up -> Build -> Save flow. Use konteks_warm_up at session start, konteks_recall as supplemental Build context, and call konteks_save with structured durable memories plus one diary entry during Save.'
 
 export default async function startMcpServer(
     options: StartMcpServerOptions,
@@ -19,37 +18,35 @@ export default async function startMcpServer(
             version: VERSION,
         },
         {
-            instructions: getKonteksMcpInstructions(),
+            instructions: MCP_INSTRUCTIONS,
         },
     )
 
-    registerKonteksTools(options, server)
-    registerKonteksPrompts(server)
+    /**
+     * REGISTER MCP TOOLS
+     */
+    mcpTools.forEach(mpcTool => {
+        server.registerTool(
+            mpcTool.name,
+            {
+                annotations: mpcTool.annotations,
+                description: mpcTool.description,
+                // biome-ignore lint/suspicious/noExplicitAny: compatibility cast
+                inputSchema: mpcTool.inputSchema as any,
+            },
+            (input: unknown) => mpcTool.handle(options, input),
+        )
+    })
+
+    /**
+     * REGISTER MCP PROMPTS
+     */
+    registerMcpPrompts(server)
 
     await server.connect(new StdioServerTransport())
 }
 
-function registerKonteksTools(
-    options: StartMcpServerOptions,
-    server: McpServer,
-): void {
-    const handlers = createToolHandlers(options)
-
-    getKonteksToolRegistrations().forEach(tool => {
-        server.registerTool(
-            tool.name,
-            {
-                annotations: tool.annotations,
-                description: tool.description,
-                // biome-ignore lint/suspicious/noExplicitAny: compatibility cast
-                inputSchema: tool.inputSchema as any,
-            },
-            (input: unknown) => handlers[tool.name](input),
-        )
-    })
-}
-
-function registerKonteksPrompts(server: McpServer): void {
+function registerMcpPrompts(server: McpServer): void {
     getKonteksPromptRegistrations().forEach(template => {
         const argsSchema: Record<string, z.ZodTypeAny> = {}
         for (const arg of template.args) {

@@ -1,6 +1,6 @@
 import type { BaseCommandInput, Command } from '@/commands/_base-command'
 import BaseCommand from '@/commands/_base-command'
-import { listKonteksTools } from '@/mcp/tools'
+import mcpTools from '@/mcp/tools'
 import printJson from '@/support/cli/print-json'
 
 export default class ToolCommand extends BaseCommand<[string]> {
@@ -16,7 +16,7 @@ export default class ToolCommand extends BaseCommand<[string]> {
     }
 
     override async handle({ args }: BaseCommandInput<[string]>): Promise<void> {
-        const tool = listKonteksTools().find(item => item.name === args[0])
+        const tool = mcpTools.find(item => item.name === args[0])
 
         if (!tool) {
             throw new Error(`Unknown Konteks tool: ${args[0]}`)

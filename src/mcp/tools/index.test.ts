@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'bun:test'
-import { KONTEKS_TOOL_SURFACE, MCP_INSTRUCTIONS } from './tool-surface'
+import mcpTools from '.'
+import BaseMcpTool from './_base-mcp-tool'
 
-describe('providers/protocol/tool-surface', () => {
-    it('documents the warm up, recall, save, search, and forget tools', () => {
-        expect(KONTEKS_TOOL_SURFACE.map(tool => tool.name)).toEqual([
+describe('mcp/tools', () => {
+    it('registers MCP tools in API order', () => {
+        expect(mcpTools.map(tool => tool.name)).toEqual([
             'konteks_warm_up',
             'konteks_recall',
             'konteks_save',
@@ -11,7 +12,7 @@ describe('providers/protocol/tool-surface', () => {
             'konteks_forget',
         ])
         expect(
-            KONTEKS_TOOL_SURFACE.map(tool => [
+            mcpTools.map(tool => [
                 tool.name,
                 tool.annotations?.readOnlyHint,
                 tool.annotations?.destructiveHint,
@@ -25,9 +26,7 @@ describe('providers/protocol/tool-surface', () => {
         ])
     })
 
-    it('describes the expected prompt workflow', () => {
-        expect(MCP_INSTRUCTIONS).toContain('Warm Up -> Build -> Save')
-        expect(MCP_INSTRUCTIONS).toContain('konteks_warm_up')
-        expect(MCP_INSTRUCTIONS).toContain('konteks_save')
+    it('contains class-based tool instances only', () => {
+        expect(mcpTools.every(tool => tool instanceof BaseMcpTool)).toBe(true)
     })
 })
