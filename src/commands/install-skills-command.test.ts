@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import installSkillsCommand from './install-skills-command'
+import InstallSkillsCommand from './install-skills-command'
 
 const tempDirs: string[] = []
 
@@ -14,12 +14,20 @@ afterEach(async () => {
     )
 })
 
-describe('skills install command', () => {
+describe('InstallSkillsCommand', () => {
+    it('declares the public CLI metadata', () => {
+        const command = new InstallSkillsCommand()
+
+        expect(command.name).toBe('install-skills')
+        expect(command.printsHeader).toBe(true)
+        expect(command.requiresProject).toBe(true)
+    })
+
     it('installs Konteks skills', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-skills-'))
         tempDirs.push(projectRoot)
 
-        await installSkillsCommand({ project: projectRoot })
+        await new InstallSkillsCommand().run({ project: projectRoot })
 
         expect(
             (await readdir(join(projectRoot, '.agents', 'skills'))).sort(),
@@ -44,7 +52,7 @@ describe('skills install command', () => {
         const homeDir = await mkdtemp(join(tmpdir(), 'konteks-skills-home-'))
         tempDirs.push(homeDir)
 
-        await installSkillsCommand({ global: true, homeDir })
+        await new InstallSkillsCommand().run({ global: true, homeDir })
 
         await expect(
             readFile(
@@ -58,7 +66,7 @@ describe('skills install command', () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-skills-'))
         tempDirs.push(projectRoot)
 
-        await installSkillsCommand({ project: projectRoot })
+        await new InstallSkillsCommand().run({ project: projectRoot })
 
         await expect(
             readFile(

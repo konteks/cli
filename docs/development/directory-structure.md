@@ -2,13 +2,13 @@
 
 ```text
 src
-├── main.ts             # Commander CLI entrypoint and command registration.
+├── main.ts             # Commander CLI entrypoint and command registration loop.
 ├── assets/             # Packaged prompt templates and other static runtime assets.
+├── commands/           # CLI command classes, nested subcommands, registry, and shared BaseCommand.
 ├── composition/        # Skill installation and memory transfer composition.
 ├── contracts/          # Service and persistence boundaries that need substitution.
 │   ├── repositories/   # Repository interfaces consumed by workflows.
 │   └── services/       # Service interfaces, such as extraction and embedding contracts.
-├── controllers/        # Thin CLI command handlers and MCP server registration.
 ├── extraction/         # Extraction workflow orchestration and runtime wiring.
 ├── middlewares/        # Cross-command guards such as CLI project initialization.
 ├── memory/             # Memory feature workflows: recall, search, save, forget, warm-up, runtime wiring.
@@ -23,7 +23,7 @@ src
 │   ├── project/        # Project context resolution helpers.
 │   └── protocol/       # MCP schemas, tool surface, and response formatting.
 └── support/            # Project-owned generic utilities and test support.
-    ├── fake/           # Test doubles shared across provider/controller tests.
+    ├── fake/           # Test doubles shared across provider/command tests.
     ├── format/         # Number and token formatting/estimation helpers.
     ├── json/           # JSON parse/stringify helpers.
     ├── object/         # Generic object/value helpers.
@@ -40,7 +40,7 @@ feature folders. Skill installation and memory transfer still use
 
 ```mermaid
 graph LR
-    E[entrypoint] --> C[controllers]
+    E[entrypoint] --> C[commands]
     C --> X[composition]
     C --> Q[mcp]
     C --> J[project]
@@ -63,25 +63,31 @@ graph LR
 
 Layer responsibilities:
 
-- `main.ts` owns Commander registration and delegates to controllers.
-- Controllers adapt CLI or MCP input/output and call composed operations.
+- `main.ts` owns the Commander entrypoint and registers command classes from `src/commands`.
+- Commands extend `BaseCommand`, adapt CLI input/output, and call composed operations or feature workflows.
+- `commands/index.ts` owns the command registry lists used by `main.ts`.
+- `commands/_base-command.ts` owns shared command behavior and re-exports the Commander `Command` type for command files.
+- Subcommands live in a directory named after their parent command, such as `commands/mcp/*` and `commands/memory/*`.
 - Composition owns skill installation and memory transfer wiring.
 - Extraction owns project extraction workflow orchestration and project context loading.
 - Memory owns recall, search, save, forget, warm-up, and MCP project/database runtime helpers.
 - MCP owns tool/prompt listing, tool dispatch, response formatting, and dry-run orchestration.
 - Project owns init, status, repair, and grammar selection workflows.
 - Providers implement contracts and own filesystem, database, object storage, embedding, protocol-template, and SDK details.
-- Middleware handles cross-cutting entrypoint checks before controllers run.
+- Middleware handles cross-cutting entrypoint checks before command handlers run.
 - Support stays generic, dependency-light, and reusable across layers.
 
 Rules:
 
-- Do not put workflow or provider selection logic in controllers.
-- Keep memory workflow code in `src/memory`; do not split recall/save/search orchestration across actions and composition.
-- Keep extraction workflow code in `src/extraction`; do not split extraction orchestration across actions and composition.
+- Command files should default-export their main command class, and the filename should reflect that class.
+- Place subcommands under a folder named after the parent command.
+- Command files that configure Commander arguments/options should import the `Command` type from `@/commands/_base-command`, not directly from `commander`.
+- Do not put workflow or provider selection logic in commands.
+- Keep memory workflow code in `src/memory`; do not split recall/save/search orchestration across command classes and composition.
+- Keep extraction workflow code in `src/extraction`; do not split extraction orchestration across command classes and composition.
 - Keep MCP tool, prompt, handler, and dry-run code in `src/mcp`; do not split MCP orchestration across composition.
-- Keep project lifecycle workflow code in `src/project`; do not split init/status/repair orchestration across actions and composition.
-- Providers must not import actions, controllers, or composition modules in production code.
+- Keep project lifecycle workflow code in `src/project`; do not split init/status/repair orchestration across command classes and composition.
+- Providers must not import commands or composition modules in production code.
 - Run `bun scripts/check-architecture-boundaries.ts` after refactors that move workflow ownership.
 - Prefer direct imports over barrel files, for example `@/providers/persistence/sqlite/database`.
 - Keep `support` for project-owned generic utilities; do not use it as a re-export layer for third-party packages or Node built-ins.

@@ -44,15 +44,19 @@ bun run test
 - Keep changes small and focused.
 - Put tests next to the code they cover using the existing `*.test.ts` pattern.
 - Follow the current module boundaries:
-  - `src/controllers` handles CLI and protocol entrypoints.
-  - `src/actions` holds use-case logic.
+  - `src/main.ts` owns the Commander entrypoint and command registration loop.
+  - `src/commands` holds CLI command classes, nested subcommands, `BaseCommand`, and command registry lists.
   - `src/composition` wires implementations together.
   - `src/contracts` defines shared interfaces.
+  - `src/memory`, `src/project`, `src/extraction`, and `src/mcp` hold feature workflows.
   - `src/providers` contains concrete infrastructure.
   - `src/support` contains low-level helpers.
+- Command files should default-export their main command class, and filenames should reflect that class.
+- Place subcommands under a folder named after the parent command, such as `src/commands/mcp`.
+- Import the Commander `Command` type from `@/commands/_base-command` inside command classes.
 - Do not add provider barrel files. Import provider modules directly.
-- Providers should not import actions, controllers, or composition modules.
-- Actions and controllers should depend on contracts instead of concrete providers.
+- Providers should not import commands or composition modules.
+- Commands should call feature workflows or composition modules instead of concrete providers.
 
 ## Docs
 

@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
-import initCommand from './init-command'
+import InitCommand from './init-command'
 
 const tempDirs: string[] = []
 
@@ -22,9 +22,20 @@ afterEach(async () => {
     )
 })
 
-describe('init command', () => {
+describe('InitCommand', () => {
     const init = (project: string) =>
-        initCommand({ embeddingProvider: new FakeEmbeddingProvider(), project })
+        new InitCommand().run({
+            embeddingProvider: new FakeEmbeddingProvider(),
+            project,
+        })
+
+    it('declares the public CLI metadata', () => {
+        const command = new InitCommand()
+
+        expect(command.name).toBe('init')
+        expect(command.printsHeader).toBe(true)
+        expect(command.requiresProject).toBe(false)
+    })
 
     it('adds .konteks to .gitignore during init', async () => {
         const projectRoot = await makeTempProject()
@@ -113,7 +124,7 @@ describe('init command', () => {
         const projectRoot = await makeTempProject()
 
         await expect(
-            initCommand({
+            new InitCommand().run({
                 embeddingProvider: new FakeEmbeddingProvider(),
                 grammar: ['not-real'],
                 project: projectRoot,
