@@ -1,6 +1,13 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
+import type {
+    BaseCommandContext,
+    BaseCommandInput,
+    BaseCommandRegistrar,
+    Command,
+} from '@/commands/_base-command'
+import BaseCommand from '@/commands/_base-command'
 import { createToolHandlers } from '@/mcp/handlers'
 import { getKonteksPromptRegistrations } from '@/mcp/prompts'
 import {
@@ -9,10 +16,42 @@ import {
 } from '@/mcp/tools'
 import type { StartMcpServerOptions } from '@/models/mcp'
 import { VERSION } from '@/support/version'
+import CallCommand from './mcp/call-command'
+import PromptCommand from './mcp/prompt-command'
+import PromptsCommand from './mcp/prompts-command'
+import ToolCommand from './mcp/tool-command'
+import ToolsCommand from './mcp/tools-command'
 
-export default async function startMcpServer(
-    options: StartMcpServerOptions,
-): Promise<void> {
+export default class McpCommand extends BaseCommand {
+    constructor(
+        private readonly children: BaseCommandRegistrar[] = [
+            new ToolsCommand(),
+            new ToolCommand(),
+            new PromptsCommand(),
+            new PromptCommand(),
+            new CallCommand(),
+        ],
+    ) {
+        super({
+            description: 'Start the MCP server or run MCP debug commands.',
+            name: 'mcp',
+        })
+    }
+
+    override register(parent: Command, context: BaseCommandContext): Command {
+        const command = super.register(parent, context)
+        for (const child of this.children) {
+            child.register(command, context)
+        }
+        return command
+    }
+
+    override async handle({ globalOptions }: BaseCommandInput): Promise<void> {
+        await startMcpServer({ project: globalOptions.project })
+    }
+}
+
+async function startMcpServer(options: StartMcpServerOptions): Promise<void> {
     const server = createMcpServer(options)
     const transport = new StdioServerTransport()
     await server.connect(transport)

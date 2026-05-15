@@ -1,5 +1,6 @@
+import type { BaseCommandInput } from '@/commands/_base-command'
+import BaseCommand from '@/commands/_base-command'
 import type { ProjectStatus } from '@/contracts/services/project-status-reader'
-import type { GlobalCliOptions } from '@/models/cli'
 import readProjectStatus from '@/project/read-project-status'
 import { formatInteger } from '@/support/format/number'
 import createColorPalette, {
@@ -8,16 +9,25 @@ import createColorPalette, {
 import { terminal } from '@/support/terminal/service'
 import { VERSION } from '@/support/version'
 
-export default async function getStatusCommand(
-    options: GlobalCliOptions,
-): Promise<void> {
-    const status = await readProjectStatus(options.project)
-    terminal.log(
-        formatStatus(status, {
-            color: createColorPalette(terminal.stdoutSupportsColor()),
-            version: VERSION,
-        }),
-    )
+export default class StatusCommand extends BaseCommand {
+    constructor() {
+        super({
+            description: 'Print Konteks project memory status for humans.',
+            name: 'status',
+            printsHeader: true,
+        })
+    }
+
+    override async handle({ globalOptions }: BaseCommandInput): Promise<void> {
+        const status = await readProjectStatus(globalOptions.project)
+
+        this.print(
+            formatStatus(status, {
+                color: createColorPalette(terminal.stdoutSupportsColor()),
+                version: VERSION,
+            }),
+        )
+    }
 }
 
 type StatusColorPalette = Pick<ColorPalette, 'accent' | 'dim' | 'success'>
@@ -32,7 +42,7 @@ function formatStatus(
     const lines = [
         '',
         `${color.accent('Konteks Memory')} ${color.dim(`v${version}`)}`,
-        color.dim('─'.repeat(48)),
+        color.dim('-'.repeat(48)),
         row('Project', status.projectRoot),
         row('Memory', status.memoryDir),
         row('Freshness', formatFreshness(status, changedFiles)),
