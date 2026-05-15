@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { recallRepositoryMemory } from '@/memory/recall'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import { SQLiteMemoryRepository } from '@/providers/persistence/sqlite/sqlite-memory-repository'
-import { GraphStore } from '@/providers/persistence/sqlite/stores/graph-store'
+import SQLiteMemoryRepository from '@/providers/persistence/sqlite/sqlite-memory-repository'
+import GraphStore from '@/providers/persistence/sqlite/stores/graph-store'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []

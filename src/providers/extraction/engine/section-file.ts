@@ -1,5 +1,6 @@
 import type { ScannedFile } from './file-scan'
-import type { CodeMetadata, TreeSitterEngine } from './tree-sitter-engine'
+import type TreeSitterEngine from './tree-sitter-engine'
+import type { CodeMetadata } from './tree-sitter-engine'
 
 type ExtractedSection = {
     anchor: string

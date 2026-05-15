@@ -41,7 +41,7 @@ export type CodeMetadata = {
     language: string
 }
 
-export class TreeSitterEngine {
+export default class TreeSitterEngine {
     private parser: Parser | undefined
     private languages: Map<string, Language> = new Map()
 

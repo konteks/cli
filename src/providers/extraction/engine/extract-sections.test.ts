@@ -6,7 +6,7 @@ import type { ExtractionProgressEvent } from '@/contracts/services/progress'
 import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import type { DatabaseService } from '@/providers/persistence/sqlite/db'
+import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 import extractSections from './extract-sections'
 import type { ScannedFile } from './file-scan'
 

@@ -1,9 +1,9 @@
 import { checkbox, select } from '@inquirer/prompts'
+import createExtractionProgressReporter from '@/providers/extraction/create-extraction-progress-reporter'
 import {
     listGrammarDefinitions,
     updateSelectedGrammarCache,
 } from '@/providers/extraction/engine/grammar-loader'
-import { createExtractionProgressReporter } from '@/providers/extraction/progress-reporter'
 import {
     loadProjectContext,
     writeProjectConfig,

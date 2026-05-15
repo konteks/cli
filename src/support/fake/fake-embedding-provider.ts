@@ -1,6 +1,8 @@
 import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
 
-export class FakeEmbeddingProvider implements EmbeddingProviderContract {
+export default class FakeEmbeddingProvider
+    implements EmbeddingProviderContract
+{
     readonly model = 'fake/all-MiniLM-L6-v2'
     readonly dimensions: number
 

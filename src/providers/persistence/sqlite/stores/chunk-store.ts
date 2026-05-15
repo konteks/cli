@@ -28,7 +28,7 @@ export type ChunkRow = {
     updated_at: string
 }
 
-export class ChunkStore {
+export default class ChunkStore {
     constructor(
         private readonly adapter: SqliteAdapter,
         private readonly db?: KonteksDatabase,

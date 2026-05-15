@@ -1,25 +1,25 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
-import { callMcpToolCommand } from '@/controllers/call-mcp-tool'
-import { configCommand } from '@/controllers/config'
-import { getPromptDetailCommand } from '@/controllers/get-prompt-detail'
-import { getPromptsCommand } from '@/controllers/get-prompts'
-import { getStatusCommand } from '@/controllers/get-status'
-import { getToolDetailCommand } from '@/controllers/get-tool-detail'
-import { getToolsCommand } from '@/controllers/get-tools'
-import { initCommand } from '@/controllers/init'
-import { installSkillsCommand } from '@/controllers/install-skills'
+import callMcpToolCommand from '@/controllers/call-mcp-tool-command'
+import configCommand from '@/controllers/config-command'
+import getPromptDetailCommand from '@/controllers/get-prompt-detail-command'
+import getPromptsCommand from '@/controllers/get-prompts-command'
+import getStatusCommand from '@/controllers/get-status-command'
+import getToolDetailCommand from '@/controllers/get-tool-detail-command'
+import getToolsCommand from '@/controllers/get-tools-command'
+import initCommand from '@/controllers/init-command'
+import installSkillsCommand from '@/controllers/install-skills-command'
 import {
     backupMemoryCommand,
     exportMemoryCommand,
     importMemoryCommand,
     restoreMemoryCommand,
 } from '@/controllers/memory-transfer'
-import { repairCommand } from '@/controllers/repair'
-import { startMcpServer } from '@/controllers/serve-mcp'
-import { ensureCliProjectInitialized } from '@/middlewares/cli-initialization'
+import repairCommand from '@/controllers/repair-command'
+import startMcpServer from '@/controllers/start-mcp-server'
+import ensureCliProjectInitialized from '@/middlewares/ensure-cli-project-initialized'
 import type { GlobalCliOptions } from '@/models/cli'
-import { printCliError } from '@/support/cli/error-output'
+import printCliError from '@/support/cli/print-cli-error'
 import { terminal } from '@/support/terminal/service'
 import { VERSION } from '@/support/version'
 

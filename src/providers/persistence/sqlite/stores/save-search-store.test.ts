@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { loadProjectContext } from '@/providers/project/context'
 import { openProjectDatabase } from '../database'
-import { saveKonteksInput } from '../save-store'
-import { searchMemory } from '../search-store'
+import saveKonteksInput from '../save-konteks-input'
+import searchMemory from '../search-memory'
 
 const tempDirs: string[] = []
 

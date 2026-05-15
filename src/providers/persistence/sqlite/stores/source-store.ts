@@ -14,7 +14,7 @@ export type SourceRow = {
     created_at: string
 }
 
-export class SourceStore {
+export default class SourceStore {
     constructor(
         private readonly adapter: SqliteAdapter,
         private readonly db?: KonteksDatabase,

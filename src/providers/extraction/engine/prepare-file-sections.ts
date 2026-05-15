@@ -2,9 +2,9 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
-import { storePayload } from '@/providers/persistence/objects/payload'
-import type { createToonStore } from '@/providers/persistence/objects/toon-store'
-import type { DatabaseService } from '@/providers/persistence/sqlite/db'
+import type createToonStore from '@/providers/persistence/objects/create-toon-store'
+import storePayload from '@/providers/persistence/objects/store-payload'
+import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 import { buildChunkRetrievalTexts } from '@/providers/persistence/sqlite/retrieval-documents'
 import {
     classifySourceRole,
@@ -15,7 +15,8 @@ import type { ScannedFile } from './file-scan'
 import { getGrammarForPath } from './grammar-loader'
 import { isExtractedSectionSuppressed } from './section-cleanup'
 import sectionFile from './section-file'
-import type { CodeMetadata, TreeSitterEngine } from './tree-sitter-engine'
+import type TreeSitterEngine from './tree-sitter-engine'
+import type { CodeMetadata } from './tree-sitter-engine'
 
 type PreparedSection = {
     anchor: string

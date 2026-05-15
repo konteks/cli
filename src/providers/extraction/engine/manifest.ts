@@ -3,12 +3,12 @@ import { join } from 'node:path'
 import type { ExtractionMode } from '@/models/extraction'
 import type { Project } from '@/models/project'
 import { pathExists } from '@/providers/project/context'
+import type { ProjectMetadata } from './extract-project-metadata'
 import {
     type ScanDiagnostics,
     type ScannedFile,
     scanProjectFiles,
 } from './file-scan'
-import type { ProjectMetadata } from './metadata'
 
 export type { ExtractionMode }
 

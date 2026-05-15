@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { SQLiteMemoryRepository } from './sqlite-memory-repository'
+import SQLiteMemoryRepository from './sqlite-memory-repository'
 
 describe('providers/persistence/sqlite/sqlite-memory-repository', () => {
     it('matches the public runtime contract', () => {

@@ -3,7 +3,7 @@ import type {
     TreeSitterLanguage,
 } from '@/providers/extraction/engine/tree-sitter-engine'
 
-export class FakeTreeSitterEngine {
+export default class FakeTreeSitterEngine {
     async init() {}
 
     async loadLanguage(_: TreeSitterLanguage, __: string) {}

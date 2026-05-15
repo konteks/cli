@@ -10,7 +10,7 @@ import type {
     RecallHistoryItem,
     RecallPackage,
 } from '@/models/memory'
-import { createMemoryRepository } from './repository'
+import createMemoryRepository from './create-memory-repository'
 import { loadMcpProjectContext, withProjectDatabaseContext } from './runtime'
 
 export async function recallMemory(

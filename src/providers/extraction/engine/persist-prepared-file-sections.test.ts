@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Project } from '@/models/project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import type { DatabaseService } from '@/providers/persistence/sqlite/db'
+import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 import persistPreparedFileSections from './persist-prepared-file-sections'
 import type { PreparedFile } from './prepare-file-sections'
 

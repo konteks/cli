@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { ModuleRow } from './module-store'
-import { ModuleStore } from './module-store'
+import ModuleStore from './module-store'
 
 type CoveredTypes = [ModuleRow]
 

@@ -16,7 +16,7 @@ export type ModuleRow = {
     updated_at: string
 }
 
-export class ModuleStore {
+export default class ModuleStore {
     constructor(
         private readonly adapter: SqliteAdapter,
         private readonly db?: KonteksDatabase,

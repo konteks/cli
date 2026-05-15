@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { loadProjectContext } from '@/providers/project/context'
 import { openProjectDatabase } from '../database'
-import { GraphStore } from './graph-store'
+import GraphStore from './graph-store'
 
 const tempDirs: string[] = []
 

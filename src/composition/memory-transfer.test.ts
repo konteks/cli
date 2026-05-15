@@ -16,8 +16,8 @@ import {
     restoreMemory,
 } from '@/composition/memory-transfer'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import { saveKonteksInput } from '@/providers/persistence/sqlite/save-store'
-import { searchMemory } from '@/providers/persistence/sqlite/search-store'
+import saveKonteksInput from '@/providers/persistence/sqlite/save-konteks-input'
+import searchMemory from '@/providers/persistence/sqlite/search-memory'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []

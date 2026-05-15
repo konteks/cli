@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { HuggingFaceEmbeddingProvider } from './hugging-face-embedding-provider'
+import HuggingFaceEmbeddingProvider from './hugging-face-embedding-provider'
 
 describe('providers/embeddings/hugging-face-embedding-provider', () => {
     it('matches the public runtime contract', () => {

@@ -1,11 +1,12 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import type { z } from 'zod'
-import { forgetMemory } from '@/memory/forget'
+import forgetMemory from '@/memory/forget-memory'
 import { recallMemory } from '@/memory/recall'
-import { saveMemory } from '@/memory/save'
-import { searchMemory } from '@/memory/search'
-import { warmUpMemory } from '@/memory/warm-up'
+import saveMemory from '@/memory/save-memory'
+import searchMemory from '@/memory/search-memory'
+import warmUpMemory from '@/memory/warm-up-memory'
 import type { StartMcpServerOptions } from '@/models/mcp'
+import formatToTextResult from '@/providers/protocol/format-to-text-result'
 import {
     forgetInputSchema,
     recallInputSchema,
@@ -13,7 +14,6 @@ import {
     searchInputSchema,
     warmUpInputSchema,
 } from '@/providers/protocol/inputs'
-import { formatToTextResult } from '@/providers/protocol/result'
 import {
     formatRecallText,
     formatSaveText,

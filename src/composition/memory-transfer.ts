@@ -28,7 +28,7 @@ import {
     importDurableMemory,
 } from '@/providers/persistence/sqlite/memory-transfer-store'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
-import { CliUserError } from '@/support/cli/errors'
+import CliUserError from '@/support/cli/cli-user-error'
 
 const execFileAsync = promisify(execFile)
 

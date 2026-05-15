@@ -7,11 +7,11 @@ import type {
 } from '@/models/memory-transfer'
 import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
-import { storePayload } from '@/providers/persistence/objects/payload'
-import { createToonStore } from '@/providers/persistence/objects/toon-store'
+import createToonStore from '@/providers/persistence/objects/create-toon-store'
+import storePayload from '@/providers/persistence/objects/store-payload'
 import { upsertRetrievalDocument } from '@/providers/persistence/sqlite/retrieval-documents'
 import { indexSearchDocument } from '@/providers/persistence/sqlite/search-index'
-import type { DatabaseService } from './db'
+import type DatabaseService from './database-service'
 
 type ObservationExportRow = {
     confidence: number

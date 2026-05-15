@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { CodeMetadata, TreeSitterLanguage } from './tree-sitter-engine'
-import { TreeSitterEngine } from './tree-sitter-engine'
+import TreeSitterEngine from './tree-sitter-engine'
 
 type CoveredTypes = [CodeMetadata, TreeSitterLanguage]
 
