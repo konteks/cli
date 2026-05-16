@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { callKonteksTool } from '@/mcp/handlers'
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
+import mcpTools from '@/mcp/tools'
+import type { StartMcpServerOptions } from '@/models/mcp'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
@@ -65,9 +67,7 @@ describe('retrieval quality evals', () => {
             'konteks_recall',
             { task: 'packaging mcp registration package manager' },
         )
-        const text = result.content.find(
-            item => item.type === 'text' && 'text' in item,
-        )?.text
+        const text = extractText(result)
 
         expect(text).toContain('recall:')
         expect(text).toContain('memories:')
@@ -151,9 +151,7 @@ describe('retrieval quality evals', () => {
                 type: 'diary',
             },
         )
-        const text = result.content.find(
-            item => item.type === 'text' && 'text' in item,
-        )?.text
+        const text = extractText(result)
         const manifest = await readExtractionManifest(context.memoryDir)
         const adapter = await openProjectDatabase(context)
         const diaryRows = await adapter.adapter.query<{ summary: string }>(
@@ -198,9 +196,7 @@ limit 1
             'konteks_warm_up',
             { maxTokens: 600 },
         )
-        const text = result.content.find(
-            item => item.type === 'text' && 'text' in item,
-        )?.text
+        const text = extractText(result)
 
         expect(text).toContain('warm_up:')
         expect(text).toContain('highlights:')
@@ -226,9 +222,7 @@ limit 1
             'konteks_recall',
             { task: 'index function' },
         )
-        const text = result.content.find(
-            item => item.type === 'text' && 'text' in item,
-        )?.text
+        const text = extractText(result)
 
         expect(text).toContain('recall:')
         expect(text).toContain('memories:')
@@ -267,9 +261,7 @@ limit 1
             'konteks_recall',
             { task: 'improve konteks_recall return shape' },
         )
-        const text = result.content.find(
-            item => item.type === 'text' && 'text' in item,
-        )?.text
+        const text = extractText(result)
 
         expect(text).toContain('brief:')
         expect(text).toContain('primary_targets:')
@@ -302,3 +294,30 @@ limit 1
         expect(rows[0]?.count).toBeGreaterThan(0)
     })
 })
+
+async function callKonteksTool(
+    options: StartMcpServerOptions,
+    name: string,
+    input: unknown,
+): Promise<CallToolResult> {
+    const tool = mcpTools.find(item => item.name === name)
+
+    if (!tool) {
+        throw new Error(`Unknown tool: ${name}`)
+    }
+
+    return await tool.handle(options, input)
+}
+
+function extractText(result: CallToolResult): string {
+    return (
+        result.content.find(
+            (
+                item,
+            ): item is Extract<
+                CallToolResult['content'][number],
+                { type: 'text' }
+            > => item.type === 'text',
+        )?.text ?? ''
+    )
+}
