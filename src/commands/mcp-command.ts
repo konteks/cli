@@ -17,6 +17,7 @@ export default class McpCommand extends BaseCommand {
     ]
     readonly description = 'Start the MCP server or run MCP debug commands.'
     readonly name = 'mcp'
+    override readonly printsHeader = false
 
     async handle({ globalOptions }: BaseCommandInput): Promise<void> {
         await startMcpServer({ project: globalOptions.project })
