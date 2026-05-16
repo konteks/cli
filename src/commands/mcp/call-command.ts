@@ -1,4 +1,4 @@
-import type { BaseCommandInput, Command } from '@/commands/_base-command'
+import type { BaseCommandInput } from '@/commands/_base-command'
 import BaseCommand from '@/commands/_base-command'
 import dryRunKonteksTool from '@/mcp/dry-run-konteks-tool'
 import { callKonteksTool } from '@/mcp/handlers'
@@ -15,22 +15,30 @@ export default class CallCommand extends BaseCommand<
     [string, string | undefined],
     McpCallOptions
 > {
-    constructor() {
-        super({
-            description: 'Preview or call one MCP tool for debugging.',
-            name: 'call',
-        })
-    }
+    override readonly args = [
+        {
+            description: 'MCP tool name, such as konteks_warm_up',
+            name: '<tool>',
+        },
+        {
+            description: 'Optional JSON tool input',
+            name: '[json]',
+        },
+    ]
+    readonly description = 'Preview or call one MCP tool for debugging.'
+    readonly name = 'call'
+    override readonly options = [
+        {
+            description: 'Actually execute mutating MCP tools.',
+            flags: '--apply',
+        },
+        {
+            description: 'Print the raw MCP result envelope as JSON.',
+            flags: '--json',
+        },
+    ]
 
-    protected override configure(command: Command): void {
-        command
-            .option('--apply', 'Actually execute mutating MCP tools.')
-            .option('--json', 'Print the raw MCP result envelope as JSON.')
-            .argument('<tool>', 'MCP tool name, such as konteks_warm_up')
-            .argument('[json]', 'Optional JSON tool input')
-    }
-
-    override async handle({
+    async handle({
         args,
         globalOptions,
         options,

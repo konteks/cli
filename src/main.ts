@@ -7,14 +7,14 @@ import printCliError from '@/support/cli/print-cli-error'
 import { VERSION } from '@/support/version'
 
 export type CreateCliProgramOptions = {
-    ensureInitialized?: (project?: string) => Promise<void>
+    runInitializationGuard?: (project?: string) => Promise<void>
 }
 
 export function createCliProgram(
     options: CreateCliProgramOptions = {},
 ): Command {
-    const ensureInitialized =
-        options.ensureInitialized ?? ensureCliProjectInitialized
+    const runInitializationGuard =
+        options.runInitializationGuard ?? ensureCliProjectInitialized
 
     const program = new Command()
         .name('konteks')
@@ -25,8 +25,8 @@ export function createCliProgram(
         .option('--project <path>', 'Project root override')
 
     registerCommands(program, {
-        ensureInitialized,
         getGlobalOptions: () => program.opts(),
+        runInitializationGuard,
     })
 
     return program

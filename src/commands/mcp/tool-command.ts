@@ -1,21 +1,19 @@
-import type { BaseCommandInput, Command } from '@/commands/_base-command'
+import type { BaseCommandInput } from '@/commands/_base-command'
 import BaseCommand from '@/commands/_base-command'
 import mcpTools from '@/mcp/tools'
 import printJson from '@/support/cli/print-json'
 
 export default class ToolCommand extends BaseCommand<[string]> {
-    constructor() {
-        super({
-            description: 'Show one MCP tool exposed by Konteks.',
-            name: 'tool',
-        })
-    }
+    override readonly args = [
+        {
+            description: 'MCP tool name, such as konteks_warm_up',
+            name: '<name>',
+        },
+    ]
+    readonly description = 'Show one MCP tool exposed by Konteks.'
+    readonly name = 'tool'
 
-    protected override configure(command: Command): void {
-        command.argument('<name>', 'MCP tool name, such as konteks_warm_up')
-    }
-
-    override async handle({ args }: BaseCommandInput<[string]>): Promise<void> {
+    async handle({ args }: BaseCommandInput<[string]>): Promise<void> {
         const tool = mcpTools.find(item => item.name === args[0])
 
         if (!tool) {

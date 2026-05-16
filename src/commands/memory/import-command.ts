@@ -1,4 +1,4 @@
-import type { BaseCommandInput, Command } from '@/commands/_base-command'
+import type { BaseCommandInput } from '@/commands/_base-command'
 import BaseCommand from '@/commands/_base-command'
 import { importMemory } from '@/composition/memory-transfer'
 import { stringifyPretty } from '@/support/json/io'
@@ -11,21 +11,23 @@ export default class ImportCommand extends BaseCommand<
     [string],
     MemoryImportOptions
 > {
-    constructor() {
-        super({
-            description: 'Import durable memories and diary entries from JSON.',
-            name: 'import',
-            printsHeader: true,
-        })
-    }
+    override readonly args = [
+        {
+            description: 'Input JSON file',
+            name: '<file>',
+        },
+    ]
+    readonly description =
+        'Import durable memories and diary entries from JSON.'
+    readonly name = 'import'
+    override readonly options = [
+        {
+            description: 'Validate and report counts without writing.',
+            flags: '--dry-run',
+        },
+    ]
 
-    protected override configure(command: Command): void {
-        command
-            .argument('<file>', 'Input JSON file')
-            .option('--dry-run', 'Validate and report counts without writing.')
-    }
-
-    override async handle({
+    async handle({
         args,
         globalOptions,
         options,

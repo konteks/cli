@@ -1,4 +1,4 @@
-import type { BaseCommandInput, Command } from '@/commands/_base-command'
+import type { BaseCommandInput } from '@/commands/_base-command'
 import BaseCommand from '@/commands/_base-command'
 import { exportMemory } from '@/composition/memory-transfer'
 import { stringifyPretty } from '@/support/json/io'
@@ -11,24 +11,22 @@ export default class ExportCommand extends BaseCommand<
     [string],
     MemoryExportOptions
 > {
-    constructor() {
-        super({
-            description: 'Export durable memories and diary entries to JSON.',
-            name: 'export',
-            printsHeader: true,
-        })
-    }
+    override readonly args = [
+        {
+            description: 'Output JSON file',
+            name: '<file>',
+        },
+    ]
+    readonly description = 'Export durable memories and diary entries to JSON.'
+    readonly name = 'export'
+    override readonly options = [
+        {
+            description: 'Include soft-deleted or suppressed durable memory.',
+            flags: '--include-inactive',
+        },
+    ]
 
-    protected override configure(command: Command): void {
-        command
-            .argument('<file>', 'Output JSON file')
-            .option(
-                '--include-inactive',
-                'Include soft-deleted or suppressed durable memory.',
-            )
-    }
-
-    override async handle({
+    async handle({
         args,
         globalOptions,
         options,
