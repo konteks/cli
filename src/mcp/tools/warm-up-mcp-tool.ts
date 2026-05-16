@@ -17,9 +17,7 @@ const INPUT_ZOD_SCHEMA = z.object({
     topic: z.string().optional(),
 })
 
-type Input = typeof INPUT_ZOD_SCHEMA._output
-
-export default class WarmUpMcpTool extends BaseMcpTool<Input> {
+export default class WarmUpMcpTool extends BaseMcpTool {
     annotations = {
         destructiveHint: false,
         idempotentHint: false,
@@ -31,19 +29,14 @@ export default class WarmUpMcpTool extends BaseMcpTool<Input> {
 
     inputSchema = INPUT_ZOD_SCHEMA
 
-    name = 'konteks_warm_up' as const
+    name = 'konteks_warm_up'
 
-    constructor(private readonly warmUp: typeof warmUpMemory = warmUpMemory) {
-        super()
-    }
-
-    protected override async execute(
+    protected async coreHandle(
         options: StartMcpServerOptions,
-        input: Input,
+        input: z.output<typeof INPUT_ZOD_SCHEMA>,
     ) {
-        return this.formatOutput(
-            formatWarmUpText(await this.warmUp(options, input)),
-        )
+        const result = await warmUpMemory(options, input)
+        return formatWarmUpText(result)
     }
 }
 

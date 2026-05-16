@@ -17,9 +17,7 @@ const INPUT_SCHEMA = z.object({
     task: z.string().min(1, 'task is required'),
 })
 
-type Input = typeof INPUT_SCHEMA._output
-
-export default class RecallMcpTool extends BaseMcpTool<Input> {
+export default class RecallMcpTool extends BaseMcpTool {
     annotations = {
         destructiveHint: false,
         idempotentHint: true,
@@ -32,22 +30,16 @@ export default class RecallMcpTool extends BaseMcpTool<Input> {
 
     inputSchema = INPUT_SCHEMA
 
-    name = 'konteks_recall' as const
+    name = 'konteks_recall'
 
-    constructor(private readonly recall: typeof recallMemory = recallMemory) {
-        super()
-    }
-
-    protected override async execute(
+    protected async coreHandle(
         options: StartMcpServerOptions,
-        input: Input,
+        input: z.output<typeof INPUT_SCHEMA>,
     ) {
-        return this.formatOutput(
-            formatRecallText({
-                includeSources: input.includeSources ?? false,
-                recall: await this.recall(options, input),
-            }),
-        )
+        return formatRecallText({
+            includeSources: input.includeSources ?? false,
+            recall: await recallMemory(options, input),
+        })
     }
 }
 

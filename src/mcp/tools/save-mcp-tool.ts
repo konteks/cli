@@ -1,3 +1,4 @@
+import type z from 'zod'
 import saveMemory from '@/memory/save-memory'
 import type { StartMcpServerOptions } from '@/models/mcp'
 import BaseMcpTool from './_base-mcp-tool'
@@ -7,9 +8,7 @@ import SAVE_INPUT_SCHEMA, {
 
 const INPUT_SCHEMA = SAVE_INPUT_SCHEMA
 
-type Input = typeof INPUT_SCHEMA._output
-
-export default class SaveMcpTool extends BaseMcpTool<Input> {
+export default class SaveMcpTool extends BaseMcpTool {
     annotations = {
         destructiveHint: false,
         idempotentHint: false,
@@ -22,23 +21,18 @@ export default class SaveMcpTool extends BaseMcpTool<Input> {
 
     inputSchema = INPUT_SCHEMA
 
-    name = 'konteks_save' as const
+    name = 'konteks_save'
 
     override get registrationInputSchema() {
         return SAVE_PROTOCOL_INPUT_SCHEMA
     }
 
-    constructor(private readonly save: typeof saveMemory = saveMemory) {
-        super()
-    }
-
-    protected override async execute(
+    protected async coreHandle(
         options: StartMcpServerOptions,
-        input: Input,
+        input: z.output<typeof INPUT_SCHEMA>,
     ) {
-        return this.formatOutput(
-            formatSaveText(await this.save(options, input)),
-        )
+        const result = await saveMemory(options, input)
+        return formatSaveText(result)
     }
 }
 

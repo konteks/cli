@@ -11,9 +11,7 @@ const INPUT_SCHEMA = z.object({
     query: z.string().min(1, 'query is required'),
 })
 
-type Input = typeof INPUT_SCHEMA._output
-
-export default class SearchMcpTool extends BaseMcpTool<Input> {
+export default class SearchMcpTool extends BaseMcpTool {
     annotations = {
         destructiveHint: false,
         idempotentHint: true,
@@ -26,23 +24,17 @@ export default class SearchMcpTool extends BaseMcpTool<Input> {
 
     inputSchema = INPUT_SCHEMA
 
-    name = 'konteks_search' as const
+    name = 'konteks_search'
 
-    constructor(private readonly search: typeof searchMemory = searchMemory) {
-        super()
-    }
-
-    protected override async execute(
+    protected async coreHandle(
         options: StartMcpServerOptions,
-        input: Input,
+        input: z.output<typeof INPUT_SCHEMA>,
     ) {
-        return this.formatOutput(
-            formatSearchText({
-                limit: input.limit ?? 10,
-                query: input.query,
-                results: await this.search(options, input),
-            }),
-        )
+        return formatSearchText({
+            limit: input.limit ?? 10,
+            query: input.query,
+            results: await searchMemory(options, input),
+        })
     }
 }
 
