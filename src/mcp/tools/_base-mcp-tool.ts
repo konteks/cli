@@ -1,7 +1,6 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { encode as encodeToon } from '@toon-format/toon'
 import z from 'zod'
-import type { StartMcpServerOptions } from '@/models/mcp'
 
 export type McpInputSchema = Record<string, z.ZodTypeAny> | z.ZodType
 
@@ -30,19 +29,13 @@ export default abstract class BaseMcpTool<Input = unknown> {
         }
     }
 
-    public async handle(
-        options: StartMcpServerOptions,
-        input: unknown,
-    ): Promise<CallToolResult> {
+    public async handle(input: unknown): Promise<CallToolResult> {
         const formattedInput = this.validate(input)
-        const result = await this.coreHandle(options, formattedInput)
+        const result = await this.coreHandle(formattedInput)
         return this.formatOutput(result)
     }
 
-    protected abstract coreHandle(
-        options: StartMcpServerOptions,
-        input: Input,
-    ): Promise<string | object>
+    protected abstract coreHandle(input: Input): Promise<string | object>
 
     private validate(input: unknown): Input {
         if (this.inputSchema instanceof z.ZodType) {

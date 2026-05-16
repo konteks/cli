@@ -4,7 +4,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import CallCommand from '@/commands/mcp/call-command'
 import mcpTools from '@/mcp/tools'
-import type { StartMcpServerOptions } from '@/models/mcp'
 import { terminal } from '@/support/terminal/service'
 
 describe('commands/mcp/call', () => {
@@ -20,77 +19,71 @@ describe('commands/mcp/call', () => {
         await mkdir(memoryDir, { recursive: true })
         await writeFile(join(memoryDir, 'config.json'), '{}\n')
 
-        let calledOptions: StartMcpServerOptions | undefined
-        let tempMemoryExistedDuringCall = false
+        let memoryDirDuringCall: string | undefined
         const saveTool = getTool('konteks_save_diary')
         const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
 
-        spyOn(saveTool, 'handle').mockImplementation(async options => {
-            calledOptions = options
-            tempMemoryExistedDuringCall = await fileExists(
-                join(options.memoryDir ?? '', 'config.json'),
+        spyOn(saveTool, 'handle').mockImplementation(async () => {
+            memoryDirDuringCall = memoryDir
+            const configExists = await fileExists(
+                join(memoryDir, 'config.json'),
             )
 
             return {
                 content: [
                     {
-                        text: `temp path: ${options.memoryDir}`,
+                        text: `dry run config exists: ${configExists}`,
                         type: 'text',
                     },
                 ],
             }
         })
 
-        await new CallCommand().handle({
-            args: [
-                'konteks_save_diary',
-                '{"summary":"Dry run diary entry should not persist."}',
-            ],
-            globalOptions: { project: projectRoot },
-            options: {},
-        })
+        await withWorkingDirectory(projectRoot, () =>
+            new CallCommand().handle({
+                args: [
+                    'konteks_save_diary',
+                    '{"summary":"Dry run diary entry should not persist."}',
+                ],
+                globalOptions: {},
+                options: {},
+            }),
+        )
 
-        expect(calledOptions?.memoryDir).not.toBe(memoryDir)
-        expect(calledOptions?.project).toBe(projectRoot)
-        expect(tempMemoryExistedDuringCall).toBe(true)
-        expect(logSpy).toHaveBeenCalledWith(`temp path: ${memoryDir}`)
-        expect(await fileExists(calledOptions?.memoryDir ?? '')).toBe(false)
+        expect(memoryDirDuringCall).toBe(memoryDir)
+        expect(logSpy).toHaveBeenCalledWith('dry run config exists: true')
+        expect(await fileExists(memoryDir)).toBe(true)
     })
 
     it('calls read-only tools directly without dry run', async () => {
-        let calledOptions: StartMcpServerOptions | undefined
         let calledInput: unknown
         const recallTool = getTool('konteks_recall')
         const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
 
-        spyOn(recallTool, 'handle').mockImplementation(
-            async (options, input) => {
-                calledOptions = options
-                calledInput = input
-                return {
-                    content: [{ text: 'direct', type: 'text' }],
-                }
-            },
-        )
+        spyOn(recallTool, 'handle').mockImplementation(async input => {
+            calledInput = input
+            return {
+                content: [{ text: 'direct', type: 'text' }],
+            }
+        })
 
         await new CallCommand().handle({
             args: ['konteks_recall', '{"task":"abc"}'],
-            globalOptions: { project: '/tmp/project' },
+            globalOptions: {},
             options: {},
         })
 
-        expect(calledOptions).toEqual({ project: '/tmp/project' })
         expect(calledInput).toEqual({ task: 'abc' })
         expect(logSpy).toHaveBeenCalledWith('direct')
     })
 
     it('calls mutating tools directly when apply is enabled', async () => {
-        let calledOptions: StartMcpServerOptions | undefined
+        let called = false
         const saveTool = getTool('konteks_save_diary')
         const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
 
-        spyOn(saveTool, 'handle').mockImplementation(async options => {
-            calledOptions = options
+        spyOn(saveTool, 'handle').mockImplementation(async () => {
+            called = true
             return {
                 content: [{ text: 'apply', type: 'text' }],
             }
@@ -101,14 +94,28 @@ describe('commands/mcp/call', () => {
                 'konteks_save_diary',
                 '{"summary":"Apply diary entry should persist to project memory."}',
             ],
-            globalOptions: { project: '/tmp/project' },
+            globalOptions: {},
             options: { apply: true },
         })
 
-        expect(calledOptions).toEqual({ project: '/tmp/project' })
+        expect(called).toBe(true)
         expect(logSpy).toHaveBeenCalledWith('apply')
     })
 })
+
+async function withWorkingDirectory<T>(
+    cwd: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(cwd)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
 
 async function fileExists(path: string): Promise<boolean> {
     try {

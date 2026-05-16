@@ -1,4 +1,3 @@
-import type { BaseCommandInput } from '@/commands/_base-command'
 import BaseCommand from '@/commands/_base-command'
 import startMcpServer from '@/mcp/start-mcp-server'
 import CallCommand from './mcp/call-command'
@@ -19,7 +18,7 @@ export default class McpCommand extends BaseCommand {
     readonly name = 'mcp'
     override readonly printsHeader = false
 
-    async handle({ globalOptions }: BaseCommandInput): Promise<void> {
-        await startMcpServer({ project: globalOptions.project })
+    async handle(): Promise<void> {
+        await startMcpServer()
     }
 }

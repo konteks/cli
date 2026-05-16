@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -17,28 +17,46 @@ afterEach(async () => {
     )
 })
 
+async function withWorkingDirectory<T>(
+    cwd: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(cwd)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
+
 describe('memory/runtime', () => {
-    it('loads project context and applies an MCP memory directory override', async () => {
+    it('loads project context from the current project directory', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-runtime-'))
         tempDirs.push(projectRoot)
-        const memoryDir = join(projectRoot, 'custom-memory')
-        await mkdir(memoryDir, { recursive: true })
+        await writeFile(join(projectRoot, 'package.json'), '{"name":"fixture"}\n')
+        await mkdir(join(projectRoot, '.konteks'), { recursive: true })
 
-        const context = await loadMcpProjectContext({
-            memoryDir,
-            project: projectRoot,
-        })
+        const context = await withWorkingDirectory(projectRoot, () =>
+            loadMcpProjectContext(),
+        )
 
         expect(context.projectRoot).toBe(projectRoot)
-        expect(context.memoryDir).toBe(memoryDir)
-        expect(context.configPath).toBe(join(memoryDir, 'config.json'))
+        expect(context.memoryDir).toBe(join(projectRoot, '.konteks'))
+        expect(context.configPath).toBe(
+            join(projectRoot, '.konteks', 'config.json'),
+        )
         expect(context.configExists).toBe(false)
     })
 
     it('skips changed-project extraction when memory is not initialized', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-runtime-'))
         tempDirs.push(projectRoot)
-        const context = await loadMcpProjectContext({ project: projectRoot })
+        await writeFile(join(projectRoot, 'package.json'), '{"name":"fixture"}\n')
+        const context = await withWorkingDirectory(projectRoot, () =>
+            loadMcpProjectContext(),
+        )
 
         await expect(
             updateChangedProjectMemorySilently(context),

@@ -2,7 +2,6 @@ import type {
     MemoryRecallInput,
     MemoryRepositoryContract,
 } from '@/contracts/repositories/memory-repository'
-import type { StartMcpServerOptions } from '@/models/mcp'
 import type {
     MemoryEntity,
     MemorySearchResult,
@@ -14,10 +13,9 @@ import createMemoryRepository from './create-memory-repository'
 import { loadMcpProjectContext, withProjectDatabaseContext } from './runtime'
 
 export async function recallMemory(
-    options: StartMcpServerOptions,
     input: MemoryRecallInput,
 ): Promise<RecallPackage> {
-    const context = await loadMcpProjectContext(options)
+    const context = await loadMcpProjectContext()
     return await withProjectDatabaseContext(context, service =>
         recallRepositoryMemory(createMemoryRepository(service, context), input),
     )

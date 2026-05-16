@@ -1,4 +1,3 @@
-import type { BaseCommandInput } from '@/commands/_base-command'
 import BaseCommand from '@/commands/_base-command'
 import type { ProjectStatus } from '@/contracts/services/project-status-reader'
 import readProjectStatus from '@/project/read-project-status'
@@ -13,8 +12,8 @@ export default class StatusCommand extends BaseCommand {
     readonly description = 'Print Konteks project memory status for humans.'
     readonly name = 'status'
 
-    async handle({ globalOptions }: BaseCommandInput): Promise<void> {
-        const status = await readProjectStatus(globalOptions.project)
+    async handle(): Promise<void> {
+        const status = await readProjectStatus()
 
         this.print(
             formatStatus(status, {

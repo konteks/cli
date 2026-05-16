@@ -29,7 +29,6 @@ export default class RestoreCommand extends BaseCommand<
 
     async handle({
         args,
-        globalOptions,
         options,
     }: BaseCommandInput<[string], RestoreOptions>): Promise<void> {
         this.print(
@@ -37,7 +36,6 @@ export default class RestoreCommand extends BaseCommand<
                 await restoreMemory({
                     force: options.force,
                     inputPath: args[0],
-                    project: globalOptions.project,
                 }),
             ),
         )

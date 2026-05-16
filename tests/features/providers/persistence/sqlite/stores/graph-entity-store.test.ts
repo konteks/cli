@@ -16,6 +16,20 @@ afterEach(async () => {
     )
 })
 
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
+
 describe('GraphEntityStore', () => {
     it('upserts canonical entities and searches aliases', async () => {
         const graph = await makeGraphEntityStore()
@@ -52,7 +66,9 @@ async function makeGraphEntityStore(): Promise<{
 }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-entity-test-'))
     tempDirs.push(projectRoot)
-    const context = await loadProjectContext(projectRoot)
+    const context = await withProjectRoot(projectRoot, () =>
+        loadProjectContext(),
+    )
     const service = await openProjectDatabase(context)
 
     return {

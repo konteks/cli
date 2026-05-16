@@ -2,7 +2,6 @@ import z from 'zod'
 import formatMemory from '@/mcp/tools/utils/format-memory'
 import inline from '@/mcp/tools/utils/inline'
 import warmUpMemory from '@/memory/warm-up-memory'
-import type { StartMcpServerOptions } from '@/models/mcp'
 import type {
     RecallPackage,
     WarmUpContext,
@@ -33,8 +32,8 @@ export default class WarmUpMcpTool extends BaseMcpTool<Input> {
 
     name = 'konteks_warm_up'
 
-    protected async coreHandle(options: StartMcpServerOptions, input: Input) {
-        const result = await warmUpMemory(options, input)
+    protected async coreHandle(input: Input) {
+        const result = await warmUpMemory(input)
         return formatWarmUpText(result)
     }
 }

@@ -1,29 +1,16 @@
-import { join } from 'node:path'
 import type { SaveOptions } from '@/contracts/repositories/memory-repository'
-import type { McpProjectContext, StartMcpServerOptions } from '@/models/mcp'
+import type { LoadedProjectContext } from '@/models/project'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import type DatabaseService from '@/providers/persistence/sqlite/database-service'
-import { loadProjectContext, pathExists } from '@/providers/project/context'
+import { loadProjectContext } from '@/providers/project/context'
 
 type SaveProjectUpdate = NonNullable<SaveOptions['projectUpdate']>
+export type McpProjectContext = LoadedProjectContext
 
-export async function loadMcpProjectContext(
-    options: StartMcpServerOptions,
-): Promise<McpProjectContext> {
-    const context = await loadProjectContext(options.project)
-    if (!options.memoryDir) {
-        return context
-    }
-
-    const configPath = join(options.memoryDir, 'config.json')
-    return {
-        ...context,
-        configExists: await pathExists(configPath),
-        configPath,
-        memoryDir: options.memoryDir,
-    }
+export async function loadMcpProjectContext(): Promise<McpProjectContext> {
+    return await loadProjectContext()
 }
 
 export async function withProjectDatabaseContext<T>(
@@ -41,7 +28,6 @@ export async function withProjectDatabaseContext<T>(
 
 export async function updateChangedProjectMemorySilently(
     context: McpProjectContext,
-    options: StartMcpServerOptions = {},
 ): Promise<SaveProjectUpdate | undefined> {
     if (
         !context.configExists ||
@@ -50,9 +36,7 @@ export async function updateChangedProjectMemorySilently(
         return undefined
     }
 
-    const result = await extractProject(context, 'changed', {
-        treeSitterEngine: options.treeSitterEngine,
-    })
+    const result = await extractProject(context, 'changed')
     return {
         deletedFilePaths: result.deletedFilePaths,
         updatedFilePaths: result.updatedFilePaths,

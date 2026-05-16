@@ -12,10 +12,9 @@ export type ReadProjectStatusOptions = {
 }
 
 export default async function readProjectStatus(
-    projectOverride?: string,
     options: ReadProjectStatusOptions = {},
 ): Promise<ProjectStatus> {
-    const context = await loadProjectContext(projectOverride)
+    const context = await loadProjectContext()
     const statusReader = options.statusReader ?? new ProjectStatusReader()
     return await statusReader.read(context)
 }

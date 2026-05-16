@@ -27,7 +27,7 @@ export default function createProjectExtractor(
 
     return {
         async execute(request) {
-            const project = await loadProjectContext(request.projectRoot)
+            const project = await loadProjectContext()
             return await extractionEngine.extract(project, request)
         },
     }

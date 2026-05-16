@@ -1,16 +1,13 @@
-import { cp, mkdtemp, rm } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, rename, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import type { BaseCommandInput } from '@/commands/_base-command'
 import BaseCommand from '@/commands/_base-command'
 import mcpTools from '@/mcp/tools'
-import type { GlobalCliOptions } from '@/models/cli'
-import type { StartMcpServerOptions } from '@/models/mcp'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
 import { parseJsonInput } from '@/support/cli/print-json'
 import printMcpCallResult from '@/support/cli/print-mcp-call-result'
-import { replaceStringDeep } from '@/support/object/value'
 
 type McpCallOptions = {
     apply?: boolean
@@ -46,7 +43,6 @@ export default class CallCommand extends BaseCommand<
 
     async handle({
         args,
-        globalOptions,
         options,
     }: BaseCommandInput<
         [ToolName, string | undefined],
@@ -62,12 +58,8 @@ export default class CallCommand extends BaseCommand<
         const isReadOnly = tool.annotations?.readOnlyHint === true
         const result =
             isReadOnly || options.apply
-                ? await callMcpTool(
-                      { project: globalOptions.project },
-                      args[0],
-                      input,
-                  )
-                : await dryRunCallTool(globalOptions, args[0], input)
+                ? await callMcpTool(args[0], input)
+                : await dryRunCallTool(args[0], input)
 
         printMcpCallResult(result, {
             json: options.json,
@@ -78,7 +70,6 @@ export default class CallCommand extends BaseCommand<
 type ToolName = (typeof mcpTools)[number]['name']
 
 async function callMcpTool(
-    options: StartMcpServerOptions,
     name: ToolName,
     input: unknown = {},
 ): Promise<CallToolResult> {
@@ -88,30 +79,37 @@ async function callMcpTool(
         throw new Error(`Unknown tool: ${name}`)
     }
 
-    return await mcpTool.handle(options, input)
+    return await mcpTool.handle(input)
 }
 
 async function dryRunCallTool(
-    options: GlobalCliOptions,
     name: ToolName,
     input: unknown,
 ): Promise<unknown> {
-    const context = await loadProjectContext(options.project)
+    const context = await loadProjectContext()
     const tempRoot = await mkdtemp(join(tmpdir(), 'konteks-mcp-dry-run-'))
-    const tempMemoryDir = join(tempRoot, '.konteks')
+    const tempMemoryDir = join(tempRoot, 'sandbox-memory')
+    const backupMemoryDir = join(tempRoot, 'original-memory')
+    const realMemoryExists = await pathExists(context.memoryDir)
 
     try {
-        if (await pathExists(context.memoryDir)) {
+        if (realMemoryExists) {
             await cp(context.memoryDir, tempMemoryDir, { recursive: true })
+        } else {
+            await mkdir(tempMemoryDir, { recursive: true })
         }
 
-        const result = await callMcpTool(
-            { memoryDir: tempMemoryDir, project: options.project },
-            name,
-            input,
-        )
-        return replaceStringDeep(result, tempMemoryDir, context.memoryDir)
+        if (realMemoryExists) {
+            await rename(context.memoryDir, backupMemoryDir)
+        }
+        await cp(tempMemoryDir, context.memoryDir, { recursive: true })
+
+        return await callMcpTool(name, input)
     } finally {
+        await rm(context.memoryDir, { force: true, recursive: true })
+        if (realMemoryExists) {
+            await rename(backupMemoryDir, context.memoryDir)
+        }
         await rm(tempRoot, { force: true, recursive: true })
     }
 }

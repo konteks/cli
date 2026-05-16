@@ -19,10 +19,9 @@ export default class InstallSkillsCommand extends BaseCommand<
     ]
 
     async handle({
-        globalOptions,
         options,
     }: BaseCommandInput<[], { global?: boolean }>): Promise<void> {
-        await this.run({ ...globalOptions, ...options })
+        await this.run(options)
     }
 
     async run(options: InstallSkillOptions): Promise<void> {

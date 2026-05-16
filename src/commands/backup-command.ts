@@ -13,15 +13,11 @@ export default class BackupCommand extends BaseCommand<[string]> {
     readonly description = 'Create a full .konteks backup archive.'
     readonly name = 'backup'
 
-    async handle({
-        args,
-        globalOptions,
-    }: BaseCommandInput<[string]>): Promise<void> {
+    async handle({ args }: BaseCommandInput<[string]>): Promise<void> {
         this.print(
             stringifyPretty(
                 await backupMemory({
                     outputPath: args[0],
-                    project: globalOptions.project,
                 }),
             ),
         )

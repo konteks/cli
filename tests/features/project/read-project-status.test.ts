@@ -9,7 +9,7 @@ import readProjectStatus, {
 } from '@/project/read-project-status'
 
 describe('project/status', () => {
-    it('loads the requested project and returns the status reader output', async () => {
+    it('loads the current project and returns the status reader output', async () => {
         const projectRoot = await createConfiguredProject()
         const status: ProjectStatus = {
             configExists: true,
@@ -43,7 +43,9 @@ describe('project/status', () => {
         }
 
         await expect(
-            readProjectStatus(projectRoot, { statusReader }),
+            withWorkingDirectory(projectRoot, () =>
+                readProjectStatus({ statusReader }),
+            ),
         ).resolves.toBe(status)
         expect(calls).toEqual([
             {
@@ -51,11 +53,9 @@ describe('project/status', () => {
                     extraction: {
                         grammars: { selected: [], updateTtlHours: 24 },
                     },
-                    projectRoot,
                     recall: { maxTokens: 2000 },
                     storage: {
                         inlinePayloadMaxBytes: 2048,
-                        memoryDir: '.konteks',
                     },
                 },
                 configExists: true,
@@ -66,6 +66,20 @@ describe('project/status', () => {
         ])
     })
 })
+
+async function withWorkingDirectory<T>(
+    cwd: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(cwd)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
 
 async function createConfiguredProject(): Promise<string> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-status-'))

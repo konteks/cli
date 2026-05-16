@@ -18,6 +18,20 @@ afterEach(async () => {
     )
 })
 
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
+
 describe('GraphTraversalStore', () => {
     it('traverses neighbors, historical relations, and directed paths', async () => {
         const graph = await makeGraphTraversalStore()
@@ -122,7 +136,9 @@ async function makeGraphTraversalStore(): Promise<{
 }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-traversal-test-'))
     tempDirs.push(projectRoot)
-    const context = await loadProjectContext(projectRoot)
+    const context = await withProjectRoot(projectRoot, () =>
+        loadProjectContext(),
+    )
     const service = await openProjectDatabase(context)
 
     return {

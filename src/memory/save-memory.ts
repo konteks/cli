@@ -4,7 +4,6 @@ import type {
     SaveMemoriesInput,
     SaveOptions,
 } from '@/contracts/repositories/memory-repository'
-import type { StartMcpServerOptions } from '@/models/mcp'
 import type { SaveResult } from '@/models/memory'
 import createMemoryRepository from './create-memory-repository'
 import {
@@ -14,14 +13,10 @@ import {
 } from './runtime'
 
 export async function saveMemories(
-    options: StartMcpServerOptions,
     input: SaveMemoriesInput,
 ): Promise<SaveResult> {
-    const context = await loadMcpProjectContext(options)
-    const projectUpdate = await updateChangedProjectMemorySilently(
-        context,
-        options,
-    )
+    const context = await loadMcpProjectContext()
+    const projectUpdate = await updateChangedProjectMemorySilently(context)
     return await withProjectDatabaseContext(context, service =>
         createMemoryRepository(service, context).saveMemories(input, {
             projectUpdate,
@@ -29,15 +24,9 @@ export async function saveMemories(
     )
 }
 
-export async function saveDiary(
-    options: StartMcpServerOptions,
-    input: SaveDiaryInput,
-): Promise<SaveResult> {
-    const context = await loadMcpProjectContext(options)
-    const projectUpdate = await updateChangedProjectMemorySilently(
-        context,
-        options,
-    )
+export async function saveDiary(input: SaveDiaryInput): Promise<SaveResult> {
+    const context = await loadMcpProjectContext()
+    const projectUpdate = await updateChangedProjectMemorySilently(context)
     return await withProjectDatabaseContext(context, service =>
         saveRepositoryDiary(createMemoryRepository(service, context), input, {
             projectUpdate,

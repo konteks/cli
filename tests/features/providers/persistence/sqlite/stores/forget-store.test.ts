@@ -16,7 +16,9 @@ async function makeAdapter() {
     tempDirs.push(projectRoot)
     await mkdir(join(projectRoot, '.konteks'), { recursive: true })
     await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
-    const context = await loadProjectContext(projectRoot)
+    const context = await withProjectRoot(projectRoot, () =>
+        loadProjectContext(),
+    )
     return {
         adapter: await openProjectDatabase(context),
         context,
@@ -30,6 +32,20 @@ afterEach(async () => {
             .map(path => rm(path, { force: true, recursive: true })),
     )
 })
+
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
 
 describe('forgetMemory', () => {
     it('soft deletes saved memory and removes it from search', async () => {

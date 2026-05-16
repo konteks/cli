@@ -35,7 +35,7 @@ const execFileAsync = promisify(execFile)
 export async function exportMemory(
     options: DurableMemoryExportOptions,
 ): Promise<DurableMemoryExportResult> {
-    const context = await loadProjectContext(options.project)
+    const context = await loadProjectContext()
     const service = await openProjectDatabase(context)
     try {
         const payload = await exportDurableMemory(service, context, {
@@ -60,7 +60,7 @@ export async function exportMemory(
 export async function importMemory(
     options: DurableMemoryImportOptions,
 ): Promise<DurableMemoryImportResult> {
-    const context = await loadProjectContext(options.project)
+    const context = await loadProjectContext()
     const payload = parseDurableMemoryExport(
         await readFile(options.inputPath, 'utf8'),
     )
@@ -77,7 +77,7 @@ export async function importMemory(
 export async function backupMemory(
     options: MemoryBackupOptions,
 ): Promise<MemoryBackupResult> {
-    const context = await loadProjectContext(options.project)
+    const context = await loadProjectContext()
     if (!(await pathExists(context.memoryDir))) {
         throw new CliUserError({
             command: 'konteks init',
@@ -95,7 +95,7 @@ export async function backupMemory(
 export async function restoreMemory(
     options: MemoryRestoreOptions,
 ): Promise<MemoryRestoreResult> {
-    const context = await loadProjectContext(options.project)
+    const context = await loadProjectContext()
     const inputPath = resolve(options.inputPath)
     const memoryDirExists = await pathExists(context.memoryDir)
     const targetHasFiles =

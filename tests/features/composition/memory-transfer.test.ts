@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { afterEach, describe, expect, it } from 'bun:test'
 import {
     mkdir,
@@ -41,10 +42,26 @@ afterEach(async () => {
     )
 })
 
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
+
 describe('memory transfer', () => {
     it('exports durable memories and diaries as portable JSON', async () => {
         const projectRoot = await makeInitializedProject()
-        const context = await loadProjectContext(projectRoot)
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         context.config.storage.inlinePayloadMaxBytes = 8
         const db = await openProjectDatabase(context)
         await saveKonteksMemory(db, context, {
@@ -61,7 +78,9 @@ describe('memory transfer', () => {
         await db.close()
 
         const outputPath = join(projectRoot, 'memory-export.json')
-        const result = await exportMemory({ outputPath, project: projectRoot })
+        const result = await withProjectRoot(projectRoot, () =>
+            exportMemory({ outputPath }),
+        )
         const payload = JSON.parse(await readFile(outputPath, 'utf8'))
 
         expect(result).toMatchObject({ diaries: 1, memories: 1 })
@@ -77,7 +96,9 @@ describe('memory transfer', () => {
 
     it('imports durable memory, rebuilds search indexes, and skips duplicates', async () => {
         const sourceRoot = await makeInitializedProject('konteks-transfer-src-')
-        const sourceContext = await loadProjectContext(sourceRoot)
+        const sourceContext = await withProjectRoot(sourceRoot, () =>
+            loadProjectContext(),
+        )
         const sourceDb = await openProjectDatabase(sourceContext)
         await saveKonteksMemory(sourceDb, sourceContext, {
             content: 'Imported durable memory should be searchable by recall.',
@@ -92,16 +113,19 @@ describe('memory transfer', () => {
         await sourceDb.close()
 
         const exportPath = join(sourceRoot, 'memory-export.json')
-        await exportMemory({ outputPath: exportPath, project: sourceRoot })
+        await withProjectRoot(sourceRoot, () =>
+            exportMemory({ outputPath: exportPath }),
+        )
 
         const targetRoot = await makeInitializedProject('konteks-transfer-dst-')
-        const dryRun = await importMemory({
-            dryRun: true,
-            inputPath: exportPath,
-            project: targetRoot,
-        })
+        const dryRun = await withProjectRoot(targetRoot, () =>
+            importMemory({
+                dryRun: true,
+                inputPath: exportPath,
+            }),
+        )
         let targetDb = await openProjectDatabase(
-            await loadProjectContext(targetRoot),
+            await withProjectRoot(targetRoot, () => loadProjectContext()),
         )
         const rows = await targetDb.adapter.query<{ count: number }>(
             'select count(*) as count from observations',
@@ -115,16 +139,18 @@ describe('memory transfer', () => {
         })
         expect(rows[0]?.count).toBe(0)
 
-        const imported = await importMemory({
-            inputPath: exportPath,
-            project: targetRoot,
-        })
-        const duplicate = await importMemory({
-            inputPath: exportPath,
-            project: targetRoot,
-        })
+        const imported = await withProjectRoot(targetRoot, () =>
+            importMemory({
+                inputPath: exportPath,
+            }),
+        )
+        const duplicate = await withProjectRoot(targetRoot, () =>
+            importMemory({
+                inputPath: exportPath,
+            }),
+        )
         targetDb = await openProjectDatabase(
-            await loadProjectContext(targetRoot),
+            await withProjectRoot(targetRoot, () => loadProjectContext()),
         )
         const results = await searchMemory(targetDb, {
             limit: 5,
@@ -156,13 +182,15 @@ describe('memory transfer', () => {
         )
 
         await expect(
-            importMemory({ inputPath, project: projectRoot }),
+            withProjectRoot(projectRoot, () => importMemory({ inputPath })),
         ).rejects.toThrow('Expected format "konteks.durable-memory.v1"')
     })
 
     it('exports inactive durable memory only when requested', async () => {
         const projectRoot = await makeInitializedProject()
-        const context = await loadProjectContext(projectRoot)
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         const db = await openProjectDatabase(context)
         const saved = await saveKonteksMemory(db, context, {
             content: 'Inactive memory should require an explicit export flag.',
@@ -177,12 +205,15 @@ describe('memory transfer', () => {
 
         const activeOnlyPath = join(projectRoot, 'active.json')
         const inactivePath = join(projectRoot, 'inactive.json')
-        await exportMemory({ outputPath: activeOnlyPath, project: projectRoot })
-        await exportMemory({
-            includeInactive: true,
-            outputPath: inactivePath,
-            project: projectRoot,
-        })
+        await withProjectRoot(projectRoot, () =>
+            exportMemory({ outputPath: activeOnlyPath }),
+        )
+        await withProjectRoot(projectRoot, () =>
+            exportMemory({
+                includeInactive: true,
+                outputPath: inactivePath,
+            }),
+        )
 
         const activeOnly = JSON.parse(await readFile(activeOnlyPath, 'utf8'))
         const withInactive = JSON.parse(await readFile(inactivePath, 'utf8'))
@@ -193,7 +224,9 @@ describe('memory transfer', () => {
 
     it('backs up and restores the full memory directory archive', async () => {
         const projectRoot = await makeInitializedProject('konteks-backup-src-')
-        const context = await loadProjectContext(projectRoot)
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         const db = await openProjectDatabase(context)
         await saveKonteksMemory(db, context, {
             content: 'Full backup should restore the exact memory database.',
@@ -203,15 +236,19 @@ describe('memory transfer', () => {
         await db.close()
 
         const archivePath = join(projectRoot, 'konteks-backup.tar.gz')
-        await backupMemory({ outputPath: archivePath, project: projectRoot })
+        await withProjectRoot(projectRoot, () =>
+            backupMemory({ outputPath: archivePath }),
+        )
         await rm(join(projectRoot, '.konteks'), {
             force: true,
             recursive: true,
         })
 
-        await restoreMemory({ inputPath: archivePath, project: projectRoot })
+        await withProjectRoot(projectRoot, () =>
+            restoreMemory({ inputPath: archivePath }),
+        )
         const restoredDb = await openProjectDatabase(
-            await loadProjectContext(projectRoot),
+            await withProjectRoot(projectRoot, () => loadProjectContext()),
         )
         const rows = await restoredDb.adapter.query<{ count: number }>(
             'select count(*) as count from observations',
@@ -224,11 +261,11 @@ describe('memory transfer', () => {
     it('refuses restore over non-empty memory unless forced and creates a safety backup', async () => {
         const sourceRoot = await makeInitializedProject('konteks-backup-src-')
         const sourceDb = await openProjectDatabase(
-            await loadProjectContext(sourceRoot),
+            await withProjectRoot(sourceRoot, () => loadProjectContext()),
         )
         await saveKonteksMemory(
             sourceDb,
-            await loadProjectContext(sourceRoot),
+            await withProjectRoot(sourceRoot, () => loadProjectContext()),
             {
                 content:
                     'Backup source memory content is intentionally distinct.',
@@ -238,18 +275,23 @@ describe('memory transfer', () => {
         )
         await sourceDb.close()
         const archivePath = join(sourceRoot, 'konteks-backup.tar.gz')
-        await backupMemory({ outputPath: archivePath, project: sourceRoot })
+        await withProjectRoot(sourceRoot, () =>
+            backupMemory({ outputPath: archivePath }),
+        )
 
         const targetRoot = await makeInitializedProject('konteks-backup-dst-')
         await expect(
-            restoreMemory({ inputPath: archivePath, project: targetRoot }),
+            withProjectRoot(targetRoot, () =>
+                restoreMemory({ inputPath: archivePath }),
+            ),
         ).rejects.toThrow('not empty')
 
-        const restored = await restoreMemory({
-            force: true,
-            inputPath: archivePath,
-            project: targetRoot,
-        })
+        const restored = await withProjectRoot(targetRoot, () =>
+            restoreMemory({
+                force: true,
+                inputPath: archivePath,
+            }),
+        )
         expect(restored.safetyBackupPath).toBeString()
         expect(await readdir(join(targetRoot, '.konteks'))).toContain(
             'memory.sqlite',

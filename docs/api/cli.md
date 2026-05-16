@@ -67,11 +67,3 @@ konteks install-skills [--global]
 ```
 
 This writes the Konteks lifecycle prompts (`warm-up`, `recall`, `save`) as native skills into `.agents/skills` (local) or `~/.agents/skills` (global).
-
-## Global Options
-
-| Option | Use When |
-| :--- | :--- |
-| `--project <path>` | Run Konteks against a specific project root. |
-| `--verbose` | Show detailed diagnostic output. |
-| `--help` | Show command help. |

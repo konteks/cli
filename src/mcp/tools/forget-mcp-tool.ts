@@ -1,6 +1,5 @@
 import z from 'zod'
 import forgetMemory from '@/memory/forget-memory'
-import type { StartMcpServerOptions } from '@/models/mcp'
 import BaseMcpTool from './_base-mcp-tool'
 
 const INPUT_SCHEMA = z
@@ -31,7 +30,7 @@ export default class ForgetMcpTool extends BaseMcpTool<Input> {
 
     name = 'konteks_forget'
 
-    protected async coreHandle(options: StartMcpServerOptions, input: Input) {
-        return forgetMemory(options, input)
+    protected async coreHandle(input: Input) {
+        return forgetMemory(input)
     }
 }

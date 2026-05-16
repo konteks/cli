@@ -14,7 +14,9 @@ async function makeTaxonomyStore(): Promise<{
 }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-tax-test-'))
     tempDirs.push(projectRoot)
-    const context = await loadProjectContext(projectRoot)
+    const context = await withProjectRoot(projectRoot, () =>
+        loadProjectContext(),
+    )
     const service = await openProjectDatabase(context)
 
     return {
@@ -30,6 +32,20 @@ afterEach(async () => {
             .map(path => rm(path, { force: true, recursive: true })),
     )
 })
+
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
 
 describe('TaxonomyStore', () => {
     it('upserts sibling nodes by case-insensitive name', async () => {

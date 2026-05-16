@@ -34,7 +34,6 @@ export default async function extractSections(
         metadata?: ProjectMetadata
         mode?: 'changed' | 'full' | 'reindex' | 'resume'
         onProgress?: ExtractionProgressReporter
-        treeSitterEngine?: TreeSitterEngine
     } = {},
 ): Promise<ExtractSectionsResult> {
     const progress = options.onProgress
@@ -47,13 +46,13 @@ export default async function extractSections(
             phase: 'chunks',
             status: 'start',
         })
-        engine = options.treeSitterEngine ?? new TreeSitterEngine()
+        engine = new TreeSitterEngine()
         const loaded = await initTreeSitterWithSelectedGrammars(
             engine,
             context,
             { onProgress: progress },
         )
-        if (loaded.loaded.length === 0 && !options.treeSitterEngine) {
+        if (loaded.loaded.length === 0) {
             engine = undefined
         }
         for (const warning of loaded.warnings) {

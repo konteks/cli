@@ -1,13 +1,12 @@
 import type { Command as CommanderCommand } from 'commander'
-import type { GlobalCliOptions } from '@/models/cli'
 import { terminal } from '@/support/terminal/service'
 import { VERSION } from '@/support/version'
 
 export type Command = CommanderCommand
 
 export type BaseCommandContext = {
-    runInitializationGuard: (project?: string) => Promise<void>
-    getGlobalOptions: () => GlobalCliOptions
+    runInitializationGuard: () => Promise<void>
+    getGlobalOptions: () => Record<string, never>
 }
 
 export type BaseCommandInput<
@@ -15,7 +14,7 @@ export type BaseCommandInput<
     Options extends object = Record<string, never>,
 > = {
     args: Args
-    globalOptions: GlobalCliOptions
+    globalOptions: Record<string, never>
     options: Options
 }
 
@@ -73,7 +72,7 @@ export default abstract class BaseCommand<
             }
 
             if (this.usesInitializationGuard) {
-                await context.runInitializationGuard(globalOptions.project)
+                await context.runInitializationGuard()
             }
 
             await this.handle({

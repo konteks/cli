@@ -1,5 +1,4 @@
 import type { MemoryRepositoryContract } from '@/contracts/repositories/memory-repository'
-import type { StartMcpServerOptions } from '@/models/mcp'
 import type {
     RecallPackage,
     WarmUpContext,
@@ -22,12 +21,12 @@ export type WarmUpResult = {
     recall?: RecallPackage
 }
 
-export default async function warmUpMemory(
-    options: StartMcpServerOptions,
-    input: { maxTokens?: number; topic?: string },
-): Promise<WarmUpResult> {
-    const context = await loadMcpProjectContext(options)
-    await updateChangedProjectMemorySilently(context, options)
+export default async function warmUpMemory(input: {
+    maxTokens?: number
+    topic?: string
+}): Promise<WarmUpResult> {
+    const context = await loadMcpProjectContext()
+    await updateChangedProjectMemorySilently(context)
 
     return await withProjectDatabaseContext(context, service =>
         warmUpRepositoryMemory({

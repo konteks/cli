@@ -17,6 +17,20 @@ afterEach(async () => {
     )
 })
 
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
+
 describe('TaxonomyLinkStore', () => {
     it('links targets idempotently and lists them sorted', async () => {
         const taxonomy = await makeTaxonomyLinkStore()
@@ -57,7 +71,9 @@ async function makeTaxonomyLinkStore(): Promise<{
 }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-tax-link-test-'))
     tempDirs.push(projectRoot)
-    const context = await loadProjectContext(projectRoot)
+    const context = await withProjectRoot(projectRoot, () =>
+        loadProjectContext(),
+    )
     const service = await openProjectDatabase(context)
 
     return {

@@ -15,7 +15,9 @@ const tempDirs: string[] = []
 async function makeAdapter() {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-fts-test-'))
     tempDirs.push(projectRoot)
-    return openProjectDatabase(await loadProjectContext(projectRoot))
+    return await withProjectRoot(projectRoot, async () =>
+        openProjectDatabase(await loadProjectContext()),
+    )
 }
 
 afterEach(async () => {
@@ -25,6 +27,20 @@ afterEach(async () => {
             .map(path => rm(path, { force: true, recursive: true })),
     )
 })
+
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
 
 describe('search index', () => {
     it('creates an FTS index when supported by SQLite WASM', async () => {

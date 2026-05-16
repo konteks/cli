@@ -16,6 +16,20 @@ afterEach(async () => {
     )
 })
 
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
+
 describe('TaxonomyNodeStore', () => {
     it('upserts sibling nodes by case-insensitive name', async () => {
         const taxonomy = await makeTaxonomyNodeStore()
@@ -43,7 +57,9 @@ async function makeTaxonomyNodeStore(): Promise<{
 }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-tax-node-test-'))
     tempDirs.push(projectRoot)
-    const context = await loadProjectContext(projectRoot)
+    const context = await withProjectRoot(projectRoot, () =>
+        loadProjectContext(),
+    )
     const service = await openProjectDatabase(context)
 
     return {

@@ -18,7 +18,7 @@ async function makeTempContext() {
     tempDirs.push(projectRoot)
     await mkdir(join(projectRoot, '.konteks'), { recursive: true })
     await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
-    return loadProjectContext(projectRoot)
+    return await withProjectRoot(projectRoot, () => loadProjectContext())
 }
 
 afterEach(async () => {
@@ -28,6 +28,20 @@ afterEach(async () => {
             .map(path => rm(path, { force: true, recursive: true })),
     )
 })
+
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
 
 describe('save and search stores', () => {
     it('persists memory observations and returns lexical matches', async () => {

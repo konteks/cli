@@ -14,7 +14,6 @@ import {
 export type InitializeProjectOptions = {
     embeddingProvider?: EmbeddingProviderContract
     grammars?: string[]
-    project?: string
 }
 
 export type InitializeProjectResult =
@@ -31,7 +30,7 @@ export type InitializeProjectResult =
 export default async function initializeProject(
     options: InitializeProjectOptions,
 ): Promise<InitializeProjectResult> {
-    const context = await loadProjectContext(options.project)
+    const context = await loadProjectContext()
     if (
         context.configExists &&
         (await readExtractionManifest(context.memoryDir))
@@ -45,7 +44,7 @@ export default async function initializeProject(
     await mkdir(context.memoryDir, { recursive: true })
     await mkdir(join(context.memoryDir, 'objects'), { recursive: true })
 
-    const defaultConfig = createDefaultConfig(context.projectRoot)
+    const defaultConfig = createDefaultConfig()
     await writeFile(
         context.configPath,
         `${JSON.stringify(
@@ -67,7 +66,7 @@ export default async function initializeProject(
             throw error
         }
     })
-    await ensureProjectDatabase(await loadProjectContext(options.project))
+    await ensureProjectDatabase(await loadProjectContext())
     await ensureKonteksGitignore(context.projectRoot)
 
     const progress = createExtractionProgressReporter()
