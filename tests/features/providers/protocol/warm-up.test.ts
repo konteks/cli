@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { callKonteksTool } from '@/mcp/handlers'
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
+import mcpTools from '@/mcp/tools'
+import type { StartMcpServerOptions } from '@/models/mcp'
 import { extractProject } from '@/providers/extraction/extract-project'
 import { loadProjectContext } from '@/providers/project/context'
 import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
@@ -88,9 +90,7 @@ describe('konteks_warm_up', () => {
             'konteks_warm_up',
             { maxTokens: 500 },
         )
-        const text =
-            result.content.find(item => item.type === 'text' && 'text' in item)
-                ?.text ?? ''
+        const text = extractText(result)
 
         expect(text).toContain('warm_up:')
         expect(text).toContain('summary:')
@@ -128,9 +128,7 @@ describe('konteks_warm_up', () => {
             'konteks_warm_up',
             { maxTokens: 500 },
         )
-        const text = result.content.find(
-            item => item.type === 'text' && 'text' in item,
-        )?.text
+        const text = extractText(result)
         const manifest = await readExtractionManifest(context.memoryDir)
 
         expect(manifest?.mode).toBe('changed')
@@ -166,9 +164,7 @@ describe('konteks_warm_up', () => {
             'konteks_warm_up',
             { maxTokens: 500, topic: 'focused recall warm up' },
         )
-        const text =
-            result.content.find(item => item.type === 'text' && 'text' in item)
-                ?.text ?? ''
+        const text = extractText(result)
 
         expect(text).toContain('recall:')
         expect(text).toContain('quality:')
@@ -181,4 +177,31 @@ async function readExtractionManifest(memoryDir: string) {
         '@/providers/extraction/engine/manifest'
     )
     return read(memoryDir)
+}
+
+async function callKonteksTool(
+    options: StartMcpServerOptions,
+    name: string,
+    input: unknown,
+): Promise<CallToolResult> {
+    const tool = mcpTools.find(item => item.name === name)
+
+    if (!tool) {
+        throw new Error(`Unknown tool: ${name}`)
+    }
+
+    return await tool.handle(options, input)
+}
+
+function extractText(result: CallToolResult): string {
+    return (
+        result.content.find(
+            (
+                item,
+            ): item is Extract<
+                CallToolResult['content'][number],
+                { type: 'text' }
+            > => item.type === 'text',
+        )?.text ?? ''
+    )
 }
