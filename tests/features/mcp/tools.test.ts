@@ -53,7 +53,15 @@ describe('MCP tools', () => {
 
         const tool = new FixtureTool()
 
-        await expect(tool.handle({})).rejects.toThrow()
+        await expect(tool.handle({})).resolves.toEqual({
+            content: [
+                {
+                    text: 'Invalid arguments for tool fixture_tool: value: Invalid input: expected string, received undefined',
+                    type: 'text',
+                },
+            ],
+            isError: true,
+        })
         await expect(tool.handle({ value: 'ok' })).resolves.toEqual({
             content: [{ text: 'value: ok', type: 'text' }],
         })
@@ -84,6 +92,36 @@ describe('MCP tools', () => {
 
         await expect(tool.handle({ value: 'ok' })).resolves.toEqual({
             content: [{ text: 'value=ok', type: 'text' }],
+        })
+    })
+
+    it('sanitizes unexpected execution failures', async () => {
+        class FixtureTool extends BaseMcpTool {
+            readonly annotations = {
+                destructiveHint: false,
+                idempotentHint: true,
+                openWorldHint: false,
+                readOnlyHint: true,
+            }
+            readonly description = 'Fixture tool.'
+            readonly inputSchema = z.object({})
+            readonly name = 'fixture_tool'
+
+            protected override async coreHandle(): Promise<string> {
+                throw new Error('database exploded')
+            }
+        }
+
+        const tool = new FixtureTool()
+
+        await expect(tool.handle({})).resolves.toEqual({
+            content: [
+                {
+                    text: 'Konteks MCP tool failed due to an internal error.',
+                    type: 'text',
+                },
+            ],
+            isError: true,
         })
     })
 })

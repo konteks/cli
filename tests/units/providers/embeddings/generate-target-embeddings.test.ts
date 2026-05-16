@@ -14,9 +14,24 @@ const tempDirs: string[] = []
 async function makeTempProject(): Promise<string> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-embed-test-'))
     tempDirs.push(projectRoot)
+    await mkdir(join(projectRoot, '.git'), { recursive: true })
     await mkdir(join(projectRoot, '.konteks'), { recursive: true })
     await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
     return projectRoot
+}
+
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
 }
 
 afterEach(async () => {
@@ -30,7 +45,9 @@ afterEach(async () => {
 describe('generateTargetEmbeddings', () => {
     it('embeds retrieval documents and reuses by embedding hash', async () => {
         const projectRoot = await makeTempProject()
-        const context = await loadProjectContext(projectRoot)
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         const service = await openProjectDatabase(context)
 
         await upsertRetrievalDocument(service, {

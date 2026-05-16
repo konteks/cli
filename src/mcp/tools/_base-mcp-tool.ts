@@ -1,6 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { encode as encodeToon } from '@toon-format/toon'
 import z from 'zod'
+import { createMcpToolErrorResult } from '@/mcp/error-handling'
 
 export type McpInputSchema = Record<string, z.ZodTypeAny> | z.ZodType
 
@@ -30,9 +31,16 @@ export default abstract class BaseMcpTool<Input = unknown> {
     }
 
     public async handle(input: unknown): Promise<CallToolResult> {
-        const formattedInput = this.validate(input)
-        const result = await this.coreHandle(formattedInput)
-        return this.formatOutput(result)
+        try {
+            const formattedInput = this.validate(input)
+            const result = await this.coreHandle(formattedInput)
+            return this.formatOutput(result)
+        } catch (error) {
+            return createMcpToolErrorResult({
+                error,
+                toolName: this.name,
+            })
+        }
     }
 
     protected abstract coreHandle(input: Input): Promise<string | object>

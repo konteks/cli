@@ -16,6 +16,7 @@ const tempDirs: string[] = []
 async function makeTempContext() {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-memory-test-'))
     tempDirs.push(projectRoot)
+    await mkdir(join(projectRoot, '.git'), { recursive: true })
     await mkdir(join(projectRoot, '.konteks'), { recursive: true })
     await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
     return await withProjectRoot(projectRoot, () => loadProjectContext())

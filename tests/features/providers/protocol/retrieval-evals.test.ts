@@ -5,27 +5,31 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import mcpTools from '@/mcp/tools'
-import type { StartMcpServerOptions } from '@/models/mcp'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import { loadProjectContext } from '@/providers/project/context'
 import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
-import FakeTreeSitterEngine from '@/support/fake/fake-tree-sitter-engine'
 
 const tempDirs: string[] = []
-
-function mcpOptions(project: string) {
-    return {
-        project,
-        treeSitterEngine: new FakeTreeSitterEngine() as never,
-    }
-}
 
 function extractionOptions() {
     return {
         embeddingProvider: new FakeEmbeddingProvider(),
-        treeSitterEngine: new FakeTreeSitterEngine() as never,
+    }
+}
+
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
     }
 }
 
@@ -44,29 +48,20 @@ describe('retrieval quality evals', () => {
         )
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
         await writeFile(
-            join(projectRoot, 'package.json'),
-            JSON.stringify(
-                {
-                    dependencies: { commander: '^14.0.0' },
-                    name: 'packaging-fixture',
-                    packageManager: 'bun@1.3.12',
-                },
-                null,
-                2,
-            ),
-        )
-        await writeFile(
-            join(projectRoot, 'src', 'cli.ts'),
+            join(projectRoot, 'src', 'cli.txt'),
             'export const run = () => "ok"\n',
         )
-        const context = await loadProjectContext(projectRoot)
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         await extractProject(context, 'full', extractionOptions())
 
-        const result = await callKonteksTool(
-            mcpOptions(projectRoot),
-            'konteks_recall',
-            { task: 'packaging mcp registration package manager' },
+        const result = await withProjectRoot(projectRoot, () =>
+            callKonteksTool('konteks_recall', {
+                task: 'packaging mcp registration package manager',
+            }),
         )
         const text = extractText(result)
 
@@ -79,12 +74,19 @@ describe('retrieval quality evals', () => {
             join(tmpdir(), 'konteks-eval-errors-'),
         )
         tempDirs.push(projectRoot)
-        const context = await loadProjectContext(projectRoot)
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         await extractProject(context, 'full', extractionOptions())
 
         await expect(
-            callKonteksTool(mcpOptions(projectRoot), 'konteks_save_diary', {}),
-        ).rejects.toThrow()
+            withProjectRoot(projectRoot, () =>
+                callKonteksTool('konteks_save_diary', {}),
+            ),
+        ).resolves.toMatchObject({
+            isError: true,
+        })
     })
 
     it('rejects invalid save chat before refreshing project memory', async () => {
@@ -93,36 +95,39 @@ describe('retrieval quality evals', () => {
         )
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
         await writeFile(
-            join(projectRoot, 'package.json'),
-            JSON.stringify({ name: 'invalid-save-refresh' }, null, 2),
-        )
-        await writeFile(
-            join(projectRoot, 'src', 'index.ts'),
+            join(projectRoot, 'src', 'index.txt'),
             'export const first = true\n',
         )
-        const context = await loadProjectContext(projectRoot)
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         await extractProject(context, 'full', extractionOptions())
         await writeFile(
-            join(projectRoot, 'src', 'should-not-refresh.ts'),
+            join(projectRoot, 'src', 'should-not-refresh.txt'),
             'export const shouldNotRefresh = true\n',
         )
 
         await expect(
-            callKonteksTool(mcpOptions(projectRoot), 'konteks_save_memories', {
-                memories: [
-                    {
-                        content: 'too short',
-                        importance: 1,
-                        kind: 'note',
-                    },
-                ],
-            }),
-        ).rejects.toThrow()
+            withProjectRoot(projectRoot, () =>
+                callKonteksTool('konteks_save_memories', {
+                    memories: [
+                        {
+                            content: 'too short',
+                            importance: 1,
+                            kind: 'note',
+                        },
+                    ],
+                }),
+            ),
+        ).resolves.toMatchObject({
+            isError: true,
+        })
         const manifest = await readExtractionManifest(context.memoryDir)
 
         expect(manifest?.files.map(file => file.path)).not.toContain(
-            'src/should-not-refresh.ts',
+            'src/should-not-refresh.txt',
         )
     })
 
@@ -130,28 +135,25 @@ describe('retrieval quality evals', () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-eval-save-'))
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
         await writeFile(
-            join(projectRoot, 'package.json'),
-            JSON.stringify({ name: 'save-refresh' }, null, 2),
-        )
-        await writeFile(
-            join(projectRoot, 'src', 'index.ts'),
+            join(projectRoot, 'src', 'index.txt'),
             'export const first = true\n',
         )
-        const context = await loadProjectContext(projectRoot)
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         await extractProject(context, 'full', extractionOptions())
         await writeFile(
-            join(projectRoot, 'src', 'saved-change.ts'),
+            join(projectRoot, 'src', 'saved-change.txt'),
             'export const savedChange = true\n',
         )
 
-        const result = await callKonteksTool(
-            mcpOptions(projectRoot),
-            'konteks_save_diary',
-            {
+        const result = await withProjectRoot(projectRoot, () =>
+            callKonteksTool('konteks_save_diary', {
                 summary:
                     'Saved structured diary context after refreshing changed project memory.',
-            },
+            }),
         )
         const text = extractText(result)
         const manifest = await readExtractionManifest(context.memoryDir)
@@ -168,9 +170,9 @@ limit 1
 
         expect(manifest?.mode).toBe('changed')
         expect(manifest?.files.map(file => file.path)).toContain(
-            'src/saved-change.ts',
+            'src/saved-change.txt',
         )
-        expect(diaryRows[0]?.summary).toContain('src/saved-change.ts')
+        expect(diaryRows[0]?.summary).toContain('src/saved-change.txt')
         expect(text).toContain('konteks: session diary saved')
         expect(text).not.toContain('mode')
         expect(text).not.toContain('Extraction complete')
@@ -182,21 +184,20 @@ limit 1
         )
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, 'src', 'mcp'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
         await writeFile(
-            join(projectRoot, 'package.json'),
-            JSON.stringify({ name: 'warm-up-arch' }, null, 2),
-        )
-        await writeFile(
-            join(projectRoot, 'src', 'mcp', 'server.ts'),
+            join(projectRoot, 'src', 'mcp', 'server.txt'),
             'export const serve = () => true\n',
         )
-        const context = await loadProjectContext(projectRoot)
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         await extractProject(context, 'full', extractionOptions())
 
-        const result = await callKonteksTool(
-            mcpOptions(projectRoot),
-            'konteks_warm_up',
-            { maxTokens: 600 },
+        const result = await withProjectRoot(projectRoot, () =>
+            callKonteksTool('konteks_warm_up', {
+                maxTokens: 600,
+            }),
         )
         const text = extractText(result)
 
@@ -208,21 +209,20 @@ limit 1
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-eval-toon-'))
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
         await writeFile(
-            join(projectRoot, 'package.json'),
-            JSON.stringify({ name: 'toon-fixture' }, null, 2),
-        )
-        await writeFile(
-            join(projectRoot, 'src', 'index.ts'),
+            join(projectRoot, 'src', 'index.txt'),
             'export const f = () => 1\n',
         )
-        const context = await loadProjectContext(projectRoot)
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         await extractProject(context, 'full', extractionOptions())
 
-        const result = await callKonteksTool(
-            mcpOptions(projectRoot),
-            'konteks_recall',
-            { task: 'index function' },
+        const result = await withProjectRoot(projectRoot, () =>
+            callKonteksTool('konteks_recall', {
+                task: 'index function',
+            }),
         )
         const text = extractText(result)
 
@@ -239,29 +239,28 @@ limit 1
         await mkdir(join(projectRoot, 'docs', 'getting-started'), {
             recursive: true,
         })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
         await writeFile(
-            join(projectRoot, 'package.json'),
-            JSON.stringify({ name: 'recall-shape-fixture' }, null, 2),
-        )
-        await writeFile(
-            join(projectRoot, 'src', 'mcp', 'server.ts'),
+            join(projectRoot, 'src', 'mcp', 'server.txt'),
             'export const konteks_recall = () => "return shape"\n',
         )
         await writeFile(
-            join(projectRoot, 'src', 'mcp', 'retrieval-format.ts'),
+            join(projectRoot, 'src', 'mcp', 'retrieval-format.txt'),
             'export const formatRecallText = () => "recall return shape"\n',
         )
         await writeFile(
             join(projectRoot, 'docs', 'getting-started', 'lifecycle.md'),
             '# Build\nUse recall during the build phase.\n',
         )
-        const context = await loadProjectContext(projectRoot)
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         await extractProject(context, 'full', extractionOptions())
 
-        const result = await callKonteksTool(
-            mcpOptions(projectRoot),
-            'konteks_recall',
-            { task: 'improve konteks_recall return shape' },
+        const result = await withProjectRoot(projectRoot, () =>
+            callKonteksTool('konteks_recall', {
+                task: 'improve konteks_recall return shape',
+            }),
         )
         const text = extractText(result)
 
@@ -278,15 +277,14 @@ limit 1
         )
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
         await writeFile(
-            join(projectRoot, 'package.json'),
-            JSON.stringify({ name: 'sqlite-fixture' }, null, 2),
-        )
-        await writeFile(
-            join(projectRoot, 'src', 'store.ts'),
+            join(projectRoot, 'src', 'store.txt'),
             'export const storage = "sqlite wasm local storage"\n',
         )
-        const context = await loadProjectContext(projectRoot)
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         await extractProject(context, 'full', extractionOptions())
         const adapter = await openProjectDatabase(context)
         const rows = await adapter.adapter.query<{ count: number }>(
@@ -298,7 +296,6 @@ limit 1
 })
 
 async function callKonteksTool(
-    options: StartMcpServerOptions,
     name: string,
     input: unknown,
 ): Promise<CallToolResult> {
@@ -308,7 +305,7 @@ async function callKonteksTool(
         throw new Error(`Unknown tool: ${name}`)
     }
 
-    return await tool.handle(options, input)
+    return await tool.handle(input)
 }
 
 function extractText(result: CallToolResult): string {

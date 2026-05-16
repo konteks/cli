@@ -285,7 +285,7 @@ describe('mcp/stdio interface', () => {
             )
             expect(invalidDiarySave.isError).toBe(true)
             expect(extractToolText(invalidDiarySave)).toContain(
-                'expected string, received undefined',
+                'Invalid arguments for tool konteks_save_diary',
             )
 
             const invalidMemorySave = resultById<ToolCallResult>(
@@ -299,7 +299,7 @@ describe('mcp/stdio interface', () => {
             )
             expect(invalidMemorySave.isError).toBe(true)
             expect(extractToolText(invalidMemorySave)).toContain(
-                'expected array, received undefined',
+                'Invalid arguments for tool konteks_save_memories',
             )
         } finally {
             await fixture.cleanup()
@@ -363,20 +363,9 @@ async function createInitializedProject(prefix: string): Promise<{
     const projectRoot = await mkdtemp(join(tmpdir(), prefix))
 
     await mkdir(join(projectRoot, 'src'), { recursive: true })
+    await mkdir(join(projectRoot, '.git'), { recursive: true })
     await writeFile(
-        join(projectRoot, 'package.json'),
-        JSON.stringify(
-            {
-                dependencies: { commander: '^14.0.0' },
-                name: 'mcp-stdio-fixture',
-                packageManager: 'bun@1.3.12',
-            },
-            null,
-            2,
-        ),
-    )
-    await writeFile(
-        join(projectRoot, 'src', 'index.ts'),
+        join(projectRoot, 'src', 'index.txt'),
         'export const run = () => "stdio fixture"\n',
     )
     await mkdir(join(projectRoot, '.konteks'), { recursive: true })
@@ -422,7 +411,7 @@ async function runMcpExchange(
             .join('\n')
 
         await writeFile(inputPath, `${input}\n`)
-        const command = `node dist/main.js mcp < ${shellQuote(inputPath)} > ${shellQuote(outputPath)}`
+        const command = `node ${shellQuote(join(process.cwd(), 'dist', 'main.js'))} mcp < ${shellQuote(inputPath)} > ${shellQuote(outputPath)}`
 
         await execFileAsync('sh', ['-lc', command], {
             cwd: projectRoot,

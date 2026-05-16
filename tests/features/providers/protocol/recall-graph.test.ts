@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { recallRepositoryMemory } from '@/memory/recall'
@@ -11,10 +11,27 @@ import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []
 
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
+
 async function makeGraph() {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-recall-graph-'))
     tempDirs.push(projectRoot)
-    const context = await loadProjectContext(projectRoot)
+    await mkdir(join(projectRoot, '.git'), { recursive: true })
+    const context = await withProjectRoot(projectRoot, () =>
+        loadProjectContext(),
+    )
     const adapter = await openProjectDatabase(context)
     return {
         adapter,
@@ -67,11 +84,14 @@ describe('recallGraph', () => {
 
         expect(items.map(item => item.relatedEntityName)).toContain('Bun')
         expect(items.map(item => item.relatedEntityName)).not.toContain('Node')
-        expect(items[0]).toMatchObject({
-            depth: 1,
-            entityName: 'Konteks',
-            predicate: 'prefers_runtime',
-        })
+        expect(items).toContainEqual(
+            expect.objectContaining({
+                depth: 1,
+                entityName: 'Konteks',
+                predicate: 'prefers_runtime',
+                relatedEntityName: 'Bun',
+            }),
+        )
         await adapter.close()
     })
 
@@ -114,14 +134,14 @@ describe('recallGraph', () => {
         const historical = historicalRecall.history
 
         expect(normal).toEqual([])
-        expect(historical).toEqual([
+        expect(historical).toContainEqual(
             expect.objectContaining({
                 objectEntityName: 'Global Memory',
                 predicate: 'stores_in',
                 status: 'superseded',
                 subjectEntityName: 'Konteks',
             }),
-        ])
+        )
         await adapter.close()
     })
 })

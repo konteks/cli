@@ -309,6 +309,7 @@ async function createInitializedProject(
     tempDirs.push(projectRoot)
 
     await mkdir(projectRoot, { recursive: true })
+    await mkdir(join(projectRoot, '.git'), { recursive: true })
     await writeFile(join(projectRoot, 'README.md'), '# Fixture\n')
 
     await withProjectRoot(projectRoot, () =>

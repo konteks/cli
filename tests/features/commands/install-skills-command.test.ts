@@ -32,7 +32,10 @@ describe('InstallSkillsCommand', () => {
     it('installs Konteks skills', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-skills-'))
         tempDirs.push(projectRoot)
-        await writeFile(join(projectRoot, 'package.json'), '{"name":"fixture"}\n')
+        await writeFile(
+            join(projectRoot, 'package.json'),
+            '{"name":"fixture"}\n',
+        )
 
         await withWorkingDirectory(projectRoot, () =>
             new InstallSkillsCommand().run({}),
@@ -74,7 +77,10 @@ describe('InstallSkillsCommand', () => {
     it('installs local skills into the current project by default', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-skills-'))
         tempDirs.push(projectRoot)
-        await writeFile(join(projectRoot, 'package.json'), '{"name":"fixture"}\n')
+        await writeFile(
+            join(projectRoot, 'package.json'),
+            '{"name":"fixture"}\n',
+        )
 
         await withWorkingDirectory(projectRoot, () =>
             new InstallSkillsCommand().run({}),

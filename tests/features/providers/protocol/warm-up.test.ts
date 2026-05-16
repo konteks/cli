@@ -5,23 +5,27 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import mcpTools from '@/mcp/tools'
-import type { StartMcpServerOptions } from '@/models/mcp'
 import { extractProject } from '@/providers/extraction/extract-project'
 import { loadProjectContext } from '@/providers/project/context'
 import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
-import FakeTreeSitterEngine from '@/support/fake/fake-tree-sitter-engine'
-
-function mcpOptions(project: string) {
-    return {
-        project,
-        treeSitterEngine: new FakeTreeSitterEngine() as never,
-    }
-}
 
 function extractionOptions() {
     return {
         embeddingProvider: new FakeEmbeddingProvider(),
-        treeSitterEngine: new FakeTreeSitterEngine() as never,
+    }
+}
+
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
     }
 }
 
@@ -39,30 +43,20 @@ describe('konteks_warm_up', () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
         await writeFile(
-            join(projectRoot, 'package.json'),
-            JSON.stringify(
-                {
-                    dependencies: { typescript: '^5.0.0' },
-                    name: 'warm-up-fixture',
-                },
-                null,
-                2,
-            ),
-        )
-        await writeFile(
-            join(projectRoot, 'src', 'index.ts'),
+            join(projectRoot, 'src', 'index.txt'),
             'export const version = "1.0.0"\n',
         )
 
-        const context = await loadProjectContext(projectRoot)
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         await extractProject(context, 'full', extractionOptions())
 
         // Seed some durable memories
-        await callKonteksTool(
-            mcpOptions(projectRoot),
-            'konteks_save_memories',
-            {
+        await withProjectRoot(projectRoot, () =>
+            callKonteksTool('konteks_save_memories', {
                 memories: [
                     {
                         content: 'Use Bun test for project verification.',
@@ -88,13 +82,11 @@ describe('konteks_warm_up', () => {
                         kind: 'fact',
                     },
                 ],
-            },
+            }),
         )
 
-        const result = await callKonteksTool(
-            mcpOptions(projectRoot),
-            'konteks_warm_up',
-            { maxTokens: 500 },
+        const result = await withProjectRoot(projectRoot, () =>
+            callKonteksTool('konteks_warm_up', { maxTokens: 500 }),
         )
         const text = extractText(result)
 
@@ -113,32 +105,31 @@ describe('konteks_warm_up', () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
         await writeFile(
-            join(projectRoot, 'package.json'),
-            JSON.stringify({ name: 'warm-up-refresh' }, null, 2),
-        )
-        await writeFile(
-            join(projectRoot, 'src', 'index.ts'),
+            join(projectRoot, 'src', 'index.txt'),
             'export const first = true\n',
         )
 
-        const context = await loadProjectContext(projectRoot)
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         await extractProject(context, 'full', extractionOptions())
         await writeFile(
-            join(projectRoot, 'src', 'later.ts'),
+            join(projectRoot, 'src', 'later.txt'),
             'export const later = true\n',
         )
 
-        const result = await callKonteksTool(
-            mcpOptions(projectRoot),
-            'konteks_warm_up',
-            { maxTokens: 500 },
+        const result = await withProjectRoot(projectRoot, () =>
+            callKonteksTool('konteks_warm_up', { maxTokens: 500 }),
         )
         const text = extractText(result)
         const manifest = await readExtractionManifest(context.memoryDir)
 
         expect(manifest?.mode).toBe('changed')
-        expect(manifest?.files.map(file => file.path)).toContain('src/later.ts')
+        expect(manifest?.files.map(file => file.path)).toContain(
+            'src/later.txt',
+        )
         expect(text).not.toContain('mode:')
         expect(text).not.toContain('mined_at:')
         expect(text).not.toContain('Selected')
@@ -149,26 +140,26 @@ describe('konteks_warm_up', () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, 'src', 'mcp'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
         await writeFile(
-            join(projectRoot, 'package.json'),
-            JSON.stringify({ name: 'warm-up-focused' }, null, 2),
-        )
-        await writeFile(
-            join(projectRoot, 'src', 'mcp', 'server.ts'),
+            join(projectRoot, 'src', 'mcp', 'server.txt'),
             'export const warmUpServer = () => "focused recall"\n',
         )
         await writeFile(
-            join(projectRoot, 'src', 'mcp', 'retrieval-format.ts'),
+            join(projectRoot, 'src', 'mcp', 'retrieval-format.txt'),
             'export const formatWarmUpText = () => "focused recall"\n',
         )
 
-        const context = await loadProjectContext(projectRoot)
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         await extractProject(context, 'full', extractionOptions())
 
-        const result = await callKonteksTool(
-            mcpOptions(projectRoot),
-            'konteks_warm_up',
-            { maxTokens: 500, topic: 'focused recall warm up' },
+        const result = await withProjectRoot(projectRoot, () =>
+            callKonteksTool('konteks_warm_up', {
+                maxTokens: 500,
+                topic: 'focused recall warm up',
+            }),
         )
         const text = extractText(result)
 
@@ -186,7 +177,6 @@ async function readExtractionManifest(memoryDir: string) {
 }
 
 async function callKonteksTool(
-    options: StartMcpServerOptions,
     name: string,
     input: unknown,
 ): Promise<CallToolResult> {
@@ -196,7 +186,7 @@ async function callKonteksTool(
         throw new Error(`Unknown tool: ${name}`)
     }
 
-    return await tool.handle(options, input)
+    return await tool.handle(input)
 }
 
 function extractText(result: CallToolResult): string {

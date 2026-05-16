@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -36,6 +36,7 @@ describe('project database', () => {
     it('creates config and migrated database when opened directly', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-db-test-'))
         tempDirs.push(projectRoot)
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )

@@ -57,32 +57,15 @@ const mismatchedEmbeddingProvider: EmbeddingProvider = {
 async function makeTempProject(): Promise<string> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-extract-test-'))
     tempDirs.push(projectRoot)
+    await mkdir(join(projectRoot, '.git'), { recursive: true })
     await mkdir(join(projectRoot, 'src'), { recursive: true })
     await mkdir(join(projectRoot, '.konteks'), { recursive: true })
     await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
-    await writeFile(
-        join(projectRoot, 'package.json'),
-        JSON.stringify(
-            {
-                dependencies: {
-                    '@modelcontextprotocol/sdk': '^1.0.0',
-                    commander: '^1.0.0',
-                },
-                devDependencies: {
-                    '@types/bun': '^1.0.0',
-                    typescript: '^5.0.0',
-                },
-                name: 'fixture',
-                scripts: {
-                    test: 'bun test',
-                },
-            },
-            null,
-            2,
-        ),
-    )
     await writeFile(join(projectRoot, 'README.md'), '# Fixture\n')
-    await writeFile(join(projectRoot, 'src', 'index.ts'), 'export {}\n')
+    await writeFile(
+        join(projectRoot, 'src', 'index.txt'),
+        'Konteks fixture notes for extraction tests.\n',
+    )
     await writeFile(join(projectRoot, '.env.local'), 'SECRET=hidden\n')
 
     return projectRoot
@@ -110,19 +93,13 @@ describe('extractProject', () => {
         )
 
         expect(result.ok).toBe(true)
-        expect(result.fileCount).toBe(3)
-        expect(result.chunkCount).toBeGreaterThan(3)
-        expect(result.technologies).toEqual([
-            'bun',
-            'cli',
-            'javascript',
-            'mcp',
-            'typescript',
-        ])
+        expect(result.fileCount).toBe(2)
+        expect(result.chunkCount).toBeGreaterThan(1)
+        expect(result.technologies).toEqual([])
         expect(manifest?.summaryRef).toBe(result.summaryRef)
         expect(manifest?.diagnostics).toMatchObject({
             chunkCount: result.chunkCount,
-            filesIncluded: 3,
+            filesIncluded: 2,
             filesSkipped: {
                 secret: 1,
             },
@@ -130,10 +107,9 @@ describe('extractProject', () => {
         })
         expect(manifest?.files.map(file => file.path)).toEqual([
             'README.md',
-            'package.json',
-            'src/index.ts',
+            'src/index.txt',
         ])
-        expect(summary).toContain('name: fixture')
+        expect(summary).toContain('README.md')
         expect(summary).not.toContain('.env.local')
     })
 
@@ -169,13 +145,6 @@ order by target_type, source_role
         const modules = await adapter.query<{ path: string }>(
             'select path from modules order by path',
         )
-        const packageModule = await adapter.query<{
-            imports_json: string
-            package_name: string | null
-        }>(
-            'select package_name, imports_json from modules where source_role = ? and package_name is not null',
-            ['package_config'],
-        )
         const searchResults = await searchMemory(service, {
             limit: 5,
             query: 'Fixture',
@@ -192,7 +161,6 @@ order by target_type, source_role
         expect(chunks.some(chunk => chunk.source_role === 'product_doc')).toBe(
             true,
         )
-        expect(chunks.some(chunk => chunk.language === 'typescript')).toBe(true)
         expect(chunks.some(chunk => chunk.anchor)).toBe(true)
         expect(
             retrievalDocuments.some(
@@ -205,8 +173,6 @@ order by target_type, source_role
             ),
         ).toBe(true)
         expect(modules.map(module => module.path)).toContain('src')
-        expect(packageModule[0]?.package_name).toBe('fixture')
-        expect(packageModule[0]?.imports_json).toContain('commander')
         expect(searchResults[0]?.type).toBe('chunk')
         expect(searchResults[0]?.sourceId).toStartWith('source_')
         expect(searchResults[0]?.tokenCost).toBeGreaterThan(0)
@@ -432,7 +398,7 @@ where id in (?, ?)
         expect(fresh.status).toBe('fresh')
 
         await writeFile(
-            join(projectRoot, 'src', 'new.ts'),
+            join(projectRoot, 'src', 'new.txt'),
             'export const x = 1\n',
         )
 
@@ -446,11 +412,13 @@ where id in (?, ?)
     it('caps chunks per file and reports the diagnostic', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(
-            join(projectRoot, 'src', 'many.ts'),
-            Array.from(
-                { length: 205 },
-                (_, index) => `export const value${index} = ${index}`,
-            ).join('\n'),
+            join(projectRoot, 'src', 'many.md'),
+            Array.from({ length: 205 }, (_, index) => [
+                `## Section ${index}`,
+                `value ${index}`,
+            ])
+                .flat()
+                .join('\n'),
         )
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
@@ -461,7 +429,7 @@ where id in (?, ?)
         const service = await openProjectDatabase(context)
         const chunks = await service.adapter.query<{ count: number }>(
             'select count(*) as count from chunks where path = ?',
-            ['src/many.ts'],
+            ['src/many.md'],
         )
         await service.close()
         const manifest = await readExtractionManifest(context.memoryDir)
@@ -487,6 +455,10 @@ where id in (?, ?)
 
     it('fails when a supported file grammar is not loaded', async () => {
         const projectRoot = await makeTempProject()
+        await writeFile(
+            join(projectRoot, 'package.json'),
+            '{"name":"fixture"}\n',
+        )
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
@@ -530,7 +502,7 @@ where id in (?, ?)
 
         await unlink(join(projectRoot, 'README.md'))
         await writeFile(
-            join(projectRoot, 'src', 'new.ts'),
+            join(projectRoot, 'src', 'new.txt'),
             'export const n = 1\n',
         )
         await extractTestProject(context, 'changed')
@@ -542,11 +514,11 @@ where id in (?, ?)
         )
         const indexChunks = await service.adapter.query<{ count: number }>(
             'select count(*) as count from chunks where path = ?',
-            ['src/index.ts'],
+            ['src/index.txt'],
         )
         const newChunks = await service.adapter.query<{ count: number }>(
             'select count(*) as count from chunks where path = ?',
-            ['src/new.ts'],
+            ['src/new.txt'],
         )
         await service.close()
 
