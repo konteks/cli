@@ -19,7 +19,10 @@ import type { TreeSitterLanguage } from '@/providers/extraction/engine/tree-sitt
 import { extractProject } from '@/providers/extraction/extract-project'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import saveKonteksInput from '@/providers/persistence/sqlite/save-konteks-input'
+import {
+    saveKonteksDiary,
+    saveKonteksMemory,
+} from '@/providers/persistence/sqlite/save-konteks-input'
 import searchMemory from '@/providers/persistence/sqlite/search-memory'
 // import { TaxonomyStore } from '../persistence/sqli./taxonomy-store'
 import { loadProjectContext } from '@/providers/project/context'
@@ -351,18 +354,17 @@ where path = ? and anchor = ? and content_hash = ?
         await extractTestProject(context, 'reindex')
 
         const service = await openProjectDatabase(context)
-        const savedMemory = await saveKonteksInput(service, context, {
+        const savedMemory = await saveKonteksMemory(service, context, {
             content:
                 'Repair must preserve durable observations during reindex operations.',
+            importance: 3,
             kind: 'constraint',
-            type: 'memory',
         })
-        const savedDiary = await saveKonteksInput(service, context, {
+        const savedDiary = await saveKonteksDiary(service, context, {
             subject: 'repair durability',
             summary:
                 'Verified repair keeps durable diary entries and retrieval indexes available.',
             tags: ['repair'],
-            type: 'diary',
         })
         await service.close()
 

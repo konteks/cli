@@ -58,32 +58,37 @@ describe('konteks_warm_up', () => {
         await extractProject(context, 'full', extractionOptions())
 
         // Seed some durable memories
-        await callKonteksTool(mcpOptions(projectRoot), 'konteks_save', {
-            memories: [
-                {
-                    content: 'Use Bun test for project verification.',
-                    kind: 'preference',
-                    type: 'memory',
-                },
-                {
-                    content: 'Konteks save must preserve explicit constraints.',
-                    kind: 'constraint',
-                    type: 'memory',
-                },
-                {
-                    content: 'Use structured save payloads for session memory.',
-                    kind: 'decision',
-                    type: 'memory',
-                },
-                {
-                    content:
-                        'Patched warm-up formatter to collapse old sections.',
-                    kind: 'fact',
-                    type: 'memory',
-                },
-            ],
-            type: 'memories',
-        })
+        await callKonteksTool(
+            mcpOptions(projectRoot),
+            'konteks_save_memories',
+            {
+                memories: [
+                    {
+                        content: 'Use Bun test for project verification.',
+                        importance: 3,
+                        kind: 'preference',
+                    },
+                    {
+                        content:
+                            'Konteks save must preserve explicit constraints.',
+                        importance: 4,
+                        kind: 'constraint',
+                    },
+                    {
+                        content:
+                            'Use structured save payloads for session memory.',
+                        importance: 5,
+                        kind: 'decision',
+                    },
+                    {
+                        content:
+                            'Patched warm-up formatter to collapse old sections.',
+                        importance: 2,
+                        kind: 'fact',
+                    },
+                ],
+            },
+        )
 
         const result = await callKonteksTool(
             mcpOptions(projectRoot),

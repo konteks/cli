@@ -7,7 +7,10 @@ import { promisify } from 'node:util'
 import InitCommand from '@/commands/init-command'
 import type { DurableMemoryExport } from '@/models/memory-transfer'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import saveKonteksInput from '@/providers/persistence/sqlite/save-konteks-input'
+import {
+    saveKonteksDiary,
+    saveKonteksMemory,
+} from '@/providers/persistence/sqlite/save-konteks-input'
 import { loadProjectContext } from '@/providers/project/context'
 import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
 import { VERSION } from '@/support/version'
@@ -199,7 +202,8 @@ describe('cli/e2e', () => {
         ).toEqual([
             'konteks_warm_up',
             'konteks_recall',
-            'konteks_save',
+            'konteks_save_memories',
+            'konteks_save_diary',
             'konteks_search',
             'konteks_forget',
         ])
@@ -262,22 +266,34 @@ describe('cli/e2e', () => {
         const dryRunSave = await runKonteks(fixture.projectRoot, [
             'mcp',
             'call',
-            'konteks_save',
-            '{"type":"diary","summary":"Dry run diary entry should not persist to project memory."}',
+            'konteks_save_diary',
+            '{"summary":"Dry run diary entry should not persist to project memory."}',
         ])
         expect(dryRunSave.exitCode).toBe(0)
-        expect(dryRunSave.output).toContain('konteks: session saved')
+        expect(dryRunSave.output).toContain('konteks: session diary saved')
+        expect(await readActiveCounts(fixture.projectRoot)).toEqual(before)
+
+        const dryRunMemories = await runKonteks(fixture.projectRoot, [
+            'mcp',
+            'call',
+            'konteks_save_memories',
+            '{"memories":[{"content":"Applied memory entry should persist to project memory.","importance":3,"kind":"note","type":"memory"}]}',
+        ])
+        expect(dryRunMemories.exitCode).toBe(0)
+        expect(dryRunMemories.output).toContain(
+            'konteks: durable memories saved',
+        )
         expect(await readActiveCounts(fixture.projectRoot)).toEqual(before)
 
         const applySave = await runKonteks(fixture.projectRoot, [
             'mcp',
             'call',
-            'konteks_save',
+            'konteks_save_diary',
             '--apply',
-            '{"type":"diary","summary":"Applied diary entry should persist to project memory."}',
+            '{"summary":"Applied diary entry should persist to project memory."}',
         ])
         expect(applySave.exitCode).toBe(0)
-        expect(applySave.output).toContain('konteks: session saved')
+        expect(applySave.output).toContain('konteks: session diary saved')
         expect(await readActiveCounts(fixture.projectRoot)).toEqual({
             diaries: before.diaries + 1,
             memories: before.memories,
@@ -311,17 +327,16 @@ async function seedDurableMemory(projectRoot: string): Promise<void> {
     const db = await openProjectDatabase(context)
 
     try {
-        await saveKonteksInput(db, context, {
+        await saveKonteksMemory(db, context, {
             content:
                 'CLI e2e durable memory should survive export and restore.',
+            importance: 3,
             kind: 'note',
-            type: 'memory',
         })
-        await saveKonteksInput(db, context, {
+        await saveKonteksDiary(db, context, {
             subject: 'cli e2e fixture',
             summary: 'CLI e2e diary entries should survive export and restore.',
             tags: ['cli', 'e2e'],
-            type: 'diary',
         })
     } finally {
         await db.close()

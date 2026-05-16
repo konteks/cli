@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import forgetMemory from '@/providers/persistence/sqlite/forget-memory'
-import saveKonteksInput from '@/providers/persistence/sqlite/save-konteks-input'
+import { saveKonteksMemory } from '@/providers/persistence/sqlite/save-konteks-input'
 import searchMemory from '@/providers/persistence/sqlite/search-memory'
 import GraphStore from '@/providers/persistence/sqlite/stores/graph-store'
 import { loadProjectContext } from '@/providers/project/context'
@@ -34,10 +34,10 @@ afterEach(async () => {
 describe('forgetMemory', () => {
     it('soft deletes saved memory and removes it from search', async () => {
         const { adapter, context } = await makeAdapter()
-        const saved = await saveKonteksInput(adapter, context, {
+        const saved = await saveKonteksMemory(adapter, context, {
             content: 'Forget this obsolete implementation detail.',
+            importance: 3,
             kind: 'note',
-            type: 'memory',
         })
 
         const result = await forgetMemory(adapter, {
@@ -61,10 +61,10 @@ describe('forgetMemory', () => {
 
     it('hard deletes sensitive memory rows', async () => {
         const { adapter, context } = await makeAdapter()
-        const saved = await saveKonteksInput(adapter, context, {
+        const saved = await saveKonteksMemory(adapter, context, {
             content: 'Remove this sensitive placeholder memory now.',
+            importance: 3,
             kind: 'note',
-            type: 'memory',
         })
 
         await forgetMemory(adapter, {
@@ -83,10 +83,10 @@ describe('forgetMemory', () => {
 
     it('query forget targets authored memory records', async () => {
         const { adapter, context } = await makeAdapter()
-        const saved = await saveKonteksInput(adapter, context, {
+        const saved = await saveKonteksMemory(adapter, context, {
             content: 'Compatibility planning is out of scope for now.',
+            importance: 3,
             kind: 'decision',
-            type: 'memory',
         })
 
         const result = await forgetMemory(adapter, {

@@ -14,7 +14,9 @@ const INPUT_SCHEMA = z
         message: 'Either id or query is required.',
     })
 
-export default class ForgetMcpTool extends BaseMcpTool {
+type Input = z.output<typeof INPUT_SCHEMA>
+
+export default class ForgetMcpTool extends BaseMcpTool<Input> {
     annotations = {
         destructiveHint: true,
         idempotentHint: false,
@@ -25,14 +27,11 @@ export default class ForgetMcpTool extends BaseMcpTool {
     description =
         'Delete, invalidate, or suppress stored memory that is wrong, stale, sensitive, or no longer useful.'
 
-    inputSchema = INPUT_SCHEMA
+    readonly inputSchema = INPUT_SCHEMA
 
     name = 'konteks_forget'
 
-    protected async coreHandle(
-        options: StartMcpServerOptions,
-        input: z.output<typeof INPUT_SCHEMA>,
-    ) {
+    protected async coreHandle(options: StartMcpServerOptions, input: Input) {
         return forgetMemory(options, input)
     }
 }

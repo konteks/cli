@@ -82,9 +82,7 @@ describe('retrieval quality evals', () => {
         await extractProject(context, 'full', extractionOptions())
 
         await expect(
-            callKonteksTool(mcpOptions(projectRoot), 'konteks_save', {
-                type: 'diary',
-            }),
+            callKonteksTool(mcpOptions(projectRoot), 'konteks_save_diary', {}),
         ).rejects.toThrow()
     })
 
@@ -110,10 +108,14 @@ describe('retrieval quality evals', () => {
         )
 
         await expect(
-            callKonteksTool(mcpOptions(projectRoot), 'konteks_save', {
-                content: 'too short',
-                kind: 'note',
-                type: 'memory',
+            callKonteksTool(mcpOptions(projectRoot), 'konteks_save_memories', {
+                memories: [
+                    {
+                        content: 'too short',
+                        importance: 1,
+                        kind: 'note',
+                    },
+                ],
             }),
         ).rejects.toThrow()
         const manifest = await readExtractionManifest(context.memoryDir)
@@ -144,11 +146,10 @@ describe('retrieval quality evals', () => {
 
         const result = await callKonteksTool(
             mcpOptions(projectRoot),
-            'konteks_save',
+            'konteks_save_diary',
             {
                 summary:
                     'Saved structured diary context after refreshing changed project memory.',
-                type: 'diary',
             },
         )
         const text = extractText(result)
@@ -169,7 +170,7 @@ limit 1
             'src/saved-change.ts',
         )
         expect(diaryRows[0]?.summary).toContain('src/saved-change.ts')
-        expect(text).toContain('konteks: session saved')
+        expect(text).toContain('konteks: session diary saved')
         expect(text).not.toContain('mode')
         expect(text).not.toContain('Extraction complete')
     })

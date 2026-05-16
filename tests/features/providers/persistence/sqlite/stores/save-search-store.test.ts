@@ -3,7 +3,11 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import saveKonteksInput from '@/providers/persistence/sqlite/save-konteks-input'
+import {
+    saveKonteksDiary,
+    saveKonteksMemories,
+    saveKonteksMemory,
+} from '@/providers/persistence/sqlite/save-konteks-input'
 import searchMemory from '@/providers/persistence/sqlite/search-memory'
 import { loadProjectContext } from '@/providers/project/context'
 
@@ -30,11 +34,10 @@ describe('save and search stores', () => {
         const context = await makeTempContext()
         const adapter = await openProjectDatabase(context)
 
-        const saved = await saveKonteksInput(adapter, context, {
+        const saved = await saveKonteksMemory(adapter, context, {
             content: 'Use Bun test instead of Vitest for this project.',
             importance: 5,
             kind: 'preference',
-            type: 'memory',
         })
         const results = await searchMemory(adapter, {
             limit: 5,
@@ -57,10 +60,10 @@ describe('save and search stores', () => {
         const context = await makeTempContext()
         const adapter = await openProjectDatabase(context)
 
-        const saved = await saveKonteksInput(adapter, context, {
+        const saved = await saveKonteksMemory(adapter, context, {
             content: 'Konteks should retrieve context with full text search.',
+            importance: 3,
             kind: 'decision',
-            type: 'memory',
         })
         const results = await searchMemory(adapter, {
             limit: 5,
@@ -76,15 +79,15 @@ describe('save and search stores', () => {
         const adapter = await openProjectDatabase(context)
         const content = 'Use content hashes to avoid duplicate durable memory.'
 
-        const first = await saveKonteksInput(adapter, context, {
+        const first = await saveKonteksMemory(adapter, context, {
             content,
+            importance: 3,
             kind: 'decision',
-            type: 'memory',
         })
-        const second = await saveKonteksInput(adapter, context, {
+        const second = await saveKonteksMemory(adapter, context, {
             content,
+            importance: 3,
             kind: 'decision',
-            type: 'memory',
         })
 
         expect(second).toMatchObject({
@@ -99,17 +102,17 @@ describe('save and search stores', () => {
         const adapter = await openProjectDatabase(context)
 
         await expect(
-            saveKonteksInput(adapter, context, {
+            saveKonteksMemory(adapter, context, {
                 content: 'too short',
+                importance: 1,
                 kind: 'note',
-                type: 'memory',
             }),
         ).rejects.toThrow('too short')
         await expect(
-            saveKonteksInput(adapter, context, {
+            saveKonteksMemory(adapter, context, {
                 content: 'api_key = abcdefghijklmnopqrstuvwxyz',
+                importance: 1,
                 kind: 'note',
-                type: 'memory',
             }),
         ).rejects.toThrow('secret')
         await adapter.close()
@@ -123,10 +126,10 @@ describe('save and search stores', () => {
             (_, index) => `context-${index}`,
         ).join(' ')
 
-        await saveKonteksInput(adapter, context, {
+        await saveKonteksMemory(adapter, context, {
             content: `needle ${longContent}`,
+            importance: 3,
             kind: 'note',
-            type: 'memory',
         })
         const results = await searchMemory(adapter, {
             limit: 5,
@@ -146,11 +149,10 @@ describe('save and search stores', () => {
         const context = await makeTempContext()
         const adapter = await openProjectDatabase(context)
 
-        const saved = await saveKonteksInput(adapter, context, {
+        const saved = await saveKonteksDiary(adapter, context, {
             subject: 'local memory storage',
             summary: 'SQLite adapter is implemented and search remains next.',
             tags: ['sqlite', 'storage'],
-            type: 'diary',
         })
         const results = await searchMemory(adapter, {
             limit: 5,
@@ -171,28 +173,26 @@ describe('save and search stores', () => {
         const context = await makeTempContext()
         const adapter = await openProjectDatabase(context)
 
-        const savedMemories = await saveKonteksInput(adapter, context, {
+        const savedMemories = await saveKonteksMemories(adapter, context, {
             memories: [
                 {
                     content:
                         'Save uses structured payloads instead of raw chat transcripts.',
+                    importance: 3,
                     kind: 'decision',
-                    type: 'memory',
                 },
                 {
                     content:
                         'Konteks save must include one diary entry per coherent session.',
+                    importance: 4,
                     kind: 'constraint',
-                    type: 'memory',
                 },
             ],
-            type: 'memories',
         })
-        const savedDiary = await saveKonteksInput(adapter, context, {
+        const savedDiary = await saveKonteksDiary(adapter, context, {
             summary:
                 'Implemented structured memory batch saves and a diary save phase.',
             tags: ['save'],
-            type: 'diary',
         })
         const memoryResults = await searchMemory(adapter, {
             limit: 5,
@@ -217,10 +217,10 @@ describe('save and search stores', () => {
         const adapter = await openProjectDatabase(context)
 
         await expect(
-            saveKonteksInput(adapter, context, {
+            saveKonteksMemory(adapter, context, {
                 content: 'api_key = abcdefghijklmnopqrstuvwxyz',
+                importance: 1,
                 kind: 'note',
-                type: 'memory',
             }),
         ).rejects.toThrow('memory content appears to contain a secret')
 
@@ -235,21 +235,20 @@ describe('save and search stores', () => {
         const context = await makeTempContext()
         const adapter = await openProjectDatabase(context)
 
-        const saved = await saveKonteksInput(adapter, context, {
+        const saved = await saveKonteksMemories(adapter, context, {
             memories: [
                 {
                     content: 'too short',
+                    importance: 1,
                     kind: 'note',
-                    type: 'memory',
                 },
                 {
                     content:
                         'Use structured save calls for durable memory persistence.',
+                    importance: 3,
                     kind: 'decision',
-                    type: 'memory',
                 },
             ],
-            type: 'memories',
         })
         const results = await searchMemory(adapter, {
             limit: 5,
@@ -266,15 +265,14 @@ describe('save and search stores', () => {
         const context = await makeTempContext()
         const adapter = await openProjectDatabase(context)
 
-        const savedMemory = await saveKonteksInput(adapter, context, {
+        const savedMemory = await saveKonteksMemory(adapter, context, {
             content: 'Use retrieval_documents as primary retrieval substrate.',
+            importance: 3,
             kind: 'decision',
-            type: 'memory',
         })
-        const savedDiary = await saveKonteksInput(adapter, context, {
+        const savedDiary = await saveKonteksDiary(adapter, context, {
             summary: 'Tried lexical ranking tweak for retrieval documents.',
             tags: ['retrieval'],
-            type: 'diary',
         })
 
         const memoryResults = await searchMemory(adapter, {
