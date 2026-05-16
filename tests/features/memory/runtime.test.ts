@@ -35,7 +35,10 @@ describe('memory/runtime', () => {
     it('loads project context from the current project directory', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-runtime-'))
         tempDirs.push(projectRoot)
-        await writeFile(join(projectRoot, 'package.json'), '{"name":"fixture"}\n')
+        await writeFile(
+            join(projectRoot, 'package.json'),
+            '{"name":"fixture"}\n',
+        )
         await mkdir(join(projectRoot, '.konteks'), { recursive: true })
 
         const context = await withWorkingDirectory(projectRoot, () =>
@@ -53,7 +56,10 @@ describe('memory/runtime', () => {
     it('skips changed-project extraction when memory is not initialized', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-runtime-'))
         tempDirs.push(projectRoot)
-        await writeFile(join(projectRoot, 'package.json'), '{"name":"fixture"}\n')
+        await writeFile(
+            join(projectRoot, 'package.json'),
+            '{"name":"fixture"}\n',
+        )
         const context = await withWorkingDirectory(projectRoot, () =>
             loadMcpProjectContext(),
         )

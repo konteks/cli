@@ -34,7 +34,7 @@ describe('CLI initialization middleware', () => {
             const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-cli-'))
             tempDirs.push(projectRoot)
 
-            const result = await runKonteks(['--project', projectRoot, ...args])
+            const result = await runKonteks(projectRoot, args)
 
             expect(result.exitCode).not.toBe(0)
             if (!args[0]?.startsWith('mcp')) {
@@ -53,7 +53,7 @@ describe('CLI initialization middleware', () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-cli-'))
         tempDirs.push(projectRoot)
 
-        const result = await runKonteks(['--project', projectRoot, 'status'], {
+        const result = await runKonteks(projectRoot, ['status'], {
             FORCE_COLOR: '1',
             NO_COLOR: '',
         })
@@ -66,17 +66,22 @@ describe('CLI initialization middleware', () => {
 })
 
 async function runKonteks(
+    projectRoot: string,
     args: string[],
     env: Record<string, string> = {},
 ): Promise<{
     exitCode: number | null
     output: string
 }> {
-    const proc = Bun.spawn(['bun', 'src/main.ts', ...args], {
-        env: { ...process.env, ...env },
-        stderr: 'pipe',
-        stdout: 'pipe',
-    })
+    const proc = Bun.spawn(
+        ['bun', join(process.cwd(), 'src/main.ts'), ...args],
+        {
+            cwd: projectRoot,
+            env: { ...process.env, ...env },
+            stderr: 'pipe',
+            stdout: 'pipe',
+        },
+    )
     const [stdout, stderr, exitCode] = await Promise.all([
         new Response(proc.stdout).text(),
         new Response(proc.stderr).text(),
@@ -93,12 +98,7 @@ it('allows restore to run before project memory is initialized', async () => {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-cli-'))
     tempDirs.push(projectRoot)
 
-    const result = await runKonteks([
-        '--project',
-        projectRoot,
-        'restore',
-        'missing.tar.gz',
-    ])
+    const result = await runKonteks(projectRoot, ['restore', 'missing.tar.gz'])
 
     expect(result.exitCode).not.toBe(0)
     expect(result.output).toContain(`Konteks v${VERSION}`)

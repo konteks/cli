@@ -42,8 +42,6 @@ describe('project/repair', () => {
             ...response,
             mode: 'repair',
         })
-        expect(calls).toEqual([
-            { mode: 'reindex', projectRoot: process.cwd() },
-        ])
+        expect(calls).toEqual([{ mode: 'reindex', projectRoot: process.cwd() }])
     })
 })

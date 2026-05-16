@@ -9,7 +9,9 @@ describe('mcp/handlers', () => {
     })
 
     it('validates input before dispatch', async () => {
-        await expect(callMcpTool('konteks_recall', {})).rejects.toThrow()
+        await expect(callMcpTool('konteks_recall', {})).resolves.toMatchObject({
+            isError: true,
+        })
     })
 })
 

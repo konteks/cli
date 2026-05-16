@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
@@ -71,6 +71,7 @@ async function makeTaxonomyLinkStore(): Promise<{
 }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-tax-link-test-'))
     tempDirs.push(projectRoot)
+    await mkdir(join(projectRoot, '.git'), { recursive: true })
     const context = await withProjectRoot(projectRoot, () =>
         loadProjectContext(),
     )

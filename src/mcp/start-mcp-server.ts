@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import z from 'zod'
+import { createMcpPromptError } from '@/mcp/error-handling'
 import { getKonteksPromptRegistrations } from '@/mcp/prompts'
 import mcpTools from '@/mcp/tools'
 import { VERSION } from '@/support/version'
@@ -64,7 +65,16 @@ function registerMcpPrompts(server: McpServer): void {
                 argsSchema: argsSchema as any,
                 description: template.description,
             },
-            (args: Record<string, string>) => template.render(args),
+            (args: Record<string, string>) => {
+                try {
+                    return template.render(args)
+                } catch (error) {
+                    throw createMcpPromptError({
+                        error,
+                        promptName: template.name,
+                    })
+                }
+            },
         )
     })
 }

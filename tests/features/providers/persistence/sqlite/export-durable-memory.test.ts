@@ -13,6 +13,20 @@ import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []
 
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
+
 afterEach(async () => {
     await Promise.all(
         tempDirs
@@ -87,9 +101,12 @@ describe('exportDurableMemory', () => {
 async function makeProject() {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-export-test-'))
     tempDirs.push(projectRoot)
+    await mkdir(join(projectRoot, '.git'), { recursive: true })
     await mkdir(join(projectRoot, '.konteks'), { recursive: true })
     await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
-    const context = await loadProjectContext(projectRoot)
+    const context = await withProjectRoot(projectRoot, () =>
+        loadProjectContext(),
+    )
     const db = await openProjectDatabase(context)
     return { context, db }
 }

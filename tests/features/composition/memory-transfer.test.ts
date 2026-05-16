@@ -29,6 +29,7 @@ const tempDirs: string[] = []
 async function makeInitializedProject(prefix = 'konteks-transfer-test-') {
     const projectRoot = await mkdtemp(join(tmpdir(), prefix))
     tempDirs.push(projectRoot)
+    await mkdir(join(projectRoot, '.git'), { recursive: true })
     await mkdir(join(projectRoot, '.konteks'), { recursive: true })
     await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
     return projectRoot

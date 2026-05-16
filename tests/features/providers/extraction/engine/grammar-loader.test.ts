@@ -82,6 +82,9 @@ describe('grammar loader registry', () => {
         await mkdir(grammarCacheDir, {
             recursive: true,
         })
+        await mkdir(join(projectRoot, '.git'), {
+            recursive: true,
+        })
         await mkdir(join(projectRoot, '.konteks'), {
             recursive: true,
         })
@@ -113,7 +116,9 @@ describe('grammar loader registry', () => {
                 version: 1,
             }),
         )
-        const project = await loadProjectContext(projectRoot)
+        const project = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
         const engine = new MockTreeSitterEngine()
 
         const result = await initTreeSitterWithSelectedGrammars(engine, project)
@@ -128,3 +133,17 @@ describe('grammar loader registry', () => {
         ])
     })
 })
+
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
