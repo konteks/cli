@@ -10,6 +10,8 @@ export type McpToolName =
     | 'konteks_search'
     | 'konteks_warm_up'
 
+type McpRegistrationInputSchema = Record<string, z.ZodTypeAny> | z.ZodType
+
 export default abstract class BaseMcpTool<Input = unknown> {
     public abstract annotations: {
         destructiveHint: boolean
@@ -23,6 +25,10 @@ export default abstract class BaseMcpTool<Input = unknown> {
     public abstract inputSchema: z.ZodType
 
     public abstract name: McpToolName
+
+    public get registrationInputSchema(): McpRegistrationInputSchema {
+        return this.inputSchema
+    }
 
     public async handle(
         options: StartMcpServerOptions,

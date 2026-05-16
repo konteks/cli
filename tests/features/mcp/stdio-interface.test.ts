@@ -89,8 +89,70 @@ describe('mcp/stdio interface', () => {
                 tool => tool.name === 'konteks_save',
             )
             expect(saveTool?.description).toContain('Persist structured')
-            expect(saveTool?.inputSchema).toEqual({
-                properties: {},
+            expect(saveTool?.inputSchema).toMatchObject({
+                properties: {
+                    content: { type: 'string' },
+                    importance: {
+                        anyOf: [
+                            { const: 1, type: 'number' },
+                            { const: 2, type: 'number' },
+                            { const: 3, type: 'number' },
+                            { const: 4, type: 'number' },
+                            { const: 5, type: 'number' },
+                        ],
+                    },
+                    kind: {
+                        enum: [
+                            'blocker',
+                            'code_insight',
+                            'constraint',
+                            'decision',
+                            'fact',
+                            'note',
+                            'preference',
+                        ],
+                        type: 'string',
+                    },
+                    memories: {
+                        items: {
+                            properties: {
+                                content: { type: 'string' },
+                                kind: {
+                                    enum: [
+                                        'blocker',
+                                        'code_insight',
+                                        'constraint',
+                                        'decision',
+                                        'fact',
+                                        'note',
+                                        'preference',
+                                    ],
+                                    type: 'string',
+                                },
+                                type: {
+                                    const: 'memory',
+                                    default: 'memory',
+                                    type: 'string',
+                                },
+                            },
+                            required: ['content', 'kind'],
+                            type: 'object',
+                        },
+                        type: 'array',
+                    },
+                    source: { type: 'string' },
+                    subject: { type: 'string' },
+                    summary: { type: 'string' },
+                    tags: {
+                        items: { type: 'string' },
+                        type: 'array',
+                    },
+                    type: {
+                        enum: ['memory', 'memories', 'diary'],
+                        type: 'string',
+                    },
+                },
+                required: ['type'],
                 type: 'object',
             })
         } finally {
@@ -207,7 +269,7 @@ describe('mcp/stdio interface', () => {
             )
             expect(invalidSave.isError).toBe(true)
             expect(extractToolText(invalidSave)).toContain(
-                'Invalid arguments for tool konteks_save',
+                'expected string, received undefined',
             )
         } finally {
             await fixture.cleanup()
