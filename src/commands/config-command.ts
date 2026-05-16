@@ -3,15 +3,10 @@ import BaseCommand from '@/commands/_base-command'
 import { openConfigTui } from '@/providers/cli/grammar-selection'
 
 export default class ConfigCommand extends BaseCommand {
-    constructor() {
-        super({
-            description: 'Configure project-local Konteks settings.',
-            name: 'config',
-            printsHeader: true,
-        })
-    }
+    readonly description = 'Configure project-local Konteks settings.'
+    readonly name = 'config'
 
-    override async handle({ globalOptions }: BaseCommandInput): Promise<void> {
+    async handle({ globalOptions }: BaseCommandInput): Promise<void> {
         await openConfigTui(globalOptions.project)
     }
 }

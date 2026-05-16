@@ -10,15 +10,10 @@ import { terminal } from '@/support/terminal/service'
 import { VERSION } from '@/support/version'
 
 export default class StatusCommand extends BaseCommand {
-    constructor() {
-        super({
-            description: 'Print Konteks project memory status for humans.',
-            name: 'status',
-            printsHeader: true,
-        })
-    }
+    readonly description = 'Print Konteks project memory status for humans.'
+    readonly name = 'status'
 
-    override async handle({ globalOptions }: BaseCommandInput): Promise<void> {
+    async handle({ globalOptions }: BaseCommandInput): Promise<void> {
         const status = await readProjectStatus(globalOptions.project)
 
         this.print(

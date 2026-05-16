@@ -6,13 +6,8 @@ import { VERSION } from '@/support/version'
 export type Command = CommanderCommand
 
 export type BaseCommandContext = {
-    ensureInitialized: (project?: string) => Promise<void>
+    runInitializationGuard: (project?: string) => Promise<void>
     getGlobalOptions: () => GlobalCliOptions
-}
-
-export type BaseCommandRegistrar = {
-    readonly name: string
-    register(parent: Command, context: BaseCommandContext): Command
 }
 
 export type BaseCommandInput<
@@ -24,32 +19,47 @@ export type BaseCommandInput<
     options: Options
 }
 
-type BaseCommandMetadata = {
-    description: string
-    name: string
-    printsHeader?: boolean
-    requiresProject?: boolean
-}
-
 export default abstract class BaseCommand<
     Args extends unknown[] = unknown[],
     Options extends object = Record<string, never>,
 > {
-    readonly description: string
-    readonly name: string
-    readonly printsHeader: boolean
-    readonly requiresProject: boolean
+    abstract readonly description: string
+    abstract readonly name: string
 
-    protected constructor(metadata: BaseCommandMetadata) {
-        this.description = metadata.description
-        this.name = metadata.name
-        this.printsHeader = metadata.printsHeader ?? false
-        this.requiresProject = metadata.requiresProject ?? true
+    readonly args: {
+        readonly name: string
+        readonly description?: string
+    }[] = []
+    readonly children: Pick<BaseCommand, 'register'>[] = []
+    readonly options: {
+        readonly flags: string
+        readonly description?: string
+        readonly parser?: (value: string, previous: unknown) => unknown
+    }[] = []
+    readonly printsHeader: boolean = true
+    readonly usesInitializationGuard: boolean = true
+
+    abstract handle(
+        input: BaseCommandInput<Args, Options>,
+    ): Promise<void> | void
+
+    protected print(value: string): void {
+        terminal.log(value)
     }
 
-    register(parent: Command, context: BaseCommandContext): Command {
+    register(parent: Command, context: BaseCommandContext) {
         const command = parent.command(this.name).description(this.description)
-        this.configure(command)
+
+        this.registerAction(command, context)
+        this.registerArgs(command)
+        this.registerChildren(command, context)
+        this.registerOptions(command)
+    }
+
+    private registerAction(
+        command: Command,
+        context: BaseCommandContext,
+    ): void {
         command.action(async (...values: unknown[]) => {
             const commandOptions = command.opts<Options>()
             const args = stripCommanderActionValues(
@@ -62,8 +72,8 @@ export default abstract class BaseCommand<
                 terminal.log(`Konteks v${VERSION}`)
             }
 
-            if (this.requiresProject) {
-                await context.ensureInitialized(globalOptions.project)
+            if (this.usesInitializationGuard) {
+                await context.runInitializationGuard(globalOptions.project)
             }
 
             await this.handle({
@@ -72,19 +82,33 @@ export default abstract class BaseCommand<
                 options: commandOptions,
             })
         })
-
-        return command
     }
 
-    protected configure(_command: Command): void {}
-
-    protected print(value: string): void {
-        terminal.log(value)
+    private registerArgs(command: Command): void {
+        this.args.forEach(({ name, description }) => {
+            command.argument(name, description)
+        })
     }
 
-    abstract handle(
-        input: BaseCommandInput<Args, Options>,
-    ): Promise<void> | void
+    private registerChildren(
+        command: Command,
+        context: BaseCommandContext,
+    ): void {
+        this.children.forEach(child => {
+            child.register(command, context)
+        })
+    }
+
+    private registerOptions(command: Command): void {
+        this.options.forEach(({ description, flags, parser }) => {
+            if (parser) {
+                command.option(flags, description ?? '', parser)
+                return
+            }
+
+            command.option(flags, description)
+        })
+    }
 }
 
 function stripCommanderActionValues<Options extends object>(

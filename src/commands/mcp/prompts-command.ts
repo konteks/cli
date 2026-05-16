@@ -4,14 +4,10 @@ import { listKonteksPrompts } from '@/mcp/prompts'
 import printJson from '@/support/cli/print-json'
 
 export default class PromptsCommand extends BaseCommand {
-    constructor() {
-        super({
-            description: 'List MCP prompts exposed by Konteks.',
-            name: 'prompts',
-        })
-    }
+    readonly description = 'List MCP prompts exposed by Konteks.'
+    readonly name = 'prompts'
 
-    override async handle(_input: BaseCommandInput): Promise<void> {
+    async handle(_input: BaseCommandInput): Promise<void> {
         printJson(listKonteksPrompts())
     }
 }

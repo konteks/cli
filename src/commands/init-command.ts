@@ -1,4 +1,4 @@
-import type { BaseCommandInput, Command } from '@/commands/_base-command'
+import type { BaseCommandInput } from '@/commands/_base-command'
 import BaseCommand from '@/commands/_base-command'
 import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
 import type { GlobalCliOptions } from '@/models/cli'
@@ -16,25 +16,20 @@ export default class InitCommand extends BaseCommand<
     [],
     { grammar?: string[] }
 > {
-    constructor() {
-        super({
+    readonly description =
+        'Initialize memory, section the project, and build indexes.'
+    readonly name = 'init'
+    override readonly options = [
+        {
             description:
-                'Initialize memory, section the project, and build indexes.',
-            name: 'init',
-            printsHeader: true,
-            requiresProject: false,
-        })
-    }
+                'Select a Tree-sitter grammar during non-interactive init; repeatable.',
+            flags: '--grammar <id>',
+            parser: collectValues,
+        },
+    ]
+    override readonly usesInitializationGuard = false
 
-    protected override configure(command: Command): void {
-        command.option(
-            '--grammar <id>',
-            'Select a Tree-sitter grammar during non-interactive init; repeatable.',
-            collectValues,
-        )
-    }
-
-    override async handle({
+    async handle({
         globalOptions,
         options,
     }: BaseCommandInput<[], { grammar?: string[] }>): Promise<void> {
@@ -64,6 +59,6 @@ export default class InitCommand extends BaseCommand<
     }
 }
 
-function collectValues(value: string, previous: string[]): string[] {
-    return [...previous, value]
+function collectValues(value: string, previous: unknown): string[] {
+    return [...(Array.isArray(previous) ? previous : []), value]
 }

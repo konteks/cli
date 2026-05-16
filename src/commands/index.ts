@@ -1,4 +1,3 @@
-import type { BaseCommandRegistrar } from '@/commands/_base-command'
 import BackupCommand from '@/commands/backup-command'
 import ConfigCommand from '@/commands/config-command'
 import InitCommand from '@/commands/init-command'
@@ -10,7 +9,7 @@ import RepairCommand from '@/commands/repair-command'
 import RestoreCommand from '@/commands/restore-command'
 import StatusCommand from '@/commands/status-command'
 
-export const commands: BaseCommandRegistrar[] = [
+export const commands = [
     new InitCommand(),
     new ConfigCommand(),
     new StatusCommand(),
@@ -19,9 +18,9 @@ export const commands: BaseCommandRegistrar[] = [
     new RestoreCommand(),
     new InstallSkillsCommand(),
     new McpCommand(),
-]
+] as const
 
-export const memoryCommands: BaseCommandRegistrar[] = [
+export const memoryCommands = [
     new ExportCommand(),
     new ImportCommand(),
-]
+] as const
