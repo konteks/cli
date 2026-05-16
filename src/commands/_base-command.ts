@@ -30,7 +30,7 @@ export default abstract class BaseCommand<
         readonly name: string
         readonly description?: string
     }[] = []
-    readonly children: Pick<BaseCommand, 'register'>[] = []
+    readonly children: InstanceType<typeof BaseCommand>[] = []
     readonly options: {
         readonly flags: string
         readonly description?: string
