@@ -11,10 +11,8 @@ export type KonteksConfig = {
             updateTtlHours: number
         }
     }
-    projectRoot: string
     storage: {
         inlinePayloadMaxBytes: number
-        memoryDir: string
     }
     recall: {
         maxTokens: number

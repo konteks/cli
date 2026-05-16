@@ -2,7 +2,6 @@ import z from 'zod'
 import formatMemory from '@/mcp/tools/utils/format-memory'
 import inline from '@/mcp/tools/utils/inline'
 import searchMemory from '@/memory/search-memory'
-import type { StartMcpServerOptions } from '@/models/mcp'
 import type { MemorySearchResult } from '@/models/memory'
 import BaseMcpTool from './_base-mcp-tool'
 
@@ -28,11 +27,11 @@ export default class SearchMcpTool extends BaseMcpTool<Input> {
 
     name = 'konteks_search'
 
-    protected async coreHandle(options: StartMcpServerOptions, input: Input) {
+    protected async coreHandle(input: Input) {
         return formatSearchText({
             limit: input.limit ?? 10,
             query: input.query,
-            results: await searchMemory(options, input),
+            results: await searchMemory(input),
         })
     }
 }

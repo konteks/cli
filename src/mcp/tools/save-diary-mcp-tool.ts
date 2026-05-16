@@ -1,6 +1,5 @@
 import z from 'zod'
 import { saveDiary } from '@/memory/save-memory'
-import type { StartMcpServerOptions } from '@/models/mcp'
 import BaseMcpTool from './_base-mcp-tool'
 import saveTextSchema from './schemas/save-input-schema'
 
@@ -26,8 +25,8 @@ export default class SaveDiaryMcpTool extends BaseMcpTool<Input> {
 
     name = 'konteks_save_diary'
 
-    protected async coreHandle(options: StartMcpServerOptions, input: Input) {
-        await saveDiary(options, input)
+    protected async coreHandle(input: Input) {
+        await saveDiary(input)
 
         return 'konteks: session diary saved.'
     }

@@ -1,13 +1,12 @@
 import type { BaseCommandInput } from '@/commands/_base-command'
 import BaseCommand from '@/commands/_base-command'
 import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
-import type { GlobalCliOptions } from '@/models/cli'
 import initializeProject from '@/project/initialize-project'
 import resolveInitialGrammars from '@/project/resolve-initial-grammars'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { loadProjectContext } from '@/providers/project/context'
 
-export type InitCommandOptions = GlobalCliOptions & {
+export type InitCommandOptions = {
     embeddingProvider?: EmbeddingProviderContract
     grammar?: string[]
 }
@@ -37,7 +36,7 @@ export default class InitCommand extends BaseCommand<
     }
 
     async run(options: InitCommandOptions): Promise<void> {
-        const context = await loadProjectContext(options.project)
+        const context = await loadProjectContext()
         const alreadyInitialized =
             context.configExists &&
             (await readExtractionManifest(context.memoryDir))

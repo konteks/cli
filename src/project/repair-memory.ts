@@ -8,10 +8,6 @@ import type {
 import confirmInteractive from '@/providers/cli/confirm-interactive'
 import createExtractionProgressReporter from '@/providers/extraction/create-extraction-progress-reporter'
 
-export type RepairMemoryOptions = {
-    project?: string
-}
-
 export type RepairMemoryDependencies = {
     confirmRepair?: () => Promise<boolean>
     extractor?: ProjectExtractor
@@ -28,7 +24,6 @@ export type RepairMemoryResult =
       })
 
 export default async function repairMemory(
-    options: RepairMemoryOptions,
     dependencies: RepairMemoryDependencies = {},
 ): Promise<RepairMemoryResult> {
     const confirmRepair = dependencies.confirmRepair ?? confirmRepairPrompt
@@ -46,7 +41,7 @@ export default async function repairMemory(
 
         const result = await extractor.execute({
             mode: 'reindex' as ExtractionMode,
-            projectRoot: options.project || process.cwd(),
+            projectRoot: process.cwd(),
         })
 
         return {

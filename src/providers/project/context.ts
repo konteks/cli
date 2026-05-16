@@ -8,7 +8,7 @@ import type {
 
 export type { LoadedProjectContext }
 
-export function createDefaultConfig(projectRoot: string): KonteksConfig {
+export function createDefaultConfig(): KonteksConfig {
     return {
         extraction: {
             grammars: {
@@ -16,13 +16,11 @@ export function createDefaultConfig(projectRoot: string): KonteksConfig {
                 updateTtlHours: 24,
             },
         },
-        projectRoot,
         recall: {
             maxTokens: 2000,
         },
         storage: {
             inlinePayloadMaxBytes: 2048,
-            memoryDir: '.konteks',
         },
     }
 }
@@ -34,12 +32,8 @@ export async function writeProjectConfig(
     await writeFile(context.configPath, `${JSON.stringify(config, null, 2)}\n`)
 }
 
-export async function resolveProjectContext(
-    projectOverride?: string,
-): Promise<ProjectContext> {
-    const projectRoot = projectOverride
-        ? resolve(projectOverride)
-        : await findProjectRoot(process.cwd())
+export async function resolveProjectContext(): Promise<ProjectContext> {
+    const projectRoot = await findProjectRoot(process.cwd())
     const memoryDir = join(projectRoot, '.konteks')
 
     return {
@@ -49,11 +43,9 @@ export async function resolveProjectContext(
     }
 }
 
-export async function loadProjectContext(
-    projectOverride?: string,
-): Promise<LoadedProjectContext> {
-    const context = await resolveProjectContext(projectOverride)
-    const config = await readConfig(context.configPath, context.projectRoot)
+export async function loadProjectContext(): Promise<LoadedProjectContext> {
+    const context = await resolveProjectContext()
+    const config = await readConfig(context.configPath)
 
     return {
         ...context,
@@ -92,11 +84,10 @@ export async function pathExists(path: string): Promise<boolean> {
 
 async function readConfig(
     configPath: string,
-    projectRoot: string,
 ): Promise<{ config: KonteksConfig; exists: boolean }> {
     if (!(await pathExists(configPath))) {
         return {
-            config: createDefaultConfig(projectRoot),
+            config: createDefaultConfig(),
             exists: false,
         }
     }
@@ -105,7 +96,7 @@ async function readConfig(
     const parsed = JSON.parse(raw) as Partial<KonteksConfig>
 
     return {
-        config: mergeConfig(createDefaultConfig(projectRoot), parsed),
+        config: mergeConfig(createDefaultConfig(), parsed),
         exists: true,
     }
 }
@@ -129,7 +120,6 @@ function mergeConfig(
                         : defaults.extraction.grammars.updateTtlHours,
             },
         },
-        projectRoot: config.projectRoot ?? defaults.projectRoot,
         recall: {
             maxTokens: config.recall?.maxTokens ?? defaults.recall.maxTokens,
         },
@@ -137,7 +127,6 @@ function mergeConfig(
             inlinePayloadMaxBytes:
                 config.storage?.inlinePayloadMaxBytes ??
                 defaults.storage.inlinePayloadMaxBytes,
-            memoryDir: config.storage?.memoryDir ?? defaults.storage.memoryDir,
         },
     }
 }

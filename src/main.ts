@@ -13,7 +13,6 @@ export function createCliProgram(): Command {
             `Konteks ${VERSION} - Project-local context memory for AI coding agents.`,
         )
         .version(VERSION)
-        .option('--project <path>', 'Project root override')
 
     registerCommands(program, {
         getGlobalOptions: () => program.opts(),

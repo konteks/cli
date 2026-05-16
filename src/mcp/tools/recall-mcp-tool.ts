@@ -1,6 +1,5 @@
 import z from 'zod'
 import { recallMemory } from '@/memory/recall'
-import type { StartMcpServerOptions } from '@/models/mcp'
 import type {
     RecallGraphItem,
     RecallHistoryItem,
@@ -34,10 +33,10 @@ export default class RecallMcpTool extends BaseMcpTool<Input> {
 
     name = 'konteks_recall'
 
-    protected async coreHandle(options: StartMcpServerOptions, input: Input) {
+    protected async coreHandle(input: Input) {
         return formatRecallText({
             includeSources: input.includeSources ?? false,
-            recall: await recallMemory(options, input),
+            recall: await recallMemory(input),
         })
     }
 }

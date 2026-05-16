@@ -14,10 +14,8 @@ function createUninitializedCliError(): CliUserError {
     })
 }
 
-export default async function ensureCliProjectInitialized(
-    project?: string,
-): Promise<void> {
-    const context = await loadProjectContext(project)
+export default async function ensureCliProjectInitialized(): Promise<void> {
+    const context = await loadProjectContext()
 
     if (!context.configExists) {
         throw createUninitializedCliError()

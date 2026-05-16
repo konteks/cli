@@ -38,13 +38,11 @@ export type DurableMemoryExportDiary = {
 export type DurableMemoryExportOptions = {
     includeInactive?: boolean
     outputPath: string
-    project?: string
 }
 
 export type DurableMemoryImportOptions = {
     dryRun?: boolean
     inputPath: string
-    project?: string
 }
 
 export type DurableMemoryExportResult = {
@@ -63,13 +61,11 @@ export type DurableMemoryImportResult = {
 
 export type MemoryBackupOptions = {
     outputPath: string
-    project?: string
 }
 
 export type MemoryRestoreOptions = {
     force?: boolean
     inputPath: string
-    project?: string
 }
 
 export type MemoryBackupResult = {

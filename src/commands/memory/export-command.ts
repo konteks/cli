@@ -28,7 +28,6 @@ export default class ExportCommand extends BaseCommand<
 
     async handle({
         args,
-        globalOptions,
         options,
     }: BaseCommandInput<[string], MemoryExportOptions>): Promise<void> {
         this.print(
@@ -36,7 +35,6 @@ export default class ExportCommand extends BaseCommand<
                 await exportMemory({
                     includeInactive: options.includeInactive,
                     outputPath: args[0],
-                    project: globalOptions.project,
                 }),
             ),
         )

@@ -1,6 +1,5 @@
 import z from 'zod'
 import { saveMemories } from '@/memory/save-memory'
-import type { StartMcpServerOptions } from '@/models/mcp'
 import BaseMcpTool from './_base-mcp-tool'
 import memoryKindSchema from './schemas/memory-kind-schema'
 import saveTextSchema from './schemas/save-input-schema'
@@ -42,8 +41,8 @@ export default class SaveMemoriesMcpTool extends BaseMcpTool<Input> {
 
     name = 'konteks_save_memories'
 
-    protected async coreHandle(options: StartMcpServerOptions, input: Input) {
-        const result = await saveMemories(options, input)
+    protected async coreHandle(input: Input) {
+        const result = await saveMemories(input)
 
         return formatSaveMemoriesText(result)
     }

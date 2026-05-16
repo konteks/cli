@@ -6,10 +6,7 @@ import repairMemory from '@/project/repair-memory'
 describe('project/repair', () => {
     it('skips repair when confirmation returns false', async () => {
         await expect(
-            repairMemory(
-                { project: '/tmp/project' },
-                { confirmRepair: async () => false },
-            ),
+            repairMemory({ confirmRepair: async () => false }),
         ).resolves.toEqual({ mode: 'repair', ok: false, skipped: true })
     })
 
@@ -37,19 +34,16 @@ describe('project/repair', () => {
         }
 
         await expect(
-            repairMemory(
-                { project: '/tmp/project' },
-                {
-                    confirmRepair: async () => true,
-                    extractor,
-                },
-            ),
+            repairMemory({
+                confirmRepair: async () => true,
+                extractor,
+            }),
         ).resolves.toEqual({
             ...response,
             mode: 'repair',
         })
         expect(calls).toEqual([
-            { mode: 'reindex', projectRoot: '/tmp/project' },
+            { mode: 'reindex', projectRoot: process.cwd() },
         ])
     })
 })

@@ -35,8 +35,8 @@ export function canPromptForGrammars(): boolean {
     return terminal.stdinIsInteractive() && terminal.stderrIsInteractive()
 }
 
-export async function openConfigTui(project?: string): Promise<void> {
-    const context = await loadProjectContext(project)
+export async function openConfigTui(): Promise<void> {
+    const context = await loadProjectContext()
     const section = await select({
         choices: [
             { name: 'Grammars', value: 'grammars' },

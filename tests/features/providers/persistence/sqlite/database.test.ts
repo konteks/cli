@@ -18,11 +18,27 @@ afterEach(async () => {
     )
 })
 
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
+
 describe('project database', () => {
     it('creates config and migrated database when opened directly', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-db-test-'))
         tempDirs.push(projectRoot)
-        const context = await loadProjectContext(projectRoot)
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
 
         const service = await openProjectDatabase(context)
         const migrations = await service.adapter.query<{ id: string }>(

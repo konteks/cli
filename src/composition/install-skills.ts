@@ -8,7 +8,6 @@ import { resolveProjectContext } from '@/providers/project/context'
 export type InstallSkillOptions = {
     global?: boolean
     homeDir?: string
-    project?: string
 }
 
 export default async function installSkills(
@@ -16,11 +15,7 @@ export default async function installSkills(
 ): Promise<InstallKonteksSkillsResult> {
     const skillsDir = options.global
         ? join(options.homeDir ?? homedir(), '.agents', 'skills')
-        : join(
-              (await resolveProjectContext(options.project)).projectRoot,
-              '.agents',
-              'skills',
-          )
+        : join((await resolveProjectContext()).projectRoot, '.agents', 'skills')
 
     return await installKonteksSkills({ skillsDir })
 }

@@ -43,7 +43,9 @@ describe('extraction/extract', () => {
         } satisfies ExtractProjectRequest
 
         await expect(
-            createProjectExtractor({ extractionEngine }).execute(request),
+            withProjectRoot(projectRoot, () =>
+                createProjectExtractor({ extractionEngine }).execute(request),
+            ),
         ).resolves.toBe(response)
         expect(calls).toEqual([
             {
@@ -55,11 +57,9 @@ describe('extraction/extract', () => {
                                 updateTtlHours: 12,
                             },
                         },
-                        projectRoot,
                         recall: { maxTokens: 4096 },
                         storage: {
                             inlinePayloadMaxBytes: 1024,
-                            memoryDir: '.konteks',
                         },
                     },
                     configExists: true,
@@ -88,11 +88,9 @@ async function createConfiguredProject(): Promise<string> {
                         updateTtlHours: 12,
                     },
                 },
-                projectRoot,
                 recall: { maxTokens: 4096 },
                 storage: {
                     inlinePayloadMaxBytes: 1024,
-                    memoryDir: '.konteks',
                 },
             },
             null,
@@ -100,4 +98,18 @@ async function createConfiguredProject(): Promise<string> {
         )}\n`,
     )
     return projectRoot
+}
+
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
 }

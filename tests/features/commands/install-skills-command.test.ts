@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import InstallSkillsCommand from '@/commands/install-skills-command'
@@ -14,12 +14,29 @@ afterEach(async () => {
     )
 })
 
+async function withWorkingDirectory<T>(
+    cwd: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(cwd)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
+
 describe('InstallSkillsCommand', () => {
     it('installs Konteks skills', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-skills-'))
         tempDirs.push(projectRoot)
+        await writeFile(join(projectRoot, 'package.json'), '{"name":"fixture"}\n')
 
-        await new InstallSkillsCommand().run({ project: projectRoot })
+        await withWorkingDirectory(projectRoot, () =>
+            new InstallSkillsCommand().run({}),
+        )
 
         expect(
             (await readdir(join(projectRoot, '.agents', 'skills'))).sort(),
@@ -54,11 +71,14 @@ describe('InstallSkillsCommand', () => {
         ).resolves.toContain('name: konteks-save')
     })
 
-    it('uses the project override for local install by default', async () => {
+    it('installs local skills into the current project by default', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-skills-'))
         tempDirs.push(projectRoot)
+        await writeFile(join(projectRoot, 'package.json'), '{"name":"fixture"}\n')
 
-        await new InstallSkillsCommand().run({ project: projectRoot })
+        await withWorkingDirectory(projectRoot, () =>
+            new InstallSkillsCommand().run({}),
+        )
 
         await expect(
             readFile(

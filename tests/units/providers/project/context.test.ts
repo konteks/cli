@@ -25,11 +25,27 @@ afterEach(async () => {
     )
 })
 
+async function withWorkingDirectory<T>(
+    cwd: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(cwd)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
+
 describe('project context', () => {
-    it('uses explicit project root overrides', async () => {
+    it('resolves the project root from the current working directory', async () => {
         const projectRoot = await makeTempProject()
 
-        const context = await resolveProjectContext(projectRoot)
+        const context = await withWorkingDirectory(projectRoot, () =>
+            resolveProjectContext(),
+        )
 
         expect(context.projectRoot).toBe(projectRoot)
         expect(context.memoryDir).toBe(join(projectRoot, '.konteks'))
@@ -39,20 +55,18 @@ describe('project context', () => {
     })
 
     it('creates default config for the project-local memory directory', () => {
-        expect(createDefaultConfig('/repo')).toEqual({
+        expect(createDefaultConfig()).toEqual({
             extraction: {
                 grammars: {
                     selected: [],
                     updateTtlHours: 24,
                 },
             },
-            projectRoot: '/repo',
             recall: {
                 maxTokens: 2000,
             },
             storage: {
                 inlinePayloadMaxBytes: 2048,
-                memoryDir: '.konteks',
             },
         })
     })
@@ -60,7 +74,9 @@ describe('project context', () => {
     it('reports missing memory when the project is not initialized', async () => {
         const projectRoot = await makeTempProject()
 
-        const status = await readProjectStatus(projectRoot)
+        const status = await withWorkingDirectory(projectRoot, () =>
+            readProjectStatus(),
+        )
 
         expect(status.freshness).toEqual({
             changedFileCount: 0,
@@ -75,7 +91,9 @@ describe('project context', () => {
         await mkdir(join(projectRoot, '.konteks'), { recursive: true })
         await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
 
-        const status = await readProjectStatus(projectRoot)
+        const status = await withWorkingDirectory(projectRoot, () =>
+            readProjectStatus(),
+        )
 
         expect(status.freshness.status).toBe('missing')
         expect(status.freshness.recommendedCommand).toBe('konteks repair')

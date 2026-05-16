@@ -10,6 +10,7 @@ const tempDirs: string[] = []
 async function makeTempProject(): Promise<string> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-init-test-'))
     tempDirs.push(projectRoot)
+    await mkdir(join(projectRoot, '.git'), { recursive: true })
     await writeFile(join(projectRoot, 'README.md'), '# Fixture\n')
     return projectRoot
 }
@@ -22,12 +23,27 @@ afterEach(async () => {
     )
 })
 
+async function withWorkingDirectory<T>(
+    cwd: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(cwd)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
+
 describe('InitCommand', () => {
     const init = (project: string) =>
-        new InitCommand().run({
-            embeddingProvider: new FakeEmbeddingProvider(),
-            project,
-        })
+        withWorkingDirectory(project, () =>
+            new InitCommand().run({
+                embeddingProvider: new FakeEmbeddingProvider(),
+            }),
+        )
 
     it('adds .konteks to .gitignore during init', async () => {
         const projectRoot = await makeTempProject()
@@ -116,11 +132,12 @@ describe('InitCommand', () => {
         const projectRoot = await makeTempProject()
 
         await expect(
-            new InitCommand().run({
-                embeddingProvider: new FakeEmbeddingProvider(),
-                grammar: ['not-real'],
-                project: projectRoot,
-            }),
+            withWorkingDirectory(projectRoot, () =>
+                new InitCommand().run({
+                    embeddingProvider: new FakeEmbeddingProvider(),
+                    grammar: ['not-real'],
+                }),
+            ),
         ).rejects.toThrow('Unknown grammar id: not-real')
         await expect(
             readFile(join(projectRoot, '.konteks', 'config.json'), 'utf8'),

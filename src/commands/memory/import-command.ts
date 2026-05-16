@@ -29,7 +29,6 @@ export default class ImportCommand extends BaseCommand<
 
     async handle({
         args,
-        globalOptions,
         options,
     }: BaseCommandInput<[string], MemoryImportOptions>): Promise<void> {
         this.print(
@@ -37,7 +36,6 @@ export default class ImportCommand extends BaseCommand<
                 await importMemory({
                     dryRun: options.dryRun,
                     inputPath: args[0],
-                    project: globalOptions.project,
                 }),
             ),
         )

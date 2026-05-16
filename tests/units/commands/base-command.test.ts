@@ -22,33 +22,27 @@ describe('BaseCommand', () => {
             }
         }
 
-        const program = new Command().option('--project <path>')
+        const program = new Command()
         new FixtureCommand().register(program, contextFor(program))
 
         await program.parseAsync(
-            [
-                'node',
-                'konteks',
-                '--project',
-                '/repo',
-                'fixture',
-                'value',
-                '--flag',
-            ],
-            { from: 'node' },
+            ['node', 'konteks', 'fixture', 'value', '--flag'],
+            {
+                from: 'node',
+            },
         )
 
         expect(seen).toEqual([
             {
                 args: ['value'],
-                globalOptions: { project: '/repo' },
+                globalOptions: {},
                 options: { flag: true },
             },
         ])
     })
 
     it('runs initialization before project commands', async () => {
-        const projects: (string | undefined)[] = []
+        let ranInitialization = false
         class FixtureCommand extends BaseCommand {
             readonly description = 'Fixture command.'
             readonly name = 'fixture'
@@ -56,20 +50,19 @@ describe('BaseCommand', () => {
             handle(): void {}
         }
 
-        const program = new Command().option('--project <path>')
+        const program = new Command()
         new FixtureCommand().register(program, {
             getGlobalOptions: () => program.opts(),
-            runInitializationGuard: async project => {
-                projects.push(project)
+            runInitializationGuard: async () => {
+                ranInitialization = true
             },
         })
 
-        await program.parseAsync(
-            ['node', 'konteks', '--project', '/repo', 'fixture'],
-            { from: 'node' },
-        )
+        await program.parseAsync(['node', 'konteks', 'fixture'], {
+            from: 'node',
+        })
 
-        expect(projects).toEqual(['/repo'])
+        expect(ranInitialization).toBe(true)
     })
 
     it('registers child commands declared as properties', async () => {
@@ -94,18 +87,17 @@ describe('BaseCommand', () => {
             handle(): void {}
         }
 
-        const program = new Command().option('--project <path>')
+        const program = new Command()
         new ParentCommand().register(program, contextFor(program))
 
-        await program.parseAsync(
-            ['node', 'konteks', '--project', '/repo', 'parent', 'child'],
-            { from: 'node' },
-        )
+        await program.parseAsync(['node', 'konteks', 'parent', 'child'], {
+            from: 'node',
+        })
 
         expect(seen).toEqual([
             {
                 args: [],
-                globalOptions: { project: '/repo' },
+                globalOptions: {},
                 options: {},
             },
         ])

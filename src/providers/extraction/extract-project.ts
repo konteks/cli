@@ -22,7 +22,6 @@ import {
     writeExtractionManifest,
 } from '@/providers/extraction/engine/manifest'
 import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
-import type TreeSitterEngine from '@/providers/extraction/engine/tree-sitter-engine'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import type DatabaseService from '@/providers/persistence/sqlite/database-service'
@@ -33,7 +32,6 @@ export async function extractProject(
     options: {
         embeddingProvider?: EmbeddingProvider
         onProgress?: ExtractionProgressReporter
-        treeSitterEngine?: TreeSitterEngine
     } = {},
 ): Promise<ExtractProjectResponse> {
     const engine = new KonteksExtractionEngine(options)
@@ -48,7 +46,6 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
         private readonly options: {
             embeddingProvider?: EmbeddingProvider
             onProgress?: ExtractionProgressReporter
-            treeSitterEngine?: TreeSitterEngine
         } = {},
     ) {}
 
@@ -134,7 +131,6 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
                 metadata,
                 mode,
                 onProgress: progress,
-                treeSitterEngine: options.treeSitterEngine,
             },
         )
         const embeddingRun = options.embeddingProvider

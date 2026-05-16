@@ -2,7 +2,6 @@ import { describe, expect, it } from 'bun:test'
 import z from 'zod'
 import mcpTools from '@/mcp/tools'
 import BaseMcpTool from '@/mcp/tools/_base-mcp-tool'
-import type { StartMcpServerOptions } from '@/models/mcp'
 
 describe('MCP tools', () => {
     it('registers tools in API order with protocol annotations', () => {
@@ -46,7 +45,6 @@ describe('MCP tools', () => {
             readonly name = 'fixture_tool'
 
             protected override async coreHandle(
-                _options: StartMcpServerOptions,
                 input: z.output<typeof this.inputSchema>,
             ) {
                 return input
@@ -55,8 +53,8 @@ describe('MCP tools', () => {
 
         const tool = new FixtureTool()
 
-        await expect(tool.handle({}, {})).rejects.toThrow()
-        await expect(tool.handle({}, { value: 'ok' })).resolves.toEqual({
+        await expect(tool.handle({})).rejects.toThrow()
+        await expect(tool.handle({ value: 'ok' })).resolves.toEqual({
             content: [{ text: 'value: ok', type: 'text' }],
         })
     })
@@ -76,7 +74,6 @@ describe('MCP tools', () => {
             readonly name = 'fixture_tool'
 
             protected override async coreHandle(
-                _options: StartMcpServerOptions,
                 input: z.output<typeof this.inputSchema>,
             ) {
                 return `value=${input.value}`
@@ -85,7 +82,7 @@ describe('MCP tools', () => {
 
         const tool = new FixtureTool()
 
-        await expect(tool.handle({}, { value: 'ok' })).resolves.toEqual({
+        await expect(tool.handle({ value: 'ok' })).resolves.toEqual({
             content: [{ text: 'value=ok', type: 'text' }],
         })
     })

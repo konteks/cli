@@ -11,7 +11,9 @@ const tempDirs: string[] = []
 async function makeAdapter() {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-policy-test-'))
     tempDirs.push(projectRoot)
-    return openProjectDatabase(await loadProjectContext(projectRoot))
+    return await withProjectRoot(projectRoot, async () =>
+        openProjectDatabase(await loadProjectContext()),
+    )
 }
 
 afterEach(async () => {
@@ -21,6 +23,20 @@ afterEach(async () => {
             .map(path => rm(path, { force: true, recursive: true })),
     )
 })
+
+async function withProjectRoot<T>(
+    projectRoot: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(projectRoot)
+
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
+}
 
 describe('search policy', () => {
     it('gates diary from recall when no continuity intent is present', async () => {
