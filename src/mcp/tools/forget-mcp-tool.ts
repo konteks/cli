@@ -14,9 +14,7 @@ const INPUT_SCHEMA = z
         message: 'Either id or query is required.',
     })
 
-type Input = typeof INPUT_SCHEMA._output
-
-export default class ForgetMcpTool extends BaseMcpTool<Input> {
+export default class ForgetMcpTool extends BaseMcpTool {
     annotations = {
         destructiveHint: true,
         idempotentHint: false,
@@ -29,16 +27,12 @@ export default class ForgetMcpTool extends BaseMcpTool<Input> {
 
     inputSchema = INPUT_SCHEMA
 
-    name = 'konteks_forget' as const
+    name = 'konteks_forget'
 
-    constructor(private readonly forget: typeof forgetMemory = forgetMemory) {
-        super()
-    }
-
-    protected override async execute(
+    protected async coreHandle(
         options: StartMcpServerOptions,
-        input: Input,
+        input: z.output<typeof INPUT_SCHEMA>,
     ) {
-        return this.formatOutput(await this.forget(options, input))
+        return forgetMemory(options, input)
     }
 }
