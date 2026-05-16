@@ -39,7 +39,7 @@ describe('providers/persistence/sqlite/save-policy', () => {
     it('appends project update summaries to diary saves', () => {
         expect(
             withProjectUpdateSummary(
-                { summary: 'Session summary has enough words.', type: 'diary' },
+                { summary: 'Session summary has enough words.' },
                 {
                     deletedFilePaths: ['src/old.ts'],
                     updatedFilePaths: ['src/new.ts'],

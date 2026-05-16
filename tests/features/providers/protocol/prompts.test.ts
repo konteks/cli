@@ -17,7 +17,8 @@ describe('MCP prompts', () => {
         expect(mcpTools.map(tool => tool.name)).toEqual([
             'konteks_warm_up',
             'konteks_recall',
-            'konteks_save',
+            'konteks_save_memories',
+            'konteks_save_diary',
             'konteks_search',
             'konteks_forget',
         ])
@@ -70,22 +71,24 @@ describe('MCP prompts', () => {
 
         expect(savePrompt?.arguments).toBeUndefined()
         expect(save).toContain(
-            'Use `konteks_save` only for these explicit user intents',
+            'Use the save tools only for these explicit user intents',
         )
         expect(save).toContain(
-            'Do not call `konteks_save` automatically at the end of other workflows.',
+            'Do not call `konteks_save_memories` or `konteks_save_diary` automatically at the end of other workflows.',
         )
         expect(save).toContain('Lightweight remember')
         expect(save).toContain(
-            'Save only durable memory entries with `type: "memory"` or `type: "memories"`.',
+            'Save only durable memories with `konteks_save_memories`.',
         )
         expect(save).toContain('Do not write a diary for lightweight remember.')
         expect(save).toContain('After lightweight remember succeeds')
         expect(save).toContain('Do not pass the full raw chat transcript')
         expect(save).toContain(
-            'For a full session save, call `konteks_save` in two phases',
+            'For a full session save, call the save tools in two phases',
         )
-        expect(save).toContain('Save one compact session diary')
+        expect(save).toContain(
+            'Save one compact session diary with `konteks_save_diary`',
+        )
         expect(save).toContain('80-160 words or 3-6 short bullets')
         expect(save).toContain(
             'Each durable memory should be short but operational',
@@ -95,12 +98,9 @@ describe('MCP prompts', () => {
         )
         expect(save).toContain('write a handoff summary, not a transcript')
         expect(save).toContain('Omit command logs, tool output, routine files')
-        expect(save).toContain('type: "memories"')
-        expect(save).toContain(
-            'the tool defaults omitted item types to `"memory"` inside a `memories` batch',
-        )
+        expect(save).toContain('konteks_save_memories')
         expect(save).toContain('Accepted durable memory batch shape')
-        expect(save).toContain('type: "diary"')
+        expect(save).toContain('konteks_save_diary')
         expect(save).toContain('If the memory payload is too large')
         expect(save).not.toContain('current Konteks task')
         expect(save).not.toContain('focus on')

@@ -4,7 +4,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import exportDurableMemory from '@/providers/persistence/sqlite/export-durable-memory'
-import saveKonteksInput from '@/providers/persistence/sqlite/save-konteks-input'
+import {
+    saveKonteksDiary,
+    saveKonteksMemory,
+} from '@/providers/persistence/sqlite/save-konteks-input'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []
@@ -22,17 +25,16 @@ describe('exportDurableMemory', () => {
         const { context, db } = await makeProject()
         context.config.storage.inlinePayloadMaxBytes = 8
         try {
-            await saveKonteksInput(db, context, {
+            await saveKonteksMemory(db, context, {
                 content:
                     'Portable durable memory content should resolve from object storage.',
+                importance: 3,
                 kind: 'decision',
-                type: 'memory',
             })
-            await saveKonteksInput(db, context, {
+            await saveKonteksDiary(db, context, {
                 subject: 'portable export',
                 summary: 'Diary export includes tags.',
                 tags: ['export'],
-                type: 'diary',
             })
 
             const payload = await exportDurableMemory(db, context, {
@@ -55,10 +57,10 @@ describe('exportDurableMemory', () => {
     it('exports inactive rows only when requested', async () => {
         const { context, db } = await makeProject()
         try {
-            const saved = await saveKonteksInput(db, context, {
+            const saved = await saveKonteksMemory(db, context, {
                 content: 'Inactive memory requires an explicit export flag.',
+                importance: 3,
                 kind: 'note',
-                type: 'memory',
             })
             await db.adapter.execute(
                 'update observations set suppressed_at = ?, forget_reason = ? where id = ?',

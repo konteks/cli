@@ -1,5 +1,5 @@
 import type {
-    SaveInput,
+    SaveDiaryInput,
     SaveOptions,
 } from '@/contracts/repositories/memory-repository'
 
@@ -33,9 +33,9 @@ export function validateSessionQuality(summary: string): void {
 }
 
 export function withProjectUpdateSummary(
-    input: Extract<SaveInput, { type: 'diary' }>,
+    input: SaveDiaryInput,
     projectUpdate: SaveProjectUpdate | undefined,
-): Extract<SaveInput, { type: 'diary' }> {
+): SaveDiaryInput {
     const projectSummary = summarizeProjectUpdate(projectUpdate)
     if (!projectSummary) {
         return input

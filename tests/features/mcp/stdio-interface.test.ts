@@ -40,7 +40,8 @@ describe('mcp/stdio interface', () => {
             expect(tools.tools.map(tool => tool.name)).toEqual([
                 'konteks_warm_up',
                 'konteks_recall',
-                'konteks_save',
+                'konteks_save_memories',
+                'konteks_save_diary',
                 'konteks_search',
                 'konteks_forget',
             ])
@@ -53,7 +54,8 @@ describe('mcp/stdio interface', () => {
             ).toEqual([
                 ['konteks_warm_up', false, false],
                 ['konteks_recall', true, false],
-                ['konteks_save', false, false],
+                ['konteks_save_memories', false, false],
+                ['konteks_save_diary', false, false],
                 ['konteks_search', true, false],
                 ['konteks_forget', false, true],
             ])
@@ -85,38 +87,27 @@ describe('mcp/stdio interface', () => {
                 type: 'object',
             })
 
-            const saveTool = tools.tools.find(
-                tool => tool.name === 'konteks_save',
+            const saveMemoriesTool = tools.tools.find(
+                tool => tool.name === 'konteks_save_memories',
             )
-            expect(saveTool?.description).toContain('Persist structured')
-            expect(saveTool?.inputSchema).toMatchObject({
+            expect(saveMemoriesTool?.description).toContain(
+                'Persist one or more structured durable memories',
+            )
+            expect(saveMemoriesTool?.inputSchema).toMatchObject({
                 properties: {
-                    content: { type: 'string' },
-                    importance: {
-                        anyOf: [
-                            { const: 1, type: 'number' },
-                            { const: 2, type: 'number' },
-                            { const: 3, type: 'number' },
-                            { const: 4, type: 'number' },
-                            { const: 5, type: 'number' },
-                        ],
-                    },
-                    kind: {
-                        enum: [
-                            'blocker',
-                            'code_insight',
-                            'constraint',
-                            'decision',
-                            'fact',
-                            'note',
-                            'preference',
-                        ],
-                        type: 'string',
-                    },
                     memories: {
                         items: {
                             properties: {
                                 content: { type: 'string' },
+                                importance: {
+                                    anyOf: [
+                                        { const: 1, type: 'number' },
+                                        { const: 2, type: 'number' },
+                                        { const: 3, type: 'number' },
+                                        { const: 4, type: 'number' },
+                                        { const: 5, type: 'number' },
+                                    ],
+                                },
                                 kind: {
                                     enum: [
                                         'blocker',
@@ -129,30 +120,38 @@ describe('mcp/stdio interface', () => {
                                     ],
                                     type: 'string',
                                 },
-                                type: {
-                                    const: 'memory',
-                                    default: 'memory',
-                                    type: 'string',
+                                source: { type: 'string' },
+                                tags: {
+                                    items: { type: 'string' },
+                                    type: 'array',
                                 },
                             },
-                            required: ['content', 'kind'],
+                            required: ['content', 'importance', 'kind'],
                             type: 'object',
                         },
                         type: 'array',
                     },
-                    source: { type: 'string' },
+                },
+                required: ['memories'],
+                type: 'object',
+            })
+
+            const saveDiaryTool = tools.tools.find(
+                tool => tool.name === 'konteks_save_diary',
+            )
+            expect(saveDiaryTool?.description).toContain(
+                'Persist one compact session diary entry',
+            )
+            expect(saveDiaryTool?.inputSchema).toMatchObject({
+                properties: {
                     subject: { type: 'string' },
                     summary: { type: 'string' },
                     tags: {
                         items: { type: 'string' },
                         type: 'array',
                     },
-                    type: {
-                        enum: ['memory', 'memories', 'diary'],
-                        type: 'string',
-                    },
                 },
-                required: ['type'],
+                required: ['summary'],
                 type: 'object',
             })
         } finally {
@@ -222,9 +221,21 @@ describe('mcp/stdio interface', () => {
                     arguments: {
                         summary:
                             'Saved a compact diary entry through the live MCP stdio interface test.',
-                        type: 'diary',
                     },
-                    name: 'konteks_save',
+                    name: 'konteks_save_diary',
+                }),
+                request(5, 'tools/call', {
+                    arguments: {
+                        memories: [
+                            {
+                                content:
+                                    'Use split save MCP tools for protocol-facing save workflows.',
+                                importance: 3,
+                                kind: 'decision',
+                            },
+                        ],
+                    },
+                    name: 'konteks_save_memories',
                 }),
             ])
 
@@ -242,7 +253,12 @@ describe('mcp/stdio interface', () => {
                 extractToolText(
                     resultById<ToolCallResult>(successResponses, 4),
                 ),
-            ).toContain('konteks: session saved')
+            ).toContain('konteks: session diary saved')
+            expect(
+                extractToolText(
+                    resultById<ToolCallResult>(successResponses, 5),
+                ),
+            ).toContain('konteks: durable memories saved')
 
             const invalidRecall = resultById<ToolCallResult>(
                 await runMcpExchange(fixture.projectRoot, [
@@ -258,18 +274,32 @@ describe('mcp/stdio interface', () => {
                 'Invalid arguments for tool konteks_recall',
             )
 
-            const invalidSave = resultById<ToolCallResult>(
+            const invalidDiarySave = resultById<ToolCallResult>(
                 await runMcpExchange(fixture.projectRoot, [
                     request(2, 'tools/call', {
-                        arguments: { type: 'diary' },
-                        name: 'konteks_save',
+                        arguments: {},
+                        name: 'konteks_save_diary',
                     }),
                 ]),
                 2,
             )
-            expect(invalidSave.isError).toBe(true)
-            expect(extractToolText(invalidSave)).toContain(
+            expect(invalidDiarySave.isError).toBe(true)
+            expect(extractToolText(invalidDiarySave)).toContain(
                 'expected string, received undefined',
+            )
+
+            const invalidMemorySave = resultById<ToolCallResult>(
+                await runMcpExchange(fixture.projectRoot, [
+                    request(2, 'tools/call', {
+                        arguments: {},
+                        name: 'konteks_save_memories',
+                    }),
+                ]),
+                2,
+            )
+            expect(invalidMemorySave.isError).toBe(true)
+            expect(extractToolText(invalidMemorySave)).toContain(
+                'expected array, received undefined',
             )
         } finally {
             await fixture.cleanup()

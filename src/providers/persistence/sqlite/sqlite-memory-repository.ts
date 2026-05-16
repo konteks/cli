@@ -2,8 +2,11 @@ import type {
     ForgetInput,
     MemoryRepositoryContract,
     MemorySearchInput,
-    SaveInput,
+    SaveDiaryInput,
+    SaveMemoriesInput,
+    SaveMemoryInput,
     SaveOptions,
+    SaveSessionInput,
 } from '@/contracts/repositories/memory-repository'
 import type {
     ForgetResult,
@@ -17,7 +20,12 @@ import type {
 import type { Project } from '@/models/project'
 import type DatabaseService from './database-service'
 import forgetMemory from './forget-memory'
-import saveKonteksInput from './save-konteks-input'
+import {
+    saveKonteksDiary,
+    saveKonteksMemories,
+    saveKonteksMemory,
+    saveKonteksSession,
+} from './save-konteks-input'
 import searchMemory from './search-memory'
 
 export default class SQLiteMemoryRepository
@@ -46,21 +54,56 @@ export default class SQLiteMemoryRepository
         }))
     }
 
-    async save(input: SaveInput, options?: SaveOptions): Promise<SaveResult> {
-        const result = await saveKonteksInput(
+    async saveMemory(
+        input: SaveMemoryInput,
+        options?: SaveOptions,
+    ): Promise<SaveResult> {
+        const result = await saveKonteksMemory(
             this.db,
             this.project,
             input,
             options,
         )
-        return {
-            accepted: result.accepted,
-            diaryId: result.diaryId,
-            duplicateOf: result.duplicateOf,
-            id: result.id,
-            memoryIds: result.memoryIds,
-            skippedMemories: result.skippedMemories,
-        }
+        return mapSaveResult(result)
+    }
+
+    async saveMemories(
+        input: SaveMemoriesInput,
+        options?: SaveOptions,
+    ): Promise<SaveResult> {
+        const result = await saveKonteksMemories(
+            this.db,
+            this.project,
+            input,
+            options,
+        )
+        return mapSaveResult(result)
+    }
+
+    async saveDiary(
+        input: SaveDiaryInput,
+        options?: SaveOptions,
+    ): Promise<SaveResult> {
+        const result = await saveKonteksDiary(
+            this.db,
+            this.project,
+            input,
+            options,
+        )
+        return mapSaveResult(result)
+    }
+
+    async saveSession(
+        input: SaveSessionInput,
+        options?: SaveOptions,
+    ): Promise<SaveResult> {
+        const result = await saveKonteksSession(
+            this.db,
+            this.project,
+            input,
+            options,
+        )
+        return mapSaveResult(result)
     }
 
     async forget(input: ForgetInput): Promise<ForgetResult> {
@@ -149,5 +192,16 @@ export default class SQLiteMemoryRepository
         limit?: number,
     ): Promise<HistoricalRelation[]> {
         return await this.db.graph.historicalRelations(entityId, { limit })
+    }
+}
+
+function mapSaveResult(result: SaveResult): SaveResult {
+    return {
+        accepted: result.accepted,
+        diaryId: result.diaryId,
+        duplicateOf: result.duplicateOf,
+        id: result.id,
+        memoryIds: result.memoryIds,
+        skippedMemories: result.skippedMemories,
     }
 }

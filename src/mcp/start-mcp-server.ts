@@ -7,7 +7,7 @@ import type { StartMcpServerOptions } from '@/models/mcp'
 import { VERSION } from '@/support/version'
 
 const MCP_INSTRUCTIONS =
-    'Use prompts for the Warm Up -> Build -> Save flow. Use konteks_warm_up at session start, konteks_recall as supplemental Build context, and call konteks_save with structured durable memories plus one diary entry during Save.'
+    'Use prompts for the Warm Up -> Build -> Save flow. Use konteks_warm_up at session start, konteks_recall as supplemental Build context, then call konteks_save_memories for durable memory and konteks_save_diary for the session handoff during Save.'
 
 export default async function startMcpServer(
     options: StartMcpServerOptions,
@@ -32,7 +32,7 @@ export default async function startMcpServer(
                 annotations: mpcTool.annotations,
                 description: mpcTool.description,
                 // biome-ignore lint/suspicious/noExplicitAny: compatibility cast
-                inputSchema: mpcTool.registrationInputSchema as any,
+                inputSchema: mpcTool.inputSchema as any,
             },
             (input: unknown) => mpcTool.handle(options, input),
         )

@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import type {
-    SaveInput,
+    SaveDiaryInput,
+    SaveMemoriesInput,
+    SaveMemoryInput,
     SaveOptions,
+    SaveSessionInput,
 } from '@/contracts/repositories/memory-repository'
 import type { SaveResult as PublicSaveResult } from '@/models/memory'
 import type { Project } from '@/models/project'
@@ -22,38 +25,50 @@ import { indexSearchDocument } from './search-index'
 
 type SaveResult = PublicSaveResult & {
     accepted: true
-    type: SaveInput['type']
+    type: 'diary' | 'memories' | 'memory' | 'session'
 }
 
-export default async function saveKonteksInput(
+export async function saveKonteksMemory(
     db: DatabaseService,
     context: Project,
-    input: SaveInput,
+    input: SaveMemoryInput,
     options: SaveOptions = {},
 ): Promise<SaveResult> {
-    if (input.type === 'memory') {
-        return saveMemory(db, context, input)
-    }
-
-    if (input.type === 'memories') {
-        return saveMemories(db, context, input)
-    }
-
-    if (input.type === 'diary') {
-        return saveDiary(
-            db,
-            context,
-            withProjectUpdateSummary(input, options.projectUpdate),
-        )
-    }
-
-    return saveSession(db, context, input)
+    return await persistMemory(db, context, input, options)
 }
 
-async function saveMemories(
+export async function saveKonteksMemories(
     db: DatabaseService,
     context: Project,
-    input: Extract<SaveInput, { type: 'memories' }>,
+    input: SaveMemoriesInput,
+    options: SaveOptions = {},
+): Promise<SaveResult> {
+    return await persistMemories(db, context, input, options)
+}
+
+export async function saveKonteksDiary(
+    db: DatabaseService,
+    context: Project,
+    input: SaveDiaryInput,
+    options: SaveOptions = {},
+): Promise<SaveResult> {
+    return await persistDiary(db, context, input, options)
+}
+
+export async function saveKonteksSession(
+    db: DatabaseService,
+    context: Project,
+    input: SaveSessionInput,
+    options: SaveOptions = {},
+): Promise<SaveResult> {
+    return await persistSession(db, context, input, options)
+}
+
+async function persistMemories(
+    db: DatabaseService,
+    context: Project,
+    input: SaveMemoriesInput,
+    _options: SaveOptions = {},
 ): Promise<SaveResult> {
     const batchId = `memory_batch_${randomUUID()}`
     const memoryIds: string[] = []
@@ -62,7 +77,7 @@ async function saveMemories(
     await db.transaction(async tx => {
         for (const memory of input.memories) {
             try {
-                const saved = await saveMemory(tx, context, memory)
+                const saved = await persistMemory(tx, context, memory)
                 memoryIds.push(saved.id)
             } catch (error) {
                 if (!isSkippableMemoryError(error)) {
@@ -78,14 +93,15 @@ async function saveMemories(
         id: memoryIds[0] ?? batchId,
         memoryIds: [...new Set(memoryIds)],
         skippedMemories,
-        type: input.type,
+        type: 'memories',
     }
 }
 
-async function saveMemory(
+async function persistMemory(
     db: DatabaseService,
     context: Project,
-    input: Extract<SaveInput, { type: 'memory' }>,
+    input: SaveMemoryInput,
+    _options: SaveOptions = {},
 ): Promise<SaveResult> {
     validateMemoryQuality(input.content)
     const hash = contentHash(input.content)
@@ -96,7 +112,7 @@ async function saveMemory(
             duplicateOf: duplicate.id,
             id: duplicate.id,
             memoryIds: [duplicate.id],
-            type: input.type,
+            type: 'memory',
         }
     }
 
@@ -166,14 +182,15 @@ insert into observations (
         accepted: true,
         id,
         memoryIds: [id],
-        type: input.type,
+        type: 'memory',
     }
 }
 
-async function saveSession(
+async function persistSession(
     db: DatabaseService,
     context: Project,
-    input: Extract<SaveInput, { type: 'session' }>,
+    input: SaveSessionInput,
+    _options: SaveOptions = {},
 ): Promise<SaveResult> {
     validateSessionQuality(input.summary)
     const id = `diary_${randomUUID()}`
@@ -231,19 +248,28 @@ insert into diary_entries (
     return {
         accepted: true,
         id,
-        type: input.type,
+        type: 'session',
     }
 }
 
-async function saveDiary(
+async function persistDiary(
     db: DatabaseService,
     context: Project,
-    input: Extract<SaveInput, { type: 'diary' }>,
+    input: SaveDiaryInput,
+    options: SaveOptions = {},
 ): Promise<SaveResult> {
-    validateSessionQuality(input.summary)
+    const formattedInput = withProjectUpdateSummary(
+        input,
+        options.projectUpdate,
+    )
+    validateSessionQuality(formattedInput.summary)
     const id = `diary_${randomUUID()}`
-    const tags = input.tags?.length ? input.tags.join(', ') : ''
-    const text = [input.subject, input.summary, tags].filter(Boolean).join('\n')
+    const tags = formattedInput.tags?.length
+        ? formattedInput.tags.join(', ')
+        : ''
+    const text = [formattedInput.subject, formattedInput.summary, tags]
+        .filter(Boolean)
+        .join('\n')
     const stored = await storePayload(text, {
         inlineMaxBytes: context.config.storage.inlinePayloadMaxBytes,
         toonStore: createToonStore(context.memoryDir),
@@ -265,9 +291,9 @@ insert into diary_entries (
 `,
             [
                 id,
-                input.subject ?? null,
-                input.summary,
-                JSON.stringify(input.tags ?? []),
+                formattedInput.subject ?? null,
+                formattedInput.summary,
+                JSON.stringify(formattedInput.tags ?? []),
                 stored.payloadRef ?? null,
                 stored.contentHash,
                 createdAt,
@@ -281,7 +307,7 @@ insert into diary_entries (
             payloadRef: stored.payloadRef,
             subjectId: id,
             subjectType: 'diary_entry',
-            summary: input.summary,
+            summary: formattedInput.summary,
         })
 
         await indexSearchDocument(tx.adapter, {
@@ -292,12 +318,12 @@ insert into diary_entries (
             type: 'diary',
         })
         await upsertRetrievalDocument(tx, {
-            anchor: input.subject ?? id,
+            anchor: formattedInput.subject ?? id,
             embeddingText: text,
             ftsText: text,
             path: 'diary',
             sourceRole: 'unknown',
-            summary: input.summary,
+            summary: formattedInput.summary,
             targetId: id,
             targetType: 'diary',
             updatedAt: createdAt,
@@ -306,8 +332,9 @@ insert into diary_entries (
 
     return {
         accepted: true,
+        diaryId: id,
         id,
-        type: input.type,
+        type: 'diary',
     }
 }
 

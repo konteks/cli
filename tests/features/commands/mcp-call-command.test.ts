@@ -22,7 +22,7 @@ describe('commands/mcp/call', () => {
 
         let calledOptions: StartMcpServerOptions | undefined
         let tempMemoryExistedDuringCall = false
-        const saveTool = getTool('konteks_save')
+        const saveTool = getTool('konteks_save_diary')
         const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
 
         spyOn(saveTool, 'handle').mockImplementation(async options => {
@@ -42,7 +42,10 @@ describe('commands/mcp/call', () => {
         })
 
         await new CallCommand().handle({
-            args: ['konteks_save', '{"type":"diary"}'],
+            args: [
+                'konteks_save_diary',
+                '{"summary":"Dry run diary entry should not persist."}',
+            ],
             globalOptions: { project: projectRoot },
             options: {},
         })
@@ -83,7 +86,7 @@ describe('commands/mcp/call', () => {
 
     it('calls mutating tools directly when apply is enabled', async () => {
         let calledOptions: StartMcpServerOptions | undefined
-        const saveTool = getTool('konteks_save')
+        const saveTool = getTool('konteks_save_diary')
         const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
 
         spyOn(saveTool, 'handle').mockImplementation(async options => {
@@ -94,7 +97,10 @@ describe('commands/mcp/call', () => {
         })
 
         await new CallCommand().handle({
-            args: ['konteks_save', undefined],
+            args: [
+                'konteks_save_diary',
+                '{"summary":"Apply diary entry should persist to project memory."}',
+            ],
             globalOptions: { project: '/tmp/project' },
             options: { apply: true },
         })

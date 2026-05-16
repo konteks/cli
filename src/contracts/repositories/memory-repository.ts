@@ -20,24 +20,21 @@ export type MemoryRecallInput = {
     includeSources?: boolean
 }
 
-type SaveMemoryInput = {
-    type: 'memory'
+export type SaveMemoryInput = {
     content: string
     kind: ObservationKind
-    importance?: 1 | 2 | 3 | 4 | 5
+    importance: 1 | 2 | 3 | 4 | 5
     source?: string
     tags?: string[]
 }
 
-type SaveDiaryInput = {
-    type: 'diary'
+export type SaveDiaryInput = {
     subject?: string
     summary: string
     tags?: string[]
 }
 
-type SaveSessionInput = {
-    type: 'session'
+export type SaveSessionInput = {
     task: string
     summary: string
     status: 'blocked' | 'done' | 'partial'
@@ -50,16 +47,9 @@ type SaveSessionInput = {
     testsRun?: string[]
 }
 
-type SaveBatchInput = {
-    type: 'memories'
+export type SaveMemoriesInput = {
     memories: SaveMemoryInput[]
 }
-
-export type SaveInput =
-    | SaveMemoryInput
-    | SaveDiaryInput
-    | SaveSessionInput
-    | SaveBatchInput
 
 export type ForgetInput = {
     id?: string
@@ -77,7 +67,19 @@ export type SaveOptions = {
 
 export interface MemoryRepositoryContract {
     search(input: MemorySearchInput): Promise<MemorySearchResult[]>
-    save(input: SaveInput, options?: SaveOptions): Promise<SaveResult>
+    saveMemory(
+        input: SaveMemoryInput,
+        options?: SaveOptions,
+    ): Promise<SaveResult>
+    saveMemories(
+        input: SaveMemoriesInput,
+        options?: SaveOptions,
+    ): Promise<SaveResult>
+    saveDiary(input: SaveDiaryInput, options?: SaveOptions): Promise<SaveResult>
+    saveSession(
+        input: SaveSessionInput,
+        options?: SaveOptions,
+    ): Promise<SaveResult>
     forget(input: ForgetInput): Promise<ForgetResult>
 
     // Graph operations

@@ -2,8 +2,6 @@ import { describe, expect, it } from 'bun:test'
 import z from 'zod'
 import mcpTools from '@/mcp/tools'
 import BaseMcpTool from '@/mcp/tools/_base-mcp-tool'
-import SaveMcpTool from '@/mcp/tools/save-mcp-tool'
-import { SAVE_PROTOCOL_INPUT_SCHEMA } from '@/mcp/tools/utils/save-input-schema'
 import type { StartMcpServerOptions } from '@/models/mcp'
 
 describe('MCP tools', () => {
@@ -11,7 +9,8 @@ describe('MCP tools', () => {
         expect(mcpTools.map(tool => tool.name)).toEqual([
             'konteks_warm_up',
             'konteks_recall',
-            'konteks_save',
+            'konteks_save_memories',
+            'konteks_save_diary',
             'konteks_search',
             'konteks_forget',
         ])
@@ -24,7 +23,8 @@ describe('MCP tools', () => {
         ).toEqual([
             ['konteks_warm_up', false, false],
             ['konteks_recall', true, false],
-            ['konteks_save', false, false],
+            ['konteks_save_memories', false, false],
+            ['konteks_save_diary', false, false],
             ['konteks_search', true, false],
             ['konteks_forget', false, true],
         ])
@@ -40,7 +40,7 @@ describe('MCP tools', () => {
                 readOnlyHint: true,
             }
             readonly description = 'Fixture tool.'
-            protected readonly inputSchema = z.object({
+            readonly inputSchema = z.object({
                 value: z.string().min(1),
             })
             readonly name = 'fixture_tool'
@@ -70,7 +70,7 @@ describe('MCP tools', () => {
                 readOnlyHint: true,
             }
             readonly description = 'Fixture tool.'
-            protected readonly inputSchema = z.object({
+            readonly inputSchema = z.object({
                 value: z.string().min(1),
             })
             readonly name = 'fixture_tool'
@@ -88,12 +88,5 @@ describe('MCP tools', () => {
         await expect(tool.handle({}, { value: 'ok' })).resolves.toEqual({
             content: [{ text: 'value=ok', type: 'text' }],
         })
-    })
-
-    it('exposes a protocol schema override for konteks_save', () => {
-        const tool = new SaveMcpTool()
-
-        expect(tool.registrationInputSchema).toBe(SAVE_PROTOCOL_INPUT_SCHEMA)
-        expect(tool.inputSchema).not.toBe(SAVE_PROTOCOL_INPUT_SCHEMA)
     })
 })

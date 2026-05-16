@@ -1,11 +1,11 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { encode as encodeToon } from '@toon-format/toon'
-import type z from 'zod'
+import z from 'zod'
 import type { StartMcpServerOptions } from '@/models/mcp'
 
-type McpRegistrationInputSchema = Record<string, z.ZodTypeAny> | z.ZodType
+export type McpInputSchema = Record<string, z.ZodTypeAny> | z.ZodType
 
-export default abstract class BaseMcpTool {
+export default abstract class BaseMcpTool<Input = unknown> {
     public abstract readonly annotations: {
         destructiveHint: boolean
         idempotentHint: boolean
@@ -15,13 +15,9 @@ export default abstract class BaseMcpTool {
 
     public abstract readonly description: string
 
-    protected abstract readonly inputSchema: z.ZodType
+    public abstract readonly inputSchema: McpInputSchema
 
     public abstract readonly name: string
-
-    public get registrationInputSchema(): McpRegistrationInputSchema {
-        return this.inputSchema
-    }
 
     private formatOutput(value: string | object): CallToolResult {
         return {
@@ -45,10 +41,14 @@ export default abstract class BaseMcpTool {
 
     protected abstract coreHandle(
         options: StartMcpServerOptions,
-        input: z.output<typeof this.inputSchema>,
+        input: Input,
     ): Promise<string | object>
 
-    private validate(input: unknown): z.output<typeof this.inputSchema> {
-        return this.inputSchema.parse(input)
+    private validate(input: unknown): Input {
+        if (this.inputSchema instanceof z.ZodType) {
+            return this.inputSchema.parse(input) as Input
+        }
+
+        return z.object(this.inputSchema).parse(input) as Input
     }
 }

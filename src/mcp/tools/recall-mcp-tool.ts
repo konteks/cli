@@ -17,7 +17,9 @@ const INPUT_SCHEMA = z.object({
     task: z.string().min(1, 'task is required'),
 })
 
-export default class RecallMcpTool extends BaseMcpTool {
+type Input = z.output<typeof INPUT_SCHEMA>
+
+export default class RecallMcpTool extends BaseMcpTool<Input> {
     annotations = {
         destructiveHint: false,
         idempotentHint: true,
@@ -28,14 +30,11 @@ export default class RecallMcpTool extends BaseMcpTool {
     description =
         'Recall compact, task-relevant project context before answering or working.'
 
-    inputSchema = INPUT_SCHEMA
+    readonly inputSchema = INPUT_SCHEMA
 
     name = 'konteks_recall'
 
-    protected async coreHandle(
-        options: StartMcpServerOptions,
-        input: z.output<typeof INPUT_SCHEMA>,
-    ) {
+    protected async coreHandle(options: StartMcpServerOptions, input: Input) {
         return formatRecallText({
             includeSources: input.includeSources ?? false,
             recall: await recallMemory(options, input),
