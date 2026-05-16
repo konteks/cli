@@ -43,7 +43,8 @@ export default async function startMcpServer(
      */
     registerMcpPrompts(server)
 
-    await server.connect(new StdioServerTransport())
+    const transport = new StdioServerTransport()
+    await server.connect(transport)
 }
 
 function registerMcpPrompts(server: McpServer): void {
