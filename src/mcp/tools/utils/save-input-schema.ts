@@ -46,6 +46,29 @@ const saveBatchMemorySchema = saveMemorySchema.extend({
     type: z.literal('memory').default('memory'),
 })
 
+export const SAVE_PROTOCOL_INPUT_SCHEMA = {
+    content: saveTextSchema.optional(),
+    importance: z
+        .union([
+            z.literal(1),
+            z.literal(2),
+            z.literal(3),
+            z.literal(4),
+            z.literal(5),
+        ])
+        .optional(),
+    kind: memoryKindSchema.optional(),
+    memories: z
+        .array(saveBatchMemorySchema)
+        .min(1, 'memories must contain at least one item')
+        .optional(),
+    source: z.string().optional(),
+    subject: z.string().optional(),
+    summary: saveTextSchema.optional(),
+    tags: z.array(z.string()).optional(),
+    type: z.enum(['memory', 'memories', 'diary']),
+} satisfies Record<string, z.ZodTypeAny>
+
 const SAVE_INPUT_SCHEMA = z.discriminatedUnion('type', [
     saveMemorySchema,
     z.object({

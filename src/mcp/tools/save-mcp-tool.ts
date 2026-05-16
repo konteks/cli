@@ -1,7 +1,9 @@
 import saveMemory from '@/memory/save-memory'
 import type { StartMcpServerOptions } from '@/models/mcp'
 import BaseMcpTool from './_base-mcp-tool'
-import SAVE_INPUT_SCHEMA from './utils/save-input-schema'
+import SAVE_INPUT_SCHEMA, {
+    SAVE_PROTOCOL_INPUT_SCHEMA,
+} from './utils/save-input-schema'
 
 const INPUT_SCHEMA = SAVE_INPUT_SCHEMA
 
@@ -21,6 +23,10 @@ export default class SaveMcpTool extends BaseMcpTool<Input> {
     inputSchema = INPUT_SCHEMA
 
     name = 'konteks_save' as const
+
+    override get registrationInputSchema() {
+        return SAVE_PROTOCOL_INPUT_SCHEMA
+    }
 
     constructor(private readonly save: typeof saveMemory = saveMemory) {
         super()

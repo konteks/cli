@@ -32,7 +32,7 @@ export default async function startMcpServer(
                 annotations: mpcTool.annotations,
                 description: mpcTool.description,
                 // biome-ignore lint/suspicious/noExplicitAny: compatibility cast
-                inputSchema: mpcTool.inputSchema as any,
+                inputSchema: mpcTool.registrationInputSchema as any,
             },
             (input: unknown) => mpcTool.handle(options, input),
         )
