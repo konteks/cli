@@ -6,16 +6,7 @@ import ensureCliProjectInitialized from '@/middlewares/ensure-cli-project-initia
 import printCliError from '@/support/cli/print-cli-error'
 import { VERSION } from '@/support/version'
 
-export type CreateCliProgramOptions = {
-    runInitializationGuard?: (project?: string) => Promise<void>
-}
-
-export function createCliProgram(
-    options: CreateCliProgramOptions = {},
-): Command {
-    const runInitializationGuard =
-        options.runInitializationGuard ?? ensureCliProjectInitialized
-
+export function createCliProgram(): Command {
     const program = new Command()
         .name('konteks')
         .description(
@@ -26,23 +17,24 @@ export function createCliProgram(
 
     registerCommands(program, {
         getGlobalOptions: () => program.opts(),
-        runInitializationGuard,
+        runInitializationGuard: ensureCliProjectInitialized,
     })
 
     return program
 }
 
 function registerCommands(program: Command, context: BaseCommandContext): void {
-    for (const command of commands) {
+    commands.forEach(command => {
         command.register(program, context)
-    }
+    })
 
     const memory = program
         .command('memory')
         .description('Import or export portable durable memory.')
-    for (const command of memoryCommands) {
+
+    memoryCommands.forEach(command => {
         command.register(memory, context)
-    }
+    })
 }
 
 createCliProgram()
