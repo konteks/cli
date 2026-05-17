@@ -18,7 +18,7 @@ describe('detectLanguage', () => {
         expect(detectLanguage('api.jsdoc')).toBe('jsdoc')
         expect(detectLanguage('docker-compose.yaml')).toBe('yaml')
         expect(detectLanguage('src/types.d.ts')).toBe('typescript_declaration')
-        expect(detectLanguage('Sources/App.swift')).toBe('unknown')
+        expect(detectLanguage('Sources/App.swift')).toBe('swift')
         expect(detectLanguage('schema.sql')).toBe('unknown')
         expect(detectLanguage('Makefile')).toBe('unknown')
     })
@@ -42,7 +42,7 @@ describe('classifySourceRole', () => {
             'implementation_plan',
         )
         expect(classifySourceRole('src/generated/client.ts')).toBe('generated')
-        expect(classifySourceRole('Sources/App.swift')).toBe('unknown')
+        expect(classifySourceRole('Sources/App.swift')).toBe('app_code')
         expect(classifySourceRole('notes.unknown')).toBe('unknown')
     })
 })

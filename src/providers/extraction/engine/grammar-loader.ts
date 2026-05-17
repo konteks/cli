@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import * as os from 'node:os'
-import { basename, join } from 'node:path'
+import { join } from 'node:path'
 import registryJson from '@/assets/grammars/registry.json' with { type: 'json' }
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import type { Project } from '@/models/project'
@@ -16,22 +16,16 @@ type TreeSitterBootstrapEngine = {
 export type GrammarDefinition = {
     aliases: string[]
     displayName: string
+    downloadUrl: string
     extensions: string[]
-    fallbackVersion: string
-    gitRepoUrl: string
     id: string
-    latestUrl?: string
-    package: string
-    wasmFile: string
 }
 
 type GrammarCacheEntry = {
     checkedAt: string
+    downloadUrl: string
     id: string
-    package: string
     sha256: string
-    version: string
-    wasmFile: string
 }
 
 type GrammarCacheManifest = {
@@ -279,6 +273,7 @@ async function ensureCachedGrammar(
     const shouldCheck =
         options.forceUpdate ||
         !entry ||
+        entry.downloadUrl !== definition.downloadUrl ||
         !cacheExists ||
         isStale(entry.checkedAt, options.updateTtlHours)
 
@@ -286,66 +281,30 @@ async function ensureCachedGrammar(
         return cachedPath
     }
 
-    const latest = await resolveLatestGrammar(definition)
-    const url = grammarDownloadUrl(definition, latest.version)
     options.onProgress?.({
-        message: `Downloading ${definition.displayName} grammar ${latest.version}`,
+        message: `Downloading ${definition.displayName} grammar`,
         phase: 'preparation',
         status: 'progress',
     })
-    const bytes = await downloadBytes(url)
+    const bytes = await downloadBytes(definition.downloadUrl)
     const sha256 = sha256Hex(bytes)
     await mkdir(grammarCacheDir(), { recursive: true })
     await writeFile(cachedPath, bytes)
     cache.grammars[definition.id] = {
         checkedAt: new Date().toISOString(),
+        downloadUrl: definition.downloadUrl,
         id: definition.id,
-        package: definition.package,
         sha256,
-        version: latest.version,
-        wasmFile: basename(cachedPath),
     }
     return cachedPath
-}
-
-async function resolveLatestGrammar(
-    definition: GrammarDefinition,
-): Promise<{ url: string; version: string }> {
-    if (!definition.latestUrl) {
-        return {
-            url: grammarDownloadUrl(definition, definition.fallbackVersion),
-            version: definition.fallbackVersion,
-        }
-    }
-    const response = await fetch(definition.latestUrl)
-    if (!response.ok) {
-        throw new Error(
-            `Failed to check ${definition.package} version: HTTP ${response.status}`,
-        )
-    }
-    const body = (await response.json()) as { version?: unknown }
-    const version =
-        typeof body.version === 'string'
-            ? body.version
-            : definition.fallbackVersion
-
-    return {
-        url: grammarDownloadUrl(definition, version),
-        version,
-    }
-}
-
-function grammarDownloadUrl(
-    definition: GrammarDefinition,
-    version: string,
-): string {
-    return `https://unpkg.com/${definition.package}@${version}/${definition.wasmFile}`
 }
 
 async function downloadBytes(url: string): Promise<Uint8Array> {
     const response = await fetch(url)
     if (!response.ok) {
-        throw new Error(`Failed to download ${url}: HTTP ${response.status}`)
+        throw new Error(
+            `Failed to download grammar from ${url}: HTTP ${response.status}. The registry downloadUrl may be stale or missing. Please report this at https://github.com/dominosaurs/konteks/issues.`,
+        )
     }
     return new Uint8Array(await response.arrayBuffer())
 }
@@ -399,12 +358,7 @@ function loadGrammarRegistry(value: unknown): GrammarDefinition[] {
     )
     validateGrammarRegistry(grammars)
 
-    return grammars.map(grammar => ({
-        ...grammar,
-        latestUrl:
-            grammar.latestUrl ??
-            `https://registry.npmjs.org/${grammar.package}/latest`,
-    }))
+    return grammars
 }
 
 function validateGrammarDefinition(
@@ -419,19 +373,19 @@ function validateGrammarDefinition(
     const grammar: GrammarDefinition = {
         aliases: stringArrayField(entry, 'aliases', index),
         displayName: stringField(entry, 'displayName', index),
+        downloadUrl: stringField(entry, 'downloadUrl', index),
         extensions: stringArrayField(entry, 'extensions', index),
-        fallbackVersion: stringField(entry, 'fallbackVersion', index),
-        gitRepoUrl: stringField(entry, 'gitRepoUrl', index),
         id: stringField(entry, 'id', index),
-        latestUrl:
-            typeof entry.latestUrl === 'string' ? entry.latestUrl : undefined,
-        package: stringField(entry, 'package', index),
-        wasmFile: stringField(entry, 'wasmFile', index),
     }
 
     if (grammar.extensions.length === 0) {
         throw new Error(
             `Grammar registry entry "${grammar.id}" must declare extensions.`,
+        )
+    }
+    if (!/^https?:\/\//u.test(grammar.downloadUrl)) {
+        throw new Error(
+            `Grammar registry entry "${grammar.id}" must declare an HTTP downloadUrl.`,
         )
     }
 
