@@ -49,14 +49,14 @@ describe('durable memory export mappers', () => {
                 subject: null,
                 summary: 'Session summary',
                 suppressed_at: null,
-                tags_json: JSON.stringify(['session', 1, 'handoff']),
+                tags_json: JSON.stringify(['session', 1, 'security']),
             },
             toonStore,
         )
 
         expect(diary).toMatchObject({
             subject: undefined,
-            tags: ['session', 'handoff'],
+            tags: ['session', 'security'],
         })
         await expect(
             exportDiaryRow(

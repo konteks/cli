@@ -9,7 +9,7 @@ import ToolCommand from './mcp/tool-command'
 import ToolsCommand from './mcp/tools-command'
 
 const MCP_INSTRUCTIONS =
-    'Use prompts for the Warm Up -> Build -> Save flow. Use konteks_warm_up at session start, konteks_recall as supplemental Build context, then call konteks_save_memories for durable memory and konteks_save_diary for the session handoff during Save.'
+    'Use prompts for the Warm Up -> Build -> Save flow. Use konteks_warm_up at session start, konteks_recall as supplemental Build context, then call konteks_save_memories for durable memory and konteks_save_diary for the session diary during Save.'
 
 export default class McpCommand extends BaseCommand {
     public override readonly children = [
