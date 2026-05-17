@@ -12,18 +12,18 @@ const INPUT_SCHEMA = z.object({
 type Input = z.output<typeof INPUT_SCHEMA>
 
 export default class SaveDiaryMcpTool extends BaseMcpTool<Input> {
-    annotations = {
+    public readonly annotations = {
         destructiveHint: false,
         idempotentHint: false,
         openWorldHint: false,
         readOnlyHint: false,
     }
 
-    description = 'Persist one compact session diary entry.'
+    public readonly description = 'Persist one compact session diary entry.'
 
-    readonly inputSchema = INPUT_SCHEMA
+    public readonly inputSchema = INPUT_SCHEMA
 
-    name = 'konteks_save_diary'
+    public readonly name = 'konteks_save_diary'
 
     protected async coreHandle(input: Input) {
         await saveDiary(input)

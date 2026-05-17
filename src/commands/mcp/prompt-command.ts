@@ -7,7 +7,7 @@ import printJson from '@/support/cli/print-json'
 export default class PromptCommand extends BaseCommand<
     [string, string[] | undefined]
 > {
-    override readonly args = [
+    public override readonly args = [
         {
             description: 'MCP prompt name, such as konteks-warm-up',
             name: '<name>',
@@ -18,12 +18,14 @@ export default class PromptCommand extends BaseCommand<
             name: '[input...]',
         },
     ]
-    readonly description = 'Render one MCP prompt for debugging.'
-    readonly name = 'prompt'
+    public readonly description = 'Render one MCP prompt for debugging.'
+    public readonly name = 'prompt'
 
-    async handle({
+    public async handle({
         args,
-    }: BaseCommandInput<[string, string[] | undefined]>): Promise<void> {
+    }: Required<
+        BaseCommandInput<[string, string[] | undefined]>
+    >): Promise<void> {
         printJson(
             getKonteksPrompt(
                 args[0],

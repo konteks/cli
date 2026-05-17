@@ -6,12 +6,12 @@ import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { loadProjectContext } from '@/providers/project/context'
 
 export default class InitCommand extends BaseCommand {
-    readonly description =
+    public readonly description =
         'Initialize memory, section the project, and build indexes.'
-    readonly name = 'init'
-    override readonly usesInitializationGuard = false
+    public readonly name = 'init'
+    public override readonly usesInitializationGuard = false
 
-    async handle(_input: BaseCommandInput): Promise<void> {
+    public async handle(_input: BaseCommandInput): Promise<void> {
         const context = await loadProjectContext()
         const alreadyInitialized =
             context.configExists &&

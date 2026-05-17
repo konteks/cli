@@ -16,19 +16,19 @@ const INPUT_SCHEMA = z
 type Input = z.output<typeof INPUT_SCHEMA>
 
 export default class ForgetMcpTool extends BaseMcpTool<Input> {
-    annotations = {
+    public readonly annotations = {
         destructiveHint: true,
         idempotentHint: false,
         openWorldHint: false,
         readOnlyHint: false,
     }
 
-    description =
+    public readonly description =
         'Delete, invalidate, or suppress stored memory that is wrong, stale, sensitive, or no longer useful.'
 
-    readonly inputSchema = INPUT_SCHEMA
+    public readonly inputSchema = INPUT_SCHEMA
 
-    name = 'konteks_forget'
+    public readonly name = 'konteks_forget'
 
     protected async coreHandle(input: Input) {
         return forgetMemory(input)

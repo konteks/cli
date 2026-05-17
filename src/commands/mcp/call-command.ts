@@ -18,7 +18,7 @@ export default class CallCommand extends BaseCommand<
     [ToolName, string | undefined],
     McpCallOptions
 > {
-    override readonly args = [
+    public override readonly args = [
         {
             description: 'MCP tool name, such as konteks_warm_up',
             name: '<tool>',
@@ -28,9 +28,9 @@ export default class CallCommand extends BaseCommand<
             name: '[json]',
         },
     ]
-    readonly description = 'Preview or call one MCP tool for debugging.'
-    readonly name = 'call'
-    override readonly options = [
+    public readonly description = 'Preview or call one MCP tool for debugging.'
+    public readonly name = 'call'
+    public override readonly options = [
         {
             description: 'Actually execute mutating MCP tools.',
             flags: '--apply',
@@ -41,12 +41,11 @@ export default class CallCommand extends BaseCommand<
         },
     ]
 
-    async handle({
+    public async handle({
         args,
         options,
-    }: BaseCommandInput<
-        [ToolName, string | undefined],
-        McpCallOptions
+    }: Required<
+        BaseCommandInput<[ToolName, string | undefined], McpCallOptions>
     >): Promise<void> {
         const input = parseJsonInput(args[1])
         const tool = mcpTools.find(item => item.name === args[0])

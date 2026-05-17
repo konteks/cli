@@ -11,26 +11,26 @@ export default class RestoreCommand extends BaseCommand<
     [string],
     RestoreOptions
 > {
-    override readonly args = [
+    public override readonly args = [
         {
             description: 'Input .tar.gz file',
             name: '<file>',
         },
     ]
-    readonly description = 'Restore a full .konteks backup archive.'
-    readonly name = 'restore'
-    override readonly options = [
+    public readonly description = 'Restore a full .konteks backup archive.'
+    public readonly name = 'restore'
+    public override readonly options = [
         {
             description: 'Replace a non-empty memory directory.',
             flags: '--force',
         },
     ]
-    override readonly usesInitializationGuard = false
+    public override readonly usesInitializationGuard = false
 
-    async handle({
+    public async handle({
         args,
         options,
-    }: BaseCommandInput<[string], RestoreOptions>): Promise<void> {
+    }: Required<BaseCommandInput<[string], RestoreOptions>>): Promise<void> {
         this.print(
             stringifyPretty(
                 await restoreMemory({

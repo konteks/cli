@@ -34,6 +34,12 @@
         "rules": {
             "recommended": true,
             "style": {
+                "useConsistentMemberAccessibility": {
+                    "level": "error",
+                    "options": {
+                        "accessibility": "explicit"
+                    }
+                },
                 "useFilenamingConvention": {
                     "level": "error",
                     "options": {
