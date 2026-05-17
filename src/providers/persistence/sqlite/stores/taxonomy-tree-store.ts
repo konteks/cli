@@ -8,9 +8,9 @@ import type {
 } from './taxonomy-types'
 
 export default class TaxonomyTreeStore {
-    constructor(private readonly adapter: SqliteAdapter) {}
+    public constructor(private readonly adapter: SqliteAdapter) {}
 
-    async getSubtree(
+    public async getSubtree(
         rootId?: string,
         options: { maxDepth?: number } = {},
     ): Promise<TaxonomyTreeNode[]> {
@@ -60,7 +60,7 @@ order by depth, name
         }))
     }
 
-    async getPath(nodeId: string): Promise<TaxonomyNode[]> {
+    public async getPath(nodeId: string): Promise<TaxonomyNode[]> {
         const rows = await this.adapter.query<TaxonomyPathRow>(
             `
 with recursive ancestors(id, parent_id, id_path, name_path) as (

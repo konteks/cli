@@ -29,12 +29,12 @@ export type ChunkRow = {
 }
 
 export default class ChunkStore {
-    constructor(
+    public constructor(
         private readonly adapter: SqliteAdapter,
         private readonly db?: KonteksDatabase,
     ) {}
 
-    async insert(
+    public async insert(
         chunk: Omit<ChunkRow, 'created_at' | 'updated_at'>,
     ): Promise<void> {
         const now = new Date().toISOString()
@@ -100,7 +100,7 @@ insert into chunks (
         )
     }
 
-    async findByAnchor(
+    public async findByAnchor(
         path: string,
         anchor: string,
     ): Promise<ChunkRow | undefined> {

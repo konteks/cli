@@ -8,9 +8,9 @@ import type {
 } from './taxonomy-types'
 
 export default class TaxonomyLinkStore {
-    constructor(private readonly adapter: SqliteAdapter) {}
+    public constructor(private readonly adapter: SqliteAdapter) {}
 
-    async linkTarget(input: TaxonomyLinkInput): Promise<TaxonomyLink> {
+    public async linkTarget(input: TaxonomyLinkInput): Promise<TaxonomyLink> {
         const existing = await this.findLink(input)
         if (existing) {
             return existing
@@ -44,7 +44,7 @@ insert into taxonomy_links (
         return link
     }
 
-    async listLinks(nodeId: string): Promise<TaxonomyLink[]> {
+    public async listLinks(nodeId: string): Promise<TaxonomyLink[]> {
         const rows = await this.adapter.query<TaxonomyLinkRow>(
             `
 select id, node_id, target_type, target_id

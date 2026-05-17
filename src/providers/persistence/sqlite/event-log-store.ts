@@ -13,9 +13,9 @@ export type MemoryEventInput = {
 }
 
 export default class EventLogStore {
-    constructor(private readonly db: KonteksDatabase) {}
+    public constructor(private readonly db: KonteksDatabase) {}
 
-    async append(event: MemoryEventInput): Promise<void> {
+    public async append(event: MemoryEventInput): Promise<void> {
         await this.db.insert(memoryEvents).values({
             actor: event.actor ?? null,
             createdAt: new Date().toISOString(),

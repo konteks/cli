@@ -8,9 +8,9 @@ import type {
 } from './taxonomy-types'
 
 export default class TaxonomyNodeStore {
-    constructor(private readonly adapter: SqliteAdapter) {}
+    public constructor(private readonly adapter: SqliteAdapter) {}
 
-    async upsertNode(input: TaxonomyNodeInput): Promise<TaxonomyNode> {
+    public async upsertNode(input: TaxonomyNodeInput): Promise<TaxonomyNode> {
         const existing = await this.findSiblingByName(
             input.parentId,
             input.name,

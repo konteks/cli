@@ -9,8 +9,8 @@ import { formatBytes } from '@/support/format/number'
 export default class HuggingFaceEmbeddingProvider
     implements EmbeddingProviderContract
 {
-    readonly model = 'Xenova/all-MiniLM-L6-v2'
-    readonly dimensions = 384
+    public readonly model = 'Xenova/all-MiniLM-L6-v2'
+    public readonly dimensions = 384
 
     private readonly onProgress?: ExtractionProgressReporter
 
@@ -18,11 +18,13 @@ export default class HuggingFaceEmbeddingProvider
         | ((text: string, options: Record<string, unknown>) => Promise<unknown>)
         | undefined
 
-    constructor(options: { onProgress?: ExtractionProgressReporter } = {}) {
+    public constructor(
+        options: { onProgress?: ExtractionProgressReporter } = {},
+    ) {
         this.onProgress = options.onProgress
     }
 
-    async embed(texts: string[]): Promise<Float32Array[]> {
+    public async embed(texts: string[]): Promise<Float32Array[]> {
         if (texts.length === 0) {
             return []
         }
@@ -41,7 +43,7 @@ export default class HuggingFaceEmbeddingProvider
         return vectors
     }
 
-    async prepare(): Promise<void> {
+    public async prepare(): Promise<void> {
         await this.getExtractor()
     }
 

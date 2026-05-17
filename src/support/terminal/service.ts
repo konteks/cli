@@ -12,18 +12,18 @@ type ReadableStream = {
 type TerminalEnvironment = Record<string, string | undefined>
 
 class TerminalService {
-    constructor(
+    public constructor(
         private readonly stdout: WritableStream = process.stdout,
         private readonly stderr: WritableStream = process.stderr,
         private readonly stdin: ReadableStream = process.stdin,
         private readonly env: TerminalEnvironment = process.env,
     ) {}
 
-    log(message: string): void {
+    public log(message: string): void {
         console.log(message)
     }
 
-    error(message: string, detail?: unknown): void {
+    public error(message: string, detail?: unknown): void {
         if (detail === undefined) {
             console.error(message)
             return
@@ -32,27 +32,27 @@ class TerminalService {
         console.error(message, detail)
     }
 
-    writeError(message: string): void {
+    public writeError(message: string): void {
         this.stderr.write(message)
     }
 
-    json(value: unknown): void {
+    public json(value: unknown): void {
         this.log(stringifyPretty(value))
     }
 
-    stdoutSupportsColor(): boolean {
+    public stdoutSupportsColor(): boolean {
         return this.supportsColor(this.stdout)
     }
 
-    stderrSupportsColor(): boolean {
+    public stderrSupportsColor(): boolean {
         return this.supportsColor(this.stderr)
     }
 
-    stderrIsInteractive(): boolean {
+    public stderrIsInteractive(): boolean {
         return Boolean(this.stderr.isTTY)
     }
 
-    stdinIsInteractive(): boolean {
+    public stdinIsInteractive(): boolean {
         return Boolean(this.stdin.isTTY)
     }
 

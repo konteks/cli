@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
 
 class MockHuggingFaceEmbeddingProvider extends FakeEmbeddingProvider {
-    constructor(_options?: unknown) {
+    public constructor(_options?: unknown) {
         super()
     }
 }

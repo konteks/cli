@@ -17,7 +17,7 @@ export default class GraphStore {
     private readonly relations: GraphRelationStore
     private readonly traversal: GraphTraversalStore
 
-    constructor(
+    public constructor(
         adapter: SqliteAdapter | { adapter: SqliteAdapter },
         _db?: KonteksDatabase,
     ) {
@@ -27,46 +27,49 @@ export default class GraphStore {
         this.traversal = new GraphTraversalStore(sqliteAdapter)
     }
 
-    async upsertEntity(input: EntityInput): Promise<EntityRecord> {
+    public async upsertEntity(input: EntityInput): Promise<EntityRecord> {
         return this.entities.upsertEntity(input)
     }
 
-    async findEntityByCanonicalName(
+    public async findEntityByCanonicalName(
         canonicalName: string,
     ): Promise<EntityRecord | undefined> {
         return this.entities.findEntityByCanonicalName(canonicalName)
     }
 
-    async searchEntities(
+    public async searchEntities(
         query: string,
         options: { limit?: number } = {},
     ): Promise<EntityRecord[]> {
         return this.entities.searchEntities(query, options)
     }
 
-    async addRelation(input: RelationInput): Promise<RelationRecord> {
+    public async addRelation(input: RelationInput): Promise<RelationRecord> {
         return this.relations.addRelation(input)
     }
 
-    async invalidateRelation(id: string, validTo?: string): Promise<void> {
+    public async invalidateRelation(
+        id: string,
+        validTo?: string,
+    ): Promise<void> {
         return this.relations.invalidateRelation(id, validTo)
     }
 
-    async traverseNeighbors(
+    public async traverseNeighbors(
         entityId: string,
         options: { maxDepth?: number; limit?: number } = {},
     ): Promise<GraphNeighbor[]> {
         return this.traversal.traverseNeighbors(entityId, options)
     }
 
-    async historicalRelations(
+    public async historicalRelations(
         entityId: string,
         options: { limit?: number } = {},
     ): Promise<HistoricalRelation[]> {
         return this.traversal.historicalRelations(entityId, options)
     }
 
-    async findPath(
+    public async findPath(
         fromEntityId: string,
         toEntityId: string,
         maxDepth = 3,

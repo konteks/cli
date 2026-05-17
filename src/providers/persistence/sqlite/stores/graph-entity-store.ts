@@ -10,9 +10,9 @@ import type {
 import { normalizeEntityName, tokenize } from './graph-utils'
 
 export default class GraphEntityStore {
-    constructor(private readonly adapter: SqliteAdapter) {}
+    public constructor(private readonly adapter: SqliteAdapter) {}
 
-    async upsertEntity(input: EntityInput): Promise<EntityRecord> {
+    public async upsertEntity(input: EntityInput): Promise<EntityRecord> {
         const canonicalName = normalizeEntityName(input.name)
         const existing = await this.findEntityByCanonicalName(canonicalName)
         const now = new Date().toISOString()
@@ -81,7 +81,7 @@ insert into entities (
         return entity
     }
 
-    async findEntityByCanonicalName(
+    public async findEntityByCanonicalName(
         canonicalName: string,
     ): Promise<EntityRecord | undefined> {
         const normalized = normalizeEntityName(canonicalName)
@@ -99,7 +99,7 @@ limit 1
         return rows[0] ? entityFromRow(rows[0]) : undefined
     }
 
-    async searchEntities(
+    public async searchEntities(
         query: string,
         options: { limit?: number } = {},
     ): Promise<EntityRecord[]> {

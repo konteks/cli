@@ -30,13 +30,13 @@ class WasmSqliteAdapter implements SqliteAdapter {
     private transactionDepth = 0
     private closed = false
 
-    constructor(
+    public constructor(
         private readonly sqlite3: Sqlite3Static,
         private readonly db: Database,
         private readonly databasePath: string,
     ) {}
 
-    async load(): Promise<void> {
+    public async load(): Promise<void> {
         await mkdir(dirname(this.databasePath), { recursive: true })
 
         if (!(await pathExists(this.databasePath))) {
@@ -72,7 +72,7 @@ class WasmSqliteAdapter implements SqliteAdapter {
         }
     }
 
-    async close(): Promise<void> {
+    public async close(): Promise<void> {
         if (this.closed) {
             return
         }
@@ -82,13 +82,13 @@ class WasmSqliteAdapter implements SqliteAdapter {
         this.closed = true
     }
 
-    async execute(sql: string, params?: SqliteParams): Promise<void> {
+    public async execute(sql: string, params?: SqliteParams): Promise<void> {
         this.assertOpen()
         this.db.exec({ bind: toBindingSpec(params), sql })
         await this.flushUnlessInTransaction()
     }
 
-    async query<T extends Record<string, unknown>>(
+    public async query<T extends Record<string, unknown>>(
         sql: string,
         params?: SqliteParams,
     ): Promise<T[]> {
@@ -96,12 +96,12 @@ class WasmSqliteAdapter implements SqliteAdapter {
         return this.db.selectObjects(sql, toBindingSpec(params)) as T[]
     }
 
-    async queryArrays(sql: string, params?: SqliteParams) {
+    public async queryArrays(sql: string, params?: SqliteParams) {
         this.assertOpen()
         return this.db.selectArrays(sql, toBindingSpec(params))
     }
 
-    async transaction<T>(operation: () => Promise<T>): Promise<T> {
+    public async transaction<T>(operation: () => Promise<T>): Promise<T> {
         this.assertOpen()
 
         if (this.transactionDepth > 0) {

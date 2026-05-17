@@ -9,13 +9,13 @@ describe('BaseCommand', () => {
     it('passes arguments and command options to handle', async () => {
         const seen: BaseCommandInput<[string], { flag?: boolean }>[] = []
         class FixtureCommand extends BaseCommand<[string], { flag?: boolean }> {
-            override readonly args = [{ name: '<name>' }]
-            readonly description = 'Fixture command.'
-            readonly name = 'fixture'
-            override readonly options = [{ flags: '--flag' }]
-            override readonly usesInitializationGuard = false
+            public override readonly args = [{ name: '<name>' }]
+            public readonly description = 'Fixture command.'
+            public readonly name = 'fixture'
+            public override readonly options = [{ flags: '--flag' }]
+            public override readonly usesInitializationGuard = false
 
-            handle(
+            public handle(
                 input: BaseCommandInput<[string], { flag?: boolean }>,
             ): void {
                 seen.push(input)
@@ -43,10 +43,10 @@ describe('BaseCommand', () => {
     it('runs initialization before project commands', async () => {
         let ranInitialization = false
         class FixtureCommand extends BaseCommand {
-            readonly description = 'Fixture command.'
-            readonly name = 'fixture'
+            public readonly description = 'Fixture command.'
+            public readonly name = 'fixture'
 
-            handle(): void {}
+            public handle(): void {}
         }
 
         const program = new Command()
@@ -67,22 +67,22 @@ describe('BaseCommand', () => {
         const seen: BaseCommandInput[] = []
 
         class ChildCommand extends BaseCommand {
-            readonly description = 'Child command.'
-            readonly name = 'child'
-            override readonly usesInitializationGuard = false
+            public readonly description = 'Child command.'
+            public readonly name = 'child'
+            public override readonly usesInitializationGuard = false
 
-            handle(input: BaseCommandInput): void {
+            public handle(input: BaseCommandInput): void {
                 seen.push(input)
             }
         }
 
         class ParentCommand extends BaseCommand {
-            override readonly children = [new ChildCommand()]
-            readonly description = 'Parent command.'
-            readonly name = 'parent'
-            override readonly usesInitializationGuard = false
+            public override readonly children = [new ChildCommand()]
+            public readonly description = 'Parent command.'
+            public readonly name = 'parent'
+            public override readonly usesInitializationGuard = false
 
-            handle(): void {}
+            public handle(): void {}
         }
 
         const program = new Command()

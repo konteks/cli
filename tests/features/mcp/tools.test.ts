@@ -32,17 +32,17 @@ describe('MCP tools', () => {
 
     it('validates input before executing a tool and formats object output', async () => {
         class FixtureTool extends BaseMcpTool {
-            readonly annotations = {
+            public readonly annotations = {
                 destructiveHint: false,
                 idempotentHint: true,
                 openWorldHint: false,
                 readOnlyHint: true,
             }
-            readonly description = 'Fixture tool.'
-            readonly inputSchema = z.object({
+            public readonly description = 'Fixture tool.'
+            public readonly inputSchema = z.object({
                 value: z.string().min(1),
             })
-            readonly name = 'fixture_tool'
+            public readonly name = 'fixture_tool'
 
             protected override async coreHandle(
                 input: z.output<typeof this.inputSchema>,
@@ -69,17 +69,17 @@ describe('MCP tools', () => {
 
     it('formats string output through the base handle flow', async () => {
         class FixtureTool extends BaseMcpTool {
-            readonly annotations = {
+            public readonly annotations = {
                 destructiveHint: false,
                 idempotentHint: true,
                 openWorldHint: false,
                 readOnlyHint: true,
             }
-            readonly description = 'Fixture tool.'
-            readonly inputSchema = z.object({
+            public readonly description = 'Fixture tool.'
+            public readonly inputSchema = z.object({
                 value: z.string().min(1),
             })
-            readonly name = 'fixture_tool'
+            public readonly name = 'fixture_tool'
 
             protected override async coreHandle(
                 input: z.output<typeof this.inputSchema>,
@@ -97,15 +97,15 @@ describe('MCP tools', () => {
 
     it('sanitizes unexpected execution failures', async () => {
         class FixtureTool extends BaseMcpTool {
-            readonly annotations = {
+            public readonly annotations = {
                 destructiveHint: false,
                 idempotentHint: true,
                 openWorldHint: false,
                 readOnlyHint: true,
             }
-            readonly description = 'Fixture tool.'
-            readonly inputSchema = z.object({})
-            readonly name = 'fixture_tool'
+            public readonly description = 'Fixture tool.'
+            public readonly inputSchema = z.object({})
+            public readonly name = 'fixture_tool'
 
             protected override async coreHandle(): Promise<string> {
                 throw new Error('database exploded')

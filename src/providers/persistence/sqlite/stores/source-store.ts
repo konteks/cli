@@ -15,12 +15,12 @@ export type SourceRow = {
 }
 
 export default class SourceStore {
-    constructor(
+    public constructor(
         private readonly adapter: SqliteAdapter,
         private readonly db?: KonteksDatabase,
     ) {}
 
-    async insert(source: Omit<SourceRow, 'created_at'>): Promise<void> {
+    public async insert(source: Omit<SourceRow, 'created_at'>): Promise<void> {
         const now = new Date().toISOString()
 
         if (this.db) {
