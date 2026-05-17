@@ -45,7 +45,6 @@ describe('commands/mcp/call', () => {
                     'konteks_save_diary',
                     '{"summary":"Dry run diary entry should not persist."}',
                 ],
-                globalOptions: {},
                 options: {},
             }),
         )
@@ -69,7 +68,6 @@ describe('commands/mcp/call', () => {
 
         await new CallCommand().handle({
             args: ['konteks_recall', '{"task":"abc"}'],
-            globalOptions: {},
             options: {},
         })
 
@@ -94,7 +92,6 @@ describe('commands/mcp/call', () => {
                 'konteks_save_diary',
                 '{"summary":"Apply diary entry should persist to project memory."}',
             ],
-            globalOptions: {},
             options: { apply: true },
         })
 
