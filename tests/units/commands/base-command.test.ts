@@ -6,7 +6,7 @@ import BaseCommand, {
 } from '@/commands/_base-command'
 
 describe('BaseCommand', () => {
-    it('passes arguments, command options, and global options to handle', async () => {
+    it('passes arguments and command options to handle', async () => {
         const seen: BaseCommandInput<[string], { flag?: boolean }>[] = []
         class FixtureCommand extends BaseCommand<[string], { flag?: boolean }> {
             override readonly args = [{ name: '<name>' }]
@@ -35,7 +35,6 @@ describe('BaseCommand', () => {
         expect(seen).toEqual([
             {
                 args: ['value'],
-                globalOptions: {},
                 options: { flag: true },
             },
         ])
@@ -52,7 +51,6 @@ describe('BaseCommand', () => {
 
         const program = new Command()
         new FixtureCommand().register(program, {
-            getGlobalOptions: () => program.opts(),
             runInitializationGuard: async () => {
                 ranInitialization = true
             },
@@ -97,16 +95,14 @@ describe('BaseCommand', () => {
         expect(seen).toEqual([
             {
                 args: [],
-                globalOptions: {},
                 options: {},
             },
         ])
     })
 })
 
-function contextFor(program: Command): BaseCommandContext {
+function contextFor(_program: Command): BaseCommandContext {
     return {
-        getGlobalOptions: () => program.opts(),
         runInitializationGuard: async () => {},
     }
 }

@@ -6,7 +6,6 @@ export type Command = CommanderCommand
 
 export type BaseCommandContext = {
     runInitializationGuard: () => Promise<void>
-    getGlobalOptions: () => Record<string, never>
 }
 
 export type BaseCommandInput<
@@ -14,7 +13,6 @@ export type BaseCommandInput<
     Options extends object = Record<string, never>,
 > = {
     args: Args
-    globalOptions: Record<string, never>
     options: Options
 }
 
@@ -65,7 +63,6 @@ export default abstract class BaseCommand<
                 values.slice(0, -1),
                 commandOptions,
             ) as Args
-            const globalOptions = context.getGlobalOptions()
 
             if (this.printsHeader) {
                 terminal.log(`Konteks v${VERSION}`)
@@ -77,7 +74,6 @@ export default abstract class BaseCommand<
 
             await this.handle({
                 args,
-                globalOptions,
                 options: commandOptions,
             })
         })

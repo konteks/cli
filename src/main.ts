@@ -15,7 +15,6 @@ export function createCliProgram(): Command {
         .version(VERSION)
 
     registerCommands(program, {
-        getGlobalOptions: () => program.opts(),
         runInitializationGuard: ensureCliProjectInitialized,
     })
 

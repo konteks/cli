@@ -24,7 +24,6 @@ describe('CLI command registry', () => {
     it('wires command registrars into Commander without duplicate names', () => {
         const program = new Command()
         const context: BaseCommandContext = {
-            getGlobalOptions: () => ({}),
             runInitializationGuard: async () => {},
         }
 

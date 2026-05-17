@@ -29,10 +29,9 @@ export default class InitCommand extends BaseCommand<
     override readonly usesInitializationGuard = false
 
     async handle({
-        globalOptions,
         options,
     }: BaseCommandInput<[], { grammar?: string[] }>): Promise<void> {
-        await this.run({ ...globalOptions, ...options })
+        await this.run(options)
     }
 
     async run(options: InitCommandOptions): Promise<void> {
