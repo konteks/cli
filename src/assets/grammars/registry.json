@@ -1,153 +1,13 @@
 [
     {
-        "aliases": ["ts", "mts", "cts"],
-        "displayName": "TypeScript",
-        "extensions": [".ts", ".mts", ".cts"],
-        "fallbackVersion": "0.23.2",
-        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-typescript",
-        "id": "typescript",
-        "package": "tree-sitter-typescript",
-        "wasmFile": "tree-sitter-typescript.wasm"
-    },
-    {
-        "aliases": [],
-        "displayName": "TSX",
-        "extensions": [".tsx"],
-        "fallbackVersion": "0.23.2",
-        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-typescript",
-        "id": "tsx",
-        "package": "tree-sitter-typescript",
-        "wasmFile": "tree-sitter-tsx.wasm"
-    },
-    {
-        "aliases": ["js"],
-        "displayName": "JavaScript and JSX",
-        "extensions": [".js", ".mjs", ".cjs", ".jsx"],
-        "fallbackVersion": "0.25.0",
-        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-javascript",
-        "id": "javascript",
-        "package": "tree-sitter-javascript",
-        "wasmFile": "tree-sitter-javascript.wasm"
-    },
-    {
-        "aliases": ["jsonc"],
-        "displayName": "JSON",
-        "extensions": [".json", ".jsonc"],
-        "fallbackVersion": "0.24.8",
-        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-json",
-        "id": "json",
-        "package": "tree-sitter-json",
-        "wasmFile": "tree-sitter-json.wasm"
-    },
-    {
-        "aliases": ["htm"],
-        "displayName": "HTML",
-        "extensions": [".html", ".htm"],
-        "fallbackVersion": "0.23.2",
-        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-html",
-        "id": "html",
-        "package": "tree-sitter-html",
-        "wasmFile": "tree-sitter-html.wasm"
-    },
-    {
-        "aliases": [],
-        "displayName": "CSS",
-        "extensions": [".css"],
-        "fallbackVersion": "0.25.0",
-        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-css",
-        "id": "css",
-        "package": "tree-sitter-css",
-        "wasmFile": "tree-sitter-css.wasm"
-    },
-    {
-        "aliases": ["yml"],
-        "displayName": "YAML",
-        "extensions": [".yaml", ".yml"],
-        "fallbackVersion": "0.7.1",
-        "gitRepoUrl": "https://github.com/tree-sitter-grammars/tree-sitter-yaml",
-        "id": "yaml",
-        "package": "@tree-sitter-grammars/tree-sitter-yaml",
-        "wasmFile": "tree-sitter-yaml.wasm"
-    },
-    {
-        "aliases": [],
-        "displayName": "TOML",
-        "extensions": [".toml"],
-        "fallbackVersion": "0.7.0",
-        "gitRepoUrl": "github.com/tree-sitter-grammars/tree-sitter-toml",
-        "id": "toml",
-        "package": "@tree-sitter-grammars/tree-sitter-toml",
-        "wasmFile": "tree-sitter-toml.wasm"
-    },
-    {
-        "aliases": ["phtml"],
-        "displayName": "PHP",
-        "extensions": [".php", ".phtml"],
-        "fallbackVersion": "0.24.2",
-        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-php",
-        "id": "php",
-        "package": "tree-sitter-php",
-        "wasmFile": "tree-sitter-php.wasm"
-    },
-    {
-        "aliases": ["py"],
-        "displayName": "Python",
-        "extensions": [".py"],
-        "fallbackVersion": "0.23.6",
-        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-python",
-        "id": "python",
-        "package": "tree-sitter-python",
-        "wasmFile": "tree-sitter-python.wasm"
-    },
-    {
-        "aliases": [],
-        "displayName": "Go",
-        "extensions": [".go"],
-        "fallbackVersion": "0.25.0",
-        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-go",
-        "id": "go",
-        "package": "tree-sitter-go",
-        "wasmFile": "tree-sitter-go.wasm"
-    },
-    {
-        "aliases": ["rs"],
-        "displayName": "Rust",
-        "extensions": [".rs"],
-        "fallbackVersion": "0.24.0",
-        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-rust",
-        "id": "rust",
-        "package": "tree-sitter-rust",
-        "wasmFile": "tree-sitter-rust.wasm"
-    },
-    {
-        "aliases": [],
-        "displayName": "Java",
-        "extensions": [".java"],
-        "fallbackVersion": "0.23.5",
-        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-java",
-        "id": "java",
-        "package": "tree-sitter-java",
-        "wasmFile": "tree-sitter-java.wasm"
-    },
-    {
-        "aliases": ["kt"],
-        "displayName": "Kotlin",
-        "extensions": [".kt", ".kts"],
-        "fallbackVersion": "1.1.0",
-        "gitRepoUrl": "https://github.com/tree-sitter-grammars/tree-sitter-kotlin",
-        "id": "kotlin",
-        "package": "@tree-sitter-grammars/tree-sitter-kotlin",
-        "wasmFile": "tree-sitter-kotlin.wasm"
-    },
-    {
-        "aliases": ["rb"],
-        "displayName": "Ruby",
-        "extensions": [".rb"],
-        "fallbackVersion": "0.23.1",
-        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-ruby",
-        "id": "ruby",
-        "package": "tree-sitter-ruby",
-        "wasmFile": "tree-sitter-ruby.wasm"
+        "aliases": ["sh"],
+        "displayName": "Bash",
+        "extensions": [".sh", ".bash", ".zsh"],
+        "fallbackVersion": "0.25.1",
+        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-bash",
+        "id": "bash",
+        "package": "tree-sitter-bash",
+        "wasmFile": "tree-sitter-bash.wasm"
     },
     {
         "aliases": [],
@@ -180,14 +40,74 @@
         "wasmFile": "tree-sitter-c_sharp.wasm"
     },
     {
-        "aliases": ["sh"],
-        "displayName": "Bash",
-        "extensions": [".sh", ".bash", ".zsh"],
-        "fallbackVersion": "0.25.1",
-        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-bash",
-        "id": "bash",
-        "package": "tree-sitter-bash",
-        "wasmFile": "tree-sitter-bash.wasm"
+        "aliases": [],
+        "displayName": "CSS",
+        "extensions": [".css"],
+        "fallbackVersion": "0.25.0",
+        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-css",
+        "id": "css",
+        "package": "tree-sitter-css",
+        "wasmFile": "tree-sitter-css.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "Go",
+        "extensions": [".go"],
+        "fallbackVersion": "0.25.0",
+        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-go",
+        "id": "go",
+        "package": "tree-sitter-go",
+        "wasmFile": "tree-sitter-go.wasm"
+    },
+    {
+        "aliases": ["htm"],
+        "displayName": "HTML",
+        "extensions": [".html", ".htm"],
+        "fallbackVersion": "0.23.2",
+        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-html",
+        "id": "html",
+        "package": "tree-sitter-html",
+        "wasmFile": "tree-sitter-html.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "Java",
+        "extensions": [".java"],
+        "fallbackVersion": "0.23.5",
+        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-java",
+        "id": "java",
+        "package": "tree-sitter-java",
+        "wasmFile": "tree-sitter-java.wasm"
+    },
+    {
+        "aliases": ["js"],
+        "displayName": "JavaScript and JSX",
+        "extensions": [".js", ".mjs", ".cjs", ".jsx"],
+        "fallbackVersion": "0.25.0",
+        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-javascript",
+        "id": "javascript",
+        "package": "tree-sitter-javascript",
+        "wasmFile": "tree-sitter-javascript.wasm"
+    },
+    {
+        "aliases": [],
+        "displayName": "JSDoc",
+        "extensions": [".jsdoc"],
+        "fallbackVersion": "0.25.0",
+        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-jsdoc",
+        "id": "jsdoc",
+        "package": "tree-sitter-jsdoc",
+        "wasmFile": "tree-sitter-jsdoc.wasm"
+    },
+    {
+        "aliases": ["kt"],
+        "displayName": "Kotlin",
+        "extensions": [".kt", ".kts"],
+        "fallbackVersion": "1.1.0",
+        "gitRepoUrl": "https://github.com/tree-sitter-grammars/tree-sitter-kotlin",
+        "id": "kotlin",
+        "package": "@tree-sitter-grammars/tree-sitter-kotlin",
+        "wasmFile": "tree-sitter-kotlin.wasm"
     },
     {
         "aliases": [],
@@ -198,6 +118,46 @@
         "id": "lua",
         "package": "@tree-sitter-grammars/tree-sitter-lua",
         "wasmFile": "tree-sitter-lua.wasm"
+    },
+    {
+        "aliases": ["phtml"],
+        "displayName": "PHP",
+        "extensions": [".php", ".phtml"],
+        "fallbackVersion": "0.24.2",
+        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-php",
+        "id": "php",
+        "package": "tree-sitter-php",
+        "wasmFile": "tree-sitter-php.wasm"
+    },
+    {
+        "aliases": ["py"],
+        "displayName": "Python",
+        "extensions": [".py"],
+        "fallbackVersion": "0.23.6",
+        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-python",
+        "id": "python",
+        "package": "tree-sitter-python",
+        "wasmFile": "tree-sitter-python.wasm"
+    },
+    {
+        "aliases": ["rb"],
+        "displayName": "Ruby",
+        "extensions": [".rb"],
+        "fallbackVersion": "0.23.1",
+        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-ruby",
+        "id": "ruby",
+        "package": "tree-sitter-ruby",
+        "wasmFile": "tree-sitter-ruby.wasm"
+    },
+    {
+        "aliases": ["rs"],
+        "displayName": "Rust",
+        "extensions": [".rs"],
+        "fallbackVersion": "0.24.0",
+        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-rust",
+        "id": "rust",
+        "package": "tree-sitter-rust",
+        "wasmFile": "tree-sitter-rust.wasm"
     },
     {
         "aliases": [],
@@ -211,12 +171,22 @@
     },
     {
         "aliases": [],
-        "displayName": "JSDoc",
-        "extensions": [".jsdoc"],
-        "fallbackVersion": "0.25.0",
-        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-jsdoc",
-        "id": "jsdoc",
-        "package": "tree-sitter-jsdoc",
-        "wasmFile": "tree-sitter-jsdoc.wasm"
+        "displayName": "TSX",
+        "extensions": [".tsx"],
+        "fallbackVersion": "0.23.2",
+        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-typescript",
+        "id": "tsx",
+        "package": "tree-sitter-typescript",
+        "wasmFile": "tree-sitter-tsx.wasm"
+    },
+    {
+        "aliases": ["ts", "mts", "cts"],
+        "displayName": "TypeScript",
+        "extensions": [".ts", ".mts", ".cts"],
+        "fallbackVersion": "0.23.2",
+        "gitRepoUrl": "https://github.com/tree-sitter/tree-sitter-typescript",
+        "id": "typescript",
+        "package": "tree-sitter-typescript",
+        "wasmFile": "tree-sitter-typescript.wasm"
     }
 ]

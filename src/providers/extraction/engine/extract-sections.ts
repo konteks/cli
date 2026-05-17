@@ -50,7 +50,10 @@ export default async function extractSections(
         const loaded = await initTreeSitterWithSelectedGrammars(
             engine,
             context,
-            { onProgress: progress },
+            {
+                onProgress: progress,
+                paths: files.map(file => file.path),
+            },
         )
         if (loaded.loaded.length === 0) {
             engine = undefined
