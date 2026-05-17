@@ -83,6 +83,7 @@ describe('mcp/prompts', () => {
     it('converts bundled prompts to skill files', () => {
         const skills = getKonteksSkillFiles()
         const warmUp = skills.find(skill => skill.name === 'konteks-warm-up')
+        const save = skills.find(skill => skill.name === 'konteks-save')
 
         expect(skills.map(skill => skill.name)).toEqual([
             'konteks-recall',
@@ -92,5 +93,6 @@ describe('mcp/prompts', () => {
         expect(warmUp?.content).toContain('name: konteks-warm-up')
         expect(warmUp?.content).toContain('any free-form text provided')
         expect(warmUp?.content).not.toContain('{{topic}}')
+        expect(save?.content).toContain('"importance": 3')
     })
 })
