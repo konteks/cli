@@ -9,19 +9,8 @@ import type {
     RecallHistoryItem,
     RecallPackage,
 } from '@/models/memory'
-import createMemoryRepository from './create-memory-repository'
-import { loadMcpProjectContext, withProjectDatabaseContext } from './runtime'
 
-export async function recallMemory(
-    input: MemoryRecallInput,
-): Promise<RecallPackage> {
-    const context = await loadMcpProjectContext()
-    return await withProjectDatabaseContext(context, service =>
-        recallRepositoryMemory(createMemoryRepository(service, context), input),
-    )
-}
-
-export async function recallRepositoryMemory(
+export default async function recallRepositoryMemory(
     memoryRepository: MemoryRepositoryContract,
     input: MemoryRecallInput,
 ): Promise<RecallPackage> {

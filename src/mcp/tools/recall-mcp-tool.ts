@@ -1,5 +1,10 @@
 import z from 'zod'
-import { recallMemory } from '@/memory/recall'
+import createMemoryRepository from '@/memory/create-memory-repository'
+import recallRepositoryMemory from '@/memory/recall-repository-memory'
+import {
+    loadMcpProjectContext,
+    withProjectDatabaseContext,
+} from '@/memory/runtime'
 import type {
     RecallGraphItem,
     RecallHistoryItem,
@@ -34,9 +39,17 @@ export default class RecallMcpTool extends BaseMcpTool<Input> {
     name = 'konteks_recall'
 
     protected async coreHandle(input: Input) {
+        const context = await loadMcpProjectContext()
+        const result = await withProjectDatabaseContext(context, service =>
+            recallRepositoryMemory(
+                createMemoryRepository(service, context),
+                input,
+            ),
+        )
+
         return formatRecallText({
             includeSources: input.includeSources ?? false,
-            recall: await recallMemory(input),
+            recall: result,
         })
     }
 }
