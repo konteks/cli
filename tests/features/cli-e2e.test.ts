@@ -5,14 +5,17 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { promisify } from 'node:util'
-import InitCommand from '@/commands/init-command'
 import type { DurableMemoryExport } from '@/models/memory-transfer'
+import { extractProject } from '@/providers/extraction/extract-project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import {
     saveKonteksDiary,
     saveKonteksMemory,
 } from '@/providers/persistence/sqlite/save-konteks-input'
-import { loadProjectContext } from '@/providers/project/context'
+import {
+    loadProjectContext,
+    writeProjectConfig,
+} from '@/providers/project/context'
 import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
 import { VERSION } from '@/support/version'
 
@@ -310,13 +313,16 @@ async function createInitializedProject(
 
     await mkdir(projectRoot, { recursive: true })
     await mkdir(join(projectRoot, '.git'), { recursive: true })
+    await mkdir(join(projectRoot, '.konteks'), { recursive: true })
     await writeFile(join(projectRoot, 'README.md'), '# Fixture\n')
 
-    await withProjectRoot(projectRoot, () =>
-        new InitCommand().run({
-            embeddingProvider: new FakeEmbeddingProvider(),
-        }),
+    const context = await withProjectRoot(projectRoot, () =>
+        loadProjectContext(),
     )
+    await writeProjectConfig(context, context.config)
+    await extractProject(context, 'full', {
+        embeddingProvider: new FakeEmbeddingProvider(),
+    })
 
     if (options.seededMemory) {
         await seedDurableMemory(projectRoot)

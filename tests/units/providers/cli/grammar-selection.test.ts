@@ -8,6 +8,7 @@ mock.module('@inquirer/prompts', () => ({
         checkboxCalls.push(options)
         return []
     },
+    confirm: async () => true,
     select: async () => 'grammars',
 }))
 

@@ -5,7 +5,6 @@ import * as os from 'node:os'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
-    getGrammarDefinition,
     getGrammarForPath,
     initTreeSitterWithSelectedGrammars,
     listGrammarDefinitions,
@@ -60,13 +59,6 @@ describe('grammar loader registry', () => {
         expect(getGrammarForPath('api.py')?.id).toBe('python')
         expect(getGrammarForPath('Dockerfile')).toBeUndefined()
         expect(getGrammarForPath('Makefile')).toBeUndefined()
-    })
-
-    it('validates known grammar ids', () => {
-        expect(getGrammarDefinition('typescript')?.displayName).toBe(
-            'TypeScript',
-        )
-        expect(getGrammarDefinition('not-real')).toBeUndefined()
     })
 
     it('loads selected grammars from cache without downloading', async () => {

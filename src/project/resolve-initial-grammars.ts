@@ -3,33 +3,16 @@ import {
     promptForGrammars,
 } from '@/providers/cli/grammar-selection'
 import { scanProjectFiles } from '@/providers/extraction/engine/file-scan'
-import {
-    getGrammarDefinition,
-    getGrammarForPath,
-} from '@/providers/extraction/engine/grammar-loader'
+import { getGrammarForPath } from '@/providers/extraction/engine/grammar-loader'
 
 export default async function resolveInitialGrammars(
     projectRoot: string,
-    values?: string[],
 ): Promise<string[]> {
-    if (values) {
-        return validateGrammarIds(values)
-    }
-
     if (!canPromptForGrammars()) {
         return []
     }
 
     return await promptForGrammars(await detectProjectGrammars(projectRoot))
-}
-
-function validateGrammarIds(values: string[]): string[] {
-    const invalid = values.filter(value => !getGrammarDefinition(value))
-    if (invalid.length > 0) {
-        throw new Error(`Unknown grammar id: ${invalid.join(', ')}`)
-    }
-
-    return [...new Set(values)]
 }
 
 async function detectProjectGrammars(projectRoot: string): Promise<string[]> {
