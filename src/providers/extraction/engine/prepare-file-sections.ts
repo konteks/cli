@@ -12,7 +12,7 @@ import {
     extractTopics,
 } from '@/providers/project/source-classification'
 import type { ScannedFile } from './file-scan'
-import { getGrammarForPath } from './grammar-loader'
+import { getGrammarForPath, isBundledGrammar } from './grammar-loader'
 import { isExtractedSectionSuppressed } from './section-cleanup'
 import sectionFile from './section-file'
 import type TreeSitterEngine from './tree-sitter-engine'
@@ -76,9 +76,27 @@ export default async function prepareFileSections(input: {
     const grammar = getGrammarForPath(input.file.path)
 
     if (grammar) {
+        if (
+            !isBundledGrammar(grammar.id) &&
+            !input.context.config.extraction.grammars.selected.includes(
+                grammar.id,
+            )
+        ) {
+            return emptyPreparedFile({
+                file: input.file,
+                language,
+                parserEngine,
+                parserStatus: 'skipped_unselected_grammar',
+                sourceRole,
+            })
+        }
+
         if (!input.engine?.hasLanguage(grammar.id)) {
+            const action = isBundledGrammar(grammar.id)
+                ? `Bundled ${grammar.displayName} grammar was not loaded before extraction.`
+                : `Select and cache the ${grammar.displayName} grammar before extraction.`
             throw new Error(
-                `Tree-sitter grammar "${grammar.id}" is required for ${input.file.path}. Select and cache the ${grammar.displayName} grammar before extraction.`,
+                `Tree-sitter grammar "${grammar.id}" is required for ${input.file.path}. ${action}`,
             )
         }
 
@@ -181,6 +199,30 @@ export default async function prepareFileSections(input: {
         sourceRole,
         sourceTopics,
         truncated: allSections.length > sections.length,
+    }
+}
+
+function emptyPreparedFile(input: {
+    file: ScannedFile
+    language: string
+    parserEngine: string
+    parserStatus: string
+    sourceRole: string
+}): PreparedFile {
+    return {
+        language: input.language,
+        parserEngine: input.parserEngine,
+        parserStatus: input.parserStatus,
+        path: input.file.path,
+        sections: [],
+        sourceId: sourceIdForPath(input.file.path),
+        sourceMetadata: {
+            parserEngine: input.parserEngine,
+            parserStatus: input.parserStatus,
+        },
+        sourceRole: input.sourceRole,
+        sourceTopics: [],
+        truncated: false,
     }
 }
 

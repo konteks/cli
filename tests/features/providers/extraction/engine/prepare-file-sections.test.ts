@@ -26,6 +26,7 @@ describe('providers/extraction/engine/prepare-file-sections', () => {
     it('prepares source metadata and stable section identifiers', async () => {
         const { context, db } = await createProject({
             path: 'src/example.ts',
+            selectedGrammars: ['typescript'],
             text: 'export const alpha = 1\n',
         })
         try {
@@ -50,6 +51,106 @@ describe('providers/extraction/engine/prepare-file-sections', () => {
             })
             expect(prepared.sections[0]?.retrievalTexts.ftsText).toContain(
                 'src/example.ts',
+            )
+        } finally {
+            await db.close()
+        }
+    })
+
+    it('extracts built-in JSON files without user grammar selection', async () => {
+        const text = '{"name":"fixture","type":"module"}\n'
+        const { context, db } = await createProject({
+            path: 'package.json',
+            text,
+        })
+        try {
+            const prepared = await prepareFileSections({
+                context,
+                db,
+                engine: new FakeTreeSitterEngine() as never,
+                file: scannedFile('package.json', text),
+                toonStore: createToonStore(context.memoryDir),
+            })
+
+            expect(prepared.parserEngine).toBe('tree_sitter')
+            expect(prepared.parserStatus).toBe('ok')
+            expect(prepared.sections.map(section => section.anchor)).toEqual([
+                'name',
+                'type',
+            ])
+            expect(prepared.sourceMetadata).toMatchObject({
+                parserEngine: 'tree_sitter',
+                parserStatus: 'ok',
+            })
+        } finally {
+            await db.close()
+        }
+    })
+
+    it('reports unloaded bundled grammars without selection guidance', async () => {
+        const text = '{"name":"fixture"}\n'
+        const { context, db } = await createProject({
+            path: 'package.json',
+            text,
+        })
+        try {
+            await expect(
+                prepareFileSections({
+                    context,
+                    db,
+                    file: scannedFile('package.json', text),
+                    toonStore: createToonStore(context.memoryDir),
+                }),
+            ).rejects.toThrow(
+                'Tree-sitter grammar "json" is required for package.json. Bundled JSON grammar was not loaded before extraction.',
+            )
+        } finally {
+            await db.close()
+        }
+    })
+
+    it('skips non-built-in grammar files that are not selected', async () => {
+        const text = 'export const skipped = true\n'
+        const { context, db } = await createProject({
+            path: 'src/skipped.ts',
+            text,
+        })
+        try {
+            const prepared = await prepareFileSections({
+                context,
+                db,
+                engine: new FakeTreeSitterEngine() as never,
+                file: scannedFile('src/skipped.ts', text),
+                toonStore: createToonStore(context.memoryDir),
+            })
+
+            expect(prepared.sections).toEqual([])
+            expect(prepared.parserStatus).toBe('skipped_unselected_grammar')
+            expect(prepared.sourceMetadata).toMatchObject({
+                parserStatus: 'skipped_unselected_grammar',
+            })
+        } finally {
+            await db.close()
+        }
+    })
+
+    it('fails when a selected grammar is not loaded', async () => {
+        const text = 'export const missing = true\n'
+        const { context, db } = await createProject({
+            path: 'src/missing.ts',
+            selectedGrammars: ['typescript'],
+            text,
+        })
+        try {
+            await expect(
+                prepareFileSections({
+                    context,
+                    db,
+                    file: scannedFile('src/missing.ts', text),
+                    toonStore: createToonStore(context.memoryDir),
+                }),
+            ).rejects.toThrow(
+                'Tree-sitter grammar "typescript" is required for src/missing.ts',
             )
         } finally {
             await db.close()
@@ -129,6 +230,7 @@ insert into mined_suppressions (
 async function createProject(input: {
     inlinePayloadMaxBytes?: number
     path: string
+    selectedGrammars?: string[]
     text: string
 }): Promise<{ context: Project; db: DatabaseService }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-sections-'))
@@ -140,7 +242,12 @@ async function createProject(input: {
 
     const context: Project = {
         config: {
-            extraction: { grammars: { selected: [], updateTtlHours: 24 } },
+            extraction: {
+                grammars: {
+                    selected: input.selectedGrammars ?? [],
+                    updateTtlHours: 24,
+                },
+            },
             projectRoot,
             recall: { maxTokens: 2000 },
             storage: {

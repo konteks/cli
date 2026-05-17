@@ -449,19 +449,56 @@ where id in (?, ?)
         expect(JSON.parse(rawManifest).mode).toBe('changed')
     })
 
-    it('fails when a supported file grammar is not loaded', async () => {
+    it('extracts package.json with bundled config grammars', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(
             join(projectRoot, 'package.json'),
-            '{"name":"fixture"}\n',
+            '{"name":"fixture","type":"module"}\n',
         )
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
 
-        await expect(extractProject(context, 'reindex')).rejects.toThrow(
-            'Tree-sitter grammar "json" is required for package.json',
+        await expect(extractProject(context, 'reindex')).resolves.toMatchObject(
+            {
+                ok: true,
+            },
         )
+
+        const service = await openProjectDatabase(context)
+        const chunks = await service.adapter.query<{ count: number }>(
+            'select count(*) as count from chunks where path = ?',
+            ['package.json'],
+        )
+        await service.close()
+
+        expect(chunks[0]?.count).toBeGreaterThan(0)
+    })
+
+    it('skips unselected source grammar files', async () => {
+        const projectRoot = await makeTempProject()
+        await writeFile(
+            join(projectRoot, 'src', 'unselected.ts'),
+            'export const unselected = true\n',
+        )
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+
+        await expect(extractProject(context, 'reindex')).resolves.toMatchObject(
+            {
+                ok: true,
+            },
+        )
+
+        const service = await openProjectDatabase(context)
+        const chunks = await service.adapter.query<{ count: number }>(
+            'select count(*) as count from chunks where path = ?',
+            ['src/unselected.ts'],
+        )
+        await service.close()
+
+        expect(chunks[0]?.count).toBe(0)
     })
 
     it('stores reindex mode in manifest', async () => {

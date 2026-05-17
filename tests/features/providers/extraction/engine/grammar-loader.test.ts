@@ -44,6 +44,9 @@ describe('grammar loader registry', () => {
         expect(ids).toContain('python')
         expect(ids).toContain('rust')
         expect(ids).toContain('javascript')
+        expect(ids).not.toContain('json')
+        expect(ids).not.toContain('yaml')
+        expect(ids).not.toContain('toml')
         expect(ids).not.toContain('jsx')
         expect(ids).not.toContain('dockerfile')
     })
@@ -55,6 +58,8 @@ describe('grammar loader registry', () => {
         expect(getGrammarForPath('src/component.jsx')?.id).toBe('javascript')
         expect(getGrammarForPath('public/index.html')?.id).toBe('html')
         expect(getGrammarForPath('composer.json')?.id).toBe('json')
+        expect(getGrammarForPath('pnpm-workspace.yaml')?.id).toBe('yaml')
+        expect(getGrammarForPath('pyproject.toml')?.id).toBe('toml')
         expect(getGrammarForPath('index.php')?.id).toBe('php')
         expect(getGrammarForPath('api.py')?.id).toBe('python')
         expect(getGrammarForPath('Dockerfile')).toBeUndefined()
@@ -121,6 +126,39 @@ describe('grammar loader registry', () => {
             {
                 lang: 'typescript',
                 path: join(grammarCacheDir, 'typescript.wasm'),
+            },
+        ])
+    })
+
+    it('loads bundled grammars from package dependencies', async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-grammar-'))
+        tempDirs.push(projectRoot)
+        await mkdir(join(projectRoot, '.git'), {
+            recursive: true,
+        })
+        await mkdir(join(projectRoot, '.konteks'), {
+            recursive: true,
+        })
+        await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
+        const project = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        const engine = new MockTreeSitterEngine()
+
+        const result = await initTreeSitterWithSelectedGrammars(
+            engine,
+            project,
+            { paths: ['package.json'] },
+        )
+
+        expect(result.loaded).toEqual(['json'])
+        expect(engine.initialized).toBeTrue()
+        expect(engine.loaded).toEqual([
+            {
+                lang: 'json',
+                path: expect.stringContaining(
+                    'node_modules/tree-sitter-json/tree-sitter-json.wasm',
+                ),
             },
         ])
     })

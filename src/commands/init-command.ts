@@ -10,7 +10,10 @@ import {
 } from '@/providers/cli/grammar-selection'
 import createExtractionProgressReporter from '@/providers/extraction/create-extraction-progress-reporter'
 import { scanProjectFiles } from '@/providers/extraction/engine/file-scan'
-import { getGrammarForPath } from '@/providers/extraction/engine/grammar-loader'
+import {
+    getGrammarForPath,
+    isBundledGrammar,
+} from '@/providers/extraction/engine/grammar-loader'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { ensureProjectDatabase } from '@/providers/persistence/sqlite/database'
 import {
@@ -139,6 +142,9 @@ async function detectProjectGrammars(projectRoot: string): Promise<string[]> {
         ...new Set(
             files.flatMap(file => {
                 const grammar = getGrammarForPath(file.path)
+                if (grammar && isBundledGrammar(grammar.id)) {
+                    return []
+                }
                 return grammar ? [grammar.id] : []
             }),
         ),

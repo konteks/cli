@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import * as os from 'node:os'
 import { basename, join } from 'node:path'
 import registryJson from '@/assets/grammars/registry.json' with { type: 'json' }
@@ -43,6 +44,16 @@ type GrammarCacheManifest = {
     version: 1
 }
 
+type BundledGrammarDefinition = {
+    displayName: string
+    extensions: string[]
+    id: TreeSitterLanguage
+    wasmPath: string
+}
+
+type GrammarMatch = GrammarDefinition | BundledGrammarDefinition
+
+const require = createRequire(import.meta.url)
 const registry: GrammarDefinition[] = (
     registryJson as GrammarRegistryEntry[]
 ).map(entry => ({
@@ -52,6 +63,31 @@ const registry: GrammarDefinition[] = (
         entry.latestUrl ?? `https://registry.npmjs.org/${entry.package}/latest`,
 }))
 
+const bundledGrammars: BundledGrammarDefinition[] = [
+    {
+        displayName: 'JSON',
+        extensions: ['.json', '.jsonc'],
+        id: 'json',
+        wasmPath: require.resolve('tree-sitter-json/tree-sitter-json.wasm'),
+    },
+    {
+        displayName: 'YAML',
+        extensions: ['.yaml', '.yml'],
+        id: 'yaml',
+        wasmPath: require.resolve(
+            '@tree-sitter-grammars/tree-sitter-yaml/tree-sitter-yaml.wasm',
+        ),
+    },
+    {
+        displayName: 'TOML',
+        extensions: ['.toml'],
+        id: 'toml',
+        wasmPath: require.resolve(
+            '@tree-sitter-grammars/tree-sitter-toml/tree-sitter-toml.wasm',
+        ),
+    },
+]
+
 export function listGrammarDefinitions(): GrammarDefinition[] {
     return [...registry]
 }
@@ -60,15 +96,43 @@ function getGrammarDefinition(id: string): GrammarDefinition | undefined {
     return registry.find(grammar => grammar.id === id)
 }
 
-export function getGrammarForPath(path: string): GrammarDefinition | undefined {
+export function getGrammarForPath(path: string): GrammarMatch | undefined {
+    return getRegistryGrammarForPath(path) ?? getBundledGrammarForPath(path)
+}
+
+export function isBundledGrammar(id: string): boolean {
+    return bundledGrammars.some(grammar => grammar.id === id)
+}
+
+function getRegistryGrammarForPath(
+    path: string,
+): GrammarDefinition | undefined {
     const lowerPath = path.toLowerCase()
     const fileName = lowerPath.split('/').at(-1) ?? lowerPath
     return registry.find(grammar =>
-        grammar.extensions.some(extension =>
-            extension.startsWith('.')
-                ? lowerPath.endsWith(extension)
-                : fileName === extension,
-        ),
+        grammarMatchesPath(grammar.extensions, lowerPath, fileName),
+    )
+}
+
+function getBundledGrammarForPath(
+    path: string,
+): BundledGrammarDefinition | undefined {
+    const lowerPath = path.toLowerCase()
+    const fileName = lowerPath.split('/').at(-1) ?? lowerPath
+    return bundledGrammars.find(grammar =>
+        grammarMatchesPath(grammar.extensions, lowerPath, fileName),
+    )
+}
+
+function grammarMatchesPath(
+    extensions: string[],
+    lowerPath: string,
+    fileName: string,
+): boolean {
+    return extensions.some(extension =>
+        extension.startsWith('.')
+            ? lowerPath.endsWith(extension)
+            : fileName === extension,
     )
 }
 
@@ -77,26 +141,41 @@ export async function initTreeSitterWithSelectedGrammars(
     project: Project,
     options: {
         forceUpdate?: boolean
+        paths?: string[]
         onProgress?: ExtractionProgressReporter
     } = {},
 ): Promise<{ loaded: TreeSitterLanguage[]; warnings: string[] }> {
     const selected = normalizeSelectedGrammars(
         project.config.extraction.grammars.selected,
     )
-    if (selected.length === 0) {
+    const bundled = bundledGrammarsForPaths(options.paths ?? [])
+    const total = selected.length + bundled.length
+    if (total === 0) {
         return { loaded: [], warnings: [] }
     }
 
     options.onProgress?.({
-        message: `Preparing ${selected.length} Tree-sitter grammars`,
+        message: `Preparing ${total} Tree-sitter grammars`,
         phase: 'preparation',
         status: 'start',
-        total: selected.length,
+        total,
     })
     await engine.init()
     const cache = await readCacheManifest()
     const warnings: string[] = []
     const loaded: TreeSitterLanguage[] = []
+
+    for (const [index, definition] of bundled.entries()) {
+        await engine.loadLanguage(definition.id, definition.wasmPath)
+        loaded.push(definition.id)
+        options.onProgress?.({
+            current: index + 1,
+            message: `Loaded ${definition.displayName} grammar`,
+            phase: 'preparation',
+            status: 'progress',
+            total,
+        })
+    }
 
     for (const [index, id] of selected.entries()) {
         const definition = getGrammarDefinition(id)
@@ -118,7 +197,7 @@ export async function initTreeSitterWithSelectedGrammars(
                     message,
                     phase: 'preparation',
                     status: 'progress',
-                    total: selected.length,
+                    total,
                 })
                 return cached
             }
@@ -128,23 +207,38 @@ export async function initTreeSitterWithSelectedGrammars(
         await engine.loadLanguage(definition.id, loadedPath)
         loaded.push(definition.id)
         options.onProgress?.({
-            current: index + 1,
+            current: bundled.length + index + 1,
             message: `Loaded ${definition.displayName} grammar`,
             phase: 'preparation',
             status: 'progress',
-            total: selected.length,
+            total,
         })
     }
 
-    await writeCacheManifest(cache)
+    if (selected.length > 0) {
+        await writeCacheManifest(cache)
+    }
     options.onProgress?.({
         message: `Tree-sitter grammars ready: ${loaded.length} loaded`,
         phase: 'preparation',
         status: 'done',
-        total: selected.length,
+        total,
     })
 
     return { loaded, warnings }
+}
+
+function bundledGrammarsForPaths(paths: string[]): BundledGrammarDefinition[] {
+    return [
+        ...new Set(
+            paths
+                .map(path => getBundledGrammarForPath(path))
+                .filter(
+                    (grammar): grammar is BundledGrammarDefinition =>
+                        grammar !== undefined,
+                ),
+        ),
+    ]
 }
 
 export async function updateSelectedGrammarCache(
