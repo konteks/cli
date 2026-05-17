@@ -16,7 +16,7 @@ import {
     loadProjectContext,
     writeProjectConfig,
 } from '@/providers/project/context'
-import { VERSION } from '@/support/version'
+import getVersion from '@/support/get-version'
 import FakeEmbeddingProvider from '../fake/fake-embedding-provider'
 
 const execFileAsync = promisify(execFile)
@@ -48,7 +48,7 @@ describe('cli/e2e', () => {
         const result = await runKonteks(fixture.projectRoot, ['init'])
 
         expect(result.exitCode).toBe(0)
-        expect(result.output).toContain(`Konteks v${VERSION}`)
+        expect(result.output).toContain(`Konteks v${getVersion()}`)
         expect(result.output).toContain('Konteks is already initialized at')
         expect(result.output).toContain('.konteks')
     }, 20000)

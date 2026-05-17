@@ -11,7 +11,7 @@ import {
     loadProjectContext,
     writeProjectConfig,
 } from '@/providers/project/context'
-import { VERSION } from '@/support/version'
+import getVersion from '@/support/get-version'
 import FakeEmbeddingProvider from '../../fake/fake-embedding-provider'
 
 const execFileAsync = promisify(execFile)
@@ -29,7 +29,7 @@ describe('mcp/stdio interface', () => {
 
             expect(init.serverInfo).toEqual({
                 name: 'konteks',
-                version: VERSION,
+                version: getVersion(),
             })
             expect(init.instructions).toContain('Warm Up -> Build -> Save flow')
             expect(init.capabilities).toMatchObject({

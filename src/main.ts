@@ -6,11 +6,13 @@ import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { projectDatabasePath } from '@/providers/persistence/sqlite/database'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
 import CliUserError from '@/support/cli/cli-user-error'
+import getVersion from '@/support/get-version'
 import createColorPalette from '@/support/terminal/create-color-palette'
 import { terminal } from '@/support/terminal/service'
-import { VERSION } from '@/support/version'
 
 export function createCliProgram(): Command {
+    const VERSION = getVersion()
+
     const program = new Command()
         .name('konteks')
         .description(
