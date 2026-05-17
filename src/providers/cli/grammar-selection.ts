@@ -1,13 +1,5 @@
-import { checkbox, select } from '@inquirer/prompts'
-import createExtractionProgressReporter from '@/providers/extraction/create-extraction-progress-reporter'
-import {
-    listGrammarDefinitions,
-    updateSelectedGrammarCache,
-} from '@/providers/extraction/engine/grammar-loader'
-import {
-    loadProjectContext,
-    writeProjectConfig,
-} from '@/providers/project/context'
+import { checkbox } from '@inquirer/prompts'
+import { listGrammarDefinitions } from '@/providers/extraction/engine/grammar-loader'
 import { terminal } from '@/support/terminal/service'
 
 export async function promptForGrammars(selected: string[]): Promise<string[]> {
@@ -33,46 +25,4 @@ export async function promptForGrammars(selected: string[]): Promise<string[]> {
 
 export function canPromptForGrammars(): boolean {
     return terminal.stdinIsInteractive() && terminal.stderrIsInteractive()
-}
-
-export async function openConfigTui(): Promise<void> {
-    const context = await loadProjectContext()
-    const section = await select({
-        choices: [
-            { name: 'Grammars', value: 'grammars' },
-            { name: 'Check for update', value: 'updates' },
-        ],
-        loop: false,
-        message: 'Configure Konteks',
-    })
-
-    if (section === 'grammars') {
-        const selected = await promptForGrammars(
-            context.config.extraction.grammars.selected,
-        )
-        await writeProjectConfig(context, {
-            ...context.config,
-            extraction: {
-                ...context.config.extraction,
-                grammars: {
-                    ...context.config.extraction.grammars,
-                    selected,
-                },
-            },
-        })
-        terminal.log(`Saved ${selected.length} selected grammars.`)
-        return
-    }
-
-    const progress = createExtractionProgressReporter()
-    try {
-        const result = await updateSelectedGrammarCache(context, {
-            onProgress: progress.report,
-        })
-        terminal.log(
-            `Grammar cache checked: ${result.updated} updated, ${result.reused} unchanged.`,
-        )
-    } finally {
-        progress.done()
-    }
 }
