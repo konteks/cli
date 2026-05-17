@@ -37,7 +37,8 @@ afterEach(async () => {
 
 describe('grammar loader registry', () => {
     it('exposes a curated grammar registry', () => {
-        const ids = listGrammarDefinitions().map(grammar => grammar.id)
+        const grammars = listGrammarDefinitions()
+        const ids = grammars.map(grammar => grammar.id)
         const sortedIds = [...ids].sort((left, right) =>
             left.localeCompare(right),
         )
@@ -53,6 +54,14 @@ describe('grammar loader registry', () => {
         expect(ids).not.toContain('toml')
         expect(ids).not.toContain('jsx')
         expect(ids).not.toContain('dockerfile')
+        expect(
+            grammars.every(grammar =>
+                grammar.downloadUrl.startsWith('https://'),
+            ),
+        ).toBe(true)
+        expect('package' in grammars[0]).toBe(false)
+        expect('fallbackVersion' in grammars[0]).toBe(false)
+        expect('wasmFile' in grammars[0]).toBe(false)
     })
 
     it('routes paths through the grammar registry', () => {
@@ -67,7 +76,7 @@ describe('grammar loader registry', () => {
         expect(getGrammarForPath('pyproject.toml')?.id).toBe('toml')
         expect(getGrammarForPath('index.php')?.id).toBe('php')
         expect(getGrammarForPath('api.py')?.id).toBe('python')
-        expect(getGrammarForPath('Sources/App.swift')).toBeUndefined()
+        expect(getGrammarForPath('Sources/App.swift')?.id).toBe('swift')
         expect(getGrammarForPath('schema.sql')).toBeUndefined()
         expect(getGrammarForPath('Dockerfile')).toBeUndefined()
         expect(getGrammarForPath('Makefile')).toBeUndefined()
@@ -110,11 +119,10 @@ describe('grammar loader registry', () => {
                 grammars: {
                     typescript: {
                         checkedAt: new Date().toISOString(),
+                        downloadUrl:
+                            'https://unpkg.com/tree-sitter-typescript@0.23.2/tree-sitter-typescript.wasm',
                         id: 'typescript',
-                        package: 'tree-sitter-typescript',
                         sha256: 'fake',
-                        version: '0.23.2',
-                        wasmFile: 'typescript.wasm',
                     },
                 },
                 version: 1,
@@ -135,6 +143,176 @@ describe('grammar loader registry', () => {
                 path: join(grammarCacheDir, 'typescript.wasm'),
             },
         ])
+    })
+
+    it('downloads selected grammars directly from the registry URL', async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-grammar-'))
+        tempDirs.push(projectRoot)
+        spyOn(os, 'homedir').mockReturnValue(projectRoot)
+        await mkdir(join(projectRoot, '.git'), {
+            recursive: true,
+        })
+        await mkdir(join(projectRoot, '.konteks'), {
+            recursive: true,
+        })
+        await writeFile(
+            join(projectRoot, '.konteks', 'config.json'),
+            JSON.stringify({
+                extraction: {
+                    grammars: {
+                        selected: ['typescript'],
+                        updateTtlHours: 24,
+                    },
+                },
+            }),
+        )
+        const fetchMock = mock(async () => {
+            return new Response(new Uint8Array([1, 2, 3]), { status: 200 })
+        })
+        const originalFetch = globalThis.fetch
+        globalThis.fetch = fetchMock as never
+        const project = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        const engine = new MockTreeSitterEngine()
+
+        try {
+            const result = await initTreeSitterWithSelectedGrammars(
+                engine,
+                project,
+            )
+
+            expect(result.loaded).toEqual(['typescript'])
+            expect(fetchMock).toHaveBeenCalledWith(
+                'https://unpkg.com/tree-sitter-typescript@0.23.2/tree-sitter-typescript.wasm',
+            )
+            await expect(
+                Bun.file(
+                    join(
+                        projectRoot,
+                        '.cache',
+                        'konteks',
+                        'grammars',
+                        'manifest.json',
+                    ),
+                ).json(),
+            ).resolves.toMatchObject({
+                grammars: {
+                    typescript: {
+                        downloadUrl:
+                            'https://unpkg.com/tree-sitter-typescript@0.23.2/tree-sitter-typescript.wasm',
+                        id: 'typescript',
+                    },
+                },
+            })
+        } finally {
+            globalThis.fetch = originalFetch
+        }
+    })
+
+    it('refreshes stale cache entries from older manifests', async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-grammar-'))
+        tempDirs.push(projectRoot)
+        spyOn(os, 'homedir').mockReturnValue(projectRoot)
+        const grammarCacheDir = join(
+            projectRoot,
+            '.cache',
+            'konteks',
+            'grammars',
+        )
+        await mkdir(grammarCacheDir, {
+            recursive: true,
+        })
+        await mkdir(join(projectRoot, '.git'), {
+            recursive: true,
+        })
+        await mkdir(join(projectRoot, '.konteks'), {
+            recursive: true,
+        })
+        await writeFile(
+            join(projectRoot, '.konteks', 'config.json'),
+            JSON.stringify({
+                extraction: {
+                    grammars: {
+                        selected: ['typescript'],
+                        updateTtlHours: 24,
+                    },
+                },
+            }),
+        )
+        await writeFile(join(grammarCacheDir, 'typescript.wasm'), 'old wasm')
+        await writeFile(
+            join(grammarCacheDir, 'manifest.json'),
+            JSON.stringify({
+                grammars: {
+                    typescript: {
+                        checkedAt: new Date().toISOString(),
+                        id: 'typescript',
+                        sha256: 'old',
+                    },
+                },
+                version: 1,
+            }),
+        )
+        const fetchMock = mock(async () => {
+            return new Response(new Uint8Array([4, 5, 6]), { status: 200 })
+        })
+        const originalFetch = globalThis.fetch
+        globalThis.fetch = fetchMock as never
+        const project = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        const engine = new MockTreeSitterEngine()
+
+        try {
+            await initTreeSitterWithSelectedGrammars(engine, project)
+
+            expect(fetchMock).toHaveBeenCalled()
+        } finally {
+            globalThis.fetch = originalFetch
+        }
+    })
+
+    it('asks users to report broken registry download URLs', async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-grammar-'))
+        tempDirs.push(projectRoot)
+        spyOn(os, 'homedir').mockReturnValue(projectRoot)
+        await mkdir(join(projectRoot, '.git'), {
+            recursive: true,
+        })
+        await mkdir(join(projectRoot, '.konteks'), {
+            recursive: true,
+        })
+        await writeFile(
+            join(projectRoot, '.konteks', 'config.json'),
+            JSON.stringify({
+                extraction: {
+                    grammars: {
+                        selected: ['typescript'],
+                        updateTtlHours: 24,
+                    },
+                },
+            }),
+        )
+        const fetchMock = mock(async () => {
+            return new Response('Not found', { status: 404 })
+        })
+        const originalFetch = globalThis.fetch
+        globalThis.fetch = fetchMock as never
+        const project = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        const engine = new MockTreeSitterEngine()
+
+        try {
+            await expect(
+                initTreeSitterWithSelectedGrammars(engine, project),
+            ).rejects.toThrow(
+                'Please report this at https://github.com/dominosaurs/konteks/issues',
+            )
+        } finally {
+            globalThis.fetch = originalFetch
+        }
     })
 
     it('loads bundled grammars from package dependencies', async () => {

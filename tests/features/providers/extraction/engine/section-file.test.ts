@@ -96,8 +96,8 @@ export const beta = 2
 
     it('treats unsupported code-like extensions as text', async () => {
         const sections = await sectionFile(
-            { ...file, path: 'Sources/App.swift' },
-            'func buildUser() {}\n',
+            { ...file, path: 'schema.sql' },
+            'CREATE TABLE users (id INTEGER PRIMARY KEY);\n',
         )
 
         expect(sections).toHaveLength(1)
