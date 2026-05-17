@@ -45,7 +45,7 @@ export default class TreeSitterEngine {
     private parser: Parser | undefined
     private languages: Map<string, Language> = new Map()
 
-    async init() {
+    public async init() {
         if (this.parser) {
             return
         }
@@ -54,7 +54,7 @@ export default class TreeSitterEngine {
         this.parser = new Parser()
     }
 
-    async loadLanguage(lang: TreeSitterLanguage, wasmPath: string) {
+    public async loadLanguage(lang: TreeSitterLanguage, wasmPath: string) {
         if (this.languages.has(lang)) {
             return
         }
@@ -63,11 +63,11 @@ export default class TreeSitterEngine {
         this.languages.set(lang, language)
     }
 
-    hasLanguage(lang: TreeSitterLanguage): boolean {
+    public hasLanguage(lang: TreeSitterLanguage): boolean {
         return this.languages.has(lang)
     }
 
-    async parse(
+    public async parse(
         path: string,
         content: string,
     ): Promise<CodeMetadata | undefined> {

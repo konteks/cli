@@ -3,14 +3,14 @@ import type { EmbeddingProviderContract } from '@/contracts/services/embedding-p
 export default class FakeEmbeddingProvider
     implements EmbeddingProviderContract
 {
-    readonly model = 'fake/all-MiniLM-L6-v2'
-    readonly dimensions: number
+    public readonly model = 'fake/all-MiniLM-L6-v2'
+    public readonly dimensions: number
 
-    constructor(dimensions = 8) {
+    public constructor(dimensions = 8) {
         this.dimensions = dimensions
     }
 
-    async embed(texts: string[]): Promise<Float32Array[]> {
+    public async embed(texts: string[]): Promise<Float32Array[]> {
         return texts.map(text => deterministicVector(text, this.dimensions))
     }
 }

@@ -17,12 +17,12 @@ export type ModuleRow = {
 }
 
 export default class ModuleStore {
-    constructor(
+    public constructor(
         private readonly adapter: SqliteAdapter,
         private readonly db?: KonteksDatabase,
     ) {}
 
-    async clear(): Promise<void> {
+    public async clear(): Promise<void> {
         if (this.db) {
             await this.db.delete(modules)
             return
@@ -30,7 +30,7 @@ export default class ModuleStore {
         await this.adapter.execute('delete from modules')
     }
 
-    async insert(module: Omit<ModuleRow, 'updated_at'>): Promise<void> {
+    public async insert(module: Omit<ModuleRow, 'updated_at'>): Promise<void> {
         const now = new Date().toISOString()
 
         if (this.db) {

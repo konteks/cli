@@ -14,9 +14,9 @@ import {
 } from './graph-utils'
 
 export default class GraphTraversalStore {
-    constructor(private readonly adapter: SqliteAdapter) {}
+    public constructor(private readonly adapter: SqliteAdapter) {}
 
-    async traverseNeighbors(
+    public async traverseNeighbors(
         entityId: string,
         options: { maxDepth?: number; limit?: number } = {},
     ): Promise<GraphNeighbor[]> {
@@ -100,7 +100,7 @@ limit ?
         }))
     }
 
-    async historicalRelations(
+    public async historicalRelations(
         entityId: string,
         options: { limit?: number } = {},
     ): Promise<HistoricalRelation[]> {
@@ -144,7 +144,7 @@ limit ?
         }))
     }
 
-    async findPath(
+    public async findPath(
         fromEntityId: string,
         toEntityId: string,
         maxDepth = 3,

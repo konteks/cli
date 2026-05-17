@@ -42,14 +42,14 @@ export async function extractProject(
 }
 
 export class KonteksExtractionEngine implements ExtractionEngineContract {
-    constructor(
+    public constructor(
         private readonly options: {
             embeddingProvider?: EmbeddingProvider
             onProgress?: ExtractionProgressReporter
         } = {},
     ) {}
 
-    async extract(
+    public async extract(
         project: Project,
         request: ExtractProjectRequest,
     ): Promise<ExtractProjectResponse> {

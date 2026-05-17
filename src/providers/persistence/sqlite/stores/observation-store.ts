@@ -11,12 +11,12 @@ export type ObservationRow = {
 }
 
 export default class ObservationStore {
-    constructor(
+    public constructor(
         private readonly adapter: SqliteAdapter,
         private readonly db?: KonteksDatabase,
     ) {}
 
-    async findByTerms(
+    public async findByTerms(
         terms: string[],
         limit: number,
     ): Promise<ObservationRow[]> {

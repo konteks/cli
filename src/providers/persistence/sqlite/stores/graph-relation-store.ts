@@ -3,9 +3,9 @@ import type { SqliteAdapter } from '../sqlite-adapter'
 import type { RelationInput, RelationRecord } from './graph-types'
 
 export default class GraphRelationStore {
-    constructor(private readonly adapter: SqliteAdapter) {}
+    public constructor(private readonly adapter: SqliteAdapter) {}
 
-    async addRelation(input: RelationInput): Promise<RelationRecord> {
+    public async addRelation(input: RelationInput): Promise<RelationRecord> {
         const relation: RelationRecord = {
             confidence: input.confidence ?? 1,
             id: `rel_${randomUUID()}`,
@@ -62,7 +62,10 @@ insert into relations (
         return relation
     }
 
-    async invalidateRelation(id: string, validTo?: string): Promise<void> {
+    public async invalidateRelation(
+        id: string,
+        validTo?: string,
+    ): Promise<void> {
         const now = new Date().toISOString()
         await this.adapter.execute(
             `

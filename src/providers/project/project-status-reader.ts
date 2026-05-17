@@ -16,7 +16,7 @@ import { pathExists } from '@/providers/project/context'
 export default class ProjectStatusReader
     implements ProjectStatusReaderContract
 {
-    async read(context: Project): Promise<ProjectStatus> {
+    public async read(context: Project): Promise<ProjectStatus> {
         const databasePath = projectDatabasePath(context)
         const memoryDirExists = await pathExists(context.memoryDir)
         const databaseExists = await pathExists(databasePath)

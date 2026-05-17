@@ -15,14 +15,14 @@ import { loadProjectContext } from '@/providers/project/context'
 const tempDirs: string[] = []
 
 class MockTreeSitterEngine {
-    readonly loaded: Array<{ lang: string; path: string }> = []
-    initialized = false
+    public readonly loaded: Array<{ lang: string; path: string }> = []
+    public initialized = false
 
-    async init() {
+    public async init() {
         this.initialized = true
     }
 
-    async loadLanguage(lang: TreeSitterLanguage, wasmPath: string) {
+    public async loadLanguage(lang: TreeSitterLanguage, wasmPath: string) {
         this.loaded.push({ lang, path: wasmPath })
     }
 }

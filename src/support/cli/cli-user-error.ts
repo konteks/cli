@@ -6,11 +6,11 @@ export type CliUserErrorOptions = {
 }
 
 export default class CliUserError extends Error {
-    readonly command?: string
-    readonly hint?: string
-    readonly title: string
+    public readonly command?: string
+    public readonly hint?: string
+    public readonly title: string
 
-    constructor(options: CliUserErrorOptions) {
+    public constructor(options: CliUserErrorOptions) {
         super(options.message)
         this.name = 'CliUserError'
         this.command = options.command

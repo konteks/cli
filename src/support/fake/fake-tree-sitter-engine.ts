@@ -4,15 +4,15 @@ import type {
 } from '@/providers/extraction/engine/tree-sitter-engine'
 
 export default class FakeTreeSitterEngine {
-    async init() {}
+    public async init() {}
 
-    async loadLanguage(_: TreeSitterLanguage, __: string) {}
+    public async loadLanguage(_: TreeSitterLanguage, __: string) {}
 
-    hasLanguage() {
+    public hasLanguage() {
         return true
     }
 
-    async parse(path: string, content: string): Promise<CodeMetadata> {
+    public async parse(path: string, content: string): Promise<CodeMetadata> {
         return {
             exports: [],
             imports: [],

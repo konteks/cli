@@ -8,15 +8,15 @@ import SourceStore from './stores/source-store'
 import TaxonomyStore from './stores/taxonomy-store'
 
 export default class DatabaseService {
-    readonly events: EventLogStore
-    readonly chunks: ChunkStore
-    readonly observations: ObservationStore
-    readonly sources: SourceStore
-    readonly modules: ModuleStore
-    readonly graph: GraphStore
-    readonly taxonomy: TaxonomyStore
+    public readonly events: EventLogStore
+    public readonly chunks: ChunkStore
+    public readonly observations: ObservationStore
+    public readonly sources: SourceStore
+    public readonly modules: ModuleStore
+    public readonly graph: GraphStore
+    public readonly taxonomy: TaxonomyStore
 
-    constructor(
+    public constructor(
         public readonly adapter: SqliteAdapter,
         public readonly db: KonteksDatabase,
     ) {
@@ -29,7 +29,7 @@ export default class DatabaseService {
         this.taxonomy = new TaxonomyStore(adapter)
     }
 
-    async transaction<T>(
+    public async transaction<T>(
         operation: (tx: DatabaseService) => Promise<T>,
     ): Promise<T> {
         return this.adapter.transaction(async () => {
@@ -37,7 +37,7 @@ export default class DatabaseService {
         })
     }
 
-    async close(): Promise<void> {
+    public async close(): Promise<void> {
         await this.adapter.close()
     }
 }

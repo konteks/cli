@@ -31,12 +31,14 @@ import searchMemory from './search-memory'
 export default class SQLiteMemoryRepository
     implements MemoryRepositoryContract
 {
-    constructor(
+    public constructor(
         private readonly db: DatabaseService,
         private readonly project: Project,
     ) {}
 
-    async search(input: MemorySearchInput): Promise<MemorySearchResult[]> {
+    public async search(
+        input: MemorySearchInput,
+    ): Promise<MemorySearchResult[]> {
         const results = await searchMemory(this.db, input)
         return results.map(r => ({
             createdAt: r.createdAt,
@@ -54,7 +56,7 @@ export default class SQLiteMemoryRepository
         }))
     }
 
-    async saveMemory(
+    public async saveMemory(
         input: SaveMemoryInput,
         options?: SaveOptions,
     ): Promise<SaveResult> {
@@ -67,7 +69,7 @@ export default class SQLiteMemoryRepository
         return mapSaveResult(result)
     }
 
-    async saveMemories(
+    public async saveMemories(
         input: SaveMemoriesInput,
         options?: SaveOptions,
     ): Promise<SaveResult> {
@@ -80,7 +82,7 @@ export default class SQLiteMemoryRepository
         return mapSaveResult(result)
     }
 
-    async saveDiary(
+    public async saveDiary(
         input: SaveDiaryInput,
         options?: SaveOptions,
     ): Promise<SaveResult> {
@@ -93,7 +95,7 @@ export default class SQLiteMemoryRepository
         return mapSaveResult(result)
     }
 
-    async saveSession(
+    public async saveSession(
         input: SaveSessionInput,
         options?: SaveOptions,
     ): Promise<SaveResult> {
@@ -106,11 +108,11 @@ export default class SQLiteMemoryRepository
         return mapSaveResult(result)
     }
 
-    async forget(input: ForgetInput): Promise<ForgetResult> {
+    public async forget(input: ForgetInput): Promise<ForgetResult> {
         return await forgetMemory(this.db, input)
     }
 
-    async upsertEntity(
+    public async upsertEntity(
         entity: Partial<MemoryEntity> & { name: string; type: string },
     ): Promise<MemoryEntity> {
         const record = await this.db.graph.upsertEntity({
@@ -128,7 +130,7 @@ export default class SQLiteMemoryRepository
         }
     }
 
-    async addRelation(
+    public async addRelation(
         relation: Omit<MemoryRelation, 'id' | 'status'>,
     ): Promise<MemoryRelation> {
         const record = await this.db.graph.addRelation({
@@ -152,7 +154,7 @@ export default class SQLiteMemoryRepository
         }
     }
 
-    async findEntityByCanonicalName(
+    public async findEntityByCanonicalName(
         name: string,
     ): Promise<MemoryEntity | undefined> {
         const record = await this.db.graph.findEntityByCanonicalName(name)
@@ -166,7 +168,7 @@ export default class SQLiteMemoryRepository
         }
     }
 
-    async searchEntities(
+    public async searchEntities(
         query: string,
         limit?: number,
     ): Promise<MemoryEntity[]> {
@@ -180,14 +182,14 @@ export default class SQLiteMemoryRepository
         }))
     }
 
-    async traverseNeighbors(
+    public async traverseNeighbors(
         entityId: string,
         options?: { maxDepth?: number; limit?: number },
     ): Promise<GraphNeighbor[]> {
         return await this.db.graph.traverseNeighbors(entityId, options)
     }
 
-    async historicalRelations(
+    public async historicalRelations(
         entityId: string,
         limit?: number,
     ): Promise<HistoricalRelation[]> {
