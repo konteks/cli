@@ -50,7 +50,7 @@ describe('CLI command registry', () => {
             program.commands
                 .find(command => command.name() === 'mcp')
                 ?.commands.map(command => command.name()),
-        ).toEqual(['tools', 'tool', 'prompts', 'prompt', 'call'])
+        ).toEqual(['tools', 'tool', 'call'])
         expect(
             program.commands
                 .find(command => command.name() === 'memory')

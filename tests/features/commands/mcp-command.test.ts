@@ -59,7 +59,6 @@ describe('commands/mcp', () => {
     it('registers tools and prompts before connecting the MCP server', async () => {
         const { default: McpCommand } = await import('@/commands/mcp-command')
         const { default: mcpTools } = await import('@/mcp/tools')
-        const { listKonteksPrompts } = await import('@/mcp/prompts')
 
         await new McpCommand().handle()
 
@@ -79,9 +78,7 @@ describe('commands/mcp', () => {
             mcpTools.map(item => item.name).sort(),
         )
         expect(promptRegistrations.map(item => item.name).sort()).toEqual(
-            listKonteksPrompts()
-                .map(item => item.name)
-                .sort(),
+            ['konteks-recall', 'konteks-save', 'konteks-warm-up'].sort(),
         )
         expect(connectedTransports).toHaveLength(1)
         expect(connectedTransports[0]).toBeInstanceOf(MockTransport)

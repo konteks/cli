@@ -1,25 +1,60 @@
 import { describe, expect, it } from 'bun:test'
-import {
-    getKonteksPrompt,
-    getKonteksPromptRegistrations,
-    listKonteksPrompts,
-} from '@/mcp/prompts'
+import { getKonteksSkillFiles, registerKonteksPrompts } from '@/mcp/prompts'
+
+type PromptRegistration = {
+    config: {
+        argsSchema?: Record<string, unknown>
+        description?: string
+    }
+    handler: (args: Record<string, string>) => {
+        messages: Array<{
+            content: { text: string; type: 'text' }
+            role: 'user'
+        }>
+    }
+    name: string
+}
+
+class FakeServer {
+    public readonly registrations: PromptRegistration[] = []
+
+    public registerPrompt(
+        name: string,
+        config: PromptRegistration['config'],
+        handler: PromptRegistration['handler'],
+    ): void {
+        this.registrations.push({ config, handler, name })
+    }
+}
 
 describe('mcp/prompts', () => {
-    it('lists lifecycle prompts in API order', () => {
-        expect(listKonteksPrompts().map(prompt => prompt.name)).toEqual([
+    it('registers lifecycle prompts in API order', () => {
+        const server = new FakeServer()
+
+        registerKonteksPrompts(server as never)
+
+        expect(server.registrations.map(prompt => prompt.name)).toEqual([
             'konteks-recall',
             'konteks-save',
             'konteks-warm-up',
         ])
     })
 
-    it('renders prompt text messages with supplied arguments', () => {
-        const result = getKonteksPrompt('konteks-warm-up', {
-            topic: 'cli status command',
-        })
+    it('registers MCP metadata and renders prompt text messages', () => {
+        const server = new FakeServer()
 
-        expect(result.messages).toEqual([
+        registerKonteksPrompts(server as never)
+
+        const warmUp = server.registrations.find(
+            prompt => prompt.name === 'konteks-warm-up',
+        )
+        const result = warmUp?.handler({ topic: 'cli status command' })
+
+        expect(warmUp?.config.description).toBe(
+            'Open a fresh Konteks session with project context.',
+        )
+        expect(Object.keys(warmUp?.config.argsSchema ?? {})).toEqual(['topic'])
+        expect(result?.messages).toEqual([
             {
                 content: {
                     text: expect.stringContaining('cli status command'),
@@ -28,30 +63,34 @@ describe('mcp/prompts', () => {
                 role: 'user',
             },
         ])
-        expect(result.messages[0]?.content.text).toContain('konteks_warm_up')
+        expect(result?.messages[0]?.content.text).toContain('konteks_warm_up')
     })
 
-    it('throws for unknown prompts', () => {
-        expect(() => getKonteksPrompt('not-real')).toThrow(
-            'Unknown Konteks prompt: not-real',
-        )
-    })
+    it('renders missing optional placeholders as empty strings', () => {
+        const server = new FakeServer()
 
-    it('creates server prompt registrations', () => {
-        const warmUp = getKonteksPromptRegistrations().find(
+        registerKonteksPrompts(server as never)
+
+        const warmUp = server.registrations.find(
             prompt => prompt.name === 'konteks-warm-up',
         )
+        const text = warmUp?.handler({}).messages[0]?.content.text
 
-        expect(warmUp?.args).toEqual([
-            {
-                description:
-                    'Optional free-form topic, module, file, behavior, decision, or memory focus for targeted recall after warm up.',
-                name: 'topic',
-                required: false,
-            },
+        expect(text).not.toContain('<prompt>')
+        expect(text).toContain('Konteks is warmed up and ready for the task.')
+    })
+
+    it('converts bundled prompts to skill files', () => {
+        const skills = getKonteksSkillFiles()
+        const warmUp = skills.find(skill => skill.name === 'konteks-warm-up')
+
+        expect(skills.map(skill => skill.name)).toEqual([
+            'konteks-recall',
+            'konteks-save',
+            'konteks-warm-up',
         ])
-        expect(
-            warmUp?.render({ topic: 'runtime' }).messages[0]?.content.text,
-        ).toContain('runtime')
+        expect(warmUp?.content).toContain('name: konteks-warm-up')
+        expect(warmUp?.content).toContain('any free-form text provided')
+        expect(warmUp?.content).not.toContain('{{topic}}')
     })
 })
