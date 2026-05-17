@@ -10,8 +10,8 @@ import {
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import BackupCommand from '@/commands/backup-command'
 import {
-    backupMemory,
     exportMemory,
     importMemory,
     restoreMemory,
@@ -238,7 +238,10 @@ describe('memory transfer', () => {
 
         const archivePath = join(projectRoot, 'konteks-backup.tar.gz')
         await withProjectRoot(projectRoot, () =>
-            backupMemory({ outputPath: archivePath }),
+            new BackupCommand().handle({
+                args: [archivePath],
+                options: {},
+            }),
         )
         await rm(join(projectRoot, '.konteks'), {
             force: true,
@@ -277,7 +280,10 @@ describe('memory transfer', () => {
         await sourceDb.close()
         const archivePath = join(sourceRoot, 'konteks-backup.tar.gz')
         await withProjectRoot(sourceRoot, () =>
-            backupMemory({ outputPath: archivePath }),
+            new BackupCommand().handle({
+                args: [archivePath],
+                options: {},
+            }),
         )
 
         const targetRoot = await makeInitializedProject('konteks-backup-dst-')

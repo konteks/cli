@@ -1,4 +1,3 @@
-import { execFile } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import {
     cp,
@@ -10,15 +9,12 @@ import {
     writeFile,
 } from 'node:fs/promises'
 import { basename, dirname, join, resolve } from 'node:path'
-import { promisify } from 'node:util'
 import type {
     DurableMemoryExport,
     DurableMemoryExportOptions,
     DurableMemoryExportResult,
     DurableMemoryImportOptions,
     DurableMemoryImportResult,
-    MemoryBackupOptions,
-    MemoryBackupResult,
     MemoryRestoreOptions,
     MemoryRestoreResult,
 } from '@/models/memory-transfer'
@@ -29,8 +25,7 @@ import {
 } from '@/providers/persistence/sqlite/memory-transfer-store'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
 import CliUserError from '@/support/cli/cli-user-error'
-
-const execFileAsync = promisify(execFile)
+import { createTarGz, extractTarGz } from '@/support/targz'
 
 export async function exportMemory(
     options: DurableMemoryExportOptions,
@@ -72,24 +67,6 @@ export async function importMemory(
     } finally {
         await service.close()
     }
-}
-
-export async function backupMemory(
-    options: MemoryBackupOptions,
-): Promise<MemoryBackupResult> {
-    const context = await loadProjectContext()
-    if (!(await pathExists(context.memoryDir))) {
-        throw new CliUserError({
-            command: 'konteks init',
-            message: 'No Konteks memory directory exists for this project.',
-            title: 'Cannot create backup',
-        })
-    }
-
-    const outputPath = resolve(options.outputPath)
-    await mkdir(dirname(outputPath), { recursive: true })
-    await createTarGz(context.memoryDir, outputPath)
-    return { outputPath }
 }
 
 export async function restoreMemory(
@@ -156,32 +133,4 @@ async function createSafetyBackup(
     const safetyBackupPath = `${inputPath}.${timestamp}.safety-${randomUUID().slice(0, 8)}.tar.gz`
     await createTarGz(memoryDir, safetyBackupPath)
     return safetyBackupPath
-}
-
-async function createTarGz(
-    sourceDir: string,
-    outputPath: string,
-): Promise<void> {
-    await runTar(['-czf', outputPath, '-C', sourceDir, '.'])
-}
-
-async function extractTarGz(
-    inputPath: string,
-    outputDir: string,
-): Promise<void> {
-    await runTar(['-xzf', inputPath, '-C', outputDir])
-}
-
-async function runTar(args: string[]): Promise<void> {
-    try {
-        await execFileAsync('tar', args)
-    } catch (error) {
-        throw new CliUserError({
-            message:
-                error instanceof Error
-                    ? error.message
-                    : 'Unable to execute the tar command.',
-            title: 'Archive operation failed',
-        })
-    }
 }

@@ -41,11 +41,11 @@ export default class InstallSkillsCommand extends BaseCommand<
     }
 }
 
-export type InstallKonteksSkillsRequest = {
+type InstallKonteksSkillsRequest = {
     skillsDir: string
 }
 
-export type InstallKonteksSkillsResult = {
+type InstallKonteksSkillsResult = {
     installedCount: number
     skillsDir: string
 }

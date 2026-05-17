@@ -59,17 +59,9 @@ export type DurableMemoryImportResult = {
     memoriesSkipped: number
 }
 
-export type MemoryBackupOptions = {
-    outputPath: string
-}
-
 export type MemoryRestoreOptions = {
     force?: boolean
     inputPath: string
-}
-
-export type MemoryBackupResult = {
-    outputPath: string
 }
 
 export type MemoryRestoreResult = {
