@@ -83,11 +83,9 @@ describe('cli/e2e', () => {
             archivePath,
         ])
         expect(backup.exitCode).toBe(0)
-        expect(
-            parseJsonFromOutput<{ outputPath: string }>(backup.output),
-        ).toEqual({
-            outputPath: resolve(archivePath),
-        })
+        expect(parseJsonFromOutput<string>(backup.output)).toBe(
+            resolve(archivePath),
+        )
         expect(await Bun.file(archivePath).exists()).toBe(true)
 
         const refused = await runKonteks(target.projectRoot, [
@@ -442,18 +440,18 @@ async function withProjectRoot<T>(
 }
 
 function parseJsonFromOutput<T>(output: string): T {
-    const objectIndex = output.indexOf('{')
-    const arrayIndex = output.indexOf('[')
-    const startCandidates = [objectIndex, arrayIndex].filter(
-        index => index >= 0,
-    )
+    for (let index = 0; index < output.length; index += 1) {
+        const char = output[index]
+        if (char !== '{' && char !== '[' && char !== '"') {
+            continue
+        }
 
-    if (startCandidates.length === 0) {
-        throw new Error(`Expected JSON output, got:\n${output}`)
+        try {
+            return JSON.parse(output.slice(index)) as T
+        } catch {}
     }
 
-    const start = Math.min(...startCandidates)
-    return JSON.parse(output.slice(start)) as T
+    throw new Error(`Expected JSON output, got:\n${output}`)
 }
 
 function commandEnv(homeDir: string): Record<string, string> {

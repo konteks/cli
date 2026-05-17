@@ -1,9 +1,9 @@
+import { confirm } from '@inquirer/prompts'
 import BaseCommand from '@/commands/_base-command'
 import createProjectExtractor from '@/extraction/create-project-extractor'
-import type { ExtractionMode } from '@/models/extraction'
-import confirmInteractive from '@/providers/cli/confirm-interactive'
 import createExtractionProgressReporter from '@/providers/extraction/create-extraction-progress-reporter'
 import { stringifyPretty } from '@/support/json/io'
+import { terminal } from '@/support/terminal/service'
 
 export default class RepairCommand extends BaseCommand {
     public readonly description =
@@ -27,7 +27,7 @@ export default class RepairCommand extends BaseCommand {
             })
 
             const result = await extractor.execute({
-                mode: 'reindex' as ExtractionMode,
+                mode: 'reindex',
                 projectRoot: process.cwd(),
             })
 
@@ -44,8 +44,13 @@ export default class RepairCommand extends BaseCommand {
 }
 
 async function confirmRepairPrompt(): Promise<boolean> {
-    return await confirmInteractive(
-        'Repair Konteks memory by rebuilding artifacts for this project?',
-        true,
-    )
+    if (!terminal.stdinIsInteractive() || !terminal.stderrIsInteractive()) {
+        return true
+    }
+
+    return await confirm({
+        default: true,
+        message:
+            'Repair Konteks memory by rebuilding artifacts for this project?',
+    })
 }
