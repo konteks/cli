@@ -11,12 +11,13 @@ Memory artifacts are stored directly inside your repository, exposing compact, t
 ## 🚀 Key Features
 
 * **Zero-Install**: Run anywhere via `npx` or `bunx` without native dependencies.
-* **Language-Aware**: Precise semantic parsing via Tree-sitter (not just regex).
-* **Broad Language Support**: supported [various file types](src/assets/grammars/registry.json).
+* **Language-Aware**: Understands code structure across [various file types](src/assets/grammars/registry.json).
 * **Local-First**: Your project memory stays in your repo—no cloud, no accounts.
 * **Token-Efficient**: High-fidelity context synthesis designed for LLM economy.
 
-## 📖 Documentation
+## 🧠 How It Works
+
+Konteks treats a repository as a local memory system for agent workflows. It builds searchable project artifacts from source files, retrieves task-relevant evidence, and expands related context through a lightweight graph of entities and relations when available.
 
 For a deep dive into the philosophy, architecture, and usage, see the [Full Documentation](docs/README.md).
 
