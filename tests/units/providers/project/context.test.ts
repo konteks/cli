@@ -1,13 +1,13 @@
-import { afterEach, describe, expect, it } from 'bun:test'
+import { afterEach, describe, expect, it, spyOn } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import StatusCommand from '@/commands/status-command'
 import {
     createDefaultConfig,
-    loadProjectContext,
     resolveProjectContext,
 } from '@/providers/project/context'
-import ProjectStatusReader from '@/providers/project/project-status-reader'
+import { terminal } from '@/support/terminal/service'
 
 const tempDirs: string[] = []
 
@@ -74,31 +74,37 @@ describe('project context', () => {
 
     it('reports missing memory when the project is not initialized', async () => {
         const projectRoot = await makeTempProject()
-        const reader = new ProjectStatusReader()
+        const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
 
-        const status = await withWorkingDirectory(projectRoot, () =>
-            loadProjectContext().then(context => reader.read(context)),
-        )
-
-        expect(status.freshness).toEqual({
-            changedFileCount: 0,
-            reason: 'Konteks project memory is not initialized.',
-            recommendedCommand: 'konteks init',
-            status: 'missing',
-        })
+        try {
+            await withWorkingDirectory(projectRoot, () =>
+                new StatusCommand().handle(),
+            )
+            const output = logSpy.mock.calls[0]?.[0] ?? ''
+            expect(output).toContain(
+                'Konteks project memory is not initialized.',
+            )
+            expect(output).toContain('run konteks init')
+        } finally {
+            logSpy.mockRestore()
+        }
     })
 
     it('reports missing extraction metadata when config exists', async () => {
         const projectRoot = await makeTempProject()
         await mkdir(join(projectRoot, '.konteks'), { recursive: true })
         await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
-        const reader = new ProjectStatusReader()
+        const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
 
-        const status = await withWorkingDirectory(projectRoot, () =>
-            loadProjectContext().then(context => reader.read(context)),
-        )
-
-        expect(status.freshness.status).toBe('missing')
-        expect(status.freshness.recommendedCommand).toBe('konteks repair')
+        try {
+            await withWorkingDirectory(projectRoot, () =>
+                new StatusCommand().handle(),
+            )
+            const output = logSpy.mock.calls[0]?.[0] ?? ''
+            expect(output).toContain('No extraction manifest exists yet.')
+            expect(output).toContain('run konteks repair')
+        } finally {
+            logSpy.mockRestore()
+        }
     })
 })

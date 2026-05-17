@@ -23,9 +23,7 @@ import {
     saveKonteksMemory,
 } from '@/providers/persistence/sqlite/save-konteks-input'
 import searchMemory from '@/providers/persistence/sqlite/search-memory'
-// import { TaxonomyStore } from '../persistence/sqli./taxonomy-store'
 import { loadProjectContext } from '@/providers/project/context'
-import ProjectStatusReader from '@/providers/project/project-status-reader'
 import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
 
 const tempDirs: string[] = []
@@ -402,13 +400,9 @@ where id in (?, ?)
             'export const x = 1\n',
         )
 
-        const stale = await withProjectRoot(projectRoot, () =>
-            loadProjectContext().then(context =>
-                new ProjectStatusReader().read(context),
-            ),
-        )
-        expect(stale.freshness.status).toBe('stale')
-        expect(stale.freshness.recommendedCommand).toBe('konteks repair')
+        const stale = await getExtractionFreshness(context)
+        expect(stale.status).toBe('stale')
+        expect(stale.recommendedCommand).toBe('konteks repair')
     })
 
     it('caps chunks per file and reports the diagnostic', async () => {
