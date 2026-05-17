@@ -10,17 +10,17 @@ export default class InstallSkillsCommand extends BaseCommand<
     [],
     { global?: boolean }
 > {
-    readonly description =
+    public readonly description =
         'Install Konteks skills for agents without MCP prompts.'
-    readonly name = 'install-skills'
-    override readonly options = [
+    public readonly name = 'install-skills'
+    public override readonly options = [
         {
             description: 'Install into ~/.agents/skills',
             flags: '--global',
         },
     ]
 
-    async handle(
+    public async handle(
         { options }: BaseCommandInput<[], { global?: boolean }> | undefined = {
             options: {},
         },

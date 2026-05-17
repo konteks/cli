@@ -3,11 +3,11 @@ import repairMemory from '@/project/repair-memory'
 import { stringifyPretty } from '@/support/json/io'
 
 export default class RepairCommand extends BaseCommand {
-    readonly description =
+    public readonly description =
         'Repair Konteks memory by rebuilding artifacts from scratch.'
-    readonly name = 'repair'
+    public readonly name = 'repair'
 
-    async handle(): Promise<void> {
+    public async handle(): Promise<void> {
         this.print(stringifyPretty(await repairMemory()))
     }
 }

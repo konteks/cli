@@ -9,10 +9,11 @@ import { terminal } from '@/support/terminal/service'
 import { VERSION } from '@/support/version'
 
 export default class StatusCommand extends BaseCommand {
-    readonly description = 'Print Konteks project memory status for humans.'
-    readonly name = 'status'
+    public readonly description =
+        'Print Konteks project memory status for humans.'
+    public readonly name = 'status'
 
-    async handle(): Promise<void> {
+    public async handle(): Promise<void> {
         const status = await readProjectStatus()
 
         this.print(

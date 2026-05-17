@@ -4,16 +4,18 @@ import { backupMemory } from '@/composition/memory-transfer'
 import { stringifyPretty } from '@/support/json/io'
 
 export default class BackupCommand extends BaseCommand<[string]> {
-    override readonly args = [
+    public override readonly args = [
         {
             description: 'Output .tar.gz file',
             name: '<file>',
         },
     ]
-    readonly description = 'Create a full .konteks backup archive.'
-    readonly name = 'backup'
+    public readonly description = 'Create a full .konteks backup archive.'
+    public readonly name = 'backup'
 
-    async handle({ args }: BaseCommandInput<[string]>): Promise<void> {
+    public async handle({
+        args,
+    }: Required<BaseCommandInput<[string]>>): Promise<void> {
         this.print(
             stringifyPretty(
                 await backupMemory({

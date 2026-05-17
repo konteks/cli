@@ -20,23 +20,23 @@ export default abstract class BaseCommand<
     Args extends unknown[] = unknown[],
     Options extends object = Record<string, never>,
 > {
-    abstract readonly description: string
-    abstract readonly name: string
+    public abstract readonly description: string
+    public abstract readonly name: string
 
-    readonly args: {
+    public readonly args: {
         readonly name: string
         readonly description?: string
     }[] = []
-    readonly children: InstanceType<typeof BaseCommand>[] = []
-    readonly options: {
+    public readonly children: InstanceType<typeof BaseCommand>[] = []
+    public readonly options: {
         readonly flags: string
         readonly description?: string
         readonly parser?: (value: string, previous: unknown) => unknown
     }[] = []
-    readonly printsHeader: boolean = true
-    readonly usesInitializationGuard: boolean = true
+    public readonly printsHeader: boolean = true
+    public readonly usesInitializationGuard: boolean = true
 
-    abstract handle(
+    public abstract handle(
         input: BaseCommandInput<Args, Options>,
     ): Promise<void> | void
 
@@ -44,7 +44,7 @@ export default abstract class BaseCommand<
         terminal.log(value)
     }
 
-    register(parent: Command, context: BaseCommandContext) {
+    public register(parent: Command, context: BaseCommandContext) {
         const command = parent.command(this.name).description(this.description)
 
         this.registerAction(command, context)

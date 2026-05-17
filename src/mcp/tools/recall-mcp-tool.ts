@@ -24,19 +24,19 @@ const INPUT_SCHEMA = z.object({
 type Input = z.output<typeof INPUT_SCHEMA>
 
 export default class RecallMcpTool extends BaseMcpTool<Input> {
-    annotations = {
+    public readonly annotations = {
         destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
         readOnlyHint: true,
     }
 
-    description =
+    public readonly description =
         'Recall compact, task-relevant project context before answering or working.'
 
-    readonly inputSchema = INPUT_SCHEMA
+    public readonly inputSchema = INPUT_SCHEMA
 
-    name = 'konteks_recall'
+    public readonly name = 'konteks_recall'
 
     protected async coreHandle(input: Input) {
         const context = await loadMcpProjectContext()

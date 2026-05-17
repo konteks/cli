@@ -11,26 +11,28 @@ export default class ImportCommand extends BaseCommand<
     [string],
     MemoryImportOptions
 > {
-    override readonly args = [
+    public override readonly args = [
         {
             description: 'Input JSON file',
             name: '<file>',
         },
     ]
-    readonly description =
+    public readonly description =
         'Import durable memories and diary entries from JSON.'
-    readonly name = 'import'
-    override readonly options = [
+    public readonly name = 'import'
+    public override readonly options = [
         {
             description: 'Validate and report counts without writing.',
             flags: '--dry-run',
         },
     ]
 
-    async handle({
+    public async handle({
         args,
         options,
-    }: BaseCommandInput<[string], MemoryImportOptions>): Promise<void> {
+    }: Required<
+        BaseCommandInput<[string], MemoryImportOptions>
+    >): Promise<void> {
         this.print(
             stringifyPretty(
                 await importMemory({

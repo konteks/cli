@@ -28,18 +28,19 @@ const INPUT_SCHEMA = {
 type Input = z.output<z.ZodObject<typeof INPUT_SCHEMA>>
 
 export default class SaveMemoriesMcpTool extends BaseMcpTool<Input> {
-    annotations = {
+    public readonly annotations = {
         destructiveHint: false,
         idempotentHint: false,
         openWorldHint: false,
         readOnlyHint: false,
     }
 
-    description = 'Persist one or more structured durable memories.'
+    public readonly description =
+        'Persist one or more structured durable memories.'
 
-    readonly inputSchema = INPUT_SCHEMA
+    public readonly inputSchema = INPUT_SCHEMA
 
-    name = 'konteks_save_memories'
+    public readonly name = 'konteks_save_memories'
 
     protected async coreHandle(input: Input) {
         const result = await saveMemories(input)

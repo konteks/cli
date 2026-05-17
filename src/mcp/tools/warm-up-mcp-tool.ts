@@ -19,18 +19,19 @@ const INPUT_ZOD_SCHEMA = z.object({
 type Input = z.output<typeof INPUT_ZOD_SCHEMA>
 
 export default class WarmUpMcpTool extends BaseMcpTool<Input> {
-    annotations = {
+    public readonly annotations = {
         destructiveHint: false,
         idempotentHint: false,
         openWorldHint: false,
         readOnlyHint: false,
     }
 
-    description = 'Load the stable project-wide briefing for the current repo.'
+    public readonly description =
+        'Load the stable project-wide briefing for the current repo.'
 
-    readonly inputSchema = INPUT_ZOD_SCHEMA
+    public readonly inputSchema = INPUT_ZOD_SCHEMA
 
-    name = 'konteks_warm_up'
+    public readonly name = 'konteks_warm_up'
 
     protected async coreHandle(input: Input) {
         const result = await warmUpMemory(input)

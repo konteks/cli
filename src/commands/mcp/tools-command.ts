@@ -4,10 +4,10 @@ import mcpTools from '@/mcp/tools'
 import printJson from '@/support/cli/print-json'
 
 export default class ToolsCommand extends BaseCommand {
-    readonly description = 'List MCP tools exposed by Konteks.'
-    readonly name = 'tools'
+    public readonly description = 'List MCP tools exposed by Konteks.'
+    public readonly name = 'tools'
 
-    async handle(_input: BaseCommandInput): Promise<void> {
+    public async handle(_input: BaseCommandInput): Promise<void> {
         printJson(mcpTools)
     }
 }
