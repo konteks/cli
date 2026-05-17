@@ -12,8 +12,8 @@ export type BaseCommandInput<
     Args extends unknown[] = unknown[],
     Options extends object = Record<string, never>,
 > = {
-    args: Args
-    options: Options
+    args?: Args
+    options?: Options
 }
 
 export default abstract class BaseCommand<

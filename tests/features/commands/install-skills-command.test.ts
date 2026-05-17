@@ -1,5 +1,6 @@
-import { afterEach, describe, expect, it } from 'bun:test'
+import { afterEach, describe, expect, it, spyOn } from 'bun:test'
 import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import * as os from 'node:os'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import InstallSkillsCommand from '@/commands/install-skills-command'
@@ -38,7 +39,7 @@ describe('InstallSkillsCommand', () => {
         )
 
         await withWorkingDirectory(projectRoot, () =>
-            new InstallSkillsCommand().run({}),
+            new InstallSkillsCommand().handle(),
         )
 
         expect(
@@ -63,8 +64,17 @@ describe('InstallSkillsCommand', () => {
     it('installs Konteks skills globally', async () => {
         const homeDir = await mkdtemp(join(tmpdir(), 'konteks-skills-home-'))
         tempDirs.push(homeDir)
+        const homedirSpy = spyOn(os, 'homedir').mockReturnValue(homeDir)
 
-        await new InstallSkillsCommand().run({ global: true, homeDir })
+        try {
+            await new InstallSkillsCommand().handle({
+                options: {
+                    global: true,
+                },
+            })
+        } finally {
+            homedirSpy.mockRestore()
+        }
 
         await expect(
             readFile(
@@ -83,7 +93,7 @@ describe('InstallSkillsCommand', () => {
         )
 
         await withWorkingDirectory(projectRoot, () =>
-            new InstallSkillsCommand().run({}),
+            new InstallSkillsCommand().handle(),
         )
 
         await expect(
