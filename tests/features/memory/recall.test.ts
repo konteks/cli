@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { MemoryRepositoryContract } from '@/contracts/repositories/memory-repository'
-import { recallRepositoryMemory } from '@/memory/recall'
+import recallRepositoryMemory from '@/memory/recall-repository-memory'
 import type {
     MemoryEntity,
     MemorySearchResult,

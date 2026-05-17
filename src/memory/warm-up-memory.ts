@@ -9,7 +9,7 @@ import type { Project } from '@/models/project'
 import readWarmUpContext from '@/providers/project/read-warm-up-context'
 import { estimateCharacterTokens } from '@/support/format/tokens'
 import createMemoryRepository from './create-memory-repository'
-import { recallRepositoryMemory } from './recall'
+import recallRepositoryMemory from './recall-repository-memory'
 import {
     loadMcpProjectContext,
     updateChangedProjectMemorySilently,
