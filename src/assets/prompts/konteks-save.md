@@ -15,7 +15,7 @@ Do not call `konteks_save_memories` or `konteks_save_diary` automatically at the
 
 For a full session save, call the save tools in two phases:
 
-1. Save durable memories with `konteks_save_memories`. Include only confirmed, future-useful guidance that should influence future sessions. Each memory must include `kind` and compact `content`. If there are no durable memories, skip this phase.
+1. Save durable memories with `konteks_save_memories`. Include only confirmed, future-useful guidance that should influence future sessions. Each memory must include compact `content`, `kind`, and `importance`. If there are no durable memories, skip this phase.
 2. Save one compact session diary with `konteks_save_diary`. Use about 80-160 words or 3-6 short bullets. Summarize only the task, outcome, important files or modules touched, verification, unresolved questions, and exact next steps. Mention file paths and test commands only when they are useful for resuming work.
 
 Accepted durable memory batch shape:
@@ -25,13 +25,14 @@ Accepted durable memory batch shape:
   "memories": [
     {
       "content": "Use compact structured save payloads instead of raw chat transcripts.",
+      "importance": 3,
       "kind": "decision"
     }
   ]
 }
 ```
 
-For durable memories, prefer stable rules, decisions, constraints, conventions, blockers, and code insights. Each durable memory should be short but operational: preserve the reusable rule, decision, or code insight a future agent can act on, not the session chronology. Do not turn completed implementation steps, file-by-file changelogs, test pass lists, or generic progress narration into durable memories; put only the useful handoff context in the diary.
+For durable memories, prefer stable rules, decisions, constraints, conventions, blockers, and code insights. Use `importance` from 1 to 5, where 3 is the default for useful project context and 4-5 is reserved for high-impact constraints, decisions, blockers, or code insights. Each durable memory should be short but operational: preserve the reusable rule, decision, or code insight a future agent can act on, not the session chronology. Do not turn completed implementation steps, file-by-file changelogs, test pass lists, or generic progress narration into durable memories; put only the useful handoff context in the diary.
 
 For the diary, write a handoff summary, not a transcript. Omit command logs, tool output, routine files, repeated context from durable memories, and blow-by-blow chronology. If nothing is unresolved, say so briefly rather than inventing next steps.
 
