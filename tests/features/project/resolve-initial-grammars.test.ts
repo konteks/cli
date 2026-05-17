@@ -53,7 +53,11 @@ describe('project/grammars', () => {
 
         const choices = (
             checkboxCalls[0] as {
-                choices: Array<{ checked: boolean; name: string; value: string }>
+                choices: Array<{
+                    checked: boolean
+                    name: string
+                    value: string
+                }>
             }
         ).choices
         expect(choices.map(choice => choice.value)).toContain('typescript')
