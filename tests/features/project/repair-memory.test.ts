@@ -61,12 +61,15 @@ describe('RepairCommand', () => {
     }
 
     const installExtractorSpies = () => {
-        const extractorSpy = spyOn(extractorModule, 'default').mockImplementation(
-            ({ onProgress }: { onProgress: (event: unknown) => void }) =>
+        const extractorSpy = spyOn(
+            extractorModule,
+            'default',
+        ).mockImplementation(
+            (options = {}) =>
                 ({
                     async execute(request: unknown) {
                         extractorCalls.push(request)
-                        onProgress({
+                        options.onProgress?.({
                             message: 'complete',
                             phase: 'done',
                             status: 'done',
