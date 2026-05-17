@@ -32,9 +32,9 @@ Accepted durable memory batch shape:
 }
 ```
 
-For durable memories, prefer stable rules, decisions, constraints, conventions, blockers, and code insights. Use `importance` from 1 to 5, where 3 is the default for useful project context and 4-5 is reserved for high-impact constraints, decisions, blockers, or code insights. Each durable memory should be short but operational: preserve the reusable rule, decision, or code insight a future agent can act on, not the session chronology. Do not turn completed implementation steps, file-by-file changelogs, test pass lists, or generic progress narration into durable memories; put only the useful handoff context in the diary.
+For durable memories, prefer stable rules, decisions, constraints, conventions, blockers, and code insights. Use `importance` from 1 to 5, where 3 is the default for useful project context and 4-5 is reserved for high-impact constraints, decisions, blockers, or code insights. Each durable memory should be short but operational: preserve the reusable rule, decision, or code insight a future agent can act on, not the session chronology. Do not turn completed implementation steps, file-by-file changelogs, test pass lists, or generic progress narration into durable memories; put only the useful session context in the diary.
 
-For the diary, write a handoff summary, not a transcript. Omit command logs, tool output, routine files, repeated context from durable memories, and blow-by-blow chronology. If nothing is unresolved, say so briefly rather than inventing next steps.
+For the diary, write a compact session summary, not a transcript. Omit command logs, tool output, routine files, repeated context from durable memories, and blow-by-blow chronology. If nothing is unresolved, say so briefly rather than inventing next steps.
 
 For lightweight remember, save only self-contained durable memory with `konteks_save_memories`. Infer `kind` conservatively, usually `note` unless the statement is clearly a `decision`, `constraint`, `preference`, `code_insight`, or `blocker`. If the requested memory is ambiguous, ephemeral, or not likely to help future sessions, ask a brief clarification or skip saving.
 

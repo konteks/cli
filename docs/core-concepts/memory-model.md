@@ -120,7 +120,7 @@ This surface answers:
 * What was completed, blocked, or left for later?
 * Why did memory change?
 
-Diary entries are for handoff and continuity. Memory events are for traceability.
+Diary entries are session summaries for continuity. Memory events are for traceability.
 
 ## 6. The Warm-Up View
 
