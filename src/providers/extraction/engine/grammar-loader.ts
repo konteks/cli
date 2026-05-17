@@ -7,11 +7,10 @@ import registryJson from '@/assets/grammars/registry.json' with { type: 'json' }
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import type { Project } from '@/models/project'
 import { pathExists } from '@/providers/project/context'
-import type { TreeSitterLanguage } from './tree-sitter-engine'
 
 type TreeSitterBootstrapEngine = {
     init(): Promise<void>
-    loadLanguage(lang: TreeSitterLanguage, wasmPath: string): Promise<void>
+    loadLanguage(lang: string, wasmPath: string): Promise<void>
 }
 
 export type GrammarDefinition = {
@@ -20,19 +19,15 @@ export type GrammarDefinition = {
     extensions: string[]
     fallbackVersion: string
     gitRepoUrl: string
-    id: TreeSitterLanguage
+    id: string
     latestUrl?: string
     package: string
     wasmFile: string
 }
 
-type GrammarRegistryEntry = Omit<GrammarDefinition, 'id'> & {
-    id: string
-}
-
 type GrammarCacheEntry = {
     checkedAt: string
-    id: TreeSitterLanguage
+    id: string
     package: string
     sha256: string
     version: string
@@ -47,21 +42,14 @@ type GrammarCacheManifest = {
 type BundledGrammarDefinition = {
     displayName: string
     extensions: string[]
-    id: TreeSitterLanguage
+    id: string
     wasmPath: string
 }
 
 type GrammarMatch = GrammarDefinition | BundledGrammarDefinition
 
 const require = createRequire(import.meta.url)
-const registry: GrammarDefinition[] = (
-    registryJson as GrammarRegistryEntry[]
-).map(entry => ({
-    ...entry,
-    id: entry.id as TreeSitterLanguage,
-    latestUrl:
-        entry.latestUrl ?? `https://registry.npmjs.org/${entry.package}/latest`,
-}))
+const registry = loadGrammarRegistry(registryJson)
 
 const bundledGrammars: BundledGrammarDefinition[] = [
     {
@@ -144,7 +132,7 @@ export async function initTreeSitterWithSelectedGrammars(
         paths?: string[]
         onProgress?: ExtractionProgressReporter
     } = {},
-): Promise<{ loaded: TreeSitterLanguage[]; warnings: string[] }> {
+): Promise<{ loaded: string[]; warnings: string[] }> {
     const selected = normalizeSelectedGrammars(
         project.config.extraction.grammars.selected,
     )
@@ -163,7 +151,7 @@ export async function initTreeSitterWithSelectedGrammars(
     await engine.init()
     const cache = await readCacheManifest()
     const warnings: string[] = []
-    const loaded: TreeSitterLanguage[] = []
+    const loaded: string[] = []
 
     for (const [index, definition] of bundled.entries()) {
         await engine.loadLanguage(definition.id, definition.wasmPath)
@@ -401,11 +389,120 @@ function grammarCacheDir(): string {
     return join(os.homedir(), '.cache', 'konteks', 'grammars')
 }
 
-function normalizeSelectedGrammars(values: string[]): TreeSitterLanguage[] {
-    const valid = new Set(registry.map(grammar => grammar.id))
-    return [...new Set(values)].filter((value): value is TreeSitterLanguage =>
-        valid.has(value as TreeSitterLanguage),
+function loadGrammarRegistry(value: unknown): GrammarDefinition[] {
+    if (!Array.isArray(value)) {
+        throw new Error('Grammar registry must be an array.')
+    }
+
+    const grammars = value.map((entry, index) =>
+        validateGrammarDefinition(entry, index),
     )
+    validateGrammarRegistry(grammars)
+
+    return grammars.map(grammar => ({
+        ...grammar,
+        latestUrl:
+            grammar.latestUrl ??
+            `https://registry.npmjs.org/${grammar.package}/latest`,
+    }))
+}
+
+function validateGrammarDefinition(
+    value: unknown,
+    index: number,
+): GrammarDefinition {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        throw new Error(`Grammar registry entry ${index} must be an object.`)
+    }
+
+    const entry = value as Record<string, unknown>
+    const grammar: GrammarDefinition = {
+        aliases: stringArrayField(entry, 'aliases', index),
+        displayName: stringField(entry, 'displayName', index),
+        extensions: stringArrayField(entry, 'extensions', index),
+        fallbackVersion: stringField(entry, 'fallbackVersion', index),
+        gitRepoUrl: stringField(entry, 'gitRepoUrl', index),
+        id: stringField(entry, 'id', index),
+        latestUrl:
+            typeof entry.latestUrl === 'string' ? entry.latestUrl : undefined,
+        package: stringField(entry, 'package', index),
+        wasmFile: stringField(entry, 'wasmFile', index),
+    }
+
+    if (grammar.extensions.length === 0) {
+        throw new Error(
+            `Grammar registry entry "${grammar.id}" must declare extensions.`,
+        )
+    }
+
+    return grammar
+}
+
+function validateGrammarRegistry(grammars: GrammarDefinition[]): void {
+    const ids = new Set<string>()
+    const extensions = new Map<string, string>()
+    let previousId = ''
+
+    for (const grammar of grammars) {
+        if (ids.has(grammar.id)) {
+            throw new Error(`Duplicate Tree-sitter grammar id: ${grammar.id}`)
+        }
+        ids.add(grammar.id)
+
+        if (previousId && previousId.localeCompare(grammar.id) > 0) {
+            throw new Error(
+                `Grammar registry must be sorted by id: ${previousId} before ${grammar.id}`,
+            )
+        }
+        previousId = grammar.id
+
+        for (const extension of grammar.extensions) {
+            const normalized = extension.toLowerCase()
+            const owner = extensions.get(normalized)
+            if (owner) {
+                throw new Error(
+                    `Grammar extension "${extension}" is used by both ${owner} and ${grammar.id}.`,
+                )
+            }
+            extensions.set(normalized, grammar.id)
+        }
+    }
+}
+
+function stringField(
+    entry: Record<string, unknown>,
+    field: string,
+    index: number,
+): string {
+    const value = entry[field]
+    if (typeof value !== 'string' || value.length === 0) {
+        throw new Error(
+            `Grammar registry entry ${index} must include string field "${field}".`,
+        )
+    }
+    return value
+}
+
+function stringArrayField(
+    entry: Record<string, unknown>,
+    field: string,
+    index: number,
+): string[] {
+    const value = entry[field]
+    if (
+        !Array.isArray(value) ||
+        !value.every(item => typeof item === 'string')
+    ) {
+        throw new Error(
+            `Grammar registry entry ${index} must include string array field "${field}".`,
+        )
+    }
+    return value
+}
+
+function normalizeSelectedGrammars(values: string[]): string[] {
+    const valid = new Set(registry.map(grammar => grammar.id))
+    return [...new Set(values)].filter(value => valid.has(value))
 }
 
 function isStale(checkedAt: string | undefined, ttlHours: number): boolean {

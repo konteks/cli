@@ -1,4 +1,5 @@
 import type { ScannedFile } from './file-scan'
+import { getGrammarForPath, isBundledGrammar } from './grammar-loader'
 import type TreeSitterEngine from './tree-sitter-engine'
 import type { CodeMetadata } from './tree-sitter-engine'
 
@@ -256,9 +257,8 @@ function isJson(path: string): boolean {
 }
 
 function isCode(path: string): boolean {
-    return /\.(ts|tsx|js|jsx|mjs|cjs|mts|cts|py|go|rs|java|kt|kts|rb|php|c|h|cc|cpp|cxx|hpp|hh|hxx|cs|sh|bash|zsh|sql|lua|swift|scala|sc)$/iu.test(
-        path,
-    )
+    const grammar = getGrammarForPath(path)
+    return Boolean(grammar && !isBundledGrammar(grammar.id))
 }
 
 function slugify(value: string): string {

@@ -1,30 +1,6 @@
 import { Language, type Node, Parser, Query } from 'web-tree-sitter'
 import { getGrammarForPath } from './grammar-loader'
 
-export type TreeSitterLanguage =
-    | 'bash'
-    | 'c'
-    | 'cpp'
-    | 'csharp'
-    | 'css'
-    | 'go'
-    | 'html'
-    | 'java'
-    | 'javascript'
-    | 'jsdoc'
-    | 'json'
-    | 'kotlin'
-    | 'lua'
-    | 'php'
-    | 'python'
-    | 'ruby'
-    | 'rust'
-    | 'scala'
-    | 'toml'
-    | 'tsx'
-    | 'typescript'
-    | 'yaml'
-
 type CodeSymbol = {
     name: string
     kind: string
@@ -54,7 +30,7 @@ export default class TreeSitterEngine {
         this.parser = new Parser()
     }
 
-    public async loadLanguage(lang: TreeSitterLanguage, wasmPath: string) {
+    public async loadLanguage(lang: string, wasmPath: string) {
         if (this.languages.has(lang)) {
             return
         }
@@ -63,7 +39,7 @@ export default class TreeSitterEngine {
         this.languages.set(lang, language)
     }
 
-    public hasLanguage(lang: TreeSitterLanguage): boolean {
+    public hasLanguage(lang: string): boolean {
         return this.languages.has(lang)
     }
 
@@ -104,7 +80,7 @@ export default class TreeSitterEngine {
         return metadata
     }
 
-    private detectLanguage(path: string): TreeSitterLanguage | undefined {
+    private detectLanguage(path: string): string | undefined {
         return getGrammarForPath(path)?.id
     }
 
@@ -112,7 +88,7 @@ export default class TreeSitterEngine {
         root: Node,
         _: string,
         metadata: CodeMetadata,
-        lang: TreeSitterLanguage,
+        lang: string,
     ) {
         if (lang !== 'javascript' && lang !== 'typescript' && lang !== 'tsx') {
             this.extractGenericMetadata(root, metadata)

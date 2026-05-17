@@ -94,6 +94,17 @@ export const beta = 2
         })
     })
 
+    it('treats unsupported code-like extensions as text', async () => {
+        const sections = await sectionFile(
+            { ...file, path: 'Sources/App.swift' },
+            'func buildUser() {}\n',
+        )
+
+        expect(sections).toHaveLength(1)
+        expect(sections[0]?.kind).toBe('text')
+        expect(sections[0]?.anchor).toBe('file')
+    })
+
     it('marks supported code as Tree-sitter processed when no symbols are found', async () => {
         const sections = await sectionFile(
             { ...file, path: 'src/empty.ts' },
