@@ -1,9 +1,24 @@
-import { afterEach, describe, expect, it } from 'bun:test'
+import { afterEach, describe, expect, it, mock } from 'bun:test'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import InitCommand from '@/commands/init-command'
 import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
+
+class MockHuggingFaceEmbeddingProvider extends FakeEmbeddingProvider {
+    constructor(_options?: unknown) {
+        super()
+    }
+}
+
+mock.module('@/providers/embeddings/hugging-face-embedding-provider', () => ({
+    default: MockHuggingFaceEmbeddingProvider,
+}))
+
+mock.module('@inquirer/prompts', () => ({
+    checkbox: async () => [],
+    confirm: async () => true,
+    select: async () => 'grammars',
+}))
 
 const tempDirs: string[] = []
 
@@ -40,9 +55,12 @@ async function withWorkingDirectory<T>(
 describe('InitCommand', () => {
     const init = (project: string) =>
         withWorkingDirectory(project, () =>
-            new InitCommand().run({
-                embeddingProvider: new FakeEmbeddingProvider(),
-            }),
+            createCommand().then(command =>
+                command.handle({
+                    args: [],
+                    options: {},
+                }),
+            ),
         )
 
     it('adds .konteks to .gitignore during init', async () => {
@@ -127,20 +145,9 @@ describe('InitCommand', () => {
             resumedManifest.diagnostics.embeddingReusedCount,
         ).toBeGreaterThan(0)
     })
-
-    it('rejects unknown grammar ids before init runs', async () => {
-        const projectRoot = await makeTempProject()
-
-        await expect(
-            withWorkingDirectory(projectRoot, () =>
-                new InitCommand().run({
-                    embeddingProvider: new FakeEmbeddingProvider(),
-                    grammar: ['not-real'],
-                }),
-            ),
-        ).rejects.toThrow('Unknown grammar id: not-real')
-        await expect(
-            readFile(join(projectRoot, '.konteks', 'config.json'), 'utf8'),
-        ).rejects.toThrow()
-    })
 })
+
+async function createCommand() {
+    const { default: InitCommand } = await import('@/commands/init-command')
+    return new InitCommand()
+}

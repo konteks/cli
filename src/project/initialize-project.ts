@@ -1,6 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
 import createProjectExtractor from '@/extraction/create-project-extractor'
 import type { ExtractProjectResponse } from '@/models/extraction'
 import createExtractionProgressReporter from '@/providers/extraction/create-extraction-progress-reporter'
@@ -12,7 +11,6 @@ import {
 } from '@/providers/project/context'
 
 export type InitializeProjectOptions = {
-    embeddingProvider?: EmbeddingProviderContract
     grammars?: string[]
 }
 
@@ -72,7 +70,6 @@ export default async function initializeProject(
     const progress = createExtractionProgressReporter()
     try {
         const extractor = createProjectExtractor({
-            embeddingProvider: options.embeddingProvider,
             onProgress: progress.report,
         })
 

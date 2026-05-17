@@ -56,9 +56,7 @@ export function listGrammarDefinitions(): GrammarDefinition[] {
     return [...registry]
 }
 
-export function getGrammarDefinition(
-    id: string,
-): GrammarDefinition | undefined {
+function getGrammarDefinition(id: string): GrammarDefinition | undefined {
     return registry.find(grammar => grammar.id === id)
 }
 

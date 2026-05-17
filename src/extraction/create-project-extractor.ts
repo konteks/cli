@@ -1,4 +1,3 @@
-import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
 import type { ExtractionEngineContract } from '@/contracts/services/extraction-engine'
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import type {
@@ -14,7 +13,6 @@ export type ProjectExtractor = {
 }
 
 export type CreateProjectExtractorOptions = {
-    embeddingProvider?: EmbeddingProviderContract
     extractionEngine?: ExtractionEngineContract
     onProgress?: ExtractionProgressReporter
 }
@@ -36,11 +34,9 @@ export default function createProjectExtractor(
 function createDefaultExtractionEngine(
     options: CreateProjectExtractorOptions,
 ): ExtractionEngineContract {
-    const embeddingProvider =
-        options.embeddingProvider ??
-        new HuggingFaceEmbeddingProvider({
-            onProgress: options.onProgress,
-        })
+    const embeddingProvider = new HuggingFaceEmbeddingProvider({
+        onProgress: options.onProgress,
+    })
 
     return new KonteksExtractionEngine({
         embeddingProvider,
