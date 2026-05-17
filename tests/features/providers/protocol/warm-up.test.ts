@@ -8,7 +8,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import mcpTools from '@/mcp/tools'
 import { extractProject } from '@/providers/extraction/extract-project'
 import { loadProjectContext } from '@/providers/project/context'
-import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
+import FakeEmbeddingProvider from '../../../fake/fake-embedding-provider'
 
 function extractionOptions() {
     return {

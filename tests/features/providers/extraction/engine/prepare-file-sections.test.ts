@@ -10,7 +10,7 @@ import { contentHash } from '@/providers/persistence/objects/content'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import type DatabaseService from '@/providers/persistence/sqlite/database-service'
-import FakeTreeSitterEngine from '@/support/fake/fake-tree-sitter-engine'
+import FakeTreeSitterEngine from '../../../../fake/fake-tree-sitter-engine'
 
 const tempDirs: string[] = []
 

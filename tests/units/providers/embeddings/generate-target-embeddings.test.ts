@@ -7,7 +7,7 @@ import generateTargetEmbeddings from '@/providers/embeddings/generate-target-emb
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import { upsertRetrievalDocument } from '@/providers/persistence/sqlite/retrieval-documents'
 import { loadProjectContext } from '@/providers/project/context'
-import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
+import FakeEmbeddingProvider from '../../../fake/fake-embedding-provider'
 
 const tempDirs: string[] = []
 

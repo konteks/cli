@@ -11,8 +11,8 @@ import {
     loadProjectContext,
     writeProjectConfig,
 } from '@/providers/project/context'
-import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
 import { VERSION } from '@/support/version'
+import FakeEmbeddingProvider from '../../fake/fake-embedding-provider'
 
 const execFileAsync = promisify(execFile)
 

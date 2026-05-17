@@ -24,7 +24,7 @@ import {
 } from '@/providers/persistence/sqlite/save-konteks-input'
 import searchMemory from '@/providers/persistence/sqlite/search-memory'
 import { loadProjectContext } from '@/providers/project/context'
-import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
+import FakeEmbeddingProvider from '../../../../fake/fake-embedding-provider'
 
 const tempDirs: string[] = []
 
