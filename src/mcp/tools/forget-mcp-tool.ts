@@ -4,6 +4,7 @@ import {
     loadMcpProjectContext,
     withProjectDatabaseContext,
 } from '@/memory/runtime'
+import type { ForgetResult } from '@/models/memory'
 import BaseMcpTool from './_base-mcp-tool'
 
 const INPUT_SCHEMA = z
@@ -34,7 +35,7 @@ export default class ForgetMcpTool extends BaseMcpTool<Input> {
 
     public readonly name = 'konteks_forget'
 
-    protected async coreHandle(input: Input) {
+    public async handle(input: Input): Promise<ForgetResult> {
         const context = await loadMcpProjectContext()
         return await withProjectDatabaseContext(context, service =>
             createMemoryRepository(service, context).forget(input),

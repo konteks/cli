@@ -29,38 +29,25 @@ export default class McpCommand extends BaseCommand {
     public override readonly printsHeader = false
 
     public async handle(): Promise<void> {
-        await startMcpServer()
-    }
-}
-
-async function startMcpServer(): Promise<void> {
-    const server = new McpServer(
-        {
-            name: 'konteks',
-            version: VERSION,
-        },
-        {
-            instructions: MCP_INSTRUCTIONS,
-        },
-    )
-
-    mcpTools.forEach(mpcTool => {
-        server.registerTool(
-            mpcTool.name,
+        const server = new McpServer(
             {
-                annotations: mpcTool.annotations,
-                description: mpcTool.description,
-                // biome-ignore lint/suspicious/noExplicitAny: compatibility cast
-                inputSchema: mpcTool.inputSchema as any,
+                name: 'konteks',
+                version: VERSION,
             },
-            (input: unknown) => mpcTool.handle(input),
+            {
+                instructions: MCP_INSTRUCTIONS,
+            },
         )
-    })
 
-    registerMcpPrompts(server)
+        mcpTools.forEach(mpcTool => {
+            mpcTool.register(server)
+        })
 
-    const transport = new StdioServerTransport()
-    await server.connect(transport)
+        registerMcpPrompts(server)
+
+        const transport = new StdioServerTransport()
+        await server.connect(transport)
+    }
 }
 
 function registerMcpPrompts(server: McpServer): void {

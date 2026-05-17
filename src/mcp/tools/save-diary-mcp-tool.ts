@@ -25,7 +25,7 @@ export default class SaveDiaryMcpTool extends BaseMcpTool<Input> {
 
     public readonly name = 'konteks_save_diary'
 
-    protected async coreHandle(input: Input) {
+    public async handle(input: Input): Promise<string> {
         await saveDiary(input)
 
         return 'konteks: session diary saved.'

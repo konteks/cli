@@ -54,7 +54,7 @@ export default class WarmUpMcpTool extends BaseMcpTool<Input> {
 
     public readonly name = 'konteks_warm_up'
 
-    protected async coreHandle(input: Input) {
+    public async handle(input: Input): Promise<string> {
         const result = await warmUpMemory(input)
         return formatWarmUpText(result)
     }

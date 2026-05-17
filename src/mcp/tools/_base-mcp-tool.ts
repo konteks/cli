@@ -1,3 +1,4 @@
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { encode as encodeToon } from '@toon-format/toon'
 import z from 'zod'
@@ -30,20 +31,32 @@ export default abstract class BaseMcpTool<Input = unknown> {
         }
     }
 
-    public async handle(input: unknown): Promise<CallToolResult> {
-        try {
-            const formattedInput = this.validate(input)
-            const result = await this.coreHandle(formattedInput)
-            return this.formatOutput(result)
-        } catch (error) {
-            return createMcpToolErrorResult({
-                error,
-                toolName: this.name,
-            })
-        }
-    }
+    public abstract handle(input: Input): Promise<string | object>
 
-    protected abstract coreHandle(input: Input): Promise<string | object>
+    public register(server: McpServer): void {
+        server.registerTool(
+            this.name,
+            {
+                annotations: this.annotations,
+                description: this.description,
+                // biome-ignore lint/suspicious/noExplicitAny: compatibility cast
+                inputSchema: this.inputSchema as any,
+            },
+            async (input: unknown): Promise<CallToolResult> => {
+                try {
+                    const formattedInput = this.validate(input)
+                    const result = await this.handle(formattedInput)
+
+                    return this.formatOutput(result)
+                } catch (error) {
+                    return createMcpToolErrorResult({
+                        error,
+                        toolName: this.name,
+                    })
+                }
+            },
+        )
+    }
 
     private validate(input: unknown): Input {
         if (this.inputSchema instanceof z.ZodType) {
