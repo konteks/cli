@@ -192,7 +192,7 @@ describe('cli/e2e', () => {
         })
     }, 20000)
 
-    it('renders MCP debug commands through the built CLI', async () => {
+    it('renders MCP tool debug commands through the built CLI', async () => {
         const fixture = await createInitializedProject()
 
         const tools = await runKonteks(fixture.projectRoot, ['mcp', 'tools'])
@@ -219,27 +219,6 @@ describe('cli/e2e', () => {
         expect(parseJsonFromOutput<{ name: string }>(tool.output).name).toBe(
             'konteks_warm_up',
         )
-
-        const prompts = await runKonteks(fixture.projectRoot, [
-            'mcp',
-            'prompts',
-        ])
-        expect(prompts.exitCode).toBe(0)
-        expect(
-            parseJsonFromOutput<Array<{ name: string }>>(prompts.output).map(
-                item => item.name,
-            ),
-        ).toEqual(['konteks-recall', 'konteks-save', 'konteks-warm-up'])
-
-        const prompt = await runKonteks(fixture.projectRoot, [
-            'mcp',
-            'prompt',
-            'konteks-warm-up',
-            'cli status command',
-        ])
-        expect(prompt.exitCode).toBe(0)
-        expect(prompt.output).toContain('cli status command')
-        expect(prompt.output).toContain('konteks_warm_up')
     }, 20000)
 
     it('supports read-only MCP calls and mutating save dry-run/apply semantics', async () => {

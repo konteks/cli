@@ -47,9 +47,6 @@ These commands inspect MCP behavior from the terminal without registering an age
 | Command | Shows |
 | :--- | :--- |
 | `konteks mcp tools` | MCP tool names, descriptions, and schemas. |
-| `konteks mcp prompts` | MCP prompt names, descriptions, and arguments. |
-| `konteks mcp prompt <prompt>` | Render one MCP prompt for debugging. |
-| `konteks mcp prompt <prompt> '<json>'` | Render one MCP prompt with arguments. |
 | `konteks mcp call <tool>` | Execute one tool in dry-run mode and print the tool text output without persisting writes. |
 | `konteks mcp call <tool> '<json>'` | Execute one tool with input in dry-run mode and print the tool text output without persisting writes. |
 | `konteks mcp call --json <tool> '<json>'` | Print the raw MCP result envelope as JSON. |

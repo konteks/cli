@@ -26,8 +26,6 @@ describe('CLI initialization middleware', () => {
         ['mcp'],
         ['mcp', 'tools'],
         ['mcp', 'tool', 'konteks_warm_up'],
-        ['mcp', 'prompts'],
-        ['mcp', 'prompt', 'konteks-warm-up'],
         ['mcp', 'call', 'konteks_warm_up'],
     ]) {
         it(`blocks ${args.join(' ')} when project memory is not initialized`, async () => {
