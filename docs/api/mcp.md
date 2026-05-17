@@ -22,7 +22,7 @@ Prompts are user-invoked workflow templates. They guide the agent through the [S
 | :--- | :--- | :--- |
 | `konteks-warm-up` | Warm Up | Open a fresh agent session in a project; optionally append a free-form focus for recall after warm up. |
 | `konteks-recall` | Build | Supplement a task with context from known modules, constraints, or decisions. |
-| `konteks-save` | Save | Persist durable memories and one session diary. |
+| `konteks-save` | Save | End of session to persist durable memories with `konteks_save_memories` and one session diary with `konteks_save_diary`. |
 
 ## Tools
 
@@ -32,7 +32,8 @@ Tools are lower-level callable operations used by agents and debugging workflows
 | :--- | :--- | :--- | :--- |
 | `konteks_warm_up` | Warm Up | | Start a fresh agent session with stable project context. |
 | `konteks_recall` | Recall | `task`, `includeSources`, `maxTokens` | Retrieve a compact brief, primary targets, and relevant memory evidence (includes a `quality` signal: `strong`, `partial`, or `weak`). |
-| `konteks_save` | Save | `type`, `memories`, `summary`, `task`, `status` | Persist structured durable memories or one diary entry. |
+| `konteks_save_memories` | Save Memories | `memories` | Persist structured durable memories for future sessions. |
+| `konteks_save_diary` | Save Diary | `summary`, `subject`, `tags` | Persist one compact session diary entry for handoff and continuity. |
 | `konteks_search` | Search | `query`, `limit` | Inspect memory directly with a query. |
 | `konteks_forget` | Forget | `id`, `query`, `mode`, `reason` | Remove or suppress wrong, stale, or sensitive memory using `soft_delete`, `invalidate`, or `hard_delete`. |
 
