@@ -1,14 +1,15 @@
 import { cp, mkdir, mkdtemp, rename, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import type { BaseCommandInput } from '@/commands/_base-command'
 import BaseCommand from '@/commands/_base-command'
-import mcpTools from '@/mcp/tools'
+import MCP_TOOLS from '@/mcp/tools'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
 import { parseJsonInput, stringifyPretty } from '@/support/json/io'
 import { isRecord } from '@/support/object/value'
 import { terminal } from '@/support/terminal/service'
+
+type McpToolName = (typeof MCP_TOOLS)[number]['name']
 
 type McpCallOptions = {
     apply?: boolean
@@ -16,7 +17,7 @@ type McpCallOptions = {
 }
 
 export default class CallCommand extends BaseCommand<
-    [ToolName, string | undefined],
+    [McpToolName, string | undefined],
     McpCallOptions
 > {
     public override readonly args = [
@@ -46,10 +47,10 @@ export default class CallCommand extends BaseCommand<
         args,
         options,
     }: Required<
-        BaseCommandInput<[ToolName, string | undefined], McpCallOptions>
+        BaseCommandInput<[McpToolName, string | undefined], McpCallOptions>
     >): Promise<void> {
         const input = parseJsonInput(args[1])
-        const tool = mcpTools.find(item => item.name === args[0])
+        const tool = MCP_TOOLS.find(item => item.name === args[0])
 
         if (!tool) {
             throw new Error(`Unknown Konteks tool: ${args[0]}`)
@@ -67,13 +68,8 @@ export default class CallCommand extends BaseCommand<
     }
 }
 
-type ToolName = (typeof mcpTools)[number]['name']
-
-async function callMcpTool(
-    name: ToolName,
-    input: unknown = {},
-): Promise<CallToolResult> {
-    const mcpTool = mcpTools.find(item => item.name === name)
+async function callMcpTool(name: McpToolName, input: unknown = {}) {
+    const mcpTool = MCP_TOOLS.find(item => item.name === name)
 
     if (!mcpTool) {
         throw new Error(`Unknown tool: ${name}`)
@@ -83,7 +79,7 @@ async function callMcpTool(
 }
 
 async function dryRunCallTool(
-    name: ToolName,
+    name: McpToolName,
     input: unknown,
 ): Promise<unknown> {
     const context = await loadProjectContext()
@@ -120,6 +116,11 @@ function printMcpCallResult(
 ): void {
     if (options.json) {
         terminal.log(stringifyPretty(result))
+        return
+    }
+
+    if (typeof result === 'string') {
+        terminal.log(result)
         return
     }
 

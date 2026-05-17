@@ -38,7 +38,7 @@ export default class RecallMcpTool extends BaseMcpTool<Input> {
 
     public readonly name = 'konteks_recall'
 
-    protected async coreHandle(input: Input) {
+    public async handle(input: Input): Promise<string> {
         const context = await loadMcpProjectContext()
         const result = await withProjectDatabaseContext(context, service =>
             recallRepositoryMemory(

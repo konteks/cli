@@ -42,7 +42,7 @@ export default class SaveMemoriesMcpTool extends BaseMcpTool<Input> {
 
     public readonly name = 'konteks_save_memories'
 
-    protected async coreHandle(input: Input) {
+    public async handle(input: Input): Promise<string> {
         const result = await saveMemories(input)
 
         return formatSaveMemoriesText(result)

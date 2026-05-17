@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'bun:test'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import z from 'zod'
 import mcpTools from '@/mcp/tools'
 import BaseMcpTool from '@/mcp/tools/_base-mcp-tool'
@@ -44,7 +46,7 @@ describe('MCP tools', () => {
             })
             public readonly name = 'fixture_tool'
 
-            protected override async coreHandle(
+            public override async handle(
                 input: z.output<typeof this.inputSchema>,
             ) {
                 return input
@@ -53,7 +55,9 @@ describe('MCP tools', () => {
 
         const tool = new FixtureTool()
 
-        await expect(tool.handle({})).resolves.toEqual({
+        const callRegisteredTool = registeredHandlerFor(tool)
+
+        await expect(callRegisteredTool({})).resolves.toEqual({
             content: [
                 {
                     text: 'Invalid arguments for tool fixture_tool: value: Invalid input: expected string, received undefined',
@@ -62,7 +66,7 @@ describe('MCP tools', () => {
             ],
             isError: true,
         })
-        await expect(tool.handle({ value: 'ok' })).resolves.toEqual({
+        await expect(callRegisteredTool({ value: 'ok' })).resolves.toEqual({
             content: [{ text: 'value: ok', type: 'text' }],
         })
     })
@@ -81,7 +85,7 @@ describe('MCP tools', () => {
             })
             public readonly name = 'fixture_tool'
 
-            protected override async coreHandle(
+            public override async handle(
                 input: z.output<typeof this.inputSchema>,
             ) {
                 return `value=${input.value}`
@@ -90,7 +94,9 @@ describe('MCP tools', () => {
 
         const tool = new FixtureTool()
 
-        await expect(tool.handle({ value: 'ok' })).resolves.toEqual({
+        const callRegisteredTool = registeredHandlerFor(tool)
+
+        await expect(callRegisteredTool({ value: 'ok' })).resolves.toEqual({
             content: [{ text: 'value=ok', type: 'text' }],
         })
     })
@@ -107,14 +113,17 @@ describe('MCP tools', () => {
             public readonly inputSchema = z.object({})
             public readonly name = 'fixture_tool'
 
-            protected override async coreHandle(): Promise<string> {
+            public override async handle(
+                _input: z.output<typeof this.inputSchema>,
+            ): Promise<string> {
                 throw new Error('database exploded')
             }
         }
 
         const tool = new FixtureTool()
+        const callRegisteredTool = registeredHandlerFor(tool)
 
-        await expect(tool.handle({})).resolves.toEqual({
+        await expect(callRegisteredTool({})).resolves.toEqual({
             content: [
                 {
                     text: 'Konteks MCP tool failed due to an internal error.',
@@ -125,3 +134,22 @@ describe('MCP tools', () => {
         })
     })
 })
+
+function registeredHandlerFor(
+    tool: BaseMcpTool,
+): (input: unknown) => Promise<CallToolResult> {
+    let handler: ((input: unknown) => Promise<CallToolResult>) | undefined
+    const server = {
+        registerTool: (...args: unknown[]) => {
+            handler = args[2] as (input: unknown) => Promise<CallToolResult>
+        },
+    } as McpServer
+
+    tool.register(server)
+
+    if (!handler) {
+        throw new Error('Tool did not register a handler.')
+    }
+
+    return handler
+}

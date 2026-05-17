@@ -1,3 +1,4 @@
+import type BaseMcpTool from './_base-mcp-tool'
 import ForgetMcpTool from './forget-mcp-tool'
 import RecallMcpTool from './recall-mcp-tool'
 import SaveDiaryMcpTool from './save-diary-mcp-tool'
@@ -5,7 +6,7 @@ import SaveMemoriesMcpTool from './save-memories-mcp-tool'
 import SearchMcpTool from './search-mcp-tool'
 import WarmUpMcpTool from './warm-up-mcp-tool'
 
-const mcpTools = [
+const MCP_TOOLS: readonly BaseMcpTool[] = [
     new WarmUpMcpTool(),
     new RecallMcpTool(),
     new SaveMemoriesMcpTool(),
@@ -14,4 +15,4 @@ const mcpTools = [
     new ForgetMcpTool(),
 ] as const
 
-export default mcpTools
+export default MCP_TOOLS

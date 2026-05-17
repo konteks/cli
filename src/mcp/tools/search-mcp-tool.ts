@@ -31,7 +31,7 @@ export default class SearchMcpTool extends BaseMcpTool<Input> {
 
     public readonly name = 'konteks_search'
 
-    protected async coreHandle(input: Input) {
+    public async handle(input: Input): Promise<string> {
         const context = await loadMcpProjectContext()
         const results = await withProjectDatabaseContext(context, service =>
             createMemoryRepository(service, context).search(input),
