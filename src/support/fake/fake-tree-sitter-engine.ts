@@ -1,12 +1,9 @@
-import type {
-    CodeMetadata,
-    TreeSitterLanguage,
-} from '@/providers/extraction/engine/tree-sitter-engine'
+import type { CodeMetadata } from '@/providers/extraction/engine/tree-sitter-engine'
 
 export default class FakeTreeSitterEngine {
     public async init() {}
 
-    public async loadLanguage(_: TreeSitterLanguage, __: string) {}
+    public async loadLanguage(_: string, __: string) {}
 
     public hasLanguage() {
         return true

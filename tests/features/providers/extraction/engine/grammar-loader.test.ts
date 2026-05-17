@@ -9,7 +9,6 @@ import {
     initTreeSitterWithSelectedGrammars,
     listGrammarDefinitions,
 } from '@/providers/extraction/engine/grammar-loader'
-import type { TreeSitterLanguage } from '@/providers/extraction/engine/tree-sitter-engine'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []
@@ -22,7 +21,7 @@ class MockTreeSitterEngine {
         this.initialized = true
     }
 
-    public async loadLanguage(lang: TreeSitterLanguage, wasmPath: string) {
+    public async loadLanguage(lang: string, wasmPath: string) {
         this.loaded.push({ lang, path: wasmPath })
     }
 }
@@ -39,11 +38,16 @@ afterEach(async () => {
 describe('grammar loader registry', () => {
     it('exposes a curated grammar registry', () => {
         const ids = listGrammarDefinitions().map(grammar => grammar.id)
+        const sortedIds = [...ids].sort((left, right) =>
+            left.localeCompare(right),
+        )
 
+        expect(ids).toEqual(sortedIds)
         expect(ids).toContain('typescript')
         expect(ids).toContain('python')
         expect(ids).toContain('rust')
         expect(ids).toContain('javascript')
+        expect(ids).toContain('dart')
         expect(ids).not.toContain('json')
         expect(ids).not.toContain('yaml')
         expect(ids).not.toContain('toml')
@@ -57,11 +61,14 @@ describe('grammar loader registry', () => {
         expect(getGrammarForPath('src/index.js')?.id).toBe('javascript')
         expect(getGrammarForPath('src/component.jsx')?.id).toBe('javascript')
         expect(getGrammarForPath('public/index.html')?.id).toBe('html')
+        expect(getGrammarForPath('lib/main.dart')?.id).toBe('dart')
         expect(getGrammarForPath('composer.json')?.id).toBe('json')
         expect(getGrammarForPath('pnpm-workspace.yaml')?.id).toBe('yaml')
         expect(getGrammarForPath('pyproject.toml')?.id).toBe('toml')
         expect(getGrammarForPath('index.php')?.id).toBe('php')
         expect(getGrammarForPath('api.py')?.id).toBe('python')
+        expect(getGrammarForPath('Sources/App.swift')).toBeUndefined()
+        expect(getGrammarForPath('schema.sql')).toBeUndefined()
         expect(getGrammarForPath('Dockerfile')).toBeUndefined()
         expect(getGrammarForPath('Makefile')).toBeUndefined()
     })

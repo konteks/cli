@@ -51,6 +51,16 @@
     },
     {
         "aliases": [],
+        "displayName": "Dart",
+        "extensions": [".dart"],
+        "fallbackVersion": "1.0.0",
+        "gitRepoUrl": "https://github.com/UserNobody14/tree-sitter-dart",
+        "id": "dart",
+        "package": "tree-sitter-dart",
+        "wasmFile": "tree-sitter-dart.wasm"
+    },
+    {
+        "aliases": [],
         "displayName": "Go",
         "extensions": [".go"],
         "fallbackVersion": "0.25.0",
