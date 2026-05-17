@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import FakeTreeSitterEngine from '@/support/fake/fake-tree-sitter-engine'
+import FakeTreeSitterEngine from '../../../fake/fake-tree-sitter-engine'
 
 describe('support/fake/fake-tree-sitter-engine', () => {
     it('reports all languages as available and extracts simple declarations', async () => {

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, mock } from 'bun:test'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
+import FakeEmbeddingProvider from '../../fake/fake-embedding-provider'
 
 class MockHuggingFaceEmbeddingProvider extends FakeEmbeddingProvider {
     public constructor(_options?: unknown) {

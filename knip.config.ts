@@ -1,7 +1,7 @@
 import type { KnipConfig } from 'knip'
 
 const knipConfig: KnipConfig = {
-    ignoreFiles: ['tests/**/*.test.ts', 'src/support/fake/**'],
+    ignoreFiles: ['tests/**/*.ts'],
 }
 
 export default knipConfig
