@@ -2,9 +2,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-export const VERSION = readPackageVersion()
-
-function readPackageVersion(): string {
+export default function getVersion(): string {
     const cliDir = dirname(fileURLToPath(import.meta.url))
     const candidates = [
         join(cliDir, '..', 'package.json'),

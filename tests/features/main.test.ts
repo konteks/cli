@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { VERSION } from '@/support/version'
+import getVersion from '@/support/get-version'
 
 const tempDirs: string[] = []
 
@@ -36,7 +36,7 @@ describe('CLI initialization middleware', () => {
 
             expect(result.exitCode).not.toBe(0)
             if (!args[0]?.startsWith('mcp')) {
-                expect(result.output).toContain(`Konteks v${VERSION}`)
+                expect(result.output).toContain(`Konteks v${getVersion()}`)
             }
             expect(result.output).toContain('Konteks memory is not initialized')
             expect(result.output).toContain('Project memory is missing')
@@ -57,7 +57,7 @@ describe('CLI initialization middleware', () => {
         })
 
         expect(result.exitCode).not.toBe(0)
-        expect(result.output).toContain(`Konteks v${VERSION}`)
+        expect(result.output).toContain(`Konteks v${getVersion()}`)
         expect(result.output).toContain('\u001b[31m')
         expect(result.output).toContain('╭─')
     })
@@ -99,6 +99,6 @@ it('allows restore to run before project memory is initialized', async () => {
     const result = await runKonteks(projectRoot, ['restore', 'missing.tar.gz'])
 
     expect(result.exitCode).not.toBe(0)
-    expect(result.output).toContain(`Konteks v${VERSION}`)
+    expect(result.output).toContain(`Konteks v${getVersion()}`)
     expect(result.output).not.toContain('Konteks memory is not initialized')
 })

@@ -1,6 +1,6 @@
 import type { Command as CommanderCommand } from 'commander'
+import getVersion from '@/support/get-version'
 import { terminal } from '@/support/terminal/service'
-import { VERSION } from '@/support/version'
 
 export type Command = CommanderCommand
 
@@ -65,7 +65,7 @@ export default abstract class BaseCommand<
             ) as Args
 
             if (this.printsHeader) {
-                terminal.log(`Konteks v${VERSION}`)
+                terminal.log(`Konteks v${getVersion()}`)
             }
 
             if (this.usesInitializationGuard) {

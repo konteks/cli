@@ -10,11 +10,11 @@ import type DatabaseService from '@/providers/persistence/sqlite/database-servic
 import type { SqliteParams } from '@/providers/persistence/sqlite/sqlite-adapter'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
 import { formatInteger } from '@/support/format/number'
+import getVersion from '@/support/get-version'
 import createColorPalette, {
     type ColorPalette,
 } from '@/support/terminal/create-color-palette'
 import { terminal } from '@/support/terminal/service'
-import { VERSION } from '@/support/version'
 
 export default class StatusCommand extends BaseCommand {
     public readonly description =
@@ -27,7 +27,7 @@ export default class StatusCommand extends BaseCommand {
         this.print(
             formatStatus(status, {
                 color: createColorPalette(terminal.stdoutSupportsColor()),
-                version: VERSION,
+                version: getVersion(),
             }),
         )
     }
@@ -83,7 +83,7 @@ function formatStatus(
 ): string {
     const color = options.color ?? createColorPalette(false)
     const changedFiles = status.freshness.changedFileCount
-    const version = options.version ?? VERSION
+    const version = options.version ?? getVersion()
     const lines = [
         '',
         `${color.accent('Konteks Memory')} ${color.dim(`v${version}`)}`,

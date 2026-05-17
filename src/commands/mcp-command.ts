@@ -3,7 +3,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import BaseCommand from '@/commands/_base-command'
 import { registerKonteksPrompts } from '@/mcp/prompts'
 import mcpTools from '@/mcp/tools'
-import { VERSION } from '@/support/version'
+import getVersion from '@/support/get-version'
 import CallCommand from './mcp/call-command'
 import ToolCommand from './mcp/tool-command'
 import ToolsCommand from './mcp/tools-command'
@@ -26,7 +26,7 @@ export default class McpCommand extends BaseCommand {
         const server = new McpServer(
             {
                 name: 'konteks',
-                version: VERSION,
+                version: getVersion(),
             },
             {
                 instructions: MCP_INSTRUCTIONS,
