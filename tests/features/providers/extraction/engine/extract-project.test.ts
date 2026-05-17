@@ -11,7 +11,6 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
-import readProjectStatus from '@/project/read-project-status'
 import {
     getExtractionFreshness,
     readExtractionManifest,
@@ -26,6 +25,7 @@ import {
 import searchMemory from '@/providers/persistence/sqlite/search-memory'
 // import { TaxonomyStore } from '../persistence/sqli./taxonomy-store'
 import { loadProjectContext } from '@/providers/project/context'
+import ProjectStatusReader from '@/providers/project/project-status-reader'
 import FakeEmbeddingProvider from '@/support/fake/fake-embedding-provider'
 
 const tempDirs: string[] = []
@@ -403,7 +403,9 @@ where id in (?, ?)
         )
 
         const stale = await withProjectRoot(projectRoot, () =>
-            readProjectStatus(),
+            loadProjectContext().then(context =>
+                new ProjectStatusReader().read(context),
+            ),
         )
         expect(stale.freshness.status).toBe('stale')
         expect(stale.freshness.recommendedCommand).toBe('konteks repair')

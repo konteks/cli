@@ -13,6 +13,24 @@ import type { Project } from '@/models/project'
 describe('extraction/extract', () => {
     it('loads the requested project and returns extraction engine output', async () => {
         const projectRoot = await createConfiguredProject()
+        const project: Project = {
+            config: {
+                extraction: {
+                    grammars: {
+                        selected: ['typescript'],
+                        updateTtlHours: 12,
+                    },
+                },
+                recall: { maxTokens: 4096 },
+                storage: {
+                    inlinePayloadMaxBytes: 1024,
+                },
+            },
+            configExists: true,
+            configPath: join(projectRoot, '.konteks/config.json'),
+            memoryDir: join(projectRoot, '.konteks'),
+            projectRoot,
+        }
         const response: ExtractProjectResponse = {
             chunkCount: 7,
             deletedFilePaths: [],
@@ -43,30 +61,14 @@ describe('extraction/extract', () => {
         } satisfies ExtractProjectRequest
 
         await expect(
-            withProjectRoot(projectRoot, () =>
-                createProjectExtractor({ extractionEngine }).execute(request),
-            ),
+            createProjectExtractor({
+                extractionEngine,
+                projectLoader: async () => project,
+            }).execute(request),
         ).resolves.toBe(response)
         expect(calls).toEqual([
             {
-                project: {
-                    config: {
-                        extraction: {
-                            grammars: {
-                                selected: ['typescript'],
-                                updateTtlHours: 12,
-                            },
-                        },
-                        recall: { maxTokens: 4096 },
-                        storage: {
-                            inlinePayloadMaxBytes: 1024,
-                        },
-                    },
-                    configExists: true,
-                    configPath: join(projectRoot, '.konteks/config.json'),
-                    memoryDir: join(projectRoot, '.konteks'),
-                    projectRoot,
-                },
+                project,
                 request,
             },
         ])
@@ -76,6 +78,7 @@ describe('extraction/extract', () => {
 async function createConfiguredProject(): Promise<string> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-extraction-'))
     const memoryDir = join(projectRoot, '.konteks')
+    await mkdir(join(projectRoot, '.git'), { recursive: true })
     await writeFile(join(projectRoot, 'package.json'), '{"type":"module"}\n')
     await mkdir(memoryDir, { recursive: true })
     await writeFile(
@@ -98,18 +101,4 @@ async function createConfiguredProject(): Promise<string> {
         )}\n`,
     )
     return projectRoot
-}
-
-async function withProjectRoot<T>(
-    projectRoot: string,
-    operation: () => Promise<T>,
-): Promise<T> {
-    const previous = process.cwd()
-    process.chdir(projectRoot)
-
-    try {
-        return await operation()
-    } finally {
-        process.chdir(previous)
-    }
 }

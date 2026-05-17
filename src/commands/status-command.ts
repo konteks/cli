@@ -1,6 +1,10 @@
 import BaseCommand from '@/commands/_base-command'
-import type { ProjectStatus } from '@/contracts/services/project-status-reader'
-import readProjectStatus from '@/project/read-project-status'
+import type {
+    ProjectStatus,
+    ProjectStatusReaderContract,
+} from '@/contracts/services/project-status-reader'
+import { loadProjectContext } from '@/providers/project/context'
+import ProjectStatusReader from '@/providers/project/project-status-reader'
 import { formatInteger } from '@/support/format/number'
 import createColorPalette, {
     type ColorPalette,
@@ -23,6 +27,18 @@ export default class StatusCommand extends BaseCommand {
             }),
         )
     }
+}
+
+type ReadProjectStatusOptions = {
+    statusReader?: ProjectStatusReaderContract
+}
+
+async function readProjectStatus(
+    options: ReadProjectStatusOptions = {},
+): Promise<ProjectStatus> {
+    const context = await loadProjectContext()
+    const statusReader = options.statusReader ?? new ProjectStatusReader()
+    return await statusReader.read(context)
 }
 
 type StatusColorPalette = Pick<ColorPalette, 'accent' | 'dim' | 'success'>

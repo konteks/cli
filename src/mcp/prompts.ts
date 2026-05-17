@@ -1,5 +1,4 @@
 import type { Prompt } from '@modelcontextprotocol/sdk/types.js'
-import type { PromptTemplate } from '@/providers/protocol/prompt-templates'
 import {
     getPromptTemplates,
     renderPromptTemplate,
@@ -16,6 +15,8 @@ export type KonteksPromptRegistration = {
         }>
     }
 }
+
+type KonteksPromptTemplate = ReturnType<typeof getPromptTemplates>[number]
 
 export function listKonteksPrompts(): Prompt[] {
     return getPromptTemplates().map(template => template.prompt)
@@ -63,7 +64,7 @@ export function getKonteksPromptRegistrations(): KonteksPromptRegistration[] {
     }))
 }
 
-function promptTemplateByName(name: string): PromptTemplate {
+function promptTemplateByName(name: string): KonteksPromptTemplate {
     const template = getPromptTemplates().find(
         item => item.prompt.name === name,
     )

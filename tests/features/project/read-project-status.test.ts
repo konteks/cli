@@ -2,11 +2,13 @@ import { describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { ProjectStatusReaderContract } from '@/contracts/services/project-status-reader'
+import type {
+    ProjectStatus,
+    ProjectStatusReaderContract,
+} from '@/contracts/services/project-status-reader'
 import type { Project } from '@/models/project'
-import readProjectStatus, {
-    type ProjectStatus,
-} from '@/project/read-project-status'
+import { loadProjectContext } from '@/providers/project/context'
+import ProjectStatusReader from '@/providers/project/project-status-reader'
 
 describe('project/status', () => {
     it('loads the current project and returns the status reader output', async () => {
@@ -41,11 +43,13 @@ describe('project/status', () => {
                 return status
             },
         }
+        const readProjectStatus = async () => {
+            const context = await loadProjectContext()
+            return await statusReader.read(context)
+        }
 
         await expect(
-            withWorkingDirectory(projectRoot, () =>
-                readProjectStatus({ statusReader }),
-            ),
+            withWorkingDirectory(projectRoot, () => readProjectStatus()),
         ).resolves.toBe(status)
         expect(calls).toEqual([
             {
@@ -64,6 +68,19 @@ describe('project/status', () => {
                 projectRoot,
             },
         ])
+    })
+
+    it('reads project status through the concrete status reader', async () => {
+        const projectRoot = await createConfiguredProject()
+
+        const status = await withWorkingDirectory(projectRoot, async () => {
+            const context = await loadProjectContext()
+            return await new ProjectStatusReader().read(context)
+        })
+
+        expect(status.projectRoot).toBe(projectRoot)
+        expect(status.memoryDir).toBe(join(projectRoot, '.konteks'))
+        expect(status.configExists).toBe(true)
     })
 })
 

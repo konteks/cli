@@ -4,6 +4,7 @@ import type {
     ExtractProjectRequest,
     ExtractProjectResponse,
 } from '@/models/extraction'
+import type { Project } from '@/models/project'
 import HuggingFaceEmbeddingProvider from '@/providers/embeddings/hugging-face-embedding-provider'
 import { KonteksExtractionEngine } from '@/providers/extraction/extract-project'
 import { loadProjectContext } from '@/providers/project/context'
@@ -15,6 +16,7 @@ export type ProjectExtractor = {
 export type CreateProjectExtractorOptions = {
     extractionEngine?: ExtractionEngineContract
     onProgress?: ExtractionProgressReporter
+    projectLoader?: () => Promise<Project>
 }
 
 export default function createProjectExtractor(
@@ -22,10 +24,11 @@ export default function createProjectExtractor(
 ): ProjectExtractor {
     const extractionEngine =
         options.extractionEngine ?? createDefaultExtractionEngine(options)
+    const projectLoader = options.projectLoader ?? loadProjectContext
 
     return {
         async execute(request) {
-            const project = await loadProjectContext()
+            const project = await projectLoader()
             return await extractionEngine.extract(project, request)
         },
     }

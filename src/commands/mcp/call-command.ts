@@ -6,8 +6,9 @@ import type { BaseCommandInput } from '@/commands/_base-command'
 import BaseCommand from '@/commands/_base-command'
 import mcpTools from '@/mcp/tools'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
-import { parseJsonInput } from '@/support/cli/print-json'
-import printMcpCallResult from '@/support/cli/print-mcp-call-result'
+import { parseJsonInput, stringifyPretty } from '@/support/json/io'
+import { isRecord } from '@/support/object/value'
+import { terminal } from '@/support/terminal/service'
 
 type McpCallOptions = {
     apply?: boolean
@@ -111,4 +112,40 @@ async function dryRunCallTool(
         }
         await rm(tempRoot, { force: true, recursive: true })
     }
+}
+
+function printMcpCallResult(
+    result: unknown,
+    options: { json?: boolean } = {},
+): void {
+    if (options.json) {
+        terminal.log(stringifyPretty(result))
+        return
+    }
+
+    const text = extractMcpText(result)
+    if (text) {
+        terminal.log(text)
+        return
+    }
+
+    terminal.log(stringifyPretty(result))
+}
+
+function extractMcpText(result: unknown): string | undefined {
+    if (!isRecord(result) || !Array.isArray(result.content)) {
+        return undefined
+    }
+
+    const texts = result.content
+        .map(item =>
+            isRecord(item) &&
+            item.type === 'text' &&
+            typeof item.text === 'string'
+                ? item.text
+                : undefined,
+        )
+        .filter((text): text is string => Boolean(text))
+
+    return texts.length > 0 ? texts.join('\n') : undefined
 }

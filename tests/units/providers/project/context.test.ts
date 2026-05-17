@@ -2,11 +2,12 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import readProjectStatus from '@/project/read-project-status'
 import {
     createDefaultConfig,
+    loadProjectContext,
     resolveProjectContext,
 } from '@/providers/project/context'
+import ProjectStatusReader from '@/providers/project/project-status-reader'
 
 const tempDirs: string[] = []
 
@@ -73,9 +74,10 @@ describe('project context', () => {
 
     it('reports missing memory when the project is not initialized', async () => {
         const projectRoot = await makeTempProject()
+        const reader = new ProjectStatusReader()
 
         const status = await withWorkingDirectory(projectRoot, () =>
-            readProjectStatus(),
+            loadProjectContext().then(context => reader.read(context)),
         )
 
         expect(status.freshness).toEqual({
@@ -90,9 +92,10 @@ describe('project context', () => {
         const projectRoot = await makeTempProject()
         await mkdir(join(projectRoot, '.konteks'), { recursive: true })
         await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
+        const reader = new ProjectStatusReader()
 
         const status = await withWorkingDirectory(projectRoot, () =>
-            readProjectStatus(),
+            loadProjectContext().then(context => reader.read(context)),
         )
 
         expect(status.freshness.status).toBe('missing')

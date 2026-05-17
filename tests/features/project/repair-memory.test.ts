@@ -1,5 +1,7 @@
-import { describe, expect, it, mock, spyOn } from 'bun:test'
+import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
+import * as extractorModule from '@/extraction/create-project-extractor'
 import type { ExtractProjectResponse } from '@/models/extraction'
+import * as progressReporterModule from '@/providers/extraction/create-extraction-progress-reporter'
 import { terminal } from '@/support/terminal/service'
 
 let confirmResult = true
@@ -21,34 +23,19 @@ const extractorCalls: unknown[] = []
 const progressReports: unknown[] = []
 let progressDoneCount = 0
 
-mock.module('@/providers/cli/confirm-interactive', () => ({
-    default: async () => confirmResult,
+mock.module('@inquirer/prompts', () => ({
+    confirm: async () => confirmResult,
 }))
 
-mock.module('@/extraction/create-project-extractor', () => ({
-    default: ({ onProgress }: { onProgress: (event: unknown) => void }) => ({
-        async execute(request: unknown) {
-            extractorCalls.push(request)
-            onProgress({ phase: 'done', status: 'done', message: 'complete' })
-            return extractedResponse
-        },
-    }),
-}))
-
-mock.module('@/providers/extraction/create-extraction-progress-reporter', () => ({
-    default: () => ({
-        done() {
-            progressDoneCount += 1
-        },
-        report(event: unknown) {
-            progressReports.push(event)
-        },
-    }),
-}))
+afterEach(() => {
+    mock.restore()
+})
 
 describe('RepairCommand', () => {
     const createCommand = async () => {
-        const { default: RepairCommand } = await import('@/commands/repair-command')
+        const { default: RepairCommand } = await import(
+            '@/commands/repair-command'
+        )
         return new RepairCommand()
     }
 
@@ -73,10 +60,48 @@ describe('RepairCommand', () => {
         progressDoneCount = 0
     }
 
+    const installExtractorSpies = () => {
+        const extractorSpy = spyOn(extractorModule, 'default').mockImplementation(
+            ({ onProgress }: { onProgress: (event: unknown) => void }) =>
+                ({
+                    async execute(request: unknown) {
+                        extractorCalls.push(request)
+                        onProgress({
+                            message: 'complete',
+                            phase: 'done',
+                            status: 'done',
+                        })
+                        return extractedResponse
+                    },
+                }) as ReturnType<typeof extractorModule.default>,
+        )
+        const progressSpy = spyOn(
+            progressReporterModule,
+            'default',
+        ).mockImplementation(() => ({
+            done() {
+                progressDoneCount += 1
+            },
+            report(event: unknown) {
+                progressReports.push(event)
+            },
+        }))
+
+        return { extractorSpy, progressSpy }
+    }
+
     it('skips repair when confirmation returns false', async () => {
         resetState()
         confirmResult = false
+        const { extractorSpy, progressSpy } = installExtractorSpies()
         const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
+        const stdinSpy = spyOn(terminal, 'stdinIsInteractive').mockReturnValue(
+            true,
+        )
+        const stderrSpy = spyOn(
+            terminal,
+            'stderrIsInteractive',
+        ).mockReturnValue(true)
 
         try {
             await (await createCommand()).handle()
@@ -91,6 +116,10 @@ describe('RepairCommand', () => {
                 ),
             )
         } finally {
+            extractorSpy.mockRestore()
+            progressSpy.mockRestore()
+            stdinSpy.mockRestore()
+            stderrSpy.mockRestore()
             logSpy.mockRestore()
         }
     })
@@ -111,7 +140,15 @@ describe('RepairCommand', () => {
             technologies: ['typescript'],
             updatedFilePaths: ['src/index.ts'],
         }
+        const { extractorSpy, progressSpy } = installExtractorSpies()
         const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
+        const stdinSpy = spyOn(terminal, 'stdinIsInteractive').mockReturnValue(
+            false,
+        )
+        const stderrSpy = spyOn(
+            terminal,
+            'stderrIsInteractive',
+        ).mockReturnValue(false)
 
         try {
             await (await createCommand()).handle()
@@ -119,7 +156,7 @@ describe('RepairCommand', () => {
                 { mode: 'reindex', projectRoot: process.cwd() },
             ])
             expect(progressReports).toEqual([
-                { phase: 'done', status: 'done', message: 'complete' },
+                { message: 'complete', phase: 'done', status: 'done' },
             ])
             expect(progressDoneCount).toBe(1)
             expect(logSpy).toHaveBeenCalledWith(
@@ -133,6 +170,10 @@ describe('RepairCommand', () => {
                 ),
             )
         } finally {
+            extractorSpy.mockRestore()
+            progressSpy.mockRestore()
+            stdinSpy.mockRestore()
+            stderrSpy.mockRestore()
             logSpy.mockRestore()
         }
     })
