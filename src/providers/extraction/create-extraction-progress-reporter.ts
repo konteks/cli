@@ -4,24 +4,31 @@ import createColorPalette, {
     type ColorPalette,
 } from '@/support/terminal/create-color-palette'
 import { terminal } from '@/support/terminal/service'
+import {
+    createInlineProgress,
+    createTuiText,
+    spinnerFrame,
+} from '@/support/tui/components'
+import type { TuiText } from '@/support/tui/components/text'
 
 export default function createExtractionProgressReporter(): {
     done(): void
     report(event: ExtractionProgressEvent): void
 } {
     let activeStep = ''
-    let lastInlineLength = 0
     let lastStep = ''
     let spinnerIndex = 0
     let lastCompactMessage = ''
     const downloadBuckets = new Map<string, number>()
     const isTty = terminal.stderrIsInteractive()
     const color = createColorPalette(terminal.stderrSupportsColor())
+    const inline = createInlineProgress(value => terminal.writeError(value))
+    const text = createTuiText(color)
 
     return {
         done() {
-            if (isTty && lastInlineLength > 0) {
-                terminal.writeError('\n')
+            if (isTty) {
+                inline.done()
             }
         },
         report(event) {
@@ -56,10 +63,7 @@ export default function createExtractionProgressReporter(): {
 
             const step = stepKey(event)
             if (step !== activeStep || event.status === 'start') {
-                if (lastInlineLength > 0) {
-                    terminal.writeError('\n')
-                    lastInlineLength = 0
-                }
+                inline.done()
                 activeStep = step
                 lastCompactMessage = ''
                 terminal.writeError(`${formatStepHeader(event, color)}\n`)
@@ -76,31 +80,20 @@ export default function createExtractionProgressReporter(): {
                 ) {
                     return
                 }
-                const padding = Math.max(
-                    0,
-                    lastInlineLength - visibleLength(output),
-                )
-                terminal.writeError(`\r${output}${' '.repeat(padding)}`)
-                lastInlineLength = visibleLength(output)
+                inline.write(output)
                 lastCompactMessage = compact
                 return
             }
 
             if (event.status === 'done' && event.phase !== 'done') {
-                if (lastInlineLength > 0) {
-                    terminal.writeError('\n')
-                    lastInlineLength = 0
-                }
-                terminal.writeError(`${formatDoneLine(event, color)}\n`)
+                inline.done()
+                terminal.writeError(`${formatDoneLine(event, text)}\n`)
                 return
             }
 
             if (event.phase === 'done') {
-                if (lastInlineLength > 0) {
-                    terminal.writeError('\n')
-                }
-                terminal.writeError(`${formatFinalLine(event, color)}\n`)
-                lastInlineLength = 0
+                inline.done()
+                terminal.writeError(`${formatFinalLine(event, text)}\n`)
             }
         },
     }
@@ -133,18 +126,15 @@ function formatInlineProgress(
     return `  ${spinner} ${progress} ${action}${detail ? color.dim(`  ${detail}`) : ''}`
 }
 
-function formatDoneLine(
-    event: ExtractionProgressEvent,
-    color: ColorPalette,
-): string {
-    return `  ${color.success('✓')} ${event.message ?? `${phaseTitle(event.phase)} done`}`
+function formatDoneLine(event: ExtractionProgressEvent, text: TuiText): string {
+    return `  ${text.checkLine(event.message ?? `${phaseTitle(event.phase)} done`)}`
 }
 
 function formatFinalLine(
     event: ExtractionProgressEvent,
-    color: ColorPalette,
+    text: TuiText,
 ): string {
-    return `${color.success('✓')} ${event.message ?? 'Extraction complete'}`
+    return text.checkLine(event.message ?? 'Extraction complete')
 }
 
 function compactMessage(event: ExtractionProgressEvent): string {
@@ -285,16 +275,4 @@ function stepTitle(event: ExtractionProgressEvent): string {
 
 function stepKey(event: ExtractionProgressEvent): string {
     return `${event.phase}:${event.stage ?? 'default'}`
-}
-
-function spinnerFrame(index: number): string {
-    return ['◐', '◓', '◑', '◒'][index % 4] ?? '◐'
-}
-
-function visibleLength(value: string): number {
-    const ansiPattern = new RegExp(
-        `${String.fromCharCode(27)}\\[[0-9;]*m`,
-        'gu',
-    )
-    return value.replaceAll(ansiPattern, '').length
 }

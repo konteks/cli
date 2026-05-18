@@ -2,6 +2,11 @@ import type { ExtractionProgressEvent } from '@/contracts/services/progress'
 import type { ExtractProjectResponse } from '@/models/extraction'
 import createColorPalette from '@/support/terminal/create-color-palette'
 import { terminal } from '@/support/terminal/service'
+import {
+    createInlineProgress,
+    createTuiText,
+    spinnerFrame,
+} from '@/support/tui/components'
 
 type InitProgressReporter = {
     done(): void
@@ -16,13 +21,14 @@ export default function createInitProgressReporter(): InitProgressReporter {
     let fileCount = 0
     let sectionCount = 0
     let spinnerIndex = 0
-    let lastInlineLength = 0
     let modelPercent: number | undefined
     const color = createColorPalette(terminal.stderrSupportsColor())
+    const inline = createInlineProgress(value => terminal.writeError(value))
+    const text = createTuiText(color)
 
     return {
         done() {
-            endInlineProgress()
+            inline.done()
         },
         report(event) {
             if (event.phase === 'preparation') {
@@ -65,11 +71,11 @@ export default function createInitProgressReporter(): InitProgressReporter {
 
             if (event.phase === 'summary' && event.status === 'done') {
                 generatedSummary = true
-                endInlineProgress()
+                inline.done()
             }
         },
         summary(result) {
-            endInlineProgress()
+            inline.done()
             if (!printedDocumentLine) {
                 sectionCount = result.chunkCount
                 fileCount = result.fileCount
@@ -80,21 +86,21 @@ export default function createInitProgressReporter(): InitProgressReporter {
             }
 
             terminal.log('')
-            terminal.log(sectionTitle('Project memory ready'))
+            terminal.log(text.sectionTitle('Project memory ready'))
             terminal.log('')
-            printStat('Files indexed', result.fileCount)
-            printStat('Sections extracted', result.chunkCount)
-            printStat('Vectors indexed', result.vectorCount)
+            terminal.log(text.statLine('Files indexed', result.fileCount))
+            terminal.log(text.statLine('Sections extracted', result.chunkCount))
+            terminal.log(text.statLine('Vectors indexed', result.vectorCount))
         },
     }
 
     function printVectorProgress(event: ExtractionProgressEvent): void {
         const current = event.current ?? 0
         const total = event.total ?? current
-        const message = `${formatCount(current)}/${formatCount(total)} vectors indexed`
+        const message = `${text.count(current)}/${text.count(total)} vectors indexed`
 
         if (current === total) {
-            writeInline(checkLine(message))
+            inline.write(text.checkLine(message))
             return
         }
 
@@ -144,28 +150,12 @@ export default function createInitProgressReporter(): InitProgressReporter {
     }
 
     function writeProgress(message: string): void {
-        writeInline(progressLine(message))
+        inline.write(text.progressLine(spinnerIndex, message))
         spinnerIndex += 1
     }
 
-    function writeInline(output: string): void {
-        const outputLength = visibleLength(output)
-        const padding = Math.max(0, lastInlineLength - outputLength)
-        terminal.writeError(`\r${output}${' '.repeat(padding)}`)
-        lastInlineLength = outputLength
-    }
-
-    function endInlineProgress(): void {
-        if (lastInlineLength === 0) {
-            return
-        }
-
-        terminal.writeError('\n')
-        lastInlineLength = 0
-    }
-
     function printCheck(message: string): void {
-        terminal.log(`${color.success('✓')} ${message}`)
+        terminal.log(text.checkLine(message))
     }
 
     function finishPreparation(): void {
@@ -184,48 +174,22 @@ export default function createInitProgressReporter(): InitProgressReporter {
         printedDocumentLine = true
         printCheck(preparedDocumentsMessage(documentCount))
         terminal.log('')
-        terminal.log(sectionTitle('Building project memory...'))
+        terminal.log(text.sectionTitle('Building project memory...'))
     }
 
     function completeInlineProgress(message: string): void {
-        if (lastInlineLength === 0) {
+        if (!inline.hasLine()) {
             printCheck(message)
             return
         }
 
-        const output = checkLine(message)
-        const outputLength = visibleLength(output)
-        const padding = Math.max(0, lastInlineLength - outputLength)
-        terminal.writeError(`\r${output}${' '.repeat(padding)}\n`)
-        lastInlineLength = 0
-    }
-
-    function printStat(label: string, value: number): void {
-        terminal.log(
-            `${color.dim(label.padEnd(18))} ${color.info(value.toString())}`,
-        )
+        inline.complete(text.checkLine(message))
     }
 
     function preparedDocumentsMessage(documentCount: number): string {
         const moduleCount = Math.max(0, documentCount - sectionCount)
 
-        return `Extracted ${formatCount(documentCount)} documents from ${formatCount(fileCount)} files (${formatCount(sectionCount)} sections, ${formatCount(moduleCount)} modules)`
-    }
-
-    function progressLine(message: string): string {
-        return `${color.accent(spinnerFrame(spinnerIndex))} ${message}`
-    }
-
-    function checkLine(message: string): string {
-        return `${color.success('✓')} ${message}`
-    }
-
-    function sectionTitle(message: string): string {
-        return color.accent(message)
-    }
-
-    function formatCount(value: number): string {
-        return color.info(value.toString())
+        return `Extracted ${text.count(documentCount)} documents from ${text.count(fileCount)} files (${text.count(sectionCount)} sections, ${text.count(moduleCount)} modules)`
     }
 }
 
@@ -234,16 +198,4 @@ function isModelReadyEvent(event: ExtractionProgressEvent): boolean {
         event.stage === 'prepare' &&
         /Embedding model ready/u.test(event.message ?? '')
     )
-}
-
-function visibleLength(value: string): number {
-    const ansiPattern = new RegExp(
-        `${String.fromCharCode(27)}\\[[0-9;]*m`,
-        'gu',
-    )
-    return value.replaceAll(ansiPattern, '').length
-}
-
-function spinnerFrame(index: number): string {
-    return ['◐', '◓', '◑', '◒'][index % 4] ?? '◐'
 }
