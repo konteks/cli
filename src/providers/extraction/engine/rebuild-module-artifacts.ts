@@ -4,7 +4,10 @@ import {
     deleteRetrievalDocuments,
     upsertRetrievalDocument,
 } from '@/providers/persistence/sqlite/retrieval-documents'
-import type { ProjectMetadata } from './extract-project-metadata'
+import type {
+    PackageManifestMetadata,
+    ProjectMetadata,
+} from './extract-project-metadata'
 
 type ModuleSummaryRow = {
     chunk_count: number
@@ -102,7 +105,7 @@ insert into modules (
         })
     }
 
-    if (metadata) {
+    if (metadata && (metadata.packageManifests ?? []).length > 0) {
         await insertPackageModule(db, metadata, extractedAt)
     }
 }
@@ -125,19 +128,25 @@ async function insertPackageModule(
     extractedAt: string,
 ): Promise<void> {
     const adapter = db.adapter
+    const packageManifests = metadata.packageManifests ?? []
+    const primaryManifest = packageManifests[0]
+    if (!primaryManifest) {
+        return
+    }
     const dependencyNames = [
         ...metadata.dependencies,
         ...metadata.devDependencies,
         ...metadata.peerDependencies,
         ...metadata.optionalDependencies,
     ].slice(0, 80)
-    const modulePath = metadata.packagePath
+    const modulePath = primaryManifest.path
+    const managers = manifestManagers(packageManifests)
     const moduleId = `module_${contentHash(`package:${modulePath}:${metadata.name ?? ''}`).slice(0, 32)}`
-    const summary = `${metadata.packageManager ?? 'npm'}, ${dependencyNames.length} deps`
+    const summary = `${managers.join(', ')}, ${dependencyNames.length} deps`
     const topics = [
         'package',
         metadata.name,
-        metadata.packageManager,
+        ...managers,
         metadata.workspaceManager,
         ...dependencyNames.slice(0, 24),
     ].filter((value): value is string => Boolean(value))
@@ -182,6 +191,9 @@ insert into modules (
         metadata.packageManager
             ? `package manager: ${metadata.packageManager}`
             : '',
+        packageManifests.length > 1
+            ? `package manifests: ${packageManifests.map(manifest => `${manifest.path} (${manifest.manager})`).join(', ')}`
+            : '',
         metadata.workspaceManager
             ? `workspace manager: ${metadata.workspaceManager}`
             : '',
@@ -207,4 +219,10 @@ insert into modules (
         targetType: 'module',
         updatedAt: extractedAt,
     })
+}
+
+function manifestManagers(manifests: PackageManifestMetadata[]): string[] {
+    return [...new Set(manifests.map(manifest => manifest.manager))].sort(
+        (left, right) => left.localeCompare(right),
+    )
 }

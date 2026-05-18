@@ -16,14 +16,27 @@ type SourceRole =
     | 'unknown'
 
 const packageConfigFiles = new Set([
-    'package.json',
+    'build.gradle',
+    'build.gradle.kts',
     'bunfig.toml',
+    'cargo.toml',
+    'composer.json',
+    'gemfile',
+    'go.mod',
+    'package.json',
+    'package.swift',
+    'pom.xml',
+    'pubspec.yaml',
+    'pyproject.toml',
+    'settings.gradle',
     'tsconfig.json',
 ])
 
 const toolingConfigFiles = new Set([
+    'analysis_options.yaml',
     'biome.json',
     'knip.json',
+    'phpunit.xml',
     'turbo.json',
     'vite.config.ts',
     'vitest.config.ts',
@@ -57,6 +70,9 @@ export function classifySourceRole(path: string): SourceRole {
         return 'generated'
     }
     if (packageConfigFiles.has(fileName)) {
+        return 'package_config'
+    }
+    if (fileName.endsWith('.csproj') || fileName.endsWith('.sln')) {
         return 'package_config'
     }
     if (toolingConfigFiles.has(fileName) || lowerPath.startsWith('.github/')) {

@@ -30,7 +30,18 @@ describe('classifySourceRole', () => {
         expect(classifySourceRole('src/index.test.ts')).toBe('test_code')
         expect(classifySourceRole('README.md')).toBe('product_doc')
         expect(classifySourceRole('package.json')).toBe('package_config')
+        expect(classifySourceRole('composer.json')).toBe('package_config')
+        expect(classifySourceRole('pubspec.yaml')).toBe('package_config')
+        expect(classifySourceRole('pyproject.toml')).toBe('package_config')
+        expect(classifySourceRole('go.mod')).toBe('package_config')
+        expect(classifySourceRole('Cargo.toml')).toBe('package_config')
+        expect(classifySourceRole('Gemfile')).toBe('package_config')
+        expect(classifySourceRole('Package.swift')).toBe('package_config')
+        expect(classifySourceRole('app.csproj')).toBe('package_config')
         expect(classifySourceRole('biome.json')).toBe('tooling_config')
+        expect(classifySourceRole('analysis_options.yaml')).toBe(
+            'tooling_config',
+        )
         expect(classifySourceRole('.github/workflows/ci.yml')).toBe(
             'tooling_config',
         )

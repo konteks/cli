@@ -26,6 +26,17 @@ describe('providers/extraction/engine/toon-summary', () => {
                 name: 'konteks',
                 optionalDependencies: [],
                 packageManager: 'bun',
+                packageManifests: [
+                    {
+                        dependencies: ['zod'],
+                        devDependencies: ['typescript'],
+                        entryPoints: ['dist/main.js'],
+                        manager: 'bun',
+                        name: 'konteks',
+                        path: 'package.json',
+                        technologies: ['typescript'],
+                    },
+                ],
                 packagePath: 'package.json',
                 peerDependencies: [],
                 readmeFiles: ['README.md'],
@@ -42,6 +53,7 @@ describe('providers/extraction/engine/toon-summary', () => {
         expect(output).toContain('project:')
         expect(output).toContain('  root: /repo')
         expect(output).toContain('  name: konteks')
+        expect(output).toContain('  package_manifests: package.json (bun)')
         expect(output).toContain('  dependencies: zod')
         expect(output).toContain('  - path: src/a.ts | bytes: 10')
     })
