@@ -18,8 +18,9 @@ describe('project/status', () => {
             const output = logSpy.mock.calls[0]?.[0] ?? ''
             expect(output).toContain(projectRoot)
             expect(output).toContain(join(projectRoot, '.konteks'))
-            expect(output).toContain('No extraction manifest exists yet.')
-            expect(output).toContain('run konteks repair')
+            expect(output).toContain('Project memory status')
+            expect(output).toContain('Status        Not initialized')
+            expect(output).toContain('Last indexed  Not indexed yet')
         } finally {
             logSpy.mockRestore()
         }

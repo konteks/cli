@@ -58,10 +58,18 @@ describe('cli/e2e', () => {
 
         const initial = await runKonteks(fixture.projectRoot, ['status'])
         expect(initial.exitCode).toBe(0)
-        expect(initial.output).toContain('Konteks Memory')
+        expect(initial.output).toContain('Project memory status')
         expect(initial.output).toContain(fixture.projectRoot)
         expect(initial.output).toContain(join(fixture.projectRoot, '.konteks'))
-        expect(initial.output).toContain('no file changes')
+        expect(initial.output).toContain('Status        Up to date')
+        expect(initial.output).toContain('Last indexed')
+        expect(initial.output).toContain('Source files')
+        expect(initial.output).toContain('Project memory')
+        expect(initial.output).toContain('Documents')
+        expect(initial.output).toContain('Vectors')
+        expect(initial.output).toContain('Session memory')
+        expect(initial.output).toContain('Memories')
+        expect(initial.output).toContain('Diary entries')
 
         await writeFile(
             join(fixture.projectRoot, 'README.md'),
@@ -70,7 +78,7 @@ describe('cli/e2e', () => {
 
         const changed = await runKonteks(fixture.projectRoot, ['status'])
         expect(changed.exitCode).toBe(0)
-        expect(changed.output).toContain('1 file changed')
+        expect(changed.output).toContain('Status        Needs indexing')
     }, 20000)
 
     it('backs up memory, refuses restore without force, and restores with force', async () => {
