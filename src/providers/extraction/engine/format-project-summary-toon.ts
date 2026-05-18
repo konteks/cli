@@ -17,6 +17,9 @@ export default function formatProjectSummaryToon(
         .slice(0, 200)
         .map(file => `  - path: ${file.path} | bytes: ${file.sizeBytes}`)
         .join('\n')
+    const packageManifests = (input.metadata.packageManifests ?? [])
+        .map(manifest => `${manifest.path} (${manifest.manager})`)
+        .join(', ')
 
     return [
         'project:',
@@ -26,6 +29,7 @@ export default function formatProjectSummaryToon(
         `  file_count: ${input.fileCount}`,
         `  name: ${input.metadata.name ?? ''}`,
         `  package_manager: ${input.metadata.packageManager ?? ''}`,
+        `  package_manifests: ${packageManifests}`,
         `  workspace_manager: ${input.metadata.workspaceManager ?? ''}`,
         `  workspace_globs: ${input.metadata.workspaceGlobs.join(', ')}`,
         `  technologies: ${input.metadata.technologies.join(', ')}`,
