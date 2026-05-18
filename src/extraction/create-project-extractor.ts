@@ -16,6 +16,7 @@ export type ProjectExtractor = {
 export type CreateProjectExtractorOptions = {
     extractionEngine?: ExtractionEngineContract
     onProgress?: ExtractionProgressReporter
+    prepareEmbeddingBeforeExtraction?: boolean
     projectLoader?: () => Promise<Project>
 }
 
@@ -44,5 +45,7 @@ function createDefaultExtractionEngine(
     return new KonteksExtractionEngine({
         embeddingProvider,
         onProgress: options.onProgress,
+        prepareEmbeddingBeforeExtraction:
+            options.prepareEmbeddingBeforeExtraction,
     })
 }

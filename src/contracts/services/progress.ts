@@ -15,6 +15,9 @@ type ExtractionProgressPhase =
 type ExtractionProgressStatus = 'done' | 'progress' | 'start'
 
 export type ExtractionProgressEvent = {
+    /**
+     * @deprecated change the name to sectionCount
+     */
     chunkCount?: number
     current?: number
     downloadFile?: string

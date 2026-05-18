@@ -1,12 +1,15 @@
-import { checkbox, confirm } from '@inquirer/prompts'
+import { checkbox, select } from '@inquirer/prompts'
 import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import {
     getGrammarForPath,
     isBundledGrammar,
     listGrammarDefinitions,
 } from '@/providers/extraction/engine/grammar-loader'
+import pluralizeWord from '@/support/pluralize-word'
 import createColorPalette from '@/support/terminal/create-color-palette'
 import { terminal } from '@/support/terminal/service'
+
+const color = createColorPalette(terminal.stdoutSupportsColor())
 
 export type DetectedGrammarSelection = {
     detectedBundledParserIds: string[]
@@ -35,25 +38,46 @@ export async function reviewDetectedGrammars(
     files: ScannedFile[],
 ): Promise<DetectedGrammarSelection> {
     const detected = detectParserGrammars(files)
+
     if (!canPromptForGrammars()) {
         return detected
     }
 
-    printDetectedGrammarSummary(detected)
     const reviewed = {
         ...detected,
         reviewedInteractively: true,
     }
+
     if (detected.detectedParserIds.length === 0) {
         return reviewed
     }
 
-    const useDetected = await confirm({
-        default: true,
-        message: 'Continue or edit?',
+    const useDetected = await select({
+        choices: [
+            {
+                name: 'Continue',
+                value: 'CONTINUE',
+            },
+            {
+                name: 'Edit',
+                value: 'EDIT',
+            },
+            {
+                name: 'Abort',
+                value: 'ABORT',
+            },
+        ],
+        default: 'CONTINUE',
+        loop: false,
+        message: getDetectedGrammarSummaryMessage(detected),
+        theme: {
+            prefix: {
+                done: color.success('✓'),
+            },
+        },
     })
 
-    if (useDetected) {
+    if (useDetected === 'CONTINUE') {
         return reviewed
     }
 
@@ -61,11 +85,6 @@ export async function reviewDetectedGrammars(
         detected.selectedRegistryParserIds,
     )
     const skippedFileCount = countSkippedFiles(files, selectedRegistryParserIds)
-    if (skippedFileCount > 0) {
-        terminal.log(
-            `Scanned ${files.length} ${pluralize('file', files.length)}, ${skippedFileCount} ${pluralize('file', skippedFileCount)} skipped.`,
-        )
-    }
 
     return {
         ...reviewed,
@@ -115,6 +134,15 @@ async function promptForRegistryGrammars(
         loop: true,
         message:
             'Select the programming languages or file types used in this project',
+        theme: {
+            icon: {
+                checked: color.success('■'),
+                unchecked: color.info('◻'),
+            },
+            prefix: {
+                done: color.success('✓'),
+            },
+        },
     })
 }
 
@@ -125,19 +153,15 @@ function registryGrammarChoices(selected: string[]): GrammarChoice[] {
         )
         .map(grammar => ({
             checked: selected.includes(grammar.id),
-            name: ` ${grammar.displayName} (${grammar.extensions.join(', ')})`,
+            name: `${grammar.displayName} (${grammar.extensions.join(', ')})`,
             value: grammar.id,
         }))
 }
 
-function printDetectedGrammarSummary(detected: DetectedGrammarSelection): void {
-    const color = createColorPalette(terminal.stdoutSupportsColor())
-    terminal.log(
-        `  ${color.info(detected.totalFileCount.toString())} ${pluralize('file', detected.totalFileCount)} will be scanned, including bundled ${pluralize('language', detected.detectedBundledParserIds.length)}: ${color.dim(formatIds(detected.detectedBundledParserIds))}`,
-    )
-    terminal.log(
-        `  ${color.info(detected.detectedParserIds.length.toString())} ${pluralize('language', detected.detectedParserIds.length)} detected: ${color.accent(formatIds(detected.detectedParserIds))}`,
-    )
+function getDetectedGrammarSummaryMessage(
+    detected: DetectedGrammarSelection,
+): string {
+    return `${color.info(detected.detectedParserIds.length.toString())} ${pluralizeWord('language', detected.detectedParserIds.length)} detected from ${color.info(detected.totalFileCount.toString())} ${pluralizeWord('file', detected.totalFileCount)}: ${color.accent(formatIds(detected.detectedParserIds))}`
 }
 
 function formatIds(ids: string[]): string {
@@ -158,8 +182,4 @@ function countSkippedFiles(files: ScannedFile[], selected: string[]): number {
             !selectedIds.has(grammar.id)
         )
     }).length
-}
-
-function pluralize(value: string, count: number): string {
-    return count === 1 ? value : `${value}s`
 }

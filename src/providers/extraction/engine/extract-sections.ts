@@ -31,6 +31,7 @@ export default async function extractSections(
     files: ScannedFile[],
     extractedAt: string,
     options: {
+        beforeExtract?: () => Promise<void>
         deletedPaths?: string[]
         metadata?: ProjectMetadata
         mode?: 'changed' | 'full' | 'reindex' | 'resume'
@@ -71,8 +72,11 @@ export default async function extractSections(
         })
     }
 
+    await options.beforeExtract?.()
+
     let sectionCount = 0
     let filesTruncatedByChunkLimit = 0
+    let extractedFileCount = 0
     let parserFallbackFiles = 0
     let parserUsedFiles = 0
 
@@ -133,6 +137,7 @@ export default async function extractSections(
             continue
         }
 
+        extractedFileCount += 1
         await db.transaction(async tx => {
             sectionCount += await persistPreparedFileSections({
                 db: tx,
@@ -156,6 +161,7 @@ export default async function extractSections(
     if (files.length > 0) {
         progress?.({
             chunkCount: sectionCount,
+            current: extractedFileCount,
             message: `Extracted ${sectionCount} sections`,
             parserCount: loadedParserCount,
             phase: 'chunks',

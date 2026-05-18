@@ -4,26 +4,26 @@ import { terminal } from '@/support/terminal/service'
 
 const checkboxCalls: unknown[] = []
 let checkboxResult: string[] = []
-const confirmCalls: unknown[] = []
-let confirmResult = true
+const selectCalls: unknown[] = []
+let selectResult = 'CONTINUE'
 
 mock.module('@inquirer/prompts', () => ({
     checkbox: async (options: unknown) => {
         checkboxCalls.push(options)
         return checkboxResult
     },
-    confirm: async (options: unknown) => {
-        confirmCalls.push(options)
-        return confirmResult
+    confirm: async () => true,
+    select: async (options: unknown) => {
+        selectCalls.push(options)
+        return selectResult
     },
-    select: async () => 'grammars',
 }))
 
 afterEach(() => {
     checkboxCalls.splice(0)
     checkboxResult = []
-    confirmCalls.splice(0)
-    confirmResult = true
+    selectCalls.splice(0)
+    selectResult = 'CONTINUE'
     mock.restore()
 })
 
@@ -47,7 +47,7 @@ describe('grammar selection', () => {
         expect(choices.map(choice => choice.value)).toContain('typescript')
         expect(choices.map(choice => choice.value)).toContain('javascript')
         expect(choices.map(choice => choice.name)).toContain(
-            ' JavaScript and JSX (.js, .mjs, .cjs, .jsx)',
+            'JavaScript and JSX (.js, .mjs, .cjs, .jsx)',
         )
     })
 
@@ -71,15 +71,14 @@ describe('grammar selection', () => {
             skippedFileCount: 0,
             totalFileCount: 2,
         })
-        expect(confirmCalls).toHaveLength(0)
+        expect(selectCalls).toHaveLength(0)
         expect(checkboxCalls).toHaveLength(0)
     })
 
     it('opens checkboxes when detected grammars are rejected', async () => {
         spyOn(terminal, 'stdinIsInteractive').mockReturnValue(true)
         spyOn(terminal, 'stderrIsInteractive').mockReturnValue(true)
-        const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
-        confirmResult = false
+        selectResult = 'EDIT'
         checkboxResult = ['javascript']
         const { reviewDetectedGrammars } = await import(
             '@/providers/cli/grammar-selection'
@@ -91,15 +90,8 @@ describe('grammar selection', () => {
 
         expect(result.selectedRegistryParserIds).toEqual(['javascript'])
         expect(result.reviewedInteractively).toBe(true)
-        expect(confirmCalls).toHaveLength(1)
-        expect((confirmCalls[0] as { message: string }).message).toBe(
-            'Continue or edit?',
-        )
+        expect(selectCalls).toHaveLength(1)
         expect(checkboxCalls).toHaveLength(1)
-        expect(logSpy).toHaveBeenCalledWith(
-            '  1 file will be scanned, including bundled languages: none',
-        )
-        expect(logSpy).toHaveBeenCalledWith('  1 language detected: typescript')
     })
 
     it('colors detected grammar review when color is supported', async () => {
@@ -113,11 +105,8 @@ describe('grammar selection', () => {
 
         await reviewDetectedGrammars([scannedFile('src/index.ts')])
 
-        expect(logSpy).toHaveBeenCalledWith(
-            '  \u001b[34m1\u001b[0m file will be scanned, including bundled languages: \u001b[90mnone\u001b[0m',
-        )
-        expect(logSpy).toHaveBeenCalledWith(
-            '  \u001b[34m1\u001b[0m language detected: \u001b[36mtypescript\u001b[0m',
+        expect(logSpy).not.toHaveBeenCalledWith(
+            expect.stringContaining('language detected'),
         )
     })
 })

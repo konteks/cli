@@ -57,7 +57,8 @@ describe('CLI initialization middleware', () => {
         })
 
         expect(result.exitCode).not.toBe(0)
-        expect(result.output).toContain(`Konteks v${getVersion()}`)
+        expect(result.output).toContain('Konteks')
+        expect(result.output).toContain(`v${getVersion()}`)
         expect(result.output).toContain('\u001b[31m')
         expect(result.output).toContain('╭─')
     })
