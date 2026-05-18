@@ -324,9 +324,16 @@ describe('InitCommand', () => {
         const firstManifest = JSON.parse(await readFile(manifestPath, 'utf8'))
         await rm(manifestPath)
 
-        await init(projectRoot)
+        const output = stripAnsi(await init(projectRoot))
 
         const resumedManifest = JSON.parse(await readFile(manifestPath, 'utf8'))
+        expect(output).toContain(
+            '✓ Extracted 5 documents from 2 files (2 sections, 3 modules)',
+        )
+        expect(output).toContain(
+            'Documents extracted: 5 (2 sections, 3 modules)',
+        )
+        expect(output).not.toContain('Extracted 5 documents from 0 files')
         expect(resumedManifest.diagnostics.chunkCount).toBe(
             firstManifest.diagnostics.chunkCount,
         )
