@@ -62,10 +62,6 @@ export async function reviewDetectedGrammars(
                 name: 'Edit',
                 value: 'EDIT',
             },
-            {
-                name: 'Abort',
-                value: 'ABORT',
-            },
         ],
         default: 'CONTINUE',
         loop: false,
