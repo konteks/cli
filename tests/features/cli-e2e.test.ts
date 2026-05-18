@@ -49,7 +49,7 @@ describe('cli/e2e', () => {
 
         expect(result.exitCode).toBe(0)
         expect(result.output).toContain(`Konteks v${getVersion()}`)
-        expect(result.output).toContain('Konteks is already initialized at')
+        expect(result.output).toContain('Project memory is already ready at')
         expect(result.output).toContain('.konteks')
     }, 20000)
 

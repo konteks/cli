@@ -20,6 +20,7 @@ import TreeSitterEngine from './tree-sitter-engine'
 type ExtractSectionsResult = {
     chunkCount: number
     filesTruncatedByChunkLimit: number
+    loadedParserCount: number
     parserFallbackFiles: number
     parserUsedFiles: number
 }
@@ -39,6 +40,7 @@ export default async function extractSections(
     const progress = options.onProgress
     const toonStore = createToonStore(context.memoryDir)
     let engine: TreeSitterEngine | undefined
+    let loadedParserCount = 0
 
     if (files.length > 0) {
         progress?.({
@@ -58,6 +60,7 @@ export default async function extractSections(
         if (loaded.loaded.length === 0) {
             engine = undefined
         }
+        loadedParserCount = loaded.loaded.length
         for (const warning of loaded.warnings) {
             terminal.error(warning)
         }
@@ -154,6 +157,7 @@ export default async function extractSections(
         progress?.({
             chunkCount: sectionCount,
             message: `Extracted ${sectionCount} sections`,
+            parserCount: loadedParserCount,
             phase: 'chunks',
             status: 'done',
             total: files.length,
@@ -185,6 +189,7 @@ export default async function extractSections(
     return {
         chunkCount: sectionCount,
         filesTruncatedByChunkLimit,
+        loadedParserCount,
         parserFallbackFiles,
         parserUsedFiles,
     }

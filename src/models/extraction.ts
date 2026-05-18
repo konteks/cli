@@ -13,9 +13,13 @@ export type ExtractProjectResponse = {
     extractedAt: string
     summaryRef: string
     chunkCount: number
+    detectedParserLanguages: string[]
     embeddedCount: number
     embeddingReusedCount: number
     technologies: string[]
+    languageCount: number
+    loadedParserCount: number
+    vectorCount: number
     updatedFilePaths: string[]
     deletedFilePaths: string[]
 }
