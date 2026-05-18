@@ -7,8 +7,8 @@ import FakeEmbeddingProvider from '../../fake/fake-embedding-provider'
 
 const checkboxCalls: unknown[] = []
 let checkboxResult: string[] = []
-const confirmCalls: unknown[] = []
-let confirmResult = true
+const selectCalls: unknown[] = []
+let selectResult = 'CONTINUE'
 
 class MockHuggingFaceEmbeddingProvider extends FakeEmbeddingProvider {
     private readonly options?: {
@@ -57,11 +57,11 @@ mock.module('@inquirer/prompts', () => ({
         checkboxCalls.push(options)
         return checkboxResult
     },
-    confirm: async (options: unknown) => {
-        confirmCalls.push(options)
-        return confirmResult
+    confirm: async () => true,
+    select: async (options: unknown) => {
+        selectCalls.push(options)
+        return selectResult
     },
-    select: async () => 'grammars',
 }))
 
 const tempDirs: string[] = []
@@ -77,8 +77,8 @@ async function makeTempProject(): Promise<string> {
 afterEach(async () => {
     checkboxCalls.splice(0)
     checkboxResult = []
-    confirmCalls.splice(0)
-    confirmResult = true
+    selectCalls.splice(0)
+    selectResult = 'CONTINUE'
     await Promise.all(
         tempDirs
             .splice(0)
@@ -183,20 +183,21 @@ describe('InitCommand', () => {
         const plainOutput = stripAnsi(output)
 
         expect(plainOutput).toContain('Initializing project memory')
+
         expect(plainOutput).toContain(
-            '  ✓ 2 files scanned, 0 languages detected: none',
+            '✓ Extracted 2 semantic sections from 2 files',
         )
-        expect(plainOutput).toContain('  ✓ Extracted 2 semantic sections')
-        expect(plainOutput).toContain('  ✓ Loaded 0 language parsers')
-        expect(plainOutput).toContain('Loading embedding model')
-        expect(plainOutput).toContain('Embedding model ready')
+        expect(plainOutput).not.toContain('Loaded 0 language parsers')
+        expect(plainOutput).toContain('✓ Preparing dependencies')
+        expect(plainOutput).not.toContain('Loading embedding model')
+        expect(plainOutput).not.toContain('Embedding model ready')
         expect(plainOutput).toContain('Building project memory...')
         expect(plainOutput).toContain('vectors indexed')
-        expect(plainOutput).toContain('  ✓ Generated project summary')
+        expect(plainOutput).toContain('✓ Generated project summary')
         expect(plainOutput).toContain('Project memory ready')
-        expect(plainOutput).toContain('  Files indexed      2')
-        expect(plainOutput).toContain('  Sections extracted 2')
-        expect(plainOutput).toContain('  Vectors indexed    5')
+        expect(plainOutput).toContain('Files indexed      2')
+        expect(plainOutput).toContain('Sections extracted 2')
+        expect(plainOutput).toContain('Vectors indexed    5')
         expect(plainOutput).not.toContain('Initialized Konteks at')
         expect(plainOutput).not.toContain('Extracted 2 files into 2 sections')
     })
@@ -237,42 +238,22 @@ describe('InitCommand', () => {
 
         const plainOutput = stripAnsi(output)
 
-        expect(plainOutput).toContain(
-            '  2 files will be scanned, including bundled language: json',
-        )
-        expect(plainOutput).toContain('  0 languages detected: none')
         expect(plainOutput).not.toContain('Bundled required')
         expect(plainOutput).not.toContain('Detected languages: json')
         expect(plainOutput).not.toContain('✓ Detected 1 languages')
-        expect(plainOutput).toContain('Preparing language parsers')
-        expect(plainOutput).toContain('1/1 language parsers ready')
+        expect(plainOutput).toContain('✓ Preparing dependencies')
+        expect(plainOutput).not.toContain('language parsers ready')
+        expect(plainOutput).not.toContain('Loaded 1 language parsers')
         expect(manifest.diagnostics.detectedParserLanguages).toEqual([])
         expect(config.extraction.grammars.selected).toEqual([])
-        expect(confirmCalls).toHaveLength(0)
+        expect(selectCalls).toHaveLength(0)
         expect(checkboxCalls).toHaveLength(0)
-    })
-
-    it('prints a skipped-file summary after deselecting detected languages', async () => {
-        const projectRoot = await makeTempProject()
-        await writeFile(join(projectRoot, 'src.ts'), 'export const value = 1\n')
-        confirmResult = false
-        checkboxResult = []
-
-        const output = await withInteractiveTerminal(() => init(projectRoot))
-
-        const plainOutput = stripAnsi(output)
-
-        expect(plainOutput).toContain(
-            '  2 files will be scanned, including bundled languages: none',
-        )
-        expect(plainOutput).toContain('  1 language detected: typescript')
-        expect(plainOutput).toContain('Scanned 2 files, 1 file skipped.')
     })
 
     it('opens registry grammar checkboxes when detected languages are rejected', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(join(projectRoot, 'src.ts'), 'export const value = 1\n')
-        confirmResult = false
+        selectResult = 'EDIT'
         checkboxResult = []
 
         await withInteractiveTerminal(() => init(projectRoot))
@@ -288,12 +269,31 @@ describe('InitCommand', () => {
             }
         ).choices
 
-        expect(confirmCalls).toHaveLength(1)
+        expect(selectCalls).toHaveLength(1)
         expect(checkboxCalls).toHaveLength(1)
         expect(
             choices.find(choice => choice.value === 'typescript')?.checked,
         ).toBe(true)
         expect(config.extraction.grammars.selected).toEqual([])
+    })
+
+    it('keeps parser and model preparation output compact', async () => {
+        const projectRoot = await makeTempProject()
+        await writeFile(join(projectRoot, 'package.json'), '{"type":"module"}')
+
+        const output = stripAnsi(
+            await withInteractiveTerminal(() => init(projectRoot)),
+        )
+
+        expect(output).toContain('✓ Preparing dependencies')
+        expect(output).not.toContain('language parsers ready')
+        expect(output).not.toContain('Downloading JSON grammar')
+        expect(output).not.toContain('Loaded JSON grammar')
+        expect(output).not.toContain('Preparing config.json')
+        expect(output).not.toContain('Loading embedding model')
+        expect(output).not.toContain('Loading tokenizer.json')
+        expect(output).not.toContain('Loaded 1 language parsers')
+        expect(output).toContain('✓ Extracted 3 semantic sections from 3 files')
     })
 
     it('finishes setup when a previous init stopped before extraction', async () => {

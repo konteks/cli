@@ -50,6 +50,7 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
         private readonly options: {
             embeddingProvider?: EmbeddingProvider
             onProgress?: ExtractionProgressReporter
+            prepareEmbeddingBeforeExtraction?: boolean
         } = {},
     ) {}
 
@@ -129,12 +130,20 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
             status: 'done',
             total: filesToExtract.length,
         })
+        const beforeExtract =
+            options.prepareEmbeddingBeforeExtraction &&
+            options.embeddingProvider?.prepare
+                ? async () => {
+                      await options.embeddingProvider?.prepare?.()
+                  }
+                : undefined
         const extractedSections = await extractSections(
             db,
             context,
             filesToExtract,
             extractedAt,
             {
+                beforeExtract,
                 deletedPaths,
                 metadata,
                 mode,

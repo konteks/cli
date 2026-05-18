@@ -1,5 +1,6 @@
 import type { Command as CommanderCommand } from 'commander'
 import getVersion from '@/support/get-version'
+import createColorPalette from '@/support/terminal/create-color-palette'
 import { terminal } from '@/support/terminal/service'
 
 export type Command = CommanderCommand
@@ -65,7 +66,11 @@ export default abstract class BaseCommand<
             ) as Args
 
             if (this.printsHeader) {
-                terminal.log(`Konteks v${getVersion()}`)
+                const version = getVersion()
+                const color = createColorPalette(terminal.stdoutSupportsColor())
+                this.print(
+                    `${color.accent('Konteks')} ${color.dim(`v${version}`)}`,
+                )
             }
 
             if (this.usesInitializationGuard) {
