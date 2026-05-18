@@ -10,7 +10,6 @@ import type DatabaseService from '@/providers/persistence/sqlite/database-servic
 import type { SqliteParams } from '@/providers/persistence/sqlite/sqlite-adapter'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
 import { formatInteger } from '@/support/format/number'
-import getVersion from '@/support/get-version'
 import createColorPalette, {
     type ColorPalette,
 } from '@/support/terminal/create-color-palette'
@@ -22,14 +21,12 @@ export default class StatusCommand extends BaseCommand {
     public readonly name = 'status'
 
     public async handle(): Promise<void> {
-        const status = await readProjectStatus()
+        const context = await loadProjectContext()
+        const statusReader = new ProjectStatusReader()
 
-        this.print(
-            formatStatus(status, {
-                color: createColorPalette(terminal.stdoutSupportsColor()),
-                version: getVersion(),
-            }),
-        )
+        const status = await statusReader.read(context)
+
+        this.print(formatStatus(status))
     }
 }
 
@@ -63,115 +60,80 @@ interface ProjectStatusReaderContract {
     read(project: Project): Promise<ProjectStatus>
 }
 
-type ReadProjectStatusOptions = {
-    statusReader?: ProjectStatusReaderContract
-}
+type StatusColorPalette = Pick<
+    ColorPalette,
+    'accent' | 'danger' | 'dim' | 'success' | 'warning'
+>
 
-async function readProjectStatus(
-    options: ReadProjectStatusOptions = {},
-): Promise<ProjectStatus> {
-    const context = await loadProjectContext()
-    const statusReader = options.statusReader ?? new ProjectStatusReader()
-    return await statusReader.read(context)
-}
+function formatStatus(status: ProjectStatus): string {
+    const color = createColorPalette(terminal.stdoutSupportsColor())
+    const statusDetail = formatStatusDetail(status, color)
 
-type StatusColorPalette = Pick<ColorPalette, 'accent' | 'dim' | 'success'>
-
-function formatStatus(
-    status: ProjectStatus,
-    options: { color?: StatusColorPalette; version?: string } = {},
-): string {
-    const color = options.color ?? createColorPalette(false)
-    const changedFiles = status.freshness.changedFileCount
-    const version = options.version ?? getVersion()
     const lines = [
         '',
-        `${color.accent('Konteks Memory')} ${color.dim(`v${version}`)}`,
-        color.dim('-'.repeat(48)),
+        color.accent('Project memory status'),
+        '',
         row('Project', status.projectRoot),
         row('Memory', status.memoryDir),
-        row('Freshness', formatFreshness(status, changedFiles)),
         '',
-        anchoredStat(
-            color,
-            'Knowledge',
-            [
-                compactStat('files', status.memoryStats.files, color),
-                compactStat('sections', status.memoryStats.sections, color),
-                compactStat('modules', status.memoryStats.modules, color),
-            ].join(', '),
+        row('Status', statusDetail),
+        row('Last indexed', formatLastIndexed(status)),
+        '',
+        row('Source files', formatInteger(status.memoryStats.files)),
+        '',
+        color.accent('Project memory'),
+        nestedRow(
+            'Documents',
+            `${formatInteger(status.memoryStats.retrievalDocuments)} (${formatCount(status.memoryStats.sections, 'section')}, ${formatCount(status.memoryStats.modules, 'module')})`,
         ),
-        anchoredStat(
-            color,
-            'Session Memory',
-            [
-                compactStat('memories', status.memoryStats.memories, color),
-                compactStat(
-                    'diary entries',
-                    status.memoryStats.diaryEntries,
-                    color,
-                ),
-            ].join(', '),
-        ),
-        anchoredStat(
-            color,
-            'Retrieval',
-            [
-                compactStat(
-                    'documents',
-                    status.memoryStats.retrievalDocuments,
-                    color,
-                ),
-                compactStat('vectors', status.memoryStats.embeddings, color),
-            ].join(', '),
+        nestedRow('Vectors', formatInteger(status.memoryStats.embeddings)),
+        '',
+        color.accent('Session memory'),
+        nestedRow('Memories', formatInteger(status.memoryStats.memories)),
+        nestedRow(
+            'Diary entries',
+            formatInteger(status.memoryStats.diaryEntries),
         ),
         '',
-    ]
+    ].filter(line => line !== undefined)
 
     return lines.join('\n')
 }
 
 function row(label: string, value: string): string {
-    return `${label.padEnd(10)} ${value}`
+    return `${label.padEnd(13)} ${value}`
 }
 
-function anchoredStat(
-    color: StatusColorPalette,
-    label: string,
-    value: string,
-): string {
-    return `${color.accent(label.padEnd(14))} ${value}`
+function nestedRow(label: string, value: string): string {
+    return `  ${label.padEnd(15)} ${value}`
 }
 
-function compactStat(
-    label: string,
-    value: number,
+function formatStatusDetail(
+    status: ProjectStatus,
     color: StatusColorPalette,
 ): string {
-    return `${color.success(formatInteger(value))} ${label}`
+    if (status.freshness.status === 'missing') {
+        return color.danger('Not initialized')
+    }
+
+    if (
+        status.freshness.status === 'stale' ||
+        status.freshness.changedFileCount > 0
+    ) {
+        return color.warning('Needs indexing')
+    }
+
+    return color.success('Up to date')
+}
+
+function formatLastIndexed(status: ProjectStatus): string {
+    return status.freshness.lastExtractedAt
+        ? formatDate(status.freshness.lastExtractedAt)
+        : 'Not indexed yet'
 }
 
 function formatCount(value: number, singular: string): string {
     return `${formatInteger(value)} ${singular}${value === 1 ? '' : 's'}`
-}
-
-function formatFreshness(status: ProjectStatus, changedFiles: number): string {
-    if (status.freshness.status === 'missing') {
-        const recommendation = status.freshness.recommendedCommand
-            ? `; run ${status.freshness.recommendedCommand}`
-            : ''
-        return `${status.freshness.reason}${recommendation}`
-    }
-
-    const lastExtracted = status.freshness.lastExtractedAt
-        ? formatDate(status.freshness.lastExtractedAt)
-        : 'Not extracted yet'
-
-    if (changedFiles > 0) {
-        return `${lastExtracted}; ${formatCount(changedFiles, 'file')} changed; indexed during warm up/save`
-    }
-
-    return `${lastExtracted}; no file changes`
 }
 
 function formatDate(value: string): string {
