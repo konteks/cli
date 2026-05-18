@@ -60,52 +60,28 @@ export default class SQLiteMemoryRepository
         input: SaveMemoryInput,
         options?: SaveOptions,
     ): Promise<SaveResult> {
-        const result = await saveKonteksMemory(
-            this.db,
-            this.project,
-            input,
-            options,
-        )
-        return mapSaveResult(result)
+        return await saveKonteksMemory(this.db, this.project, input, options)
     }
 
     public async saveMemories(
         input: SaveMemoriesInput,
         options?: SaveOptions,
     ): Promise<SaveResult> {
-        const result = await saveKonteksMemories(
-            this.db,
-            this.project,
-            input,
-            options,
-        )
-        return mapSaveResult(result)
+        return await saveKonteksMemories(this.db, this.project, input, options)
     }
 
     public async saveDiary(
         input: SaveDiaryInput,
         options?: SaveOptions,
     ): Promise<SaveResult> {
-        const result = await saveKonteksDiary(
-            this.db,
-            this.project,
-            input,
-            options,
-        )
-        return mapSaveResult(result)
+        return await saveKonteksDiary(this.db, this.project, input, options)
     }
 
     public async saveSession(
         input: SaveSessionInput,
         options?: SaveOptions,
     ): Promise<SaveResult> {
-        const result = await saveKonteksSession(
-            this.db,
-            this.project,
-            input,
-            options,
-        )
-        return mapSaveResult(result)
+        return await saveKonteksSession(this.db, this.project, input, options)
     }
 
     public async forget(input: ForgetInput): Promise<ForgetResult> {
@@ -194,16 +170,5 @@ export default class SQLiteMemoryRepository
         limit?: number,
     ): Promise<HistoricalRelation[]> {
         return await this.db.graph.historicalRelations(entityId, { limit })
-    }
-}
-
-function mapSaveResult(result: SaveResult): SaveResult {
-    return {
-        accepted: result.accepted,
-        diaryId: result.diaryId,
-        duplicateOf: result.duplicateOf,
-        id: result.id,
-        memoryIds: result.memoryIds,
-        skippedMemories: result.skippedMemories,
     }
 }
