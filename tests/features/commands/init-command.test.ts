@@ -197,7 +197,7 @@ describe('InitCommand', () => {
         expect(plainOutput).toContain('Project memory ready')
         expect(plainOutput).toContain('Files indexed      2')
         expect(plainOutput).toContain(
-            'Documents extracted: 5 (2 sections, 3 modules)',
+            'Documents extracted 5 (2 sections, 3 modules)',
         )
         expect(plainOutput).toContain('Vectors indexed    5')
         expect(plainOutput).not.toContain('Initialized Konteks at')
@@ -331,7 +331,7 @@ describe('InitCommand', () => {
             '✓ Extracted 5 documents from 2 files (2 sections, 3 modules)',
         )
         expect(output).toContain(
-            'Documents extracted: 5 (2 sections, 3 modules)',
+            'Documents extracted 5 (2 sections, 3 modules)',
         )
         expect(output).not.toContain('Extracted 5 documents from 0 files')
         expect(resumedManifest.diagnostics.chunkCount).toBe(
