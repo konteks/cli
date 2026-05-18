@@ -195,7 +195,7 @@ export default function createInitProgressReporter(): InitProgressReporter {
     function documentsExtractedLine(result: ExtractProjectResponse): string {
         const moduleCount = Math.max(0, result.vectorCount - result.chunkCount)
 
-        return `${color.dim('Documents extracted:')} ${text.count(result.vectorCount)} (${text.count(result.chunkCount)} sections, ${text.count(moduleCount)} modules)`
+        return `${color.dim('Documents extracted'.padEnd(18))} ${text.count(result.vectorCount)} (${text.count(result.chunkCount)} sections, ${text.count(moduleCount)} modules)`
     }
 }
 
