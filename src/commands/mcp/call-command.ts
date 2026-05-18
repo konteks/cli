@@ -1,6 +1,5 @@
 import { cp, mkdir, mkdtemp, rename, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import type { BaseCommandInput } from '@/commands/_base-command'
 import BaseCommand from '@/commands/_base-command'
 import MCP_TOOLS from '@/mcp/tools'
@@ -83,10 +82,15 @@ async function dryRunCallTool(
     input: unknown,
 ): Promise<unknown> {
     const context = await loadProjectContext()
-    const tempRoot = await mkdtemp(join(tmpdir(), 'konteks-mcp-dry-run-'))
+    const tempRoot = await mkdtemp(
+        join(dirname(context.memoryDir), '.konteks-mcp-dry-run-'),
+    )
     const tempMemoryDir = join(tempRoot, 'sandbox-memory')
     const backupMemoryDir = join(tempRoot, 'original-memory')
     const realMemoryExists = await pathExists(context.memoryDir)
+    let backupMoved = false
+    let sandboxInstalled = false
+    let restored = false
 
     try {
         if (realMemoryExists) {
@@ -97,16 +101,25 @@ async function dryRunCallTool(
 
         if (realMemoryExists) {
             await rename(context.memoryDir, backupMemoryDir)
+            backupMoved = true
         }
         await cp(tempMemoryDir, context.memoryDir, { recursive: true })
+        sandboxInstalled = true
 
         return await callMcpTool(name, input)
     } finally {
-        await rm(context.memoryDir, { force: true, recursive: true })
-        if (realMemoryExists) {
-            await rename(backupMemoryDir, context.memoryDir)
+        if (sandboxInstalled) {
+            await rm(context.memoryDir, { force: true, recursive: true })
         }
-        await rm(tempRoot, { force: true, recursive: true })
+        if (backupMoved) {
+            await rename(backupMemoryDir, context.memoryDir)
+            restored = true
+        } else {
+            restored = !realMemoryExists
+        }
+        if (restored) {
+            await rm(tempRoot, { force: true, recursive: true })
+        }
     }
 }
 

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import CallCommand from '@/commands/mcp/call-command'
 import mcpTools from '@/mcp/tools'
+import { loadProjectContext } from '@/providers/project/context'
 import { terminal } from '@/support/terminal/service'
 
 describe('commands/mcp/call', () => {
@@ -52,6 +53,42 @@ describe('commands/mcp/call', () => {
         expect(memoryDirDuringCall).toBe(memoryDir)
         expect(logSpy).toHaveBeenCalledWith('dry run config exists: true')
         expect(await fileExists(memoryDir)).toBe(true)
+    })
+
+    it('restores the original memory directory when a dry-run tool fails', async () => {
+        const projectRoot = await mkdtemp(
+            join(tmpdir(), 'konteks-call-command-'),
+        )
+        const memoryDir = join(projectRoot, '.konteks')
+        await mkdir(memoryDir, { recursive: true })
+        await writeFile(join(memoryDir, 'config.json'), '{}\n')
+
+        const saveTool = getTool('konteks_save_diary')
+        spyOn(saveTool, 'handle').mockImplementation(async () => {
+            const context = await loadProjectContext()
+            await writeFile(
+                join(context.memoryDir, 'dry-run-marker.txt'),
+                'sandbox',
+            )
+            throw new Error('dry run boom')
+        })
+
+        await expect(
+            withWorkingDirectory(projectRoot, () =>
+                new CallCommand().handle({
+                    args: [
+                        'konteks_save_diary',
+                        '{"summary":"Dry run diary entry should not persist."}',
+                    ],
+                    options: {},
+                }),
+            ),
+        ).rejects.toThrow('dry run boom')
+
+        expect(await fileExists(join(memoryDir, 'config.json'))).toBe(true)
+        expect(await fileExists(join(memoryDir, 'dry-run-marker.txt'))).toBe(
+            false,
+        )
     })
 
     it('calls read-only tools directly without dry run', async () => {
