@@ -84,6 +84,10 @@ function getHardIgnoreReason(relativePath: string): IgnoreReason | undefined {
         return 'hard_directory'
     }
 
+    if (parts.some(part => part.startsWith('.konteks-mcp-dry-run-'))) {
+        return 'hard_directory'
+    }
+
     const generatedReason = generatedOrMinifiedReason(normalized)
     if (generatedReason) {
         return generatedReason

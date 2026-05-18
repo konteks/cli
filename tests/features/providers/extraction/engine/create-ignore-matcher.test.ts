@@ -8,6 +8,11 @@ describe('extraction ignore rules', () => {
         expect(matcher.ignores('node_modules/pkg/index.js')).toBe(true)
         expect(matcher.ignores('dist/index.js')).toBe(true)
         expect(matcher.ignores('.konteks/config.json')).toBe(true)
+        expect(
+            matcher.ignores(
+                '.konteks-mcp-dry-run-abc/original-memory/config.json',
+            ),
+        ).toBe(true)
         expect(matcher.ignores('.env.local')).toBe(true)
         expect(matcher.ignores('certs/prod.pem')).toBe(true)
         expect(matcher.ignores('assets/logo.png')).toBe(true)
