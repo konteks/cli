@@ -150,6 +150,17 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
                 onProgress: progress,
             },
         )
+        const totalSectionCount = await readTotalSectionCount(db)
+        if (mode === 'resume') {
+            progress?.({
+                chunkCount: totalSectionCount,
+                current: files.length,
+                message: `Resumed extraction from ${files.length} files`,
+                phase: 'chunks',
+                status: 'done',
+                total: files.length,
+            })
+        }
         const embeddingRun = options.embeddingProvider
             ? await generateTargetEmbeddings(
                   db,
@@ -161,7 +172,6 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
             : { embeddedCount: 0, reusedCount: 0 }
         const vectorCount =
             embeddingRun.embeddedCount + embeddingRun.reusedCount
-        const totalSectionCount = await readTotalSectionCount(db)
         await db.close()
         const toonStore = createToonStore(context.memoryDir)
         progress?.({
