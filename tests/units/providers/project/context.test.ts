@@ -75,6 +75,9 @@ describe('project context', () => {
     it('reports missing memory when the project is not initialized', async () => {
         const projectRoot = await makeTempProject()
         const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
+        const colorSpy = spyOn(terminal, 'stdoutSupportsColor').mockReturnValue(
+            false,
+        )
 
         try {
             await withWorkingDirectory(projectRoot, () =>
@@ -88,6 +91,7 @@ describe('project context', () => {
                 'Documents       0 (0 sections, 0 modules)',
             )
         } finally {
+            colorSpy.mockRestore()
             logSpy.mockRestore()
         }
     })
@@ -97,6 +101,9 @@ describe('project context', () => {
         await mkdir(join(projectRoot, '.konteks'), { recursive: true })
         await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
         const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
+        const colorSpy = spyOn(terminal, 'stdoutSupportsColor').mockReturnValue(
+            false,
+        )
 
         try {
             await withWorkingDirectory(projectRoot, () =>
@@ -110,6 +117,7 @@ describe('project context', () => {
                 'Documents       0 (0 sections, 0 modules)',
             )
         } finally {
+            colorSpy.mockRestore()
             logSpy.mockRestore()
         }
     })

@@ -9,6 +9,9 @@ describe('project/status', () => {
     it('prints status with the current project paths', async () => {
         const projectRoot = await createConfiguredProject()
         const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
+        const colorSpy = spyOn(terminal, 'stdoutSupportsColor').mockReturnValue(
+            false,
+        )
 
         try {
             await withWorkingDirectory(projectRoot, () =>
@@ -22,6 +25,7 @@ describe('project/status', () => {
             expect(output).toContain('Status        Not initialized')
             expect(output).toContain('Last indexed  Not indexed yet')
         } finally {
+            colorSpy.mockRestore()
             logSpy.mockRestore()
         }
     })
