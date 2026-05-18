@@ -10,22 +10,19 @@ type InitProgressReporter = {
 }
 
 export default function createInitProgressReporter(): InitProgressReporter {
-    let printedSections = false
+    let printedDocumentLine = false
     let printedPreparation = false
     let generatedSummary = false
-    let latestFileCount = 0
-    let latestSectionCount = 0
+    let fileCount = 0
+    let sectionCount = 0
     let spinnerIndex = 0
     let lastInlineLength = 0
-    let latestModelPercent: number | undefined
+    let modelPercent: number | undefined
     const color = createColorPalette(terminal.stderrSupportsColor())
 
     return {
         done() {
-            if (lastInlineLength > 0) {
-                terminal.writeError('\n')
-                lastInlineLength = 0
-            }
+            endInlineProgress()
         },
         report(event) {
             if (event.phase === 'preparation') {
@@ -35,8 +32,8 @@ export default function createInitProgressReporter(): InitProgressReporter {
 
             if (event.phase === 'chunks' && event.status === 'done') {
                 finishPreparation()
-                latestSectionCount = event.chunkCount ?? 0
-                latestFileCount = event.current ?? event.total ?? 0
+                sectionCount = event.chunkCount ?? 0
+                fileCount = event.current ?? event.total ?? 0
                 return
             }
 
@@ -45,11 +42,7 @@ export default function createInitProgressReporter(): InitProgressReporter {
                 event.stage === 'embed' &&
                 event.status === 'start'
             ) {
-                finishPreparation()
-                printedSections = true
-                printCheck(preparedDocumentsMessage(event.total ?? 0))
-                terminal.log('')
-                terminal.log(sectionTitle('Building project memory...'))
+                printEmbeddingStart(event.total ?? 0)
                 return
             }
 
@@ -77,9 +70,9 @@ export default function createInitProgressReporter(): InitProgressReporter {
         },
         summary(result) {
             endInlineProgress()
-            if (!printedSections) {
-                latestSectionCount = result.chunkCount
-                latestFileCount = result.fileCount
+            if (!printedDocumentLine) {
+                sectionCount = result.chunkCount
+                fileCount = result.fileCount
                 printCheck(preparedDocumentsMessage(result.vectorCount))
             }
             if (generatedSummary || result.summaryRef) {
@@ -98,17 +91,14 @@ export default function createInitProgressReporter(): InitProgressReporter {
     function printVectorProgress(event: ExtractionProgressEvent): void {
         const current = event.current ?? 0
         const total = event.total ?? current
-        const line = `${formatCount(current)}/${formatCount(total)} vectors indexed`
-        const output =
-            current === total
-                ? `${color.success('✓')} ${line}`
-                : progressLine(line)
-        spinnerIndex += 1
+        const message = `${formatCount(current)}/${formatCount(total)} vectors indexed`
 
-        const outputLength = visibleLength(output)
-        const padding = Math.max(0, lastInlineLength - outputLength)
-        terminal.writeError(`\r${output}${' '.repeat(padding)}`)
-        lastInlineLength = outputLength
+        if (current === total) {
+            writeInline(checkLine(message))
+            return
+        }
+
+        writeProgress(message)
     }
 
     function printPreparation(event: ExtractionProgressEvent): void {
@@ -127,7 +117,7 @@ export default function createInitProgressReporter(): InitProgressReporter {
         }
 
         if (event.stage === 'prepare' && event.downloadPercent !== undefined) {
-            latestModelPercent = event.downloadPercent
+            modelPercent = event.downloadPercent
         }
 
         printCombinedPreparation()
@@ -142,17 +132,23 @@ export default function createInitProgressReporter(): InitProgressReporter {
     }
 
     function preparationMessage(): string {
-        if (latestModelPercent === undefined) {
+        if (modelPercent === undefined) {
             return `Preparing dependencies: ${spinnerFrame(spinnerIndex)}`
         }
 
-        return `Preparing dependencies: ${color.accent(latestModelPercent.toFixed(1))}%`
+        return `Preparing dependencies: ${color.accent(modelPercent.toFixed(1))}%`
     }
 
     function printInlineProgress(message: string): void {
-        const output = progressLine(message)
-        spinnerIndex += 1
+        writeProgress(message)
+    }
 
+    function writeProgress(message: string): void {
+        writeInline(progressLine(message))
+        spinnerIndex += 1
+    }
+
+    function writeInline(output: string): void {
         const outputLength = visibleLength(output)
         const padding = Math.max(0, lastInlineLength - outputLength)
         terminal.writeError(`\r${output}${' '.repeat(padding)}`)
@@ -183,6 +179,14 @@ export default function createInitProgressReporter(): InitProgressReporter {
         )
     }
 
+    function printEmbeddingStart(documentCount: number): void {
+        finishPreparation()
+        printedDocumentLine = true
+        printCheck(preparedDocumentsMessage(documentCount))
+        terminal.log('')
+        terminal.log(sectionTitle('Building project memory...'))
+    }
+
     function completeInlineProgress(message: string): void {
         if (lastInlineLength === 0) {
             printCheck(message)
@@ -203,9 +207,9 @@ export default function createInitProgressReporter(): InitProgressReporter {
     }
 
     function preparedDocumentsMessage(documentCount: number): string {
-        const moduleCount = Math.max(0, documentCount - latestSectionCount)
+        const moduleCount = Math.max(0, documentCount - sectionCount)
 
-        return `Extracted ${formatCount(documentCount)} documents from ${formatCount(latestFileCount)} files (${formatCount(latestSectionCount)} sections, ${formatCount(moduleCount)} modules)`
+        return `Extracted ${formatCount(documentCount)} documents from ${formatCount(fileCount)} files (${formatCount(sectionCount)} sections, ${formatCount(moduleCount)} modules)`
     }
 
     function progressLine(message: string): string {
