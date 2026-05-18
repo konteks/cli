@@ -28,8 +28,12 @@ export type ExtractionManifest = {
 
 type ExtractionDiagnostics = ScanDiagnostics & {
     chunkCount: number
+    detectedParserLanguages: string[]
     embeddedCount: number
     embeddingReusedCount: number
+    languageCount: number
+    loadedParserCount: number
+    vectorCount: number
     filesTruncatedByChunkLimit: number
     parserFallbackFiles: number
     parserUsedFiles: number

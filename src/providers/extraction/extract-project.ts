@@ -13,6 +13,10 @@ import extractSections from '@/providers/extraction/engine/extract-sections'
 import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import { scanProjectFilesWithDiagnostics } from '@/providers/extraction/engine/file-scan'
 import formatProjectSummaryToon from '@/providers/extraction/engine/format-project-summary-toon'
+import {
+    getGrammarForPath,
+    isBundledGrammar,
+} from '@/providers/extraction/engine/grammar-loader'
 import type {
     ExtractionManifest,
     ExtractionMode,
@@ -71,7 +75,11 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
         })
         const scan = await scanProjectFilesWithDiagnostics(context.projectRoot)
         const files = scan.files
+        const detectedParserLanguages = detectParserLanguages(files)
+        const languageCount = detectedParserLanguages.length
         progress?.({
+            detectedParserLanguages,
+            languageCount,
             message: `Scanned ${files.length} files`,
             phase: 'scan',
             status: 'done',
@@ -142,6 +150,8 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
                   { onProgress: progress },
               )
             : { embeddedCount: 0, reusedCount: 0 }
+        const vectorCount =
+            embeddingRun.embeddedCount + embeddingRun.reusedCount
         const totalSectionCount = await readTotalSectionCount(db)
         await db.close()
         const toonStore = createToonStore(context.memoryDir)
@@ -170,12 +180,16 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
             diagnostics: {
                 ...scan.diagnostics,
                 chunkCount: totalSectionCount,
+                detectedParserLanguages,
                 embeddedCount: embeddingRun.embeddedCount,
                 embeddingReusedCount: embeddingRun.reusedCount,
                 filesTruncatedByChunkLimit:
                     extractedSections.filesTruncatedByChunkLimit,
+                languageCount,
+                loadedParserCount: extractedSections.loadedParserCount,
                 parserFallbackFiles: extractedSections.parserFallbackFiles,
                 parserUsedFiles: extractedSections.parserUsedFiles,
+                vectorCount,
             },
             fileCount: files.length,
             files,
@@ -195,7 +209,7 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
         progress?.({
             chunkCount: extractedSections.chunkCount,
             embeddedCount: embeddingRun.embeddedCount,
-            message: `Extraction complete: ${totalSectionCount} sections, ${embeddingRun.embeddedCount} indexed, ${embeddingRun.reusedCount} unchanged`,
+            message: `Extraction complete: ${totalSectionCount} sections, ${vectorCount} indexed, ${embeddingRun.reusedCount} unchanged`,
             phase: 'done',
             reusedCount: embeddingRun.reusedCount,
             status: 'done',
@@ -204,18 +218,35 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
         return {
             chunkCount: totalSectionCount,
             deletedFilePaths: deletedPaths,
+            detectedParserLanguages,
             embeddedCount: embeddingRun.embeddedCount,
             embeddingReusedCount: embeddingRun.reusedCount,
             extractedAt,
             fileCount: files.length,
+            languageCount,
+            loadedParserCount: extractedSections.loadedParserCount,
             mode,
             ok: true,
             projectRoot: context.projectRoot,
             summaryRef: summary.ref,
             technologies: metadata.technologies,
             updatedFilePaths: filesToExtract.map(file => file.path),
+            vectorCount,
         }
     }
+}
+
+function detectParserLanguages(files: ScannedFile[]): string[] {
+    return [
+        ...new Set(
+            files.flatMap(file => {
+                const grammar = getGrammarForPath(file.path)
+                return grammar && !isBundledGrammar(grammar.id)
+                    ? [grammar.id]
+                    : []
+            }),
+        ),
+    ].sort((left, right) => left.localeCompare(right))
 }
 
 function selectFilesForMode(

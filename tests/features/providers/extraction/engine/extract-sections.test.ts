@@ -44,6 +44,7 @@ describe('providers/extraction/engine/extract-sections', () => {
             expect(result).toEqual({
                 chunkCount: 2,
                 filesTruncatedByChunkLimit: 0,
+                loadedParserCount: 0,
                 parserFallbackFiles: 0,
                 parserUsedFiles: 0,
             })

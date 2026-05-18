@@ -97,6 +97,7 @@ describe('extractProject', () => {
         expect(manifest?.summaryRef).toBe(result.summaryRef)
         expect(manifest?.diagnostics).toMatchObject({
             chunkCount: result.chunkCount,
+            detectedParserLanguages: [],
             filesIncluded: 2,
             filesSkipped: {
                 secret: 1,

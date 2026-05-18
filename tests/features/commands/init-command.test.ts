@@ -1,12 +1,50 @@
-import { afterEach, describe, expect, it, mock } from 'bun:test'
+import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { terminal } from '@/support/terminal/service'
 import FakeEmbeddingProvider from '../../fake/fake-embedding-provider'
 
+const checkboxCalls: unknown[] = []
+let checkboxResult: string[] = []
+const confirmCalls: unknown[] = []
+let confirmResult = true
+
 class MockHuggingFaceEmbeddingProvider extends FakeEmbeddingProvider {
-    public constructor(_options?: unknown) {
+    private readonly options?: {
+        onProgress?: (event: {
+            message: string
+            phase: 'preparation'
+            stage: 'prepare'
+            status: 'progress'
+        }) => void
+    }
+
+    public constructor(options?: {
+        onProgress?: (event: {
+            message: string
+            phase: 'preparation'
+            stage: 'prepare'
+            status: 'progress'
+        }) => void
+    }) {
         super()
+        this.options = options
+    }
+
+    public async prepare(): Promise<void> {
+        this.options?.onProgress?.({
+            message: 'Loading embedding model fake/all-MiniLM-L6-v2',
+            phase: 'preparation',
+            stage: 'prepare',
+            status: 'progress',
+        })
+        this.options?.onProgress?.({
+            message: 'Embedding model ready: fake/all-MiniLM-L6-v2',
+            phase: 'preparation',
+            stage: 'prepare',
+            status: 'progress',
+        })
     }
 }
 
@@ -15,8 +53,14 @@ mock.module('@/providers/embeddings/hugging-face-embedding-provider', () => ({
 }))
 
 mock.module('@inquirer/prompts', () => ({
-    checkbox: async () => [],
-    confirm: async () => true,
+    checkbox: async (options: unknown) => {
+        checkboxCalls.push(options)
+        return checkboxResult
+    },
+    confirm: async (options: unknown) => {
+        confirmCalls.push(options)
+        return confirmResult
+    },
     select: async () => 'grammars',
 }))
 
@@ -31,6 +75,10 @@ async function makeTempProject(): Promise<string> {
 }
 
 afterEach(async () => {
+    checkboxCalls.splice(0)
+    checkboxResult = []
+    confirmCalls.splice(0)
+    confirmResult = true
     await Promise.all(
         tempDirs
             .splice(0)
@@ -53,15 +101,30 @@ async function withWorkingDirectory<T>(
 }
 
 describe('InitCommand', () => {
-    const init = (project: string) =>
-        withWorkingDirectory(project, () =>
-            createCommand().then(command =>
-                command.handle({
-                    args: [],
-                    options: {},
-                }),
-            ),
-        )
+    const init = async (project: string) =>
+        await withWorkingDirectory(project, async () => {
+            const output: string[] = []
+            const logSpy = spyOn(terminal, 'log').mockImplementation(
+                message => {
+                    output.push(message)
+                },
+            )
+            const errorSpy = spyOn(terminal, 'writeError').mockImplementation(
+                message => {
+                    output.push(message)
+                },
+            )
+
+            try {
+                const command = await createCommand()
+                await command.handle()
+            } finally {
+                logSpy.mockRestore()
+                errorSpy.mockRestore()
+            }
+
+            return output.join('\n')
+        })
 
     it('adds .konteks to .gitignore during init', async () => {
         const projectRoot = await makeTempProject()
@@ -112,6 +175,127 @@ describe('InitCommand', () => {
         expect(secondManifest).toBe(firstManifest)
     })
 
+    it('prints the redesigned init progress and summary', async () => {
+        const projectRoot = await makeTempProject()
+
+        const output = await init(projectRoot)
+
+        const plainOutput = stripAnsi(output)
+
+        expect(plainOutput).toContain('Initializing project memory')
+        expect(plainOutput).toContain(
+            '  ✓ 2 files scanned, 0 languages detected: none',
+        )
+        expect(plainOutput).toContain('  ✓ Extracted 2 semantic sections')
+        expect(plainOutput).toContain('  ✓ Loaded 0 language parsers')
+        expect(plainOutput).toContain('Loading embedding model')
+        expect(plainOutput).toContain('Embedding model ready')
+        expect(plainOutput).toContain('Building project memory...')
+        expect(plainOutput).toContain('vectors indexed')
+        expect(plainOutput).toContain('  ✓ Generated project summary')
+        expect(plainOutput).toContain('Project memory ready')
+        expect(plainOutput).toContain('  Files indexed      2')
+        expect(plainOutput).toContain('  Sections extracted 2')
+        expect(plainOutput).toContain('  Vectors indexed    5')
+        expect(plainOutput).not.toContain('Initialized Konteks at')
+        expect(plainOutput).not.toContain('Extracted 2 files into 2 sections')
+    })
+
+    it('colors init progress when color is supported', async () => {
+        const projectRoot = await makeTempProject()
+        const colorSpy = spyOn(terminal, 'stderrSupportsColor').mockReturnValue(
+            true,
+        )
+
+        try {
+            const output = await init(projectRoot)
+
+            expect(output).toContain('\u001b[32m✓\u001b[0m')
+            expect(output).toContain('\u001b[36mProject memory ready\u001b[0m')
+        } finally {
+            colorSpy.mockRestore()
+        }
+    })
+
+    it('excludes bundled parser detections from the language review', async () => {
+        const projectRoot = await makeTempProject()
+        await writeFile(join(projectRoot, 'package.json'), '{"type":"module"}')
+
+        const output = await withInteractiveTerminal(() => init(projectRoot))
+        const manifest = JSON.parse(
+            await readFile(
+                join(projectRoot, '.konteks', 'mine-manifest.json'),
+                'utf8',
+            ),
+        )
+        const config = JSON.parse(
+            await readFile(
+                join(projectRoot, '.konteks', 'config.json'),
+                'utf8',
+            ),
+        )
+
+        const plainOutput = stripAnsi(output)
+
+        expect(plainOutput).toContain(
+            '  2 files will be scanned, including bundled language: json',
+        )
+        expect(plainOutput).toContain('  0 languages detected: none')
+        expect(plainOutput).not.toContain('Bundled required')
+        expect(plainOutput).not.toContain('Detected languages: json')
+        expect(plainOutput).not.toContain('✓ Detected 1 languages')
+        expect(plainOutput).toContain('Preparing language parsers')
+        expect(plainOutput).toContain('1/1 language parsers ready')
+        expect(manifest.diagnostics.detectedParserLanguages).toEqual([])
+        expect(config.extraction.grammars.selected).toEqual([])
+        expect(confirmCalls).toHaveLength(0)
+        expect(checkboxCalls).toHaveLength(0)
+    })
+
+    it('prints a skipped-file summary after deselecting detected languages', async () => {
+        const projectRoot = await makeTempProject()
+        await writeFile(join(projectRoot, 'src.ts'), 'export const value = 1\n')
+        confirmResult = false
+        checkboxResult = []
+
+        const output = await withInteractiveTerminal(() => init(projectRoot))
+
+        const plainOutput = stripAnsi(output)
+
+        expect(plainOutput).toContain(
+            '  2 files will be scanned, including bundled languages: none',
+        )
+        expect(plainOutput).toContain('  1 language detected: typescript')
+        expect(plainOutput).toContain('Scanned 2 files, 1 file skipped.')
+    })
+
+    it('opens registry grammar checkboxes when detected languages are rejected', async () => {
+        const projectRoot = await makeTempProject()
+        await writeFile(join(projectRoot, 'src.ts'), 'export const value = 1\n')
+        confirmResult = false
+        checkboxResult = []
+
+        await withInteractiveTerminal(() => init(projectRoot))
+        const config = JSON.parse(
+            await readFile(
+                join(projectRoot, '.konteks', 'config.json'),
+                'utf8',
+            ),
+        )
+        const choices = (
+            checkboxCalls[0] as {
+                choices: Array<{ checked: boolean; value: string }>
+            }
+        ).choices
+
+        expect(confirmCalls).toHaveLength(1)
+        expect(checkboxCalls).toHaveLength(1)
+        expect(
+            choices.find(choice => choice.value === 'typescript')?.checked,
+        ).toBe(true)
+        expect(config.extraction.grammars.selected).toEqual([])
+    })
+
     it('finishes setup when a previous init stopped before extraction', async () => {
         const projectRoot = await makeTempProject()
         await mkdir(join(projectRoot, '.konteks'), { recursive: true })
@@ -144,10 +328,36 @@ describe('InitCommand', () => {
         expect(
             resumedManifest.diagnostics.embeddingReusedCount,
         ).toBeGreaterThan(0)
+        expect(resumedManifest.diagnostics.vectorCount).toBe(
+            resumedManifest.diagnostics.embeddedCount +
+                resumedManifest.diagnostics.embeddingReusedCount,
+        )
     })
 })
 
 async function createCommand() {
     const { default: InitCommand } = await import('@/commands/init-command')
     return new InitCommand()
+}
+
+async function withInteractiveTerminal<T>(operation: () => Promise<T>) {
+    const stdinSpy = spyOn(terminal, 'stdinIsInteractive').mockReturnValue(true)
+    const stderrSpy = spyOn(terminal, 'stderrIsInteractive').mockReturnValue(
+        true,
+    )
+
+    try {
+        return await operation()
+    } finally {
+        stdinSpy.mockRestore()
+        stderrSpy.mockRestore()
+    }
+}
+
+function stripAnsi(value: string): string {
+    const ansiPattern = new RegExp(
+        `${String.fromCharCode(27)}\\[[0-9;]*m`,
+        'gu',
+    )
+    return value.replaceAll(ansiPattern, '')
 }

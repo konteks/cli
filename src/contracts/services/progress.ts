@@ -21,10 +21,13 @@ export type ExtractionProgressEvent = {
     downloadLoadedBytes?: number
     downloadPercent?: number
     downloadTotalBytes?: number
+    detectedParserLanguages?: string[]
     embeddedCount?: number
+    languageCount?: number
     message?: string
     path?: string
     phase: ExtractionProgressPhase
+    parserCount?: number
     stage?: 'embed' | 'prepare'
     reusedCount?: number
     status: ExtractionProgressStatus

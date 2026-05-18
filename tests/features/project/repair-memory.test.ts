@@ -8,16 +8,20 @@ let confirmResult = true
 let extractedResponse: ExtractProjectResponse = {
     chunkCount: 0,
     deletedFilePaths: [],
+    detectedParserLanguages: [],
     embeddedCount: 0,
     embeddingReusedCount: 0,
     extractedAt: '2026-01-01T00:00:00.000Z',
     fileCount: 0,
+    languageCount: 0,
+    loadedParserCount: 0,
     mode: 'reindex',
     ok: true,
     projectRoot: process.cwd(),
     summaryRef: 'objects/summary.json',
     technologies: [],
     updatedFilePaths: [],
+    vectorCount: 0,
 }
 const extractorCalls: unknown[] = []
 const progressReports: unknown[] = []
@@ -44,16 +48,20 @@ describe('RepairCommand', () => {
         extractedResponse = {
             chunkCount: 0,
             deletedFilePaths: [],
+            detectedParserLanguages: [],
             embeddedCount: 0,
             embeddingReusedCount: 0,
             extractedAt: '2026-01-01T00:00:00.000Z',
             fileCount: 0,
+            languageCount: 0,
+            loadedParserCount: 0,
             mode: 'reindex',
             ok: true,
             projectRoot: process.cwd(),
             summaryRef: 'objects/summary.json',
             technologies: [],
             updatedFilePaths: [],
+            vectorCount: 0,
         }
         extractorCalls.length = 0
         progressReports.length = 0
@@ -132,16 +140,20 @@ describe('RepairCommand', () => {
         extractedResponse = {
             chunkCount: 4,
             deletedFilePaths: [],
+            detectedParserLanguages: ['typescript'],
             embeddedCount: 3,
             embeddingReusedCount: 1,
             extractedAt: '2026-01-01T00:00:00.000Z',
             fileCount: 2,
+            languageCount: 1,
+            loadedParserCount: 1,
             mode: 'reindex',
             ok: true,
             projectRoot: '/tmp/project',
             summaryRef: 'objects/summary.toon',
             technologies: ['typescript'],
             updatedFilePaths: ['src/index.ts'],
+            vectorCount: 4,
         }
         const { extractorSpy, progressSpy } = installExtractorSpies()
         const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})

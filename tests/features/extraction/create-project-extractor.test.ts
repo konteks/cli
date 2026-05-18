@@ -34,16 +34,20 @@ describe('extraction/extract', () => {
         const response: ExtractProjectResponse = {
             chunkCount: 7,
             deletedFilePaths: [],
+            detectedParserLanguages: ['typescript'],
             embeddedCount: 7,
             embeddingReusedCount: 0,
             extractedAt: '2026-01-01T00:00:00.000Z',
             fileCount: 3,
+            languageCount: 1,
+            loadedParserCount: 1,
             mode: 'changed',
             ok: true,
             projectRoot,
             summaryRef: 'objects/summary.toon',
             technologies: ['typescript'],
             updatedFilePaths: ['src/index.ts'],
+            vectorCount: 7,
         }
         const calls: Array<{
             project: Project
