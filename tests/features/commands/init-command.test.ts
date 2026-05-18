@@ -196,7 +196,9 @@ describe('InitCommand', () => {
         expect(plainOutput).toContain('✓ Generated project summary')
         expect(plainOutput).toContain('Project memory ready')
         expect(plainOutput).toContain('Files indexed      2')
-        expect(plainOutput).toContain('Sections extracted 2')
+        expect(plainOutput).toContain(
+            'Documents extracted: 5 (2 sections, 3 modules)',
+        )
         expect(plainOutput).toContain('Vectors indexed    5')
         expect(plainOutput).not.toContain('Initialized Konteks at')
         expect(plainOutput).not.toContain('Extracted 2 files into 2 sections')
