@@ -6,7 +6,7 @@ import type {
     SaveOptions,
     SaveSessionInput,
 } from '@/contracts/repositories/memory-repository'
-import type { SaveResult as PublicSaveResult } from '@/models/memory'
+import type { SaveResult } from '@/models/memory'
 import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
@@ -23,81 +23,7 @@ import {
 } from './save-policy'
 import { indexSearchDocument } from './search-index'
 
-type SaveResult = PublicSaveResult & {
-    accepted: true
-    type: 'diary' | 'memories' | 'memory' | 'session'
-}
-
 export async function saveKonteksMemory(
-    db: DatabaseService,
-    context: Project,
-    input: SaveMemoryInput,
-    options: SaveOptions = {},
-): Promise<SaveResult> {
-    return await persistMemory(db, context, input, options)
-}
-
-export async function saveKonteksMemories(
-    db: DatabaseService,
-    context: Project,
-    input: SaveMemoriesInput,
-    options: SaveOptions = {},
-): Promise<SaveResult> {
-    return await persistMemories(db, context, input, options)
-}
-
-export async function saveKonteksDiary(
-    db: DatabaseService,
-    context: Project,
-    input: SaveDiaryInput,
-    options: SaveOptions = {},
-): Promise<SaveResult> {
-    return await persistDiary(db, context, input, options)
-}
-
-export async function saveKonteksSession(
-    db: DatabaseService,
-    context: Project,
-    input: SaveSessionInput,
-    options: SaveOptions = {},
-): Promise<SaveResult> {
-    return await persistSession(db, context, input, options)
-}
-
-async function persistMemories(
-    db: DatabaseService,
-    context: Project,
-    input: SaveMemoriesInput,
-    _options: SaveOptions = {},
-): Promise<SaveResult> {
-    const batchId = `memory_batch_${randomUUID()}`
-    const memoryIds: string[] = []
-    let skippedMemories = 0
-
-    await db.transaction(async tx => {
-        for (const memory of input.memories) {
-            try {
-                const saved = await persistMemory(tx, context, memory)
-                memoryIds.push(saved.id)
-            } catch (error) {
-                if (!isSkippableMemoryError(error)) {
-                    throw error
-                }
-                skippedMemories += 1
-            }
-        }
-    })
-
-    return {
-        accepted: true,
-        id: memoryIds[0] ?? batchId,
-        memoryIds: [...new Set(memoryIds)],
-        skippedMemories,
-        type: 'memories',
-    }
-}
-
-async function persistMemory(
     db: DatabaseService,
     context: Project,
     input: SaveMemoryInput,
@@ -112,7 +38,6 @@ async function persistMemory(
             duplicateOf: duplicate.id,
             id: duplicate.id,
             memoryIds: [duplicate.id],
-            type: 'memory',
         }
     }
 
@@ -182,11 +107,42 @@ insert into observations (
         accepted: true,
         id,
         memoryIds: [id],
-        type: 'memory',
     }
 }
 
-async function persistSession(
+export async function saveKonteksMemories(
+    db: DatabaseService,
+    context: Project,
+    input: SaveMemoriesInput,
+    _options: SaveOptions = {},
+): Promise<SaveResult> {
+    const batchId = `memory_batch_${randomUUID()}`
+    const memoryIds: string[] = []
+    let skippedMemories = 0
+
+    await db.transaction(async tx => {
+        for (const memory of input.memories) {
+            try {
+                const saved = await saveKonteksMemory(tx, context, memory)
+                memoryIds.push(saved.id)
+            } catch (error) {
+                if (!isSkippableMemoryError(error)) {
+                    throw error
+                }
+                skippedMemories += 1
+            }
+        }
+    })
+
+    return {
+        accepted: true,
+        id: memoryIds[0] ?? batchId,
+        memoryIds: [...new Set(memoryIds)],
+        skippedMemories,
+    }
+}
+
+export async function saveKonteksSession(
     db: DatabaseService,
     context: Project,
     input: SaveSessionInput,
@@ -248,11 +204,10 @@ insert into diary_entries (
     return {
         accepted: true,
         id,
-        type: 'session',
     }
 }
 
-async function persistDiary(
+export async function saveKonteksDiary(
     db: DatabaseService,
     context: Project,
     input: SaveDiaryInput,
@@ -334,7 +289,6 @@ insert into diary_entries (
         accepted: true,
         diaryId: id,
         id,
-        type: 'diary',
     }
 }
 

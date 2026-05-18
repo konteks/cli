@@ -1,8 +1,6 @@
 import type {
-    MemoryRepositoryContract,
     SaveDiaryInput,
     SaveMemoriesInput,
-    SaveOptions,
 } from '@/contracts/repositories/memory-repository'
 import type { SaveResult } from '@/models/memory'
 import createMemoryRepository from './create-memory-repository'
@@ -28,16 +26,8 @@ export async function saveDiary(input: SaveDiaryInput): Promise<SaveResult> {
     const context = await loadMcpProjectContext()
     const projectUpdate = await updateChangedProjectMemorySilently(context)
     return await withProjectDatabaseContext(context, service =>
-        saveRepositoryDiary(createMemoryRepository(service, context), input, {
+        createMemoryRepository(service, context).saveDiary(input, {
             projectUpdate,
         }),
     )
-}
-
-async function saveRepositoryDiary(
-    memoryRepository: MemoryRepositoryContract,
-    input: SaveDiaryInput,
-    options?: SaveOptions,
-): Promise<SaveResult> {
-    return await memoryRepository.saveDiary(input, options)
 }

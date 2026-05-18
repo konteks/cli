@@ -115,7 +115,6 @@ export function applyRolePolicy(
 export function applyGroupAwarePruning(
     results: MemorySearchResult[],
     mode: SearchMode,
-    _intent: SearchIntent,
     limit: number,
 ): MemorySearchResult[] {
     const maxPerType = mode === 'recall' ? 4 : 6

@@ -87,7 +87,6 @@ export default async function searchMemory(
             ...diaries.map(row => diaryToResult(row, terms)),
         ],
         mode,
-        intent,
         limit,
     )
         .filter(result => allowResult(result, mode, intent))
@@ -124,7 +123,6 @@ async function searchRetrievalDocuments(
             }),
         ),
         mode,
-        intent,
         limit,
     )
         .filter(result => allowResult(result, mode, intent))
@@ -163,7 +161,6 @@ async function searchFts(
             }),
         ),
         mode,
-        intent,
         limit,
     )
         .filter(result => allowResult(result, mode, intent))

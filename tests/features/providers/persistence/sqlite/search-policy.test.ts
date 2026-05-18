@@ -117,11 +117,6 @@ describe('providers/persistence/sqlite/search-policy', () => {
                     result({ id: `m${index}`, score: 100 - index }),
                 ),
                 'recall',
-                {
-                    allowsDiary: false,
-                    implementationTask: false,
-                    prefersAgentReference: false,
-                },
                 10,
             ).map(item => item.id),
         ).toEqual(['m0', 'm1', 'm2', 'm3'])
