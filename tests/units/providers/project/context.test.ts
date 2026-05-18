@@ -81,10 +81,12 @@ describe('project context', () => {
                 new StatusCommand().handle(),
             )
             const output = logSpy.mock.calls[0]?.[0] ?? ''
+            expect(output).toContain('Project memory status')
+            expect(output).toContain('Status        Not initialized')
+            expect(output).toContain('Last indexed  Not indexed yet')
             expect(output).toContain(
-                'Konteks project memory is not initialized.',
+                'Documents       0 (0 sections, 0 modules)',
             )
-            expect(output).toContain('run konteks init')
         } finally {
             logSpy.mockRestore()
         }
@@ -101,8 +103,12 @@ describe('project context', () => {
                 new StatusCommand().handle(),
             )
             const output = logSpy.mock.calls[0]?.[0] ?? ''
-            expect(output).toContain('No extraction manifest exists yet.')
-            expect(output).toContain('run konteks repair')
+            expect(output).toContain('Project memory status')
+            expect(output).toContain('Status        Not initialized')
+            expect(output).toContain('Last indexed  Not indexed yet')
+            expect(output).toContain(
+                'Documents       0 (0 sections, 0 modules)',
+            )
         } finally {
             logSpy.mockRestore()
         }
