@@ -185,7 +185,7 @@ describe('InitCommand', () => {
         expect(plainOutput).toContain('Initializing project memory')
 
         expect(plainOutput).toContain(
-            '✓ Extracted 2 semantic sections from 2 files',
+            '✓ Extracted 5 documents from 2 files (2 sections, 3 modules)',
         )
         expect(plainOutput).not.toContain('Loaded 0 language parsers')
         expect(plainOutput).toContain('✓ Preparing dependencies')
@@ -200,6 +200,7 @@ describe('InitCommand', () => {
         expect(plainOutput).toContain('Vectors indexed    5')
         expect(plainOutput).not.toContain('Initialized Konteks at')
         expect(plainOutput).not.toContain('Extracted 2 files into 2 sections')
+        expect(plainOutput).not.toContain('Extracted 2 semantic sections')
     })
 
     it('colors init progress when color is supported', async () => {
@@ -293,7 +294,9 @@ describe('InitCommand', () => {
         expect(output).not.toContain('Loading embedding model')
         expect(output).not.toContain('Loading tokenizer.json')
         expect(output).not.toContain('Loaded 1 language parsers')
-        expect(output).toContain('✓ Extracted 3 semantic sections from 3 files')
+        expect(output).toContain(
+            '✓ Extracted 7 documents from 3 files (3 sections, 4 modules)',
+        )
     })
 
     it('finishes setup when a previous init stopped before extraction', async () => {

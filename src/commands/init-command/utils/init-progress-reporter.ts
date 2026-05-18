@@ -13,6 +13,8 @@ export default function createInitProgressReporter(): InitProgressReporter {
     let printedSections = false
     let printedPreparation = false
     let generatedSummary = false
+    let latestFileCount = 0
+    let latestSectionCount = 0
     let spinnerIndex = 0
     let lastInlineLength = 0
     let latestModelPercent: number | undefined
@@ -33,10 +35,8 @@ export default function createInitProgressReporter(): InitProgressReporter {
 
             if (event.phase === 'chunks' && event.status === 'done') {
                 finishPreparation()
-                printedSections = true
-                printCheck(
-                    `Extracted ${color.accent((event.chunkCount ?? 0).toString())} semantic sections from ${color.accent((event.current ?? event.total ?? 0).toString())} files`,
-                )
+                latestSectionCount = event.chunkCount ?? 0
+                latestFileCount = event.current ?? event.total ?? 0
                 return
             }
 
@@ -46,6 +46,8 @@ export default function createInitProgressReporter(): InitProgressReporter {
                 event.status === 'start'
             ) {
                 finishPreparation()
+                printedSections = true
+                printCheck(preparedDocumentsMessage(event.total ?? 0))
                 terminal.log('')
                 terminal.log(sectionTitle('Building project memory...'))
                 return
@@ -76,9 +78,9 @@ export default function createInitProgressReporter(): InitProgressReporter {
         summary(result) {
             endInlineProgress()
             if (!printedSections) {
-                printCheck(
-                    `Extracted ${color.accent(result.chunkCount.toString())} semantic sections from ${color.accent(result.fileCount.toString())} files`,
-                )
+                latestSectionCount = result.chunkCount
+                latestFileCount = result.fileCount
+                printCheck(preparedDocumentsMessage(result.vectorCount))
             }
             if (generatedSummary || result.summaryRef) {
                 printCheck('Generated project summary')
@@ -198,6 +200,12 @@ export default function createInitProgressReporter(): InitProgressReporter {
         terminal.log(
             `${color.dim(label.padEnd(18))} ${color.info(value.toString())}`,
         )
+    }
+
+    function preparedDocumentsMessage(documentCount: number): string {
+        const moduleCount = Math.max(0, documentCount - latestSectionCount)
+
+        return `Extracted ${formatCount(documentCount)} documents from ${formatCount(latestFileCount)} files (${formatCount(latestSectionCount)} sections, ${formatCount(moduleCount)} modules)`
     }
 
     function progressLine(message: string): string {
