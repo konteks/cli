@@ -11,6 +11,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
+import searchMemory from '@/database/services/search-memory'
 import {
     getExtractionFreshness,
     readExtractionManifest,
@@ -22,7 +23,6 @@ import {
     saveKonteksDiary,
     saveKonteksMemory,
 } from '@/providers/persistence/sqlite/save-konteks-input'
-import searchMemory from '@/providers/persistence/sqlite/search-memory'
 import { loadProjectContext } from '@/providers/project/context'
 import FakeEmbeddingProvider from '../../../../fake/fake-embedding-provider'
 

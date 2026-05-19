@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'bun:test'
 import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
-import type { RetrievalDocumentRow } from '@/providers/persistence/sqlite/persistence-adapter'
+import type { RetrievalDocumentRow } from '@/database/actions/query-retrieval-documents'
 import {
     computeVectorScore,
     embedSearchQuery,
     makeSearchResult,
-} from '@/providers/persistence/sqlite/search-scoring'
+} from '@/database/support/search-scoring'
 
 function vectorBlob(values: number[]): Uint8Array {
     return new Uint8Array(new Float32Array(values).buffer)

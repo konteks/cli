@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import type { ForgetInput } from '@/contracts/repositories/memory-repository'
+import queryDiaries from '@/database/actions/query-diaries'
+import queryObservations from '@/database/actions/query-observations'
 import type DatabaseService from './database-service'
+
 // import { GraphStore } from ./graph-store.js'
-import { queryDiaries, queryObservations } from './persistence-adapter'
 
 type ForgetResult = {
     accepted: boolean

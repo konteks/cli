@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'bun:test'
-import type { MemorySearchResult } from '@/models/memory'
 import {
     allowResult,
     applyGroupAwarePruning,
@@ -8,7 +7,8 @@ import {
     detectIntent,
     toFtsQuery,
     tokenize,
-} from '@/providers/persistence/sqlite/search-policy'
+} from '@/database/support/search-policy'
+import type { MemorySearchResult } from '@/models/memory'
 
 function result(input: Partial<MemorySearchResult>): MemorySearchResult {
     return {

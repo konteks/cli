@@ -2,13 +2,13 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import searchMemory from '@/database/services/search-memory'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import {
     saveKonteksDiary,
     saveKonteksMemories,
     saveKonteksMemory,
 } from '@/providers/persistence/sqlite/save-konteks-input'
-import searchMemory from '@/providers/persistence/sqlite/search-memory'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []
