@@ -1,4 +1,4 @@
-import type { SqliteAdapter } from '../sqlite-adapter'
+import { querySql, type SqliteExecutor } from '../libsql-helpers'
 import { entityFromHistoricalRow, entityFromRow } from './graph-row-mappers'
 import type {
     GraphNeighbor,
@@ -14,7 +14,7 @@ import {
 } from './graph-utils'
 
 export default class GraphTraversalStore {
-    public constructor(private readonly adapter: SqliteAdapter) {}
+    public constructor(private readonly client: SqliteExecutor) {}
 
     public async traverseNeighbors(
         entityId: string,
@@ -22,7 +22,8 @@ export default class GraphTraversalStore {
     ): Promise<GraphNeighbor[]> {
         const maxDepth = clampDepth(options.maxDepth ?? 1)
         const limit = options.limit ?? 25
-        const rows = await this.adapter.query<NeighborRow>(
+        const rows = await querySql<NeighborRow>(
+            this.client,
             `
 with recursive walk(depth, entity_id, relation_id, predicate, direction, visited) as (
     select
@@ -104,7 +105,8 @@ limit ?
         entityId: string,
         options: { limit?: number } = {},
     ): Promise<HistoricalRelation[]> {
-        const rows = await this.adapter.query<HistoricalRelationRow>(
+        const rows = await querySql<HistoricalRelationRow>(
+            this.client,
             `
 select
     r.id as relation_id,
@@ -149,7 +151,8 @@ limit ?
         toEntityId: string,
         maxDepth = 3,
     ): Promise<GraphPathStep[]> {
-        const rows = await this.adapter.query<PathRow>(
+        const rows = await querySql<PathRow>(
+            this.client,
             `
 with recursive path(depth, entity_id, entity_path, relation_path, predicate_path) as (
     select

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { SqliteAdapter } from '../sqlite-adapter'
+import { executeSql, querySql, type SqliteExecutor } from '../libsql-helpers'
 import { entityFromRow } from './graph-row-mappers'
 import type {
     EntityInput,
@@ -10,7 +10,7 @@ import type {
 import { normalizeEntityName, tokenize } from './graph-utils'
 
 export default class GraphEntityStore {
-    public constructor(private readonly adapter: SqliteAdapter) {}
+    public constructor(private readonly client: SqliteExecutor) {}
 
     public async upsertEntity(input: EntityInput): Promise<EntityRecord> {
         const canonicalName = normalizeEntityName(input.name)
@@ -18,7 +18,8 @@ export default class GraphEntityStore {
         const now = new Date().toISOString()
 
         if (existing) {
-            await this.adapter.execute(
+            await executeSql(
+                this.client,
                 `
 update entities
 set type = ?, name = ?, summary = coalesce(?, summary), properties_json = coalesce(?, properties_json), updated_at = ?
@@ -50,9 +51,9 @@ where id = ?
             type: input.type,
         }
 
-        await this.adapter.transaction(async () => {
-            await this.adapter.execute(
-                `
+        await executeSql(
+            this.client,
+            `
 insert into entities (
     id,
     type,
@@ -64,19 +65,18 @@ insert into entities (
     updated_at
 ) values (?, ?, ?, ?, ?, ?, ?, ?)
 `,
-                [
-                    entity.id,
-                    input.type,
-                    input.name,
-                    canonicalName,
-                    input.summary ?? null,
-                    input.properties ? JSON.stringify(input.properties) : null,
-                    now,
-                    now,
-                ],
-            )
-            await this.addAliases(entity.id, input.aliases ?? [], now)
-        })
+            [
+                entity.id,
+                input.type,
+                input.name,
+                canonicalName,
+                input.summary ?? null,
+                input.properties ? JSON.stringify(input.properties) : null,
+                now,
+                now,
+            ],
+        )
+        await this.addAliases(entity.id, input.aliases ?? [], now)
 
         return entity
     }
@@ -86,7 +86,8 @@ insert into entities (
     ): Promise<EntityRecord | undefined> {
         const normalized = normalizeEntityName(canonicalName)
 
-        const rows = await this.adapter.query<EntityRow>(
+        const rows = await querySql<EntityRow>(
+            this.client,
             `
 select id, type, name, canonical_name, summary
 from entities
@@ -108,7 +109,8 @@ limit 1
             return []
         }
 
-        const rows = await this.adapter.query<EntitySearchRow>(
+        const rows = await querySql<EntitySearchRow>(
+            this.client,
             `
 select *
 from (
@@ -153,7 +155,8 @@ limit ?
         createdAt: string,
     ): Promise<void> {
         for (const alias of aliases) {
-            await this.adapter.execute(
+            await executeSql(
+                this.client,
                 `
 insert into entity_aliases (
     id,

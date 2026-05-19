@@ -2,8 +2,11 @@ import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { type Client, createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
+import {
+    querySql,
+    type SqliteExecutor,
+} from '@/providers/persistence/sqlite/libsql-helpers'
 import initialSchemaSql from '@/providers/persistence/sqlite/migrations/001_initial_schema.sql?raw'
-import type { SqliteAdapter } from '@/providers/persistence/sqlite/sqlite-adapter'
 
 type Database = ReturnType<typeof drizzle>
 type LibsqlValue = Uint8Array | boolean | number | string | null
@@ -56,20 +59,23 @@ function isTestRuntime(): boolean {
     )
 }
 
-async function syncTestActionDatabase(adapter: SqliteAdapter): Promise<void> {
+async function syncTestActionDatabase(
+    sourceClient: SqliteExecutor,
+): Promise<void> {
     if (!isTestRuntime()) {
         throw new Error('syncTestActionDatabase can only run in tests.')
     }
 
-    const { client } = currentDatabaseEntry()
-    await client.executeMultiple(initialSchemaSql)
-    await clearSyncedTables(client)
+    const { client: targetClient } = currentDatabaseEntry()
+    await targetClient.executeMultiple(initialSchemaSql)
+    await clearSyncedTables(targetClient)
 
     for (const table of syncedTables) {
-        const rows = await adapter.query<Record<string, unknown>>(
+        const rows = await querySql<Record<string, unknown>>(
+            sourceClient,
             `select * from ${table}`,
         )
-        await insertRows(client, table, rows)
+        await insertRows(targetClient, table, rows)
     }
 }
 
@@ -125,7 +131,7 @@ function findProjectRoot(start: string): string {
 
 const db = new Proxy(
     { syncTestActionDatabase } as Database & {
-        syncTestActionDatabase(adapter: SqliteAdapter): Promise<void>
+        syncTestActionDatabase(client: SqliteExecutor): Promise<void>
     },
     {
         get(target, property, receiver) {

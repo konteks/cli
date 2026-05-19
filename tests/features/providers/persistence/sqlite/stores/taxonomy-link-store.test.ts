@@ -79,7 +79,7 @@ async function makeTaxonomyLinkStore(): Promise<{
 
     return {
         close: () => service.close(),
-        links: new TaxonomyLinkStore(service.adapter),
-        nodes: new TaxonomyNodeStore(service.adapter),
+        links: new TaxonomyLinkStore(service.client),
+        nodes: new TaxonomyNodeStore(service.client),
     }
 }

@@ -1,4 +1,8 @@
 import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import {
+    executeSql,
+    querySql,
+} from '@/providers/persistence/sqlite/libsql-helpers'
 import { deleteRetrievalDocuments } from '@/providers/persistence/sqlite/retrieval-documents'
 
 /**
@@ -13,7 +17,8 @@ export async function isExtractedSectionSuppressed(
     contentHashValue: string,
 ): Promise<boolean> {
     // "Mined" is legacy terminology; persisted compatibility keeps the table name stable.
-    const rows = await db.adapter.query<{ content_hash: string }>(
+    const rows = await querySql<{ content_hash: string }>(
+        db.client,
         `
 select content_hash
 from mined_suppressions
@@ -31,55 +36,77 @@ limit 1
 export async function clearExtractedSections(
     db: DatabaseService,
 ): Promise<void> {
-    const adapter = db.adapter
     await recordExtractedSuppressions(db)
-    await adapter.execute(`
+    await executeSql(
+        db.client,
+        `
 delete from memory_fts_indexed
 where id in (select id from chunks where source_id in (select id from sources where type = 'mined_file'));
-`)
-    await adapter.execute(`
+`,
+    )
+    await executeSql(
+        db.client,
+        `
 delete from memory_fts
 where id in (select id from chunks where source_id in (select id from sources where type = 'mined_file'));
-`)
-    await adapter.execute(`
+`,
+    )
+    await executeSql(
+        db.client,
+        `
 delete from taxonomy_links
 where target_type = 'chunk'
   and target_id in (select id from chunks where source_id in (select id from sources where type = 'mined_file'));
-`)
-    const chunkIds = await adapter.query<{ id: string }>(`
+`,
+    )
+    const chunkIds = await querySql<{ id: string }>(
+        db.client,
+        `
 select id from chunks where source_id in (select id from sources where type = 'mined_file');
-`)
+`,
+    )
     await deleteRetrievalDocuments(
         db,
         'chunk',
         chunkIds.map(row => row.id),
     )
     await deleteRetrievalDocuments(db, 'module')
-    await adapter.execute(`
+    await executeSql(
+        db.client,
+        `
 delete from target_embeddings
 where target_type = 'chunk'
   and target_id in (select id from chunks where source_id in (select id from sources where type = 'mined_file'));
-`)
-    await adapter.execute(`
+`,
+    )
+    await executeSql(
+        db.client,
+        `
 delete from target_embeddings
 where target_type = 'module';
-`)
+`,
+    )
     await db.modules.clear()
-    await adapter.execute(`
+    await executeSql(
+        db.client,
+        `
 delete from chunks
 where source_id in (select id from sources where type = 'mined_file');
-`)
-    await adapter.execute(`
+`,
+    )
+    await executeSql(
+        db.client,
+        `
 delete from sources
 where type = 'mined_file';
-`)
+`,
+    )
 }
 
 export async function clearExtractedSectionsForPaths(
     db: DatabaseService,
     paths: string[],
 ): Promise<void> {
-    const adapter = db.adapter
     const uniquePaths = [...new Set(paths)].filter(Boolean)
     if (uniquePaths.length === 0) {
         return
@@ -88,7 +115,8 @@ export async function clearExtractedSectionsForPaths(
     const placeholders = uniquePaths.map(() => '?').join(', ')
 
     await recordExtractedSuppressions(db, uniquePaths)
-    const chunkIds = await adapter.query<{ id: string }>(
+    const chunkIds = await querySql<{ id: string }>(
+        db.client,
         `
 select id
 from chunks
@@ -97,7 +125,8 @@ where path in (${placeholders});
         uniquePaths,
     )
 
-    await adapter.execute(
+    await executeSql(
+        db.client,
         `
 delete from memory_fts_indexed
 where id in (
@@ -108,7 +137,8 @@ where id in (
 `,
         uniquePaths,
     )
-    await adapter.execute(
+    await executeSql(
+        db.client,
         `
 delete from memory_fts
 where id in (
@@ -119,7 +149,8 @@ where id in (
 `,
         uniquePaths,
     )
-    await adapter.execute(
+    await executeSql(
+        db.client,
         `
 delete from taxonomy_links
 where target_type = 'chunk'
@@ -136,7 +167,8 @@ where target_type = 'chunk'
         'chunk',
         chunkIds.map(row => row.id),
     )
-    await adapter.execute(
+    await executeSql(
+        db.client,
         `
 delete from target_embeddings
 where target_type = 'chunk'
@@ -148,14 +180,16 @@ where target_type = 'chunk'
 `,
         uniquePaths,
     )
-    await adapter.execute(
+    await executeSql(
+        db.client,
         `
 delete from chunks
 where path in (${placeholders});
 `,
         uniquePaths,
     )
-    await adapter.execute(
+    await executeSql(
+        db.client,
         `
 delete from sources
 where type = 'mined_file'
@@ -173,7 +207,8 @@ async function recordExtractedSuppressions(
         paths && paths.length > 0
             ? `and path in (${paths.map(() => '?').join(', ')})`
             : ''
-    await db.adapter.execute(
+    await executeSql(
+        db.client,
         `
 insert or ignore into mined_suppressions (
     path,

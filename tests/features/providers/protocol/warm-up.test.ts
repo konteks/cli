@@ -186,7 +186,7 @@ async function syncProjectActionDatabase(
     context: Awaited<ReturnType<typeof loadProjectContext>>,
 ) {
     const service = await openProjectDatabase(context)
-    await actionDb.syncTestActionDatabase(service.adapter)
+    await actionDb.syncTestActionDatabase(service.client)
     await service.close()
 }
 

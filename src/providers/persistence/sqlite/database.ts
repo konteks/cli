@@ -1,9 +1,9 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { drizzle } from 'drizzle-orm/sqlite-proxy'
+import { createClient } from '@libsql/client'
+import { drizzle } from 'drizzle-orm/libsql'
 import type { Project } from '@/models/project'
 import DatabaseService from './database-service'
-import openWasmSqliteAdapter from './open-wasm-sqlite-adapter'
 import runMigrations from './run-migrations'
 import * as schema from './schema'
 import { ensureSearchIndex } from './search-index'
@@ -17,27 +17,13 @@ export async function openProjectDatabase(
 ): Promise<DatabaseService> {
     await ensureConfigFile(context)
     const databasePath = projectDatabasePath(context)
-    const adapter = await openWasmSqliteAdapter(databasePath)
-    await runMigrations(adapter)
-    await ensureSearchIndex(adapter)
+    const client = createClient({ url: `file:${databasePath}` })
+    const db = drizzle(client, { schema })
+    const service = new DatabaseService(client, db)
+    await runMigrations(service)
+    await ensureSearchIndex(service)
 
-    const db = drizzle(
-        async (sql, params, method) => {
-            if (method === 'run') {
-                await adapter.execute(sql, params)
-                return { rows: [] }
-            }
-
-            const rows = await adapter.queryArrays(sql, params)
-            if (method === 'get') {
-                return { rows: rows[0] ?? [] }
-            }
-            return { rows }
-        },
-        { schema },
-    )
-
-    return new DatabaseService(adapter, db)
+    return service
 }
 
 export async function ensureProjectDatabase(context: Project): Promise<void> {

@@ -64,6 +64,6 @@ async function makeTaxonomyNodeStore(): Promise<{
 
     return {
         close: () => service.close(),
-        store: new TaxonomyNodeStore(service.adapter),
+        store: new TaxonomyNodeStore(service.client),
     }
 }

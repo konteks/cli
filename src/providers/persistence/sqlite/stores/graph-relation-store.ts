@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto'
-import type { SqliteAdapter } from '../sqlite-adapter'
+import { executeSql, type SqliteExecutor } from '../libsql-helpers'
 import type { RelationInput, RelationRecord } from './graph-types'
 
 export default class GraphRelationStore {
-    public constructor(private readonly adapter: SqliteAdapter) {}
+    public constructor(private readonly client: SqliteExecutor) {}
 
     public async addRelation(input: RelationInput): Promise<RelationRecord> {
         const relation: RelationRecord = {
@@ -18,13 +18,13 @@ export default class GraphRelationStore {
         }
         const now = new Date().toISOString()
 
-        const operation = async () => {
-            if (input.supersedesRelationId) {
-                await this.supersedeRelation(input.supersedesRelationId, now)
-            }
+        if (input.supersedesRelationId) {
+            await this.supersedeRelation(input.supersedesRelationId, now)
+        }
 
-            await this.adapter.execute(
-                `
+        await executeSql(
+            this.client,
+            `
 insert into relations (
     id,
     subject_id,
@@ -40,24 +40,21 @@ insert into relations (
     updated_at
 ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `,
-                [
-                    relation.id,
-                    input.subjectId,
-                    input.predicate,
-                    input.objectId,
-                    relation.confidence,
-                    relation.status,
-                    input.validFrom ?? null,
-                    input.validTo ?? null,
-                    input.supersedesRelationId ?? null,
-                    input.properties ? JSON.stringify(input.properties) : null,
-                    now,
-                    now,
-                ],
-            )
-        }
-
-        await this.adapter.transaction(operation)
+            [
+                relation.id,
+                input.subjectId,
+                input.predicate,
+                input.objectId,
+                relation.confidence,
+                relation.status,
+                input.validFrom ?? null,
+                input.validTo ?? null,
+                input.supersedesRelationId ?? null,
+                input.properties ? JSON.stringify(input.properties) : null,
+                now,
+                now,
+            ],
+        )
 
         return relation
     }
@@ -67,7 +64,8 @@ insert into relations (
         validTo?: string,
     ): Promise<void> {
         const now = new Date().toISOString()
-        await this.adapter.execute(
+        await executeSql(
+            this.client,
             `
 update relations
 set status = 'invalidated', valid_to = coalesce(?, valid_to), updated_at = ?
@@ -81,7 +79,8 @@ where id = ?
         id: string,
         updatedAt: string,
     ): Promise<void> {
-        await this.adapter.execute(
+        await executeSql(
+            this.client,
             `
 update relations
 set status = 'superseded', updated_at = ?

@@ -6,6 +6,7 @@ import actionDb from '@/database/actions/_db'
 import searchMemory from '@/database/services/search-memory'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import forgetMemory from '@/providers/persistence/sqlite/forget-memory'
+import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import { saveKonteksMemory } from '@/providers/persistence/sqlite/save-konteks-input'
 import GraphStore from '@/providers/persistence/sqlite/stores/graph-store'
 import { loadProjectContext } from '@/providers/project/context'
@@ -63,7 +64,7 @@ describe('forgetMemory', () => {
             mode: 'soft_delete',
             reason: 'obsolete',
         })
-        await actionDb.syncTestActionDatabase(adapter.adapter)
+        await actionDb.syncTestActionDatabase(adapter.client)
         const search = await searchMemory(adapter, {
             limit: 5,
             query: 'obsolete implementation',
@@ -91,7 +92,8 @@ describe('forgetMemory', () => {
             mode: 'hard_delete',
             reason: 'sensitive',
         })
-        const rows = await adapter.adapter.query<{ id: string }>(
+        const rows = await querySql<{ id: string }>(
+            adapter.client,
             'select id from observations where id = ?',
             [saved.id],
         )
@@ -107,17 +109,18 @@ describe('forgetMemory', () => {
             importance: 3,
             kind: 'decision',
         })
-        await actionDb.syncTestActionDatabase(adapter.adapter)
+        await actionDb.syncTestActionDatabase(adapter.client)
 
         const result = await forgetMemory(adapter, {
             mode: 'invalidate',
             query: 'compatibility planning',
             reason: 'not relevant now',
         })
-        const rows = await adapter.adapter.query<{
+        const rows = await querySql<{
             forget_reason: string | null
             suppressed_at: string | null
         }>(
+            adapter.client,
             'select suppressed_at, forget_reason from observations where id = ?',
             [saved.id],
         )

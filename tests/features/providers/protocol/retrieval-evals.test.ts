@@ -10,6 +10,7 @@ import mcpTools from '@/mcp/tools'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
+import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import { loadProjectContext } from '@/providers/project/context'
 import FakeEmbeddingProvider from '../../../fake/fake-embedding-provider'
 
@@ -161,7 +162,8 @@ describe('retrieval quality evals', () => {
         const text = extractText(result)
         const manifest = await readExtractionManifest(context.memoryDir)
         const adapter = await openProjectDatabase(context)
-        const diaryRows = await adapter.adapter.query<{ summary: string }>(
+        const diaryRows = await querySql<{ summary: string }>(
+            adapter.client,
             `
 select summary
 from diary_entries
@@ -292,7 +294,8 @@ limit 1
         )
         await extractProject(context, 'full', extractionOptions())
         const adapter = await openProjectDatabase(context)
-        const rows = await adapter.adapter.query<{ count: number }>(
+        const rows = await querySql<{ count: number }>(
+            adapter.client,
             'select count(*) as count from retrieval_documents',
         )
         await adapter.close()
@@ -317,7 +320,7 @@ async function syncProjectActionDatabase(
     context: Awaited<ReturnType<typeof loadProjectContext>>,
 ) {
     const service = await openProjectDatabase(context)
-    await actionDb.syncTestActionDatabase(service.adapter)
+    await actionDb.syncTestActionDatabase(service.client)
     await service.close()
 }
 

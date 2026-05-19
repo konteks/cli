@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import actionDb from '@/database/actions/_db'
 import searchMemory from '@/database/services/search-memory'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
+import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import {
     saveKonteksDiary,
     saveKonteksMemories,
@@ -55,7 +56,7 @@ describe('save and search stores', () => {
             importance: 5,
             kind: 'preference',
         })
-        await actionDb.syncTestActionDatabase(adapter.adapter)
+        await actionDb.syncTestActionDatabase(adapter.client)
         const results = await searchMemory(adapter, {
             limit: 5,
             query: 'vitest bun',
@@ -82,7 +83,7 @@ describe('save and search stores', () => {
             importance: 3,
             kind: 'decision',
         })
-        await actionDb.syncTestActionDatabase(adapter.adapter)
+        await actionDb.syncTestActionDatabase(adapter.client)
         const results = await searchMemory(adapter, {
             limit: 5,
             query: 'retrieve context',
@@ -149,7 +150,7 @@ describe('save and search stores', () => {
             importance: 3,
             kind: 'note',
         })
-        await actionDb.syncTestActionDatabase(adapter.adapter)
+        await actionDb.syncTestActionDatabase(adapter.client)
         const results = await searchMemory(adapter, {
             limit: 5,
             query: 'needle',
@@ -173,7 +174,7 @@ describe('save and search stores', () => {
             summary: 'SQLite adapter is implemented and search remains next.',
             tags: ['sqlite', 'storage'],
         })
-        await actionDb.syncTestActionDatabase(adapter.adapter)
+        await actionDb.syncTestActionDatabase(adapter.client)
         const results = await searchMemory(adapter, {
             limit: 5,
             query: 'sqlite storage',
@@ -214,7 +215,7 @@ describe('save and search stores', () => {
                 'Implemented structured memory batch saves and a diary save phase.',
             tags: ['save'],
         })
-        await actionDb.syncTestActionDatabase(adapter.adapter)
+        await actionDb.syncTestActionDatabase(adapter.client)
         const memoryResults = await searchMemory(adapter, {
             limit: 5,
             query: 'structured payloads raw chat',
@@ -245,7 +246,8 @@ describe('save and search stores', () => {
             }),
         ).rejects.toThrow('memory content appears to contain a secret')
 
-        const rows = await adapter.adapter.query<{ count: number }>(
+        const rows = await querySql<{ count: number }>(
+            adapter.client,
             'select count(*) as count from observations',
         )
         expect(rows[0]?.count).toBe(0)
@@ -271,7 +273,7 @@ describe('save and search stores', () => {
                 },
             ],
         })
-        await actionDb.syncTestActionDatabase(adapter.adapter)
+        await actionDb.syncTestActionDatabase(adapter.client)
         const results = await searchMemory(adapter, {
             limit: 5,
             query: 'structured save calls',
@@ -297,7 +299,7 @@ describe('save and search stores', () => {
             tags: ['retrieval'],
         })
 
-        await actionDb.syncTestActionDatabase(adapter.adapter)
+        await actionDb.syncTestActionDatabase(adapter.client)
         const memoryResults = await searchMemory(adapter, {
             limit: 5,
             query: 'primary retrieval substrate',

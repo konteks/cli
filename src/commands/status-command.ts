@@ -7,7 +7,10 @@ import {
     projectDatabasePath,
 } from '@/providers/persistence/sqlite/database'
 import type DatabaseService from '@/providers/persistence/sqlite/database-service'
-import type { SqliteParams } from '@/providers/persistence/sqlite/sqlite-adapter'
+import {
+    querySql,
+    type SqliteParams,
+} from '@/providers/persistence/sqlite/libsql-helpers'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
 import { formatInteger } from '@/support/format/number'
 import createColorPalette, {
@@ -250,6 +253,6 @@ async function countRows(
     sql: string,
     params: SqliteParams = [],
 ): Promise<number> {
-    const rows = await service.adapter.query<{ count: number }>(sql, params)
+    const rows = await querySql<{ count: number }>(service.client, sql, params)
     return rows[0]?.count ?? 0
 }

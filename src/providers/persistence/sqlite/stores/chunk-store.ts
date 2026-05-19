@@ -1,6 +1,11 @@
 import { sql } from 'drizzle-orm'
+import {
+    executeSql,
+    type KonteksDatabase,
+    querySql,
+    type SqliteExecutor,
+} from '../libsql-helpers'
 import { chunks } from '../schema'
-import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter'
 
 export type ChunkRow = {
     id: string
@@ -30,7 +35,7 @@ export type ChunkRow = {
 
 export default class ChunkStore {
     public constructor(
-        private readonly adapter: SqliteAdapter,
+        private readonly client: SqliteExecutor,
         private readonly db?: KonteksDatabase,
     ) {}
 
@@ -63,7 +68,8 @@ export default class ChunkStore {
             return
         }
 
-        await this.adapter.execute(
+        await executeSql(
+            this.client,
             `
 insert into chunks (
     id, source_id, kind, path, anchor, summary, content_inline, payload_ref,
@@ -111,7 +117,8 @@ insert into chunks (
             return row ? rowToChunkRow(row) : undefined
         }
 
-        const rows = await this.adapter.query<ChunkRow>(
+        const rows = await querySql<ChunkRow>(
+            this.client,
             'select * from chunks where path = ? and anchor = ? limit 1',
             [path, anchor],
         )

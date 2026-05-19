@@ -82,7 +82,7 @@ async function makeTaxonomyTreeStore(): Promise<{
 
     return {
         close: () => service.close(),
-        nodes: new TaxonomyNodeStore(service.adapter),
-        tree: new TaxonomyTreeStore(service.adapter),
+        nodes: new TaxonomyNodeStore(service.client),
+        tree: new TaxonomyTreeStore(service.client),
     }
 }

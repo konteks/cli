@@ -1,5 +1,6 @@
 import { contentHash } from '@/providers/persistence/objects/content'
 import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import { executeSql } from './libsql-helpers'
 
 const maxChunkContentChars = 3000
 const maxEmbeddingTextChars = 2500
@@ -22,8 +23,8 @@ export async function upsertRetrievalDocument(
     db: DatabaseService,
     input: RetrievalDocumentInput,
 ): Promise<void> {
-    const adapter = db.adapter
-    await adapter.execute(
+    await executeSql(
+        db.client,
         `
 insert or replace into retrieval_documents (
     target_id,
@@ -55,14 +56,16 @@ insert or replace into retrieval_documents (
             input.updatedAt,
         ],
     )
-    await adapter.execute(
+    await executeSql(
+        db.client,
         `
 delete from retrieval_documents_fts
 where target_id = ? and target_type = ?
 `,
         [input.targetId, input.targetType],
     )
-    await adapter.execute(
+    await executeSql(
+        db.client,
         `
 insert into retrieval_documents_fts (
     target_id,
@@ -89,14 +92,14 @@ export async function deleteRetrievalDocuments(
     targetType: RetrievalDocumentInput['targetType'],
     targetIds?: string[],
 ): Promise<void> {
-    const adapter = db.adapter
     if (targetIds && targetIds.length === 0) {
         return
     }
 
     if (targetIds) {
         const placeholders = targetIds.map(() => '?').join(', ')
-        await adapter.execute(
+        await executeSql(
+            db.client,
             `
 delete from retrieval_documents_fts
 where target_type = ?
@@ -104,7 +107,8 @@ where target_type = ?
 `,
             [targetType, ...targetIds],
         )
-        await adapter.execute(
+        await executeSql(
+            db.client,
             `
 delete from retrieval_documents
 where target_type = ?
@@ -115,11 +119,13 @@ where target_type = ?
         return
     }
 
-    await adapter.execute(
+    await executeSql(
+        db.client,
         'delete from retrieval_documents_fts where target_type = ?',
         [targetType],
     )
-    await adapter.execute(
+    await executeSql(
+        db.client,
         'delete from retrieval_documents where target_type = ?',
         [targetType],
     )
@@ -128,9 +134,10 @@ where target_type = ?
 export async function reindexRetrievalDocumentFts(
     db: DatabaseService,
 ): Promise<void> {
-    const adapter = db.adapter
-    await adapter.execute('delete from retrieval_documents_fts')
-    await adapter.execute(`
+    await executeSql(db.client, 'delete from retrieval_documents_fts')
+    await executeSql(
+        db.client,
+        `
 insert into retrieval_documents_fts (
     target_id,
     target_type,
@@ -147,7 +154,8 @@ select
     anchor,
     fts_text
 from retrieval_documents
-`)
+`,
+    )
 }
 
 export function buildChunkRetrievalTexts(input: {

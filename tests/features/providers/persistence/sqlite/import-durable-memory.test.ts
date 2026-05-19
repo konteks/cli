@@ -7,6 +7,7 @@ import type { DurableMemoryExport } from '@/models/memory-transfer'
 import { contentHash } from '@/providers/persistence/objects/content'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import importDurableMemory from '@/providers/persistence/sqlite/import-durable-memory'
+import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []
@@ -41,7 +42,8 @@ describe('importDurableMemory', () => {
             const dryRun = await importDurableMemory(db, context, payload, {
                 dryRun: true,
             })
-            const afterDryRun = await db.adapter.query<{ count: number }>(
+            const afterDryRun = await querySql<{ count: number }>(
+                db.client,
                 'select count(*) as count from observations',
             )
 
@@ -52,7 +54,8 @@ describe('importDurableMemory', () => {
                 payload,
                 {},
             )
-            const events = await db.adapter.query<{ event_type: string }>(
+            const events = await querySql<{ event_type: string }>(
+                db.client,
                 "select event_type from memory_events where event_type = 'memory_imported'",
             )
 

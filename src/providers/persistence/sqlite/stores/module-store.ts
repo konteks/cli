@@ -1,5 +1,9 @@
+import {
+    executeSql,
+    type KonteksDatabase,
+    type SqliteExecutor,
+} from '../libsql-helpers'
 import { modules } from '../schema'
-import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter'
 
 export type ModuleRow = {
     id: string
@@ -18,7 +22,7 @@ export type ModuleRow = {
 
 export default class ModuleStore {
     public constructor(
-        private readonly adapter: SqliteAdapter,
+        private readonly client: SqliteExecutor,
         private readonly db?: KonteksDatabase,
     ) {}
 
@@ -27,7 +31,7 @@ export default class ModuleStore {
             await this.db.delete(modules)
             return
         }
-        await this.adapter.execute('delete from modules')
+        await executeSql(this.client, 'delete from modules')
     }
 
     public async insert(module: Omit<ModuleRow, 'updated_at'>): Promise<void> {
@@ -49,7 +53,8 @@ export default class ModuleStore {
             return
         }
 
-        await this.adapter.execute(
+        await executeSql(
+            this.client,
             `
 insert into modules (
     id, path, source_role, package_name, summary, file_count, chunk_count,

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { SqliteAdapter } from '../sqlite-adapter'
+import { executeSql, querySql, type SqliteExecutor } from '../libsql-helpers'
 import { taxonomyLinkFromRow } from './taxonomy-row-mappers'
 import type {
     TaxonomyLink,
@@ -8,7 +8,7 @@ import type {
 } from './taxonomy-types'
 
 export default class TaxonomyLinkStore {
-    public constructor(private readonly adapter: SqliteAdapter) {}
+    public constructor(private readonly client: SqliteExecutor) {}
 
     public async linkTarget(input: TaxonomyLinkInput): Promise<TaxonomyLink> {
         const existing = await this.findLink(input)
@@ -22,7 +22,8 @@ export default class TaxonomyLinkStore {
             targetId: input.targetId,
             targetType: input.targetType,
         }
-        await this.adapter.execute(
+        await executeSql(
+            this.client,
             `
 insert into taxonomy_links (
     id,
@@ -45,7 +46,8 @@ insert into taxonomy_links (
     }
 
     public async listLinks(nodeId: string): Promise<TaxonomyLink[]> {
-        const rows = await this.adapter.query<TaxonomyLinkRow>(
+        const rows = await querySql<TaxonomyLinkRow>(
+            this.client,
             `
 select id, node_id, target_type, target_id
 from taxonomy_links
@@ -61,7 +63,8 @@ order by target_type, target_id
     private async findLink(
         input: TaxonomyLinkInput,
     ): Promise<TaxonomyLink | undefined> {
-        const rows = await this.adapter.query<TaxonomyLinkRow>(
+        const rows = await querySql<TaxonomyLinkRow>(
+            this.client,
             `
 select id, node_id, target_type, target_id
 from taxonomy_links

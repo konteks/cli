@@ -10,6 +10,7 @@ import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import { contentHash } from '@/providers/persistence/objects/content'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 
 const tempDirs: string[] = []
 
@@ -74,7 +75,7 @@ describe('providers/extraction/engine/extract-sections', () => {
             })
 
             await expect(
-                db.adapter.query('select * from chunks where id = ?', [
+                querySql(db.client, 'select * from chunks where id = ?', [
                     'chunk_existing',
                 ]),
             ).resolves.toHaveLength(1)
@@ -97,7 +98,7 @@ describe('providers/extraction/engine/extract-sections', () => {
             })
 
             await expect(
-                db.adapter.query('select * from chunks where id = ?', [
+                querySql(db.client, 'select * from chunks where id = ?', [
                     'chunk_existing',
                 ]),
             ).resolves.toHaveLength(0)

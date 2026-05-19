@@ -13,6 +13,7 @@ import createToonStore from '@/providers/persistence/objects/create-toon-store'
 import storePayload from '@/providers/persistence/objects/store-payload'
 import { upsertRetrievalDocument } from '@/providers/persistence/sqlite/retrieval-documents'
 import type DatabaseService from './database-service'
+import { executeSql, querySql } from './libsql-helpers'
 import {
     importanceToConfidence,
     isSkippableMemoryError,
@@ -50,7 +51,8 @@ export async function saveKonteksMemory(
     const createdAt = new Date().toISOString()
 
     await db.transaction(async tx => {
-        await tx.adapter.execute(
+        await executeSql(
+            tx.client,
             `
 insert into observations (
     id,
@@ -83,7 +85,7 @@ insert into observations (
             summary,
         })
 
-        await indexSearchDocument(tx.adapter, {
+        await indexSearchDocument(tx, {
             content: stored.contentInline ?? summary,
             createdAt,
             id,
@@ -158,7 +160,8 @@ export async function saveKonteksSession(
     const createdAt = new Date().toISOString()
 
     await db.transaction(async tx => {
-        await tx.adapter.execute(
+        await executeSql(
+            tx.client,
             `
 insert into diary_entries (
     id,
@@ -191,7 +194,7 @@ insert into diary_entries (
             summary: input.summary,
         })
 
-        await indexSearchDocument(tx.adapter, {
+        await indexSearchDocument(tx, {
             content: input.summary,
             createdAt,
             id,
@@ -232,7 +235,8 @@ export async function saveKonteksDiary(
     const createdAt = new Date().toISOString()
 
     await db.transaction(async tx => {
-        await tx.adapter.execute(
+        await executeSql(
+            tx.client,
             `
 insert into diary_entries (
     id,
@@ -265,7 +269,7 @@ insert into diary_entries (
             summary: formattedInput.summary,
         })
 
-        await indexSearchDocument(tx.adapter, {
+        await indexSearchDocument(tx, {
             content: text,
             createdAt,
             id,
@@ -296,7 +300,8 @@ async function findDuplicateObservation(
     db: DatabaseService,
     hash: string,
 ): Promise<{ id: string } | undefined> {
-    const rows = await db.adapter.query<{ id: string }>(
+    const rows = await querySql<{ id: string }>(
+        db.client,
         `
 select id
 from observations

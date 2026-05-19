@@ -9,6 +9,7 @@ import {
     insertImportedDiary,
     insertImportedObservation,
 } from '@/providers/persistence/sqlite/durable-memory-import-writers'
+import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []
@@ -56,16 +57,20 @@ describe('durable memory import writers', () => {
                 tags: ['import'],
             })
 
-            const observations = await db.adapter.query<{ count: number }>(
+            const observations = await querySql<{ count: number }>(
+                db.client,
                 'select count(*) as count from observations',
             )
-            const diaries = await db.adapter.query<{ count: number }>(
+            const diaries = await querySql<{ count: number }>(
+                db.client,
                 'select count(*) as count from diary_entries',
             )
-            const retrievalRows = await db.adapter.query<{ count: number }>(
+            const retrievalRows = await querySql<{ count: number }>(
+                db.client,
                 'select count(*) as count from retrieval_documents',
             )
-            const indexedRows = await db.adapter.query<{ count: number }>(
+            const indexedRows = await querySql<{ count: number }>(
+                db.client,
                 'select count(*) as count from memory_fts_indexed',
             )
 

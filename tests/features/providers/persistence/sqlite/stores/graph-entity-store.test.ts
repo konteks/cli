@@ -73,6 +73,6 @@ async function makeGraphEntityStore(): Promise<{
 
     return {
         close: () => service.close(),
-        store: new GraphEntityStore(service.adapter),
+        store: new GraphEntityStore(service.client),
     }
 }

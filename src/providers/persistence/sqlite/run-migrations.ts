@@ -1,5 +1,6 @@
+import type DatabaseService from './database-service'
+import { executeSql, querySql } from './libsql-helpers'
 import initialSchemaSql from './migrations/001_initial_schema.sql?raw'
-import type { SqliteAdapter } from './sqlite-adapter'
 
 type Migration = {
     id: string
@@ -14,19 +15,23 @@ const migrations: Migration[] = [
 ]
 
 export default async function runMigrations(
-    adapter: SqliteAdapter,
+    service: DatabaseService,
 ): Promise<void> {
-    await adapter.transaction(async () => {
-        await adapter.execute(`
+    await service.transaction(async tx => {
+        await executeSql(
+            tx.client,
+            `
 create table if not exists schema_migrations (
     id text primary key,
     applied_at text not null
 );
-`)
+`,
+        )
 
         const applied = new Set(
             (
-                await adapter.query<{ id: string }>(
+                await querySql<{ id: string }>(
+                    tx.client,
                     'select id from schema_migrations',
                 )
             ).map(row => row.id),
@@ -37,8 +42,9 @@ create table if not exists schema_migrations (
                 continue
             }
 
-            await adapter.execute(migration.sql)
-            await adapter.execute(
+            await tx.client.executeMultiple(migration.sql)
+            await executeSql(
+                tx.client,
                 'insert into schema_migrations (id, applied_at) values (?, ?)',
                 [migration.id, new Date().toISOString()],
             )

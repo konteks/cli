@@ -1,41 +1,48 @@
-import { describe, expect, it } from 'bun:test'
+import { afterEach, describe, expect, it } from 'bun:test'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { createClient } from '@libsql/client'
+import { drizzle } from 'drizzle-orm/libsql'
+import DatabaseService from '@/providers/persistence/sqlite/database-service'
+import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import runMigrations from '@/providers/persistence/sqlite/run-migrations'
-import type {
-    SqliteAdapter,
-    SqliteParams,
-} from '@/providers/persistence/sqlite/sqlite-adapter'
+import * as schema from '@/providers/persistence/sqlite/schema'
+
+const tempDirs: string[] = []
+
+afterEach(async () => {
+    await Promise.all(
+        tempDirs
+            .splice(0)
+            .map(path => rm(path, { force: true, recursive: true })),
+    )
+})
 
 describe('migrations', () => {
-    it('runs unapplied migrations through an adapter transaction', async () => {
-        const executed: Array<{ params?: SqliteParams; sql: string }> = []
-        const adapter: SqliteAdapter = {
-            async close() {},
-            async execute(sql, params) {
-                executed.push({ params, sql })
-            },
-            async query() {
-                return []
-            },
-            async queryArrays() {
-                return []
-            },
-            async transaction(operation) {
-                return operation()
-            },
-        }
+    it('runs unapplied migrations through a LibSQL service', async () => {
+        const tempDir = await mkdtemp(join(tmpdir(), 'konteks-migration-'))
+        tempDirs.push(tempDir)
+        const client = createClient({ url: `file:${join(tempDir, 'test.db')}` })
+        const service = new DatabaseService(client, drizzle(client, { schema }))
 
-        await runMigrations(adapter)
-
-        expect(
-            executed.some(item => item.sql.includes('schema_migrations')),
-        ).toBe(true)
-        expect(executed.some(item => item.sql.includes('memory_events'))).toBe(
-            true,
+        await runMigrations(service)
+        const migrations = await querySql<{ id: string }>(
+            service.client,
+            'select id from schema_migrations',
         )
-        expect(
-            executed.some(item =>
-                item.sql.includes('insert into schema_migrations'),
-            ),
-        ).toBe(true)
+        const tables = await querySql<{ name: string }>(
+            service.client,
+            `
+select name
+from sqlite_master
+where type = 'table'
+  and name = 'memory_events'
+`,
+        )
+        await service.close()
+
+        expect(migrations).toEqual([{ id: '001_initial_schema' }])
+        expect(tables).toEqual([{ name: 'memory_events' }])
     })
 })

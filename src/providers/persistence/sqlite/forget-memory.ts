@@ -3,6 +3,7 @@ import type { ForgetInput } from '@/contracts/repositories/memory-repository'
 import queryDiaries from '@/database/actions/query-diaries'
 import queryObservations from '@/database/actions/query-observations'
 import type DatabaseService from './database-service'
+import { executeSql } from './libsql-helpers'
 
 // import { GraphStore } from ./graph-store.js'
 
@@ -118,7 +119,8 @@ async function markForgotten(
         return false
     }
 
-    await db.adapter.execute(
+    await executeSql(
+        db.client,
         `
 update ${table}
 set deleted_at = ?, forget_reason = ?
@@ -139,7 +141,8 @@ async function markSuppressed(
         return false
     }
 
-    await db.adapter.execute(
+    await executeSql(
+        db.client,
         `
 update ${table}
 set suppressed_at = ?, forget_reason = ?
@@ -155,7 +158,8 @@ async function hardDelete(
     target: ForgetTarget,
 ): Promise<boolean> {
     if (target.kind === 'chunk') {
-        await db.adapter.execute(
+        await executeSql(
+            db.client,
             'delete from taxonomy_links where target_id = ?',
             [target.id],
         )
@@ -166,7 +170,9 @@ async function hardDelete(
         return false
     }
 
-    await db.adapter.execute(`delete from ${table} where id = ?`, [target.id])
+    await executeSql(db.client, `delete from ${table} where id = ?`, [
+        target.id,
+    ])
     return true
 }
 
@@ -174,11 +180,12 @@ async function removeFromSearchIndex(
     db: DatabaseService,
     id: string,
 ): Promise<void> {
-    await db.adapter.execute(
+    await executeSql(
+        db.client,
         'delete from memory_fts where rowid in (select rowid from memory_fts where id = ?)',
         [id],
     )
-    await db.adapter.execute('delete from memory_fts_indexed where id = ?', [
+    await executeSql(db.client, 'delete from memory_fts_indexed where id = ?', [
         id,
     ])
 }

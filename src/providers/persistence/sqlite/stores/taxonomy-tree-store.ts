@@ -1,4 +1,4 @@
-import type { SqliteAdapter } from '../sqlite-adapter'
+import { querySql, type SqliteExecutor } from '../libsql-helpers'
 import { taxonomyNodeFromRow } from './taxonomy-row-mappers'
 import type {
     TaxonomyNode,
@@ -8,14 +8,15 @@ import type {
 } from './taxonomy-types'
 
 export default class TaxonomyTreeStore {
-    public constructor(private readonly adapter: SqliteAdapter) {}
+    public constructor(private readonly client: SqliteExecutor) {}
 
     public async getSubtree(
         rootId?: string,
         options: { maxDepth?: number } = {},
     ): Promise<TaxonomyTreeNode[]> {
         const maxDepth = clampDepth(options.maxDepth ?? 4)
-        const rows = await this.adapter.query<TaxonomyTreeRow>(
+        const rows = await querySql<TaxonomyTreeRow>(
+            this.client,
             rootId
                 ? `
 with recursive tree(depth, id, parent_id, name, summary) as (
@@ -61,7 +62,8 @@ order by depth, name
     }
 
     public async getPath(nodeId: string): Promise<TaxonomyNode[]> {
-        const rows = await this.adapter.query<TaxonomyPathRow>(
+        const rows = await querySql<TaxonomyPathRow>(
+            this.client,
             `
 with recursive ancestors(id, parent_id, id_path, name_path) as (
     select id, parent_id, id, name

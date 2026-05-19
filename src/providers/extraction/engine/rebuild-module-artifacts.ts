@@ -1,6 +1,10 @@
 import { contentHash } from '@/providers/persistence/objects/content'
 import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 import {
+    executeSql,
+    querySql,
+} from '@/providers/persistence/sqlite/libsql-helpers'
+import {
     deleteRetrievalDocuments,
     upsertRetrievalDocument,
 } from '@/providers/persistence/sqlite/retrieval-documents'
@@ -21,15 +25,16 @@ export default async function rebuildModuleArtifacts(
     extractedAt: string,
     metadata?: ProjectMetadata,
 ): Promise<void> {
-    const adapter = db.adapter
     await deleteRetrievalDocuments(db, 'module')
-    await adapter.execute(
+    await executeSql(
+        db.client,
         'delete from target_embeddings where target_type = ?',
         ['module'],
     )
-    await adapter.execute('delete from modules')
+    await executeSql(db.client, 'delete from modules')
 
-    const rows = await adapter.query<ModuleSummaryRow>(
+    const rows = await querySql<ModuleSummaryRow>(
+        db.client,
         `
 select
     case
@@ -52,7 +57,8 @@ order by chunk_count desc, module_path
         const summary = summarizeModule(row)
         const topics = moduleTopics(row.module_path)
 
-        await adapter.execute(
+        await executeSql(
+            db.client,
             `
 insert into modules (
     id,
@@ -127,7 +133,6 @@ async function insertPackageModule(
     metadata: ProjectMetadata,
     extractedAt: string,
 ): Promise<void> {
-    const adapter = db.adapter
     const packageManifests = metadata.packageManifests ?? []
     const primaryManifest = packageManifests[0]
     if (!primaryManifest) {
@@ -151,7 +156,8 @@ async function insertPackageModule(
         ...dependencyNames.slice(0, 24),
     ].filter((value): value is string => Boolean(value))
 
-    await adapter.execute(
+    await executeSql(
+        db.client,
         `
 insert into modules (
     id,

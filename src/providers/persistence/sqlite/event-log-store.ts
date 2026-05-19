@@ -1,5 +1,5 @@
+import type { KonteksDatabase } from './libsql-helpers'
 import { memoryEvents } from './schema'
-import type { KonteksDatabase } from './sqlite-adapter'
 
 export type MemoryEventInput = {
     actor?: string

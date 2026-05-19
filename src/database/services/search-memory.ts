@@ -62,7 +62,7 @@ export default async function searchMemory(
         return retrievalResults
     }
 
-    if (await hasSearchIndex(db.adapter)) {
+    if (await hasSearchIndex(db)) {
         const ftsResults = await searchFts(terms, limit, mode, intent)
         if (ftsResults.length > 0) {
             return ftsResults

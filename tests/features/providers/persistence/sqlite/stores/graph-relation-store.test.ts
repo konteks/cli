@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
+import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import GraphEntityStore from '@/providers/persistence/sqlite/stores/graph-entity-store'
 import GraphRelationStore from '@/providers/persistence/sqlite/stores/graph-relation-store'
 import { loadProjectContext } from '@/providers/project/context'
@@ -88,11 +89,12 @@ async function makeGraphRelationStore(): Promise<{
 
     return {
         close: () => service.close(),
-        entities: new GraphEntityStore(service.adapter),
+        entities: new GraphEntityStore(service.client),
         queryRelations: () =>
-            service.adapter.query<{ id: string; status: string }>(
+            querySql<{ id: string; status: string }>(
+                service.client,
                 'select id, status from relations order by created_at',
             ),
-        relations: new GraphRelationStore(service.adapter),
+        relations: new GraphRelationStore(service.client),
     }
 }
