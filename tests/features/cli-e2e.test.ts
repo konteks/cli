@@ -8,6 +8,7 @@ import { promisify } from 'node:util'
 import type { DurableMemoryExport } from '@/models/memory-transfer'
 import { extractProject } from '@/providers/extraction/extract-project'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
+import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import {
     saveKonteksDiary,
     saveKonteksMemory,
@@ -350,10 +351,12 @@ async function readActiveCounts(projectRoot: string): Promise<{
 
     try {
         const [memoryRows, diaryRows] = await Promise.all([
-            db.adapter.query<{ count: number }>(
+            querySql<{ count: number }>(
+                db.client,
                 'select count(*) as count from observations where deleted_at is null and suppressed_at is null',
             ),
-            db.adapter.query<{ count: number }>(
+            querySql<{ count: number }>(
+                db.client,
                 'select count(*) as count from diary_entries where deleted_at is null and suppressed_at is null',
             ),
         ])

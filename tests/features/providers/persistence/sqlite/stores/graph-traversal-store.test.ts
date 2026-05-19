@@ -144,8 +144,8 @@ async function makeGraphTraversalStore(): Promise<{
 
     return {
         close: () => service.close(),
-        entities: new GraphEntityStore(service.adapter),
-        relations: new GraphRelationStore(service.adapter),
-        traversal: new GraphTraversalStore(service.adapter),
+        entities: new GraphEntityStore(service.client),
+        relations: new GraphRelationStore(service.client),
+        traversal: new GraphTraversalStore(service.client),
     }
 }

@@ -10,6 +10,7 @@ import type {
     DiaryExportRow,
     ObservationExportRow,
 } from './durable-memory-transfer-types'
+import { querySql } from './libsql-helpers'
 
 export default async function exportDurableMemory(
     db: DatabaseService,
@@ -20,7 +21,8 @@ export default async function exportDurableMemory(
     const activeFilter = options.includeInactive
         ? ''
         : 'where deleted_at is null and suppressed_at is null'
-    const memoryRows = await db.adapter.query<ObservationExportRow>(
+    const memoryRows = await querySql<ObservationExportRow>(
+        db.client,
         `
 select id, kind, text_inline, payload_ref, content_hash, confidence, created_at, deleted_at, suppressed_at, forget_reason
 from observations
@@ -28,7 +30,8 @@ ${activeFilter}
 order by created_at asc
 `,
     )
-    const diaryRows = await db.adapter.query<DiaryExportRow>(
+    const diaryRows = await querySql<DiaryExportRow>(
+        db.client,
         `
 select id, subject, summary, tags_json, payload_ref, content_hash, deleted_at, suppressed_at, forget_reason, created_at
 from diary_entries

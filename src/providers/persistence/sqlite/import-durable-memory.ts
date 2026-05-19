@@ -9,6 +9,7 @@ import {
     insertImportedDiary,
     insertImportedObservation,
 } from './durable-memory-import-writers'
+import { querySql } from './libsql-helpers'
 
 export default async function importDurableMemory(
     db: DatabaseService,
@@ -65,7 +66,8 @@ async function hasObservationHash(
     db: DatabaseService,
     hash: string,
 ): Promise<boolean> {
-    const rows = await db.adapter.query<{ id: string }>(
+    const rows = await querySql<{ id: string }>(
+        db.client,
         `
 select id
 from observations
@@ -81,7 +83,8 @@ async function hasDiaryHash(
     db: DatabaseService,
     hash: string,
 ): Promise<boolean> {
-    const rows = await db.adapter.query<{ id: string }>(
+    const rows = await querySql<{ id: string }>(
+        db.client,
         `
 select id
 from diary_entries

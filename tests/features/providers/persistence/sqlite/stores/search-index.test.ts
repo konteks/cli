@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import actionDb from '@/database/actions/_db'
 import searchMemory from '@/database/services/search-memory'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
+import { executeSql } from '@/providers/persistence/sqlite/libsql-helpers'
 import {
     ensureSearchIndex,
     hasSearchIndex,
@@ -45,20 +46,20 @@ async function withProjectRoot<T>(
 }
 
 describe('search index', () => {
-    it('creates an FTS index when supported by SQLite WASM', async () => {
+    it('creates an FTS index when supported by SQLite', async () => {
         const service = await makeAdapter()
 
-        expect(await hasSearchIndex(service.adapter)).toBe(true)
+        expect(await hasSearchIndex(service)).toBe(true)
 
         await service.close()
     })
 
     it('backfills existing observations into FTS', async () => {
         const service = await makeAdapter()
-        const adapter = service.adapter
-        await adapter.execute('drop table memory_fts')
-        await adapter.execute('drop table memory_fts_indexed')
-        await adapter.execute(
+        await executeSql(service.client, 'drop table memory_fts')
+        await executeSql(service.client, 'drop table memory_fts_indexed')
+        await executeSql(
+            service.client,
             `
 insert into observations (id, kind, text_inline, payload_ref, confidence, created_at)
 values (?, ?, ?, ?, ?, ?)
@@ -73,8 +74,8 @@ values (?, ?, ?, ?, ?, ?)
             ],
         )
 
-        expect(await ensureSearchIndex(adapter)).toBe(true)
-        await actionDb.syncTestActionDatabase(adapter)
+        expect(await ensureSearchIndex(service)).toBe(true)
+        await actionDb.syncTestActionDatabase(service.client)
         const results = await searchMemory(service, {
             limit: 5,
             query: 'lexical search',

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { SqliteAdapter } from '../sqlite-adapter'
+import { executeSql, querySql, type SqliteExecutor } from '../libsql-helpers'
 import { taxonomyNodeFromRow } from './taxonomy-row-mappers'
 import type {
     TaxonomyNode,
@@ -8,7 +8,7 @@ import type {
 } from './taxonomy-types'
 
 export default class TaxonomyNodeStore {
-    public constructor(private readonly adapter: SqliteAdapter) {}
+    public constructor(private readonly client: SqliteExecutor) {}
 
     public async upsertNode(input: TaxonomyNodeInput): Promise<TaxonomyNode> {
         const existing = await this.findSiblingByName(
@@ -18,7 +18,8 @@ export default class TaxonomyNodeStore {
         const now = new Date().toISOString()
 
         if (existing) {
-            await this.adapter.execute(
+            await executeSql(
+                this.client,
                 `
 update taxonomy_nodes
 set summary = coalesce(?, summary), updated_at = ?
@@ -38,7 +39,8 @@ where id = ?
             parentId: input.parentId,
             summary: input.summary,
         }
-        await this.adapter.execute(
+        await executeSql(
+            this.client,
             `
 insert into taxonomy_nodes (
     id,
@@ -66,7 +68,8 @@ insert into taxonomy_nodes (
         parentId: string | undefined,
         name: string,
     ): Promise<TaxonomyNode | undefined> {
-        const rows = await this.adapter.query<TaxonomyNodeRow>(
+        const rows = await querySql<TaxonomyNodeRow>(
+            this.client,
             `
 select id, parent_id, name, summary
 from taxonomy_nodes

@@ -9,6 +9,7 @@ import storePayload from '@/providers/persistence/objects/store-payload'
 import { upsertRetrievalDocument } from '@/providers/persistence/sqlite/retrieval-documents'
 import { indexSearchDocument } from '@/providers/persistence/sqlite/search-index'
 import type DatabaseService from './database-service'
+import { executeSql } from './libsql-helpers'
 
 export async function insertImportedObservation(
     db: DatabaseService,
@@ -23,7 +24,8 @@ export async function insertImportedObservation(
     const createdAt = memory.createdAt || new Date().toISOString()
 
     await db.transaction(async tx => {
-        await tx.adapter.execute(
+        await executeSql(
+            tx.client,
             `
 insert into observations (
     id, kind, text_inline, payload_ref, content_hash, confidence, created_at, deleted_at, suppressed_at, forget_reason
@@ -42,7 +44,7 @@ insert into observations (
                 memory.forgetReason ?? null,
             ],
         )
-        await indexSearchDocument(tx.adapter, {
+        await indexSearchDocument(tx, {
             content: memory.content,
             createdAt,
             id,
@@ -79,7 +81,8 @@ export async function insertImportedDiary(
     const createdAt = diary.createdAt || new Date().toISOString()
 
     await db.transaction(async tx => {
-        await tx.adapter.execute(
+        await executeSql(
+            tx.client,
             `
 insert into diary_entries (
     id, subject, summary, tags_json, payload_ref, content_hash, deleted_at, suppressed_at, forget_reason, created_at
@@ -98,7 +101,7 @@ insert into diary_entries (
                 createdAt,
             ],
         )
-        await indexSearchDocument(tx.adapter, {
+        await indexSearchDocument(tx, {
             content: text,
             createdAt,
             id,

@@ -1,5 +1,9 @@
+import {
+    executeSql,
+    type KonteksDatabase,
+    type SqliteExecutor,
+} from '../libsql-helpers'
 import { sources } from '../schema'
-import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter'
 
 export type SourceRow = {
     id: string
@@ -16,7 +20,7 @@ export type SourceRow = {
 
 export default class SourceStore {
     public constructor(
-        private readonly adapter: SqliteAdapter,
+        private readonly client: SqliteExecutor,
         private readonly db?: KonteksDatabase,
     ) {}
 
@@ -39,7 +43,8 @@ export default class SourceStore {
             return
         }
 
-        await this.adapter.execute(
+        await executeSql(
+            this.client,
             `
 insert into sources (
     id, type, uri, excerpt_ref, source_role, language, topics_json,

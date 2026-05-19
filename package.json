@@ -9,7 +9,6 @@
         "@inquirer/prompts": "^8.4.3",
         "@libsql/client": "^0.17.3",
         "@modelcontextprotocol/sdk": "^1.29.0",
-        "@sqlite.org/sqlite-wasm": "^3.53.0-build1",
         "@toon-format/toon": "^2.2.0",
         "@tree-sitter-grammars/tree-sitter-toml": "^0.7.0",
         "@tree-sitter-grammars/tree-sitter-yaml": "^0.7.1",

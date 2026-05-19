@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import generateTargetEmbeddings from '@/providers/embeddings/generate-target-embeddings'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
+import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import { upsertRetrievalDocument } from '@/providers/persistence/sqlite/retrieval-documents'
 import { loadProjectContext } from '@/providers/project/context'
 import FakeEmbeddingProvider from '../../../fake/fake-embedding-provider'
@@ -83,11 +84,12 @@ describe('generateTargetEmbeddings', () => {
         expect(second.embeddedCount).toBe(0)
         expect(second.reusedCount).toBe(1)
 
-        const rows = await service.adapter.query<{
+        const rows = await querySql<{
             dimensions: number
             model: string
             vector_blob: Uint8Array
         }>(
+            service.client,
             'select model, dimensions, vector_blob from target_embeddings where target_id = ? and target_type = ?',
             ['chunk_a', 'chunk'],
         )

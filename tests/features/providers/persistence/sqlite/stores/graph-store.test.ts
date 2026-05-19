@@ -22,7 +22,7 @@ async function makeGraphStore(): Promise<{
 
     return {
         close: () => service.close(),
-        store: new GraphStore(service.adapter, service.db),
+        store: new GraphStore(service.client, service.db),
     }
 }
 

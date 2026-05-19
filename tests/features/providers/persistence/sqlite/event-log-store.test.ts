@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import EventLogStore from '@/providers/persistence/sqlite/event-log-store'
-import type { KonteksDatabase } from '@/providers/persistence/sqlite/sqlite-adapter'
+import type { KonteksDatabase } from '@/providers/persistence/sqlite/libsql-helpers'
 
 type MemoryEvent = {
     actor: string

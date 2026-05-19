@@ -8,6 +8,7 @@ import persistPreparedFileSections from '@/providers/extraction/engine/persist-p
 import type { PreparedFile } from '@/providers/extraction/engine/prepare-file-sections'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 
 const tempDirs: string[] = []
 
@@ -37,29 +38,31 @@ describe('providers/extraction/engine/persist-prepared-file-sections', () => {
 
             expect(count).toBe(1)
             await expect(
-                db.adapter.query('select * from sources where id = ?', [
+                querySql(db.client, 'select * from sources where id = ?', [
                     'source_fixture',
                 ]),
             ).resolves.toHaveLength(1)
             await expect(
-                db.adapter.query('select * from chunks where id = ?', [
+                querySql(db.client, 'select * from chunks where id = ?', [
                     'chunk_fixture',
                 ]),
             ).resolves.toHaveLength(1)
             await expect(
-                db.adapter.query(
+                querySql(
+                    db.client,
                     'select * from taxonomy_links where target_id = ?',
                     ['chunk_fixture'],
                 ),
             ).resolves.toHaveLength(1)
             await expect(
-                db.adapter.query(
+                querySql(
+                    db.client,
                     'select * from retrieval_documents where target_id = ?',
                     ['chunk_fixture'],
                 ),
             ).resolves.toHaveLength(1)
             await expect(
-                db.adapter.query('select * from memory_fts where id = ?', [
+                querySql(db.client, 'select * from memory_fts where id = ?', [
                     'chunk_fixture',
                 ]),
             ).resolves.toHaveLength(1)

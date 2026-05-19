@@ -6,6 +6,7 @@ import {
     openProjectDatabase,
     projectDatabasePath,
 } from '@/providers/persistence/sqlite/database'
+import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []
@@ -42,7 +43,8 @@ describe('project database', () => {
         )
 
         const service = await openProjectDatabase(context)
-        const migrations = await service.adapter.query<{ id: string }>(
+        const migrations = await querySql<{ id: string }>(
+            service.client,
             'select id from schema_migrations',
         )
         await service.close()

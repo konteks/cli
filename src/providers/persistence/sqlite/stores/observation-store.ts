@@ -1,6 +1,10 @@
 import { and, isNull, or, sql } from 'drizzle-orm'
+import {
+    type KonteksDatabase,
+    querySql,
+    type SqliteExecutor,
+} from '../libsql-helpers'
 import { observations } from '../schema'
-import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter'
 
 export type ObservationRow = {
     id: string
@@ -12,7 +16,7 @@ export type ObservationRow = {
 
 export default class ObservationStore {
     public constructor(
-        private readonly adapter: SqliteAdapter,
+        private readonly client: SqliteExecutor,
         private readonly db?: KonteksDatabase,
     ) {}
 
@@ -47,7 +51,8 @@ export default class ObservationStore {
             }))
         }
 
-        return this.adapter.query<ObservationRow>(
+        return querySql<ObservationRow>(
+            this.client,
             `
 select id, kind, text_inline, confidence, created_at
 from observations

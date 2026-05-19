@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import exportDurableMemory from '@/providers/persistence/sqlite/export-durable-memory'
+import { executeSql } from '@/providers/persistence/sqlite/libsql-helpers'
 import {
     saveKonteksDiary,
     saveKonteksMemory,
@@ -77,7 +78,8 @@ describe('exportDurableMemory', () => {
                 importance: 3,
                 kind: 'note',
             })
-            await db.adapter.execute(
+            await executeSql(
+                db.client,
                 'update observations set suppressed_at = ?, forget_reason = ? where id = ?',
                 [new Date().toISOString(), 'test inactive export', saved.id],
             )

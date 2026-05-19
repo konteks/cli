@@ -1,5 +1,8 @@
+import type { Client, Transaction } from '@libsql/client'
+import { drizzle } from 'drizzle-orm/libsql'
 import EventLogStore from './event-log-store'
-import type { KonteksDatabase, SqliteAdapter } from './sqlite-adapter'
+import type { KonteksDatabase } from './libsql-helpers'
+import * as schema from './schema'
 import ChunkStore from './stores/chunk-store'
 import GraphStore from './stores/graph-store'
 import ModuleStore from './stores/module-store'
@@ -17,27 +20,47 @@ export default class DatabaseService {
     public readonly taxonomy: TaxonomyStore
 
     public constructor(
-        public readonly adapter: SqliteAdapter,
+        public readonly client: Client | Transaction,
         public readonly db: KonteksDatabase,
+        private readonly ownsClient = true,
     ) {
         this.events = new EventLogStore(db)
-        this.chunks = new ChunkStore(adapter, db)
-        this.observations = new ObservationStore(adapter, db)
-        this.sources = new SourceStore(adapter, db)
-        this.modules = new ModuleStore(adapter, db)
-        this.graph = new GraphStore(adapter, db)
-        this.taxonomy = new TaxonomyStore(adapter)
+        this.chunks = new ChunkStore(client, db)
+        this.observations = new ObservationStore(client, db)
+        this.sources = new SourceStore(client, db)
+        this.modules = new ModuleStore(client, db)
+        this.graph = new GraphStore(client, db)
+        this.taxonomy = new TaxonomyStore(client)
     }
 
     public async transaction<T>(
         operation: (tx: DatabaseService) => Promise<T>,
     ): Promise<T> {
-        return this.adapter.transaction(async () => {
+        if (!('transaction' in this.client)) {
             return operation(this)
-        })
+        }
+
+        const transaction = await this.client.transaction('write')
+        const txDb = drizzle(transaction as unknown as Client, { schema })
+        const txService = new DatabaseService(
+            transaction,
+            txDb as KonteksDatabase,
+            false,
+        )
+
+        try {
+            const result = await operation(txService)
+            await transaction.commit()
+            return result
+        } catch (error) {
+            await transaction.rollback()
+            throw error
+        }
     }
 
     public async close(): Promise<void> {
-        await this.adapter.close()
+        if (this.ownsClient && 'close' in this.client) {
+            this.client.close()
+        }
     }
 }

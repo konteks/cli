@@ -10,6 +10,7 @@ import { contentHash } from '@/providers/persistence/objects/content'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import { executeSql } from '@/providers/persistence/sqlite/libsql-helpers'
 import FakeTreeSitterEngine from '../../../../fake/fake-tree-sitter-engine'
 
 const tempDirs: string[] = []
@@ -194,7 +195,8 @@ describe('providers/extraction/engine/prepare-file-sections', () => {
             })
             expect(first.sections).toHaveLength(1)
 
-            await db.adapter.execute(
+            await executeSql(
+                db.client,
                 `
 insert into mined_suppressions (
     path,

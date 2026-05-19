@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import actionDb from '@/database/actions/_db'
 import searchMemory from '@/database/services/search-memory'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
+import { executeSql } from '@/providers/persistence/sqlite/libsql-helpers'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []
@@ -43,7 +44,8 @@ async function withProjectRoot<T>(
 describe('search policy', () => {
     it('gates diary from recall when no continuity intent is present', async () => {
         const service = await makeAdapter()
-        await service.adapter.execute(
+        await executeSql(
+            service.client,
             `
 insert into diary_entries (id, subject, summary, tags_json, created_at)
 values (?, ?, ?, ?, ?)
@@ -56,7 +58,7 @@ values (?, ?, ?, ?, ?)
                 new Date().toISOString(),
             ],
         )
-        await actionDb.syncTestActionDatabase(service.adapter)
+        await actionDb.syncTestActionDatabase(service.client)
         const recall = await searchMemory(service, {
             task: 'auth refactor design',
         })
@@ -71,8 +73,8 @@ values (?, ?, ?, ?, ?)
 
     it('downranks agent references for recall unless query asks for agent context', async () => {
         const service = await makeAdapter()
-        const adapter = service.adapter
-        await adapter.execute(
+        await executeSql(
+            service.client,
             `
 insert into retrieval_documents (
   target_id, target_type, source_id, source_role, path, anchor, summary,
@@ -93,7 +95,8 @@ insert into retrieval_documents (
                 new Date().toISOString(),
             ],
         )
-        await adapter.execute(
+        await executeSql(
+            service.client,
             `
 insert into retrieval_documents (
   target_id, target_type, source_id, source_role, path, anchor, summary,
@@ -114,7 +117,8 @@ insert into retrieval_documents (
                 new Date().toISOString(),
             ],
         )
-        await adapter.execute(
+        await executeSql(
+            service.client,
             `
 insert into retrieval_documents_fts (
   target_id, target_type, source_role, path, anchor, fts_text
@@ -128,7 +132,8 @@ insert into retrieval_documents_fts (
                 'auth session refresh flow',
             ],
         )
-        await adapter.execute(
+        await executeSql(
+            service.client,
             `
 insert into retrieval_documents_fts (
   target_id, target_type, source_role, path, anchor, fts_text
@@ -143,7 +148,7 @@ insert into retrieval_documents_fts (
             ],
         )
 
-        await actionDb.syncTestActionDatabase(adapter)
+        await actionDb.syncTestActionDatabase(service.client)
         const normal = await searchMemory(service, {
             task: 'auth session refresh flow',
         })

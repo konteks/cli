@@ -68,7 +68,7 @@ export default async function persistPreparedFileSections(input: {
             targetId: section.id,
             targetType: 'chunk',
         })
-        await indexSearchDocument(db.adapter, {
+        await indexSearchDocument(db, {
             content: section.contentInline ?? section.summary,
             createdAt: extractedAt,
             id: section.id,

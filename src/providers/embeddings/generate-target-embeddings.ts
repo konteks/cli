@@ -2,6 +2,10 @@ import type { EmbeddingProviderContract } from '@/contracts/services/embedding-p
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import { contentHash } from '@/providers/persistence/objects/content'
 import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import {
+    executeSql,
+    querySql,
+} from '@/providers/persistence/sqlite/libsql-helpers'
 
 type TargetType = 'chunk' | 'diary' | 'memory' | 'module'
 
@@ -35,13 +39,13 @@ export default async function generateTargetEmbeddings(
         onProgress?: ExtractionProgressReporter
     } = {},
 ): Promise<EmbeddingRunResult> {
-    const adapter = db.adapter
     if (targetTypes.length === 0) {
         return { embeddedCount: 0, reusedCount: 0 }
     }
 
     const placeholders = targetTypes.map(() => '?').join(', ')
-    const rows = await adapter.query<RetrievalDocumentRow>(
+    const rows = await querySql<RetrievalDocumentRow>(
+        db.client,
         `
 select target_id, target_type, embedding_text
 from retrieval_documents
@@ -55,7 +59,8 @@ where target_type in (${placeholders})
     const workItems: EmbeddingWorkItem[] = []
 
     for (const row of rows) {
-        const existing = await adapter.query<ExistingEmbeddingRow>(
+        const existing = await querySql<ExistingEmbeddingRow>(
+            db.client,
             `
 select embedding_hash
 from target_embeddings
@@ -138,7 +143,8 @@ limit 1
             )
         }
 
-        await adapter.execute(
+        await executeSql(
+            db.client,
             `
 insert or replace into target_embeddings (
     target_id,

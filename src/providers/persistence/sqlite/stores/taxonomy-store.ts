@@ -1,4 +1,4 @@
-import type { SqliteAdapter } from '../sqlite-adapter'
+import type { SqliteExecutor } from '../libsql-helpers'
 import TaxonomyLinkStore from './taxonomy-link-store'
 import TaxonomyNodeStore from './taxonomy-node-store'
 import TaxonomyTreeStore from './taxonomy-tree-store'
@@ -15,10 +15,10 @@ export default class TaxonomyStore {
     private readonly nodes: TaxonomyNodeStore
     private readonly tree: TaxonomyTreeStore
 
-    public constructor(adapter: SqliteAdapter) {
-        this.links = new TaxonomyLinkStore(adapter)
-        this.nodes = new TaxonomyNodeStore(adapter)
-        this.tree = new TaxonomyTreeStore(adapter)
+    public constructor(client: SqliteExecutor) {
+        this.links = new TaxonomyLinkStore(client)
+        this.nodes = new TaxonomyNodeStore(client)
+        this.tree = new TaxonomyTreeStore(client)
     }
 
     public async upsertNode(input: TaxonomyNodeInput): Promise<TaxonomyNode> {

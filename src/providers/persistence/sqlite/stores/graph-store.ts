@@ -1,4 +1,4 @@
-import type { KonteksDatabase, SqliteAdapter } from '../sqlite-adapter'
+import type { KonteksDatabase, SqliteExecutor } from '../libsql-helpers'
 import GraphEntityStore from './graph-entity-store'
 import GraphRelationStore from './graph-relation-store'
 import GraphTraversalStore from './graph-traversal-store'
@@ -18,13 +18,13 @@ export default class GraphStore {
     private readonly traversal: GraphTraversalStore
 
     public constructor(
-        adapter: SqliteAdapter | { adapter: SqliteAdapter },
+        client: SqliteExecutor | { client: SqliteExecutor },
         _db?: KonteksDatabase,
     ) {
-        const sqliteAdapter = 'adapter' in adapter ? adapter.adapter : adapter
-        this.entities = new GraphEntityStore(sqliteAdapter)
-        this.relations = new GraphRelationStore(sqliteAdapter)
-        this.traversal = new GraphTraversalStore(sqliteAdapter)
+        const sqliteClient = 'client' in client ? client.client : client
+        this.entities = new GraphEntityStore(sqliteClient)
+        this.relations = new GraphRelationStore(sqliteClient)
+        this.traversal = new GraphTraversalStore(sqliteClient)
     }
 
     public async upsertEntity(input: EntityInput): Promise<EntityRecord> {

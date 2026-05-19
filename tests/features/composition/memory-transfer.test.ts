@@ -20,6 +20,10 @@ import actionDb from '@/database/actions/_db'
 import searchMemory from '@/database/services/search-memory'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import {
+    executeSql,
+    querySql,
+} from '@/providers/persistence/sqlite/libsql-helpers'
+import {
     saveKonteksDiary,
     saveKonteksMemory,
 } from '@/providers/persistence/sqlite/save-konteks-input'
@@ -129,7 +133,8 @@ describe('memory transfer', () => {
         let targetDb = await openProjectDatabase(
             await withProjectRoot(targetRoot, () => loadProjectContext()),
         )
-        const rows = await targetDb.adapter.query<{ count: number }>(
+        const rows = await querySql<{ count: number }>(
+            targetDb.client,
             'select count(*) as count from observations',
         )
         await targetDb.close()
@@ -154,7 +159,7 @@ describe('memory transfer', () => {
         targetDb = await openProjectDatabase(
             await withProjectRoot(targetRoot, () => loadProjectContext()),
         )
-        await actionDb.syncTestActionDatabase(targetDb.adapter)
+        await actionDb.syncTestActionDatabase(targetDb.client)
         const results = await searchMemory(targetDb, {
             limit: 5,
             query: 'searchable recall',
@@ -200,7 +205,8 @@ describe('memory transfer', () => {
             importance: 3,
             kind: 'note',
         })
-        await db.adapter.execute(
+        await executeSql(
+            db.client,
             'update observations set suppressed_at = ?, forget_reason = ? where id = ?',
             [new Date().toISOString(), 'test inactive export', saved.id],
         )
@@ -256,7 +262,8 @@ describe('memory transfer', () => {
         const restoredDb = await openProjectDatabase(
             await withProjectRoot(projectRoot, () => loadProjectContext()),
         )
-        const rows = await restoredDb.adapter.query<{ count: number }>(
+        const rows = await querySql<{ count: number }>(
+            restoredDb.client,
             'select count(*) as count from observations',
         )
         await restoredDb.close()

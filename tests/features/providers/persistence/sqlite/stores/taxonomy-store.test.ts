@@ -22,7 +22,7 @@ async function makeTaxonomyStore(): Promise<{
 
     return {
         close: () => service.close(),
-        store: new TaxonomyStore(service.adapter),
+        store: new TaxonomyStore(service.client),
     }
 }
 
