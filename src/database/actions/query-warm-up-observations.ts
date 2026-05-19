@@ -1,17 +1,24 @@
-import type { SqliteAdapter } from '@/providers/persistence/sqlite/sqlite-adapter'
+import { and, desc, isNull } from 'drizzle-orm'
+import { observations } from '@/providers/persistence/sqlite/schema'
 import type { WarmUpObservationRow } from '@/providers/project/warm-up-ranking'
+import db from './_db'
 
-export default async function queryWarmUpObservations(
-    adapter: SqliteAdapter,
-): Promise<WarmUpObservationRow[]> {
-    return adapter.query<WarmUpObservationRow>(
-        `
-select id, kind, text_inline
-from observations
-where deleted_at is null
-  and suppressed_at is null
-order by created_at desc
-limit 120
-`,
-    )
+export default async function queryWarmUpObservations(): Promise<
+    WarmUpObservationRow[]
+> {
+    return db
+        .select({
+            id: observations.id,
+            kind: observations.kind,
+            text_inline: observations.textInline,
+        })
+        .from(observations)
+        .where(
+            and(
+                isNull(observations.deletedAt),
+                isNull(observations.suppressedAt),
+            ),
+        )
+        .orderBy(desc(observations.createdAt))
+        .limit(120)
 }

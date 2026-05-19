@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import actionDb from '@/database/actions/_db'
 import searchMemory from '@/database/services/search-memory'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import {
@@ -54,6 +55,7 @@ describe('save and search stores', () => {
             importance: 5,
             kind: 'preference',
         })
+        await actionDb.syncTestActionDatabase(adapter.adapter)
         const results = await searchMemory(adapter, {
             limit: 5,
             query: 'vitest bun',
@@ -80,6 +82,7 @@ describe('save and search stores', () => {
             importance: 3,
             kind: 'decision',
         })
+        await actionDb.syncTestActionDatabase(adapter.adapter)
         const results = await searchMemory(adapter, {
             limit: 5,
             query: 'retrieve context',
@@ -146,6 +149,7 @@ describe('save and search stores', () => {
             importance: 3,
             kind: 'note',
         })
+        await actionDb.syncTestActionDatabase(adapter.adapter)
         const results = await searchMemory(adapter, {
             limit: 5,
             query: 'needle',
@@ -169,6 +173,7 @@ describe('save and search stores', () => {
             summary: 'SQLite adapter is implemented and search remains next.',
             tags: ['sqlite', 'storage'],
         })
+        await actionDb.syncTestActionDatabase(adapter.adapter)
         const results = await searchMemory(adapter, {
             limit: 5,
             query: 'sqlite storage',
@@ -209,6 +214,7 @@ describe('save and search stores', () => {
                 'Implemented structured memory batch saves and a diary save phase.',
             tags: ['save'],
         })
+        await actionDb.syncTestActionDatabase(adapter.adapter)
         const memoryResults = await searchMemory(adapter, {
             limit: 5,
             query: 'structured payloads raw chat',
@@ -265,6 +271,7 @@ describe('save and search stores', () => {
                 },
             ],
         })
+        await actionDb.syncTestActionDatabase(adapter.adapter)
         const results = await searchMemory(adapter, {
             limit: 5,
             query: 'structured save calls',
@@ -290,6 +297,7 @@ describe('save and search stores', () => {
             tags: ['retrieval'],
         })
 
+        await actionDb.syncTestActionDatabase(adapter.adapter)
         const memoryResults = await searchMemory(adapter, {
             limit: 5,
             query: 'primary retrieval substrate',

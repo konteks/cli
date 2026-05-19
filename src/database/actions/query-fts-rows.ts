@@ -1,4 +1,10 @@
-import type { SqliteAdapter } from '@/providers/persistence/sqlite/sqlite-adapter'
+import { eq, sql } from 'drizzle-orm'
+import {
+    chunks,
+    memoryFts,
+    observations,
+} from '@/providers/persistence/sqlite/schema'
+import db from './_db'
 
 export type FtsRow = {
     id: string
@@ -14,45 +20,43 @@ export type FtsRow = {
 }
 
 export default async function queryFtsRows(
-    adapter: SqliteAdapter,
     ftsQuery: string,
     limit: number,
 ): Promise<FtsRow[]> {
-    return adapter.query<FtsRow>(
-        `
-select
-    memory_fts.id,
-    memory_fts.type,
-    memory_fts.kind,
-    memory_fts.task,
-    memory_fts.content,
-    memory_fts.created_at,
-    bm25(memory_fts) as rank,
-    c.source_id,
-    c.token_count,
-    o.confidence
-from memory_fts
-left join chunks c on c.id = memory_fts.id
-left join observations o on o.id = memory_fts.id
-where memory_fts match ?
-  and not exists (
-      select 1 from chunks dc
-      where dc.id = memory_fts.id
-        and (dc.deleted_at is not null or dc.suppressed_at is not null)
-  )
-  and not exists (
-      select 1 from observations do
-      where do.id = memory_fts.id
-        and (do.deleted_at is not null or do.suppressed_at is not null)
-  )
-  and not exists (
-      select 1 from diary_entries dd
-      where dd.id = memory_fts.id
-        and (dd.deleted_at is not null or dd.suppressed_at is not null)
-  )
-order by rank
-limit ?
-`,
-        [ftsQuery, limit],
-    )
+    return db
+        .select({
+            confidence: observations.confidence,
+            content: memoryFts.content,
+            created_at: memoryFts.createdAt,
+            id: memoryFts.id,
+            kind: memoryFts.kind,
+            rank: sql<number>`bm25(memory_fts)`,
+            source_id: chunks.sourceId,
+            task: memoryFts.task,
+            token_count: chunks.tokenCount,
+            type: memoryFts.type,
+        })
+        .from(memoryFts)
+        .leftJoin(chunks, eq(chunks.id, memoryFts.id))
+        .leftJoin(observations, eq(observations.id, memoryFts.id))
+        .where(sql`
+            memory_fts match ${ftsQuery}
+            and not exists (
+                select 1 from chunks dc
+                where dc.id = ${memoryFts.id}
+                  and (dc.deleted_at is not null or dc.suppressed_at is not null)
+            )
+            and not exists (
+                select 1 from observations do
+                where do.id = ${memoryFts.id}
+                  and (do.deleted_at is not null or do.suppressed_at is not null)
+            )
+            and not exists (
+                select 1 from diary_entries dd
+                where dd.id = ${memoryFts.id}
+                  and (dd.deleted_at is not null or dd.suppressed_at is not null)
+            )
+        `)
+        .orderBy(sql`rank`)
+        .limit(limit)
 }

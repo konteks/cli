@@ -1,4 +1,6 @@
-import type { SqliteAdapter } from '@/providers/persistence/sqlite/sqlite-adapter'
+import { desc } from 'drizzle-orm'
+import { modules } from '@/providers/persistence/sqlite/schema'
+import db from './_db'
 
 export type WarmUpModuleRow = {
     path: string
@@ -6,15 +8,14 @@ export type WarmUpModuleRow = {
     summary: string
 }
 
-export default async function queryWarmUpModules(
-    adapter: SqliteAdapter,
-): Promise<WarmUpModuleRow[]> {
-    return adapter.query<WarmUpModuleRow>(
-        `
-select path, source_role, summary
-from modules
-order by chunk_count desc, file_count desc
-limit 12
-`,
-    )
+export default async function queryWarmUpModules(): Promise<WarmUpModuleRow[]> {
+    return db
+        .select({
+            path: modules.path,
+            source_role: modules.sourceRole,
+            summary: modules.summary,
+        })
+        .from(modules)
+        .orderBy(desc(modules.chunkCount), desc(modules.fileCount))
+        .limit(12)
 }

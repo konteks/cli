@@ -1,4 +1,6 @@
-import type { SqliteAdapter } from '@/providers/persistence/sqlite/sqlite-adapter'
+import { and, desc, isNull, or, sql } from 'drizzle-orm'
+import { observations } from '@/providers/persistence/sqlite/schema'
+import db from './_db'
 
 export type ObservationRow = {
     id: string
@@ -9,20 +11,30 @@ export type ObservationRow = {
 }
 
 export default async function queryObservations(
-    adapter: SqliteAdapter,
     terms: string[],
     limit: number,
 ): Promise<ObservationRow[]> {
-    return adapter.query<ObservationRow>(
-        `
-select id, kind, text_inline, confidence, created_at
-from observations
-where (${terms.map(() => "lower(coalesce(text_inline, '')) like ?").join(' or ')})
-  and deleted_at is null
-  and suppressed_at is null
-order by created_at desc
-limit ?
-`,
-        [...terms.map(term => `%${term}%`), limit],
-    )
+    return db
+        .select({
+            confidence: observations.confidence,
+            created_at: observations.createdAt,
+            id: observations.id,
+            kind: observations.kind,
+            text_inline: observations.textInline,
+        })
+        .from(observations)
+        .where(
+            and(
+                or(
+                    ...terms.map(
+                        term =>
+                            sql`lower(coalesce(${observations.textInline}, '')) like ${`%${term}%`}`,
+                    ),
+                ),
+                isNull(observations.deletedAt),
+                isNull(observations.suppressedAt),
+            ),
+        )
+        .orderBy(desc(observations.createdAt))
+        .limit(limit)
 }
