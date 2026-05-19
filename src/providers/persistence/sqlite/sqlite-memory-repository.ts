@@ -8,6 +8,7 @@ import type {
     SaveOptions,
     SaveSessionInput,
 } from '@/contracts/repositories/memory-repository'
+import searchMemory from '@/database/services/search-memory'
 import type {
     ForgetResult,
     GraphNeighbor,
@@ -26,7 +27,6 @@ import {
     saveKonteksMemory,
     saveKonteksSession,
 } from './save-konteks-input'
-import searchMemory from './search-memory'
 
 export default class SQLiteMemoryRepository
     implements MemoryRepositoryContract

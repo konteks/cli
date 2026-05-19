@@ -3,20 +3,20 @@ import type {
     MemorySearchInput,
 } from '@/contracts/repositories/memory-repository'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
+import queryDiaries, { type DiaryRow } from '@/database/actions/query-diaries'
+import queryFtsRows from '@/database/actions/query-fts-rows'
+import queryObservations, {
+    type ObservationRow,
+} from '@/database/actions/query-observations'
+import queryRetrievalDocuments, {
+    type RetrievalDocumentRow,
+} from '@/database/actions/query-retrieval-documents'
 import type { MemorySearchResult } from '@/models/memory'
+import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import { hasSearchIndex } from '@/providers/persistence/sqlite/search-index'
+import type { SqliteAdapter } from '@/providers/persistence/sqlite/sqlite-adapter'
 import { classifySourceRole } from '@/providers/project/source-classification'
 import { estimateTextTokens } from '@/support/format/tokens'
-import type DatabaseService from './database-service'
-import {
-    type DiaryRow,
-    type ObservationRow,
-    queryDiaries,
-    queryFtsRows,
-    queryObservations,
-    queryRetrievalDocuments,
-    type RetrievalDocumentRow,
-} from './persistence-adapter'
-import { hasSearchIndex } from './search-index'
 import {
     allowResult,
     applyGroupAwarePruning,
@@ -27,13 +27,12 @@ import {
     type SearchMode,
     toFtsQuery,
     tokenize,
-} from './search-policy'
+} from '../support/search-policy'
 import {
     computeVectorScore,
     embedSearchQuery,
     makeSearchResult,
-} from './search-scoring'
-import type { SqliteAdapter } from './sqlite-adapter'
+} from '../support/search-scoring'
 
 type SearchMemoryOptions = {
     embeddingProvider?: EmbeddingProvider
