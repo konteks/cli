@@ -173,7 +173,9 @@ export const retrievalDocuments = sqliteTable(
         sourceRole: text('source_role'),
         summary: text('summary'),
         targetId: text('target_id').notNull(),
-        targetType: text('target_type').notNull(),
+        targetType: text('target_type')
+            .$type<'chunk' | 'diary' | 'memory' | 'module'>()
+            .notNull(),
         updatedAt: text('updated_at').notNull(),
     },
     table => ({
@@ -191,8 +193,10 @@ export const targetEmbeddings = sqliteTable(
         model: text('model').notNull(),
         normalized: integer('normalized').notNull(),
         targetId: text('target_id').notNull(),
-        targetType: text('target_type').notNull(),
-        vectorBlob: blob('vector_blob').notNull(),
+        targetType: text('target_type')
+            .$type<'chunk' | 'diary' | 'memory' | 'module'>()
+            .notNull(),
+        vectorBlob: blob('vector_blob').$type<Uint8Array>().notNull(),
     },
     table => ({
         pk: primaryKey({
@@ -235,4 +239,21 @@ export const minedSuppressions = sqliteTable(
 export const memoryFtsIndexed = sqliteTable('memory_fts_indexed', {
     id: text('id').primaryKey(),
     indexedAt: text('indexed_at').notNull(),
+})
+
+export const memoryFts = sqliteTable('memory_fts', {
+    content: text('content').notNull(),
+    createdAt: text('created_at').notNull(),
+    id: text('id').notNull(),
+    kind: text('kind'),
+    task: text('task'),
+    type: text('type').$type<'chunk' | 'diary' | 'memory'>().notNull(),
+})
+
+export const retrievalDocumentsFts = sqliteTable('retrieval_documents_fts', {
+    ftsText: text('fts_text').notNull(),
+    targetId: text('target_id').notNull(),
+    targetType: text('target_type')
+        .$type<'chunk' | 'diary' | 'memory' | 'module'>()
+        .notNull(),
 })

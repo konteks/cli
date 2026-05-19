@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import actionDb from '@/database/actions/_db'
 import searchMemory from '@/database/services/search-memory'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import {
@@ -73,6 +74,7 @@ values (?, ?, ?, ?, ?, ?)
         )
 
         expect(await ensureSearchIndex(adapter)).toBe(true)
+        await actionDb.syncTestActionDatabase(adapter)
         const results = await searchMemory(service, {
             limit: 5,
             query: 'lexical search',

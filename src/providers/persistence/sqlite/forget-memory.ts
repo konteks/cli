@@ -24,7 +24,7 @@ export default async function forgetMemory(
     input: ForgetInput,
 ): Promise<ForgetResult> {
     const mode = input.mode ?? 'soft_delete'
-    const targets = await resolveTargets(db, input)
+    const targets = await resolveTargets(input)
     const affectedIds: string[] = []
 
     await db.transaction(async tx => {
@@ -55,10 +55,7 @@ export default async function forgetMemory(
     }
 }
 
-async function resolveTargets(
-    db: DatabaseService,
-    input: ForgetInput,
-): Promise<ForgetTarget[]> {
+async function resolveTargets(input: ForgetInput): Promise<ForgetTarget[]> {
     if (input.id) {
         return [{ id: input.id, kind: inferKind(input.id) }]
     }
@@ -73,8 +70,8 @@ async function resolveTargets(
     }
 
     const [observations, diaries] = await Promise.all([
-        queryObservations(db.adapter, terms, 10),
-        queryDiaries(db.adapter, terms, 10),
+        queryObservations(terms, 10),
+        queryDiaries(terms, 10),
     ])
 
     return [

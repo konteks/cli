@@ -11,6 +11,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
+import actionDb from '@/database/actions/_db'
 import searchMemory from '@/database/services/search-memory'
 import {
     getExtractionFreshness,
@@ -144,6 +145,7 @@ order by target_type, source_role
         const modules = await adapter.query<{ path: string }>(
             'select path from modules order by path',
         )
+        await actionDb.syncTestActionDatabase(adapter)
         const searchResults = await searchMemory(service, {
             limit: 5,
             query: 'Fixture',
@@ -191,6 +193,7 @@ order by target_type, source_role
         await extractTestProject(context, 'reindex', { embeddingProvider })
 
         const service = await openProjectDatabase(context)
+        await actionDb.syncTestActionDatabase(service.adapter)
         const vectorResults = await searchMemory(
             service,
             {
@@ -373,6 +376,7 @@ where id in (?, ?)
 `,
             [savedMemory.id, savedDiary.id],
         )
+        await actionDb.syncTestActionDatabase(repairedService.adapter)
         const results = await searchMemory(repairedService, {
             limit: 5,
             query: 'repair preserve durable',

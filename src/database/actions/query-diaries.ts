@@ -1,4 +1,6 @@
-import type { SqliteAdapter } from '@/providers/persistence/sqlite/sqlite-adapter'
+import { and, desc, isNull, or, sql } from 'drizzle-orm'
+import { diaryEntries } from '@/providers/persistence/sqlite/schema'
+import db from './_db'
 
 export type DiaryRow = {
     id: string
@@ -9,28 +11,31 @@ export type DiaryRow = {
 }
 
 export default async function queryDiaries(
-    adapter: SqliteAdapter,
     terms: string[],
     limit: number,
 ): Promise<DiaryRow[]> {
-    return adapter.query<DiaryRow>(
-        `
-select id, subject, summary, tags_json, created_at
-from diary_entries
-where (${terms
-            .map(
-                () =>
-                    "(lower(summary) like ? or lower(coalesce(subject, '')) like ? or lower(coalesce(tags_json, '')) like ?)",
-            )
-            .join(' or ')})
-  and deleted_at is null
-  and suppressed_at is null
-order by created_at desc
-limit ?
-`,
-        [
-            ...terms.flatMap(term => [`%${term}%`, `%${term}%`, `%${term}%`]),
-            limit,
-        ],
-    )
+    return await db
+        .select({
+            created_at: diaryEntries.createdAt,
+            id: diaryEntries.id,
+            subject: diaryEntries.subject,
+            summary: diaryEntries.summary,
+            tags_json: diaryEntries.tagsJson,
+        })
+        .from(diaryEntries)
+        .where(
+            and(
+                or(
+                    ...terms.flatMap(term => [
+                        sql`lower(${diaryEntries.summary}) like ${`%${term}%`}`,
+                        sql`lower(coalesce(${diaryEntries.subject}, '')) like ${`%${term}%`}`,
+                        sql`lower(coalesce(${diaryEntries.tagsJson}, '')) like ${`%${term}%`}`,
+                    ]),
+                ),
+                isNull(diaryEntries.deletedAt),
+                isNull(diaryEntries.suppressedAt),
+            ),
+        )
+        .orderBy(desc(diaryEntries.createdAt))
+        .limit(limit)
 }

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import actionDb from '@/database/actions/_db'
 import searchMemory from '@/database/services/search-memory'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import forgetMemory from '@/providers/persistence/sqlite/forget-memory'
@@ -62,6 +63,7 @@ describe('forgetMemory', () => {
             mode: 'soft_delete',
             reason: 'obsolete',
         })
+        await actionDb.syncTestActionDatabase(adapter.adapter)
         const search = await searchMemory(adapter, {
             limit: 5,
             query: 'obsolete implementation',
@@ -105,6 +107,7 @@ describe('forgetMemory', () => {
             importance: 3,
             kind: 'decision',
         })
+        await actionDb.syncTestActionDatabase(adapter.adapter)
 
         const result = await forgetMemory(adapter, {
             mode: 'invalidate',

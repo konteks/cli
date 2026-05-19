@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import actionDb from '@/database/actions/_db'
 import searchMemory from '@/database/services/search-memory'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import { loadProjectContext } from '@/providers/project/context'
@@ -55,6 +56,7 @@ values (?, ?, ?, ?, ?)
                 new Date().toISOString(),
             ],
         )
+        await actionDb.syncTestActionDatabase(service.adapter)
         const recall = await searchMemory(service, {
             task: 'auth refactor design',
         })
@@ -141,6 +143,7 @@ insert into retrieval_documents_fts (
             ],
         )
 
+        await actionDb.syncTestActionDatabase(adapter)
         const normal = await searchMemory(service, {
             task: 'auth session refresh flow',
         })

@@ -5,7 +5,6 @@ import type { WarmUpContext, WarmUpHighlight } from '@/models/memory'
 import type { Project } from '@/models/project'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import type DatabaseService from '@/providers/persistence/sqlite/database-service'
-import type { SqliteAdapter } from '@/providers/persistence/sqlite/sqlite-adapter'
 import {
     guidanceFromObservations,
     recencyBoost,
@@ -16,7 +15,7 @@ import { estimateTextTokens } from '@/support/format/tokens'
 
 export default async function readWarmUpContext(
     context: Project,
-    service: DatabaseService,
+    _service: DatabaseService,
 ): Promise<WarmUpContext> {
     const manifest = await readExtractionManifest(context.memoryDir)
     if (!manifest) {
@@ -38,9 +37,9 @@ export default async function readWarmUpContext(
         }
     }
 
-    const modules = await queryWarmUpModules(service.adapter)
-    const highlights = await warmUpHighlights(service.adapter)
-    const observations = await queryWarmUpObservations(service.adapter)
+    const modules = await queryWarmUpModules()
+    const highlights = await warmUpHighlights()
+    const observations = await queryWarmUpObservations()
 
     return {
         architecture: architectureFromHighlights(highlights, modules),
@@ -97,10 +96,8 @@ function keyFilesFromHighlights(
     return [...paths].slice(0, 12)
 }
 
-async function warmUpHighlights(
-    adapter: SqliteAdapter,
-): Promise<WarmUpHighlight[]> {
-    const rows = await queryWarmUpHighlightRows(adapter)
+async function warmUpHighlights(): Promise<WarmUpHighlight[]> {
+    const rows = await queryWarmUpHighlightRows()
 
     return rows
         .map(row => {

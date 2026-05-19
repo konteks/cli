@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
+import actionDb from '@/database/actions/_db'
 import mcpTools from '@/mcp/tools'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
@@ -58,6 +59,7 @@ describe('retrieval quality evals', () => {
             loadProjectContext(),
         )
         await extractProject(context, 'full', extractionOptions())
+        await syncProjectActionDatabase(context)
 
         const result = await withProjectRoot(projectRoot, () =>
             callKonteksTool('konteks_recall', {
@@ -219,6 +221,7 @@ limit 1
             loadProjectContext(),
         )
         await extractProject(context, 'full', extractionOptions())
+        await syncProjectActionDatabase(context)
 
         const result = await withProjectRoot(projectRoot, () =>
             callKonteksTool('konteks_recall', {
@@ -257,6 +260,7 @@ limit 1
             loadProjectContext(),
         )
         await extractProject(context, 'full', extractionOptions())
+        await syncProjectActionDatabase(context)
 
         const result = await withProjectRoot(projectRoot, () =>
             callKonteksTool('konteks_recall', {
@@ -307,6 +311,14 @@ async function callKonteksTool(
     }
 
     return await registeredHandlerFor(tool)(input)
+}
+
+async function syncProjectActionDatabase(
+    context: Awaited<ReturnType<typeof loadProjectContext>>,
+) {
+    const service = await openProjectDatabase(context)
+    await actionDb.syncTestActionDatabase(service.adapter)
+    await service.close()
 }
 
 function registeredHandlerFor(inputTool: (typeof mcpTools)[number]) {

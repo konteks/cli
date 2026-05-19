@@ -14,7 +14,6 @@ import queryRetrievalDocuments, {
 import type { MemorySearchResult } from '@/models/memory'
 import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 import { hasSearchIndex } from '@/providers/persistence/sqlite/search-index'
-import type { SqliteAdapter } from '@/providers/persistence/sqlite/sqlite-adapter'
 import { classifySourceRole } from '@/providers/project/source-classification'
 import { estimateTextTokens } from '@/support/format/tokens'
 import {
@@ -53,7 +52,6 @@ export default async function searchMemory(
     }
 
     const retrievalResults = await searchRetrievalDocuments(
-        db.adapter,
         terms,
         limit,
         mode,
@@ -65,20 +63,14 @@ export default async function searchMemory(
     }
 
     if (await hasSearchIndex(db.adapter)) {
-        const ftsResults = await searchFts(
-            db.adapter,
-            terms,
-            limit,
-            mode,
-            intent,
-        )
+        const ftsResults = await searchFts(terms, limit, mode, intent)
         if (ftsResults.length > 0) {
             return ftsResults
         }
     }
 
-    const observations = await queryObservations(db.adapter, terms, limit * 2)
-    const diaries = await queryDiaries(db.adapter, terms, limit * 2)
+    const observations = await queryObservations(terms, limit * 2)
+    const diaries = await queryDiaries(terms, limit * 2)
 
     return applyGroupAwarePruning(
         [
@@ -94,7 +86,6 @@ export default async function searchMemory(
 }
 
 async function searchRetrievalDocuments(
-    adapter: SqliteAdapter,
     terms: string[],
     limit: number,
     mode: SearchMode,
@@ -107,7 +98,6 @@ async function searchRetrievalDocuments(
     }
     const queryVector = await embedSearchQuery(options.embeddingProvider, terms)
     const rows = await queryRetrievalDocuments(
-        adapter,
         options.embeddingProvider?.model ?? '',
         options.embeddingProvider?.dimensions ?? 0,
         ftsQuery,
@@ -131,7 +121,6 @@ async function searchRetrievalDocuments(
 }
 
 async function searchFts(
-    adapter: SqliteAdapter,
     terms: string[],
     limit: number,
     mode: SearchMode,
@@ -142,7 +131,7 @@ async function searchFts(
         return []
     }
 
-    const rows = await queryFtsRows(adapter, ftsQuery, limit)
+    const rows = await queryFtsRows(ftsQuery, limit)
 
     return applyGroupAwarePruning(
         rows.map(row =>

@@ -16,6 +16,7 @@ import {
     importMemory,
     restoreMemory,
 } from '@/composition/memory-transfer'
+import actionDb from '@/database/actions/_db'
 import searchMemory from '@/database/services/search-memory'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import {
@@ -153,6 +154,7 @@ describe('memory transfer', () => {
         targetDb = await openProjectDatabase(
             await withProjectRoot(targetRoot, () => loadProjectContext()),
         )
+        await actionDb.syncTestActionDatabase(targetDb.adapter)
         const results = await searchMemory(targetDb, {
             limit: 5,
             query: 'searchable recall',

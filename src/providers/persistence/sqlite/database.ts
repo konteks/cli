@@ -16,7 +16,8 @@ export async function openProjectDatabase(
     context: Project,
 ): Promise<DatabaseService> {
     await ensureConfigFile(context)
-    const adapter = await openWasmSqliteAdapter(projectDatabasePath(context))
+    const databasePath = projectDatabasePath(context)
+    const adapter = await openWasmSqliteAdapter(databasePath)
     await runMigrations(adapter)
     await ensureSearchIndex(adapter)
 

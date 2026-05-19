@@ -5,8 +5,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
+import actionDb from '@/database/actions/_db'
 import mcpTools from '@/mcp/tools'
 import { extractProject } from '@/providers/extraction/extract-project'
+import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import { loadProjectContext } from '@/providers/project/context'
 import FakeEmbeddingProvider from '../../../fake/fake-embedding-provider'
 
@@ -86,6 +88,7 @@ describe('konteks_warm_up', () => {
             }),
         )
 
+        await syncProjectActionDatabase(context)
         const result = await withProjectRoot(projectRoot, () =>
             callKonteksTool('konteks_warm_up', { maxTokens: 500 }),
         )
@@ -121,6 +124,7 @@ describe('konteks_warm_up', () => {
             'export const later = true\n',
         )
 
+        await syncProjectActionDatabase(context)
         const result = await withProjectRoot(projectRoot, () =>
             callKonteksTool('konteks_warm_up', { maxTokens: 500 }),
         )
@@ -156,6 +160,7 @@ describe('konteks_warm_up', () => {
         )
         await extractProject(context, 'full', extractionOptions())
 
+        await syncProjectActionDatabase(context)
         const result = await withProjectRoot(projectRoot, () =>
             callKonteksTool('konteks_warm_up', {
                 maxTokens: 500,
@@ -175,6 +180,14 @@ async function readExtractionManifest(memoryDir: string) {
         '@/providers/extraction/engine/manifest'
     )
     return read(memoryDir)
+}
+
+async function syncProjectActionDatabase(
+    context: Awaited<ReturnType<typeof loadProjectContext>>,
+) {
+    const service = await openProjectDatabase(context)
+    await actionDb.syncTestActionDatabase(service.adapter)
+    await service.close()
 }
 
 async function callKonteksTool(
