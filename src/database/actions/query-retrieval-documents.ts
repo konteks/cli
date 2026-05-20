@@ -5,7 +5,7 @@ import {
     retrievalDocumentsFts,
     targetEmbeddings,
 } from '@/database/schema'
-import db from './_db'
+import getDb from './_db'
 
 export type RetrievalDocumentRow = {
     anchor: string | null
@@ -30,6 +30,7 @@ export default async function queryRetrievalDocuments(
     ftsQuery: string,
     limit: number,
 ): Promise<RetrievalDocumentRow[]> {
+    const db = await getDb()
     return db
         .select({
             anchor: retrievalDocuments.anchor,

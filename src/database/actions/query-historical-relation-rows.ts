@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import db from './_db'
+import getDb from './_db'
 
 export type HistoricalRelationRow = {
     relation_id: string
@@ -23,6 +23,7 @@ export default async function queryHistoricalRelationRows(
     entityId: string,
     limit: number,
 ): Promise<HistoricalRelationRow[]> {
+    const db = await getDb()
     return await db.all<HistoricalRelationRow>(sql`
 select
     r.id as relation_id, r.predicate, r.status, r.valid_from, r.valid_to,

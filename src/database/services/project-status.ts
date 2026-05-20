@@ -1,5 +1,6 @@
 import { openProjectDatabase } from '@/database/actions/_db'
 import queryProjectMemoryStats from '@/database/actions/query-project-memory-stats'
+import withBoundActionDatabase from '@/database/actions/with-bound-action-database'
 import type { Project } from '@/models/project'
 
 export type ProjectMemoryStats = {
@@ -18,7 +19,9 @@ export async function readProjectMemoryStats(
 ): Promise<ProjectMemoryStats> {
     const connection = await openProjectDatabase(context)
     try {
-        return await queryProjectMemoryStats(connection)
+        return await withBoundActionDatabase(connection, () =>
+            queryProjectMemoryStats(),
+        )
     } finally {
         await connection.close()
     }

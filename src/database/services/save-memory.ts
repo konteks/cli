@@ -13,6 +13,7 @@ import indexSearchDocument from '@/database/actions/index-search-document'
 import insertDiaryEntry from '@/database/actions/insert-diary-entry'
 import insertObservation from '@/database/actions/insert-observation'
 import upsertRetrievalDocument from '@/database/actions/upsert-retrieval-document'
+import withBoundActionDatabase from '@/database/actions/with-bound-action-database'
 import {
     importanceToConfidence,
     isSkippableMemoryError,
@@ -35,7 +36,9 @@ export async function saveKonteksMemory(
 ): Promise<SaveResult> {
     validateMemoryQuality(input.content)
     const hash = contentHash(input.content)
-    const duplicate = await findDuplicateObservation(db, hash)
+    const duplicate = await withBoundActionDatabase(db, () =>
+        findDuplicateObservation(hash),
+    )
     if (duplicate) {
         return {
             accepted: true,
@@ -53,8 +56,8 @@ export async function saveKonteksMemory(
     const summary = summarizeText(input.content)
     const createdAt = new Date().toISOString()
 
-    await withTransaction(db, async tx => {
-        await insertObservation(tx, {
+    await withTransaction(db, async () => {
+        await insertObservation({
             confidence: importanceToConfidence(input.importance),
             contentHash: stored.contentHash,
             createdAt,
@@ -74,14 +77,14 @@ export async function saveKonteksMemory(
             summary,
         })
 
-        await indexSearchDocument(tx, {
+        await indexSearchDocument({
             content: stored.contentInline ?? summary,
             createdAt,
             id,
             kind: input.kind,
             type: 'memory',
         })
-        await upsertRetrievalDocument(tx, {
+        await upsertRetrievalDocument({
             anchor: input.source ?? id,
             embeddingText: stored.contentInline ?? input.content,
             ftsText: stored.contentInline ?? input.content,
@@ -148,8 +151,8 @@ export async function saveKonteksSession(
     })
     const createdAt = new Date().toISOString()
 
-    await withTransaction(db, async tx => {
-        await insertDiaryEntry(tx, {
+    await withTransaction(db, async () => {
+        await insertDiaryEntry({
             contentHash: stored.contentHash,
             createdAt,
             id,
@@ -169,7 +172,7 @@ export async function saveKonteksSession(
             summary: input.summary,
         })
 
-        await indexSearchDocument(tx, {
+        await indexSearchDocument({
             content: input.summary,
             createdAt,
             id,
@@ -209,8 +212,8 @@ export async function saveKonteksDiary(
     })
     const createdAt = new Date().toISOString()
 
-    await withTransaction(db, async tx => {
-        await insertDiaryEntry(tx, {
+    await withTransaction(db, async () => {
+        await insertDiaryEntry({
             contentHash: stored.contentHash,
             createdAt,
             id,
@@ -230,14 +233,14 @@ export async function saveKonteksDiary(
             summary: formattedInput.summary,
         })
 
-        await indexSearchDocument(tx, {
+        await indexSearchDocument({
             content: text,
             createdAt,
             id,
             kind: 'diary',
             type: 'diary',
         })
-        await upsertRetrievalDocument(tx, {
+        await upsertRetrievalDocument({
             anchor: formattedInput.subject ?? id,
             embeddingText: text,
             ftsText: text,

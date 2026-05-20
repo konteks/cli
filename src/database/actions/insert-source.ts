@@ -1,5 +1,5 @@
 import { sources } from '@/database/schema'
-import db from './_db'
+import getDb from './_db'
 
 export type SourceInput = {
     entities_json: string | null
@@ -14,7 +14,7 @@ export type SourceInput = {
 }
 
 export default async function insertSource(source: SourceInput): Promise<void> {
-    await db.ensureActionDatabase()
+    const db = await getDb()
     await db.insert(sources).values({
         createdAt: new Date().toISOString(),
         entitiesJson: source.entities_json,

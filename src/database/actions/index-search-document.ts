@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import type { SqliteConnection } from '@/database/actions/_db'
+import getDb from './_db'
 import hasSearchIndex from './has-search-index'
 
 type SearchDocument = {
@@ -12,18 +12,18 @@ type SearchDocument = {
 }
 
 export default async function indexSearchDocument(
-    service: SqliteConnection,
     document: SearchDocument,
 ): Promise<void> {
-    if (!(await hasSearchIndex(service))) {
+    if (!(await hasSearchIndex())) {
         return
     }
 
-    await service.db.run(sql`
+    const db = await getDb()
+    await db.run(sql`
 insert into memory_fts (id, type, kind, task, content, created_at)
 values (${document.id}, ${document.type}, ${document.kind ?? null}, ${document.task ?? null}, ${document.content}, ${document.createdAt})
 `)
-    await service.db.run(sql`
+    await db.run(sql`
 insert or replace into memory_fts_indexed (id, indexed_at)
 values (${document.id}, ${new Date().toISOString()})
 `)

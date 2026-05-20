@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import db from './_db'
+import getDb from './_db'
 
 export type EntityRow = {
     id: string
@@ -17,6 +17,7 @@ export default async function queryEntitySearchRows(
     terms: string[],
     limit: number,
 ): Promise<EntitySearchRow[]> {
+    const db = await getDb()
     return await db.all<EntitySearchRow>(sql`
 select *
 from (

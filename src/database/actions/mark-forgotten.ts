@@ -1,26 +1,26 @@
 import { eq } from 'drizzle-orm'
-import type { SqliteConnection } from '@/database/actions/_db'
 import { chunks, diaryEntries, observations } from '@/database/schema'
 import type { ForgetTarget } from '@/database/support/forget-target'
+import getDb from './_db'
 
 export default async function markForgotten(
-    db: SqliteConnection,
     target: ForgetTarget,
     reason: string | undefined,
 ): Promise<boolean> {
+    const db = await getDb()
     const values = {
         deletedAt: new Date().toISOString(),
         forgetReason: reason ?? null,
     }
     if (target.kind === 'chunk') {
-        await db.db.update(chunks).set(values).where(eq(chunks.id, target.id))
+        await db.update(chunks).set(values).where(eq(chunks.id, target.id))
     } else if (target.kind === 'observation') {
-        await db.db
+        await db
             .update(observations)
             .set(values)
             .where(eq(observations.id, target.id))
     } else if (target.kind === 'diary_entry') {
-        await db.db
+        await db
             .update(diaryEntries)
             .set(values)
             .where(eq(diaryEntries.id, target.id))

@@ -1,5 +1,4 @@
 import { and, count, eq, isNull } from 'drizzle-orm'
-import type { SqliteConnection } from '@/database/actions/_db'
 import {
     chunks,
     diaryEntries,
@@ -12,10 +11,10 @@ import {
 } from '@/database/schema'
 import type { ProjectMemoryStats } from '@/database/services/project-status'
 import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
+import getDb from './_db'
 
-export default async function queryProjectMemoryStats(
-    connection: SqliteConnection,
-): Promise<ProjectMemoryStats> {
+export default async function queryProjectMemoryStats(): Promise<ProjectMemoryStats> {
+    const db = await getDb()
     const [
         files,
         sections,
@@ -27,22 +26,22 @@ export default async function queryProjectMemoryStats(
         events,
     ] = await Promise.all([
         countFrom(
-            connection.db
+            db
                 .select({ count: count() })
                 .from(sources)
                 .where(eq(sources.type, EXTRACTED_FILE_SOURCE_TYPE)),
         ),
         countFrom(
-            connection.db
+            db
                 .select({ count: count() })
                 .from(chunks)
                 .where(
                     and(isNull(chunks.deletedAt), isNull(chunks.suppressedAt)),
                 ),
         ),
-        countFrom(connection.db.select({ count: count() }).from(modules)),
+        countFrom(db.select({ count: count() }).from(modules)),
         countFrom(
-            connection.db
+            db
                 .select({ count: count() })
                 .from(observations)
                 .where(
@@ -53,7 +52,7 @@ export default async function queryProjectMemoryStats(
                 ),
         ),
         countFrom(
-            connection.db
+            db
                 .select({ count: count() })
                 .from(diaryEntries)
                 .where(
@@ -63,13 +62,9 @@ export default async function queryProjectMemoryStats(
                     ),
                 ),
         ),
-        countFrom(
-            connection.db.select({ count: count() }).from(retrievalDocuments),
-        ),
-        countFrom(
-            connection.db.select({ count: count() }).from(targetEmbeddings),
-        ),
-        countFrom(connection.db.select({ count: count() }).from(memoryEvents)),
+        countFrom(db.select({ count: count() }).from(retrievalDocuments)),
+        countFrom(db.select({ count: count() }).from(targetEmbeddings)),
+        countFrom(db.select({ count: count() }).from(memoryEvents)),
     ])
 
     return {

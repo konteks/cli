@@ -1,6 +1,6 @@
 import { eq, sql } from 'drizzle-orm'
 import { chunks, memoryFts, observations } from '@/database/schema'
-import db from './_db'
+import getDb from './_db'
 
 export type FtsRow = {
     id: string
@@ -19,6 +19,7 @@ export default async function queryFtsRows(
     ftsQuery: string,
     limit: number,
 ): Promise<FtsRow[]> {
+    const db = await getDb()
     return db
         .select({
             confidence: observations.confidence,

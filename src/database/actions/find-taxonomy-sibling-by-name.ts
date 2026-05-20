@@ -1,13 +1,14 @@
 import { eq, isNull } from 'drizzle-orm'
 import { taxonomyNodes } from '@/database/schema'
 import type { TaxonomyNode } from '@/database/services/taxonomy'
-import db from './_db'
+import getDb from './_db'
 import type { TaxonomyNodeRow } from './query-taxonomy-subtree-rows'
 
 export default async function findTaxonomySiblingByName(
     parentId: string | undefined,
     name: string,
 ): Promise<TaxonomyNode | undefined> {
+    const db = await getDb()
     const rows = await db
         .select({
             id: taxonomyNodes.id,

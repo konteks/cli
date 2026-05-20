@@ -1,20 +1,27 @@
-import type { Client, InArgs, Transaction } from '@libsql/client'
+import { Database } from 'bun:sqlite'
+import { projectDatabasePath } from '@/database/actions/_db'
+import type { Project } from '@/models/project'
 
-type SqliteExecutor = Pick<Client | Transaction, 'execute'>
+type SqliteQueryTarget = Project | string
+type SqliteValue = Uint8Array | boolean | number | string | null
 
-export async function executeSql(
-    client: SqliteExecutor,
-    sql: string,
-    args: InArgs = [],
-): Promise<void> {
-    await client.execute({ args, sql })
+function resolveDatabasePath(target: SqliteQueryTarget): string {
+    return typeof target === 'string' ? target : projectDatabasePath(target)
 }
 
 export async function querySql<Row extends Record<string, unknown>>(
-    client: SqliteExecutor,
+    target: SqliteQueryTarget,
     sql: string,
-    args: InArgs = [],
+    args: SqliteValue[] = [],
 ): Promise<Row[]> {
-    const result = await client.execute({ args, sql })
-    return result.rows as unknown as Row[]
+    const database = new Database(resolveDatabasePath(target), {
+        readonly: true,
+        strict: true,
+    })
+
+    try {
+        return database.query(sql).all(...args) as Row[]
+    } finally {
+        database.close()
+    }
 }

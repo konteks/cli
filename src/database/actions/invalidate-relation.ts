@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm'
 import { relations } from '@/database/schema'
-import db from './_db'
+import getDb from './_db'
 
 export default async function invalidateRelation(
     id: string,
     validTo?: string,
 ): Promise<void> {
-    await db.ensureActionDatabase()
+    const db = await getDb()
     await db
         .update(relations)
         .set({

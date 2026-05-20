@@ -1,13 +1,30 @@
 import { randomUUID } from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import { relations } from '@/database/schema'
-import type { RelationInput, RelationRecord } from '@/database/services/graph'
-import db from './_db'
+import getDb from './_db'
 
-export default async function addRelation(
-    input: RelationInput,
-): Promise<RelationRecord> {
-    await db.ensureActionDatabase()
+type RelationRecord = {
+    id: string
+    subjectId: string
+    predicate: string
+    objectId: string
+    confidence: number
+    status: 'active' | 'invalidated' | 'superseded'
+    validFrom?: string
+    validTo?: string
+}
+
+export default async function addRelation(input: {
+    subjectId: string
+    predicate: string
+    objectId: string
+    confidence?: number
+    validFrom?: string
+    validTo?: string
+    supersedesRelationId?: string
+    properties?: Record<string, unknown>
+}): Promise<RelationRecord> {
+    const db = await getDb()
     const relation: RelationRecord = {
         confidence: input.confidence ?? 1,
         id: `rel_${randomUUID()}`,

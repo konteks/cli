@@ -10,14 +10,15 @@ import {
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { executeSql, querySql } from 'tests/support/sqlite-libsql'
+import { querySql } from 'tests/support/sqlite-libsql'
 import BackupCommand from '@/commands/backup-command'
 import {
     exportMemory,
     importMemory,
     restoreMemory,
 } from '@/composition/memory-transfer'
-import { openProjectDatabase } from '@/database/actions/_db'
+import { openProjectDatabase, withActionDatabase } from '@/database/actions/_db'
+import markSuppressed from '@/database/actions/mark-suppressed'
 import {
     saveKonteksDiary,
     saveKonteksMemory,
@@ -141,8 +142,8 @@ describe('memory transfer', () => {
         let targetDb = await openProjectDatabase(
             await withProjectRoot(targetRoot, () => loadProjectContext()),
         )
-        const rows = await querySql<{ count: number }>(
-            targetDb.client,
+        const rows = await querySql(
+            join(targetRoot, '.konteks', 'memory.sqlite'),
             'select count(*) as count from observations',
         )
         await targetDb.close()
@@ -214,10 +215,11 @@ describe('memory transfer', () => {
             importance: 3,
             kind: 'note',
         })
-        await executeSql(
-            db.client,
-            'update observations set suppressed_at = ?, forget_reason = ? where id = ?',
-            [new Date().toISOString(), 'test inactive export', saved.id],
+        await withActionDatabase(db.client, db.db, () =>
+            markSuppressed(
+                { id: saved.id, kind: 'observation' },
+                'test inactive export',
+            ),
         )
         await db.close()
 
@@ -271,8 +273,8 @@ describe('memory transfer', () => {
         const restoredDb = await openProjectDatabase(
             await withProjectRoot(projectRoot, () => loadProjectContext()),
         )
-        const rows = await querySql<{ count: number }>(
-            restoredDb.client,
+        const rows = await querySql(
+            join(projectRoot, '.konteks', 'memory.sqlite'),
             'select count(*) as count from observations',
         )
         await restoredDb.close()

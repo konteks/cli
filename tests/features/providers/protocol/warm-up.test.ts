@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
-import actionDb, { openProjectDatabase } from '@/database/actions/_db'
+import { openProjectDatabase } from '@/database/actions/_db'
 import mcpTools from '@/mcp/tools'
 import { extractProject } from '@/providers/extraction/extract-project'
 import { loadProjectContext } from '@/providers/project/context'
@@ -185,7 +185,6 @@ async function syncProjectActionDatabase(
     context: Awaited<ReturnType<typeof loadProjectContext>>,
 ) {
     const service = await openProjectDatabase(context)
-    await actionDb.syncTestActionDatabase(service.client)
     await service.close()
 }
 

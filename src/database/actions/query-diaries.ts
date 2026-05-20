@@ -1,6 +1,6 @@
 import { and, desc, isNull, or, sql } from 'drizzle-orm'
 import { diaryEntries } from '@/database/schema'
-import db from './_db'
+import getDb from './_db'
 
 export type DiaryRow = {
     id: string
@@ -14,6 +14,7 @@ export default async function queryDiaries(
     terms: string[],
     limit: number,
 ): Promise<DiaryRow[]> {
+    const db = await getDb()
     return await db
         .select({
             created_at: diaryEntries.createdAt,

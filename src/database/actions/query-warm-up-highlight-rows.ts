@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { chunks, retrievalDocuments } from '@/database/schema'
 import type { WarmUpHighlight } from '@/models/memory'
-import db from './_db'
+import getDb from './_db'
 
 export type WarmUpHighlightRow = {
     anchor: string | null
@@ -17,6 +17,7 @@ export type WarmUpHighlightRow = {
 export default async function queryWarmUpHighlightRows(): Promise<
     WarmUpHighlightRow[]
 > {
+    const db = await getDb()
     return db
         .select({
             anchor: retrievalDocuments.anchor,

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import db from './_db'
+import getDb from './_db'
 
 export type PathRow = {
     relation_path: string
@@ -12,6 +12,7 @@ export default async function queryPathRows(
     toEntityId: string,
     maxDepth: number,
 ): Promise<PathRow[]> {
+    const db = await getDb()
     return await db.all<PathRow>(sql`
 with recursive path(depth, entity_id, entity_path, relation_path, predicate_path) as (
     select 0, ${fromEntityId}, ${fromEntityId}, '', ''

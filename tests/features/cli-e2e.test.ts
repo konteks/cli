@@ -357,12 +357,12 @@ async function readActiveCounts(projectRoot: string): Promise<{
 
         try {
             const [memoryRows, diaryRows] = await Promise.all([
-                querySql<{ count: number }>(
-                    db.client,
+                querySql(
+                    context,
                     'select count(*) as count from observations where deleted_at is null and suppressed_at is null',
                 ),
-                querySql<{ count: number }>(
-                    db.client,
+                querySql(
+                    context,
                     'select count(*) as count from diary_entries where deleted_at is null and suppressed_at is null',
                 ),
             ])

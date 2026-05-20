@@ -21,7 +21,7 @@ export default async function rebuildModuleArtifacts(
     extractedAt: string,
     metadata?: ProjectMetadata,
 ): Promise<void> {
-    await deleteRetrievalDocuments(db, 'module')
+    await deleteRetrievalDocuments('module')
     await db.db
         .delete(targetEmbeddings)
         .where(eq(targetEmbeddings.targetType, 'module'))
@@ -70,7 +70,7 @@ order by chunk_count desc, module_path
             `topics: ${topics.join(', ')}`,
         ].join('\n')
 
-        await upsertRetrievalDocument(db, {
+        await upsertRetrievalDocument({
             anchor: row.module_path,
             embeddingText: ftsText,
             ftsText,
@@ -167,7 +167,7 @@ async function insertPackageModule(
         .filter(Boolean)
         .join('\n')
 
-    await upsertRetrievalDocument(db, {
+    await upsertRetrievalDocument({
         anchor: modulePath,
         embeddingText: text,
         ftsText: text,

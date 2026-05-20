@@ -1,13 +1,13 @@
 import { and, asc, isNull } from 'drizzle-orm'
-import type { SqliteConnection } from '@/database/actions/_db'
 import { diaryEntries } from '@/database/schema'
 import type { DiaryExportRow } from '@/database/support/memory-transfer-types'
+import getDb from './_db'
 
-export default async function queryExportDiaryRows(
-    db: SqliteConnection,
-    options: { includeInactive?: boolean },
-): Promise<DiaryExportRow[]> {
-    return await db.db
+export default async function queryExportDiaryRows(options: {
+    includeInactive?: boolean
+}): Promise<DiaryExportRow[]> {
+    const db = await getDb()
+    return await db
         .select({
             content_hash: diaryEntries.contentHash,
             created_at: diaryEntries.createdAt,

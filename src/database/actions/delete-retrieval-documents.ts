@@ -1,19 +1,19 @@
 import { and, eq, inArray } from 'drizzle-orm'
-import type { SqliteConnection } from '@/database/actions/_db'
 import { retrievalDocuments, retrievalDocumentsFts } from '@/database/schema'
+import getDb from './_db'
 import type { RetrievalDocumentInput } from './upsert-retrieval-document'
 
 export default async function deleteRetrievalDocuments(
-    db: SqliteConnection,
     targetType: RetrievalDocumentInput['targetType'],
     targetIds?: string[],
 ): Promise<void> {
+    const db = await getDb()
     if (targetIds && targetIds.length === 0) {
         return
     }
 
     if (targetIds) {
-        await db.db
+        await db
             .delete(retrievalDocumentsFts)
             .where(
                 and(
@@ -21,7 +21,7 @@ export default async function deleteRetrievalDocuments(
                     inArray(retrievalDocumentsFts.targetId, targetIds),
                 ),
             )
-        await db.db
+        await db
             .delete(retrievalDocuments)
             .where(
                 and(
@@ -32,10 +32,10 @@ export default async function deleteRetrievalDocuments(
         return
     }
 
-    await db.db
+    await db
         .delete(retrievalDocumentsFts)
         .where(eq(retrievalDocumentsFts.targetType, targetType))
-    await db.db
+    await db
         .delete(retrievalDocuments)
         .where(eq(retrievalDocuments.targetType, targetType))
 }

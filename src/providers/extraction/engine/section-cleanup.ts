@@ -52,11 +52,10 @@ where target_type = 'chunk'
 select id from chunks where source_id in (select id from sources where type = 'mined_file');
 `)
     await deleteRetrievalDocuments(
-        db,
         'chunk',
         chunkIds.map(row => row.id),
     )
-    await deleteRetrievalDocuments(db, 'module')
+    await deleteRetrievalDocuments('module')
     await db.db.run(sql`
 delete from target_embeddings
 where target_type = 'chunk'
@@ -115,7 +114,6 @@ where target_type = 'chunk'
   )}));
 `)
     await deleteRetrievalDocuments(
-        db,
         'chunk',
         chunkIds.map(row => row.id),
     )

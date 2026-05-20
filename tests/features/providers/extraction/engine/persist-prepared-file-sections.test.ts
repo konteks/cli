@@ -23,7 +23,7 @@ afterEach(async () => {
 
 describe('providers/extraction/engine/persist-prepared-file-sections', () => {
     it('stores source, section, taxonomy, search, and retrieval rows', async () => {
-        const { db } = await createProject()
+        const { context, db } = await createProject()
         try {
             const rootNode = await withTransaction(db, () =>
                 upsertNode({
@@ -32,9 +32,8 @@ describe('providers/extraction/engine/persist-prepared-file-sections', () => {
             )
 
             let count = 0
-            await withTransaction(db, async tx => {
+            await withTransaction(db, async () => {
                 count = await persistPreparedFileSections({
-                    db: tx,
                     extractedAt: '2026-01-01T00:00:00.000Z',
                     preparedFile: preparedFile(),
                     rootNodeId: rootNode.id,
@@ -43,31 +42,31 @@ describe('providers/extraction/engine/persist-prepared-file-sections', () => {
 
             expect(count).toBe(1)
             await expect(
-                querySql(db.client, 'select * from sources where id = ?', [
+                querySql(context, 'select * from sources where id = ?', [
                     'source_fixture',
                 ]),
             ).resolves.toHaveLength(1)
             await expect(
-                querySql(db.client, 'select * from chunks where id = ?', [
+                querySql(context, 'select * from chunks where id = ?', [
                     'chunk_fixture',
                 ]),
             ).resolves.toHaveLength(1)
             await expect(
                 querySql(
-                    db.client,
+                    context,
                     'select * from taxonomy_links where target_id = ?',
                     ['chunk_fixture'],
                 ),
             ).resolves.toHaveLength(1)
             await expect(
                 querySql(
-                    db.client,
+                    context,
                     'select * from retrieval_documents where target_id = ?',
                     ['chunk_fixture'],
                 ),
             ).resolves.toHaveLength(1)
             await expect(
-                querySql(db.client, 'select * from memory_fts where id = ?', [
+                querySql(context, 'select * from memory_fts where id = ?', [
                     'chunk_fixture',
                 ]),
             ).resolves.toHaveLength(1)

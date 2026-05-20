@@ -10,9 +10,10 @@ import {
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { executeSql, querySql } from 'tests/support/sqlite-libsql'
+import { querySql } from 'tests/support/sqlite-libsql'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
-import actionDb, { openProjectDatabase } from '@/database/actions/_db'
+import { openProjectDatabase, withActionDatabase } from '@/database/actions/_db'
+import markSuppressed from '@/database/actions/mark-suppressed'
 import {
     saveKonteksDiary,
     saveKonteksMemory,
@@ -123,32 +124,22 @@ describe('extractProject', () => {
         await extractTestProject(context, 'reindex')
 
         const service = await openProjectDatabase(context)
-        const chunks = await querySql<{
-            anchor: string | null
-            id: string
-            language: string | null
-            path: string
-            source_role: string | null
-        }>(
-            service.client,
+        const chunks = await querySql(
+            context,
             'select id, path, source_role, language, anchor from chunks order by path',
         )
-        const retrievalDocuments = await querySql<{
-            source_role: string | null
-            target_type: string
-        }>(
-            service.client,
+        const retrievalDocuments = await querySql(
+            context,
             `
 select target_type, source_role
 from retrieval_documents
 order by target_type, source_role
 `,
         )
-        const modules = await querySql<{ path: string }>(
-            service.client,
+        const modules = await querySql(
+            context,
             'select path from modules order by path',
         )
-        await actionDb.syncTestActionDatabase(service.client)
         const searchResults = await searchMemory(service, {
             limit: 5,
             query: 'Fixture',
@@ -156,8 +147,8 @@ order by target_type, source_role
         const roots = await taxonomyApi(service).getSubtree(undefined, {
             maxDepth: 2,
         })
-        const events = await querySql<{ event_type: string }>(
-            service.client,
+        const events = await querySql(
+            context,
             'select event_type from memory_events where event_type = ?',
             ['project_mined'],
         )
@@ -198,7 +189,6 @@ order by target_type, source_role
         await extractTestProject(context, 'reindex', { embeddingProvider })
 
         const service = await openProjectDatabase(context)
-        await actionDb.syncTestActionDatabase(service.client)
         const vectorResults = await searchMemory(
             service,
             {
@@ -250,14 +240,10 @@ order by target_type, source_role
         await extractTestProject(context, 'reindex')
 
         const service = await openProjectDatabase(context)
-        const chunks = await querySql<{
-            anchor: string
-            content_hash: string
-            path: string
-        }>(
-            service.client,
+        const chunks = await querySql(
+            context,
             `
-select path, anchor, content_hash
+select id, path, anchor, content_hash
 from chunks
 where path = ?
 limit 1
@@ -266,30 +252,19 @@ limit 1
         )
         const chunk = chunks[0]
         expect(chunk).toBeDefined()
-        await executeSql(
-            service.client,
-            `
-update chunks
-set suppressed_at = ?, forget_reason = ?
-where path = ? and anchor = ? and content_hash = ?
-`,
-            [
-                new Date().toISOString(),
+        await withActionDatabase(service.client, service.db, () =>
+            markSuppressed(
+                { id: chunk?.id ?? '', kind: 'chunk' },
                 'test suppression',
-                chunk?.path ?? '',
-                chunk?.anchor ?? '',
-                chunk?.content_hash ?? '',
-            ],
+            ),
         )
         await service.close()
 
         await extractTestProject(context, 'reindex')
 
         const reindexedService = await openProjectDatabase(context)
-        const restored = await querySql<{
-            count: number
-        }>(
-            reindexedService.client,
+        const restored = await querySql(
+            context,
             `
 select count(*) as count
 from chunks
@@ -297,10 +272,8 @@ where path = ? and anchor = ? and content_hash = ?
 `,
             [chunk?.path ?? '', chunk?.anchor ?? '', chunk?.content_hash ?? ''],
         )
-        const suppressions = await querySql<{
-            count: number
-        }>(
-            reindexedService.client,
+        const suppressions = await querySql(
+            context,
             `
 select count(*) as count
 from mined_suppressions
@@ -340,10 +313,8 @@ where path = ? and anchor = ? and content_hash = ?
         await extractTestProject(context, 'reindex')
 
         const repairedService = await openProjectDatabase(context)
-        const durableRows = await querySql<{
-            count: number
-        }>(
-            repairedService.client,
+        const durableRows = await querySql(
+            context,
             `
 select count(*) as count
 from (
@@ -354,10 +325,8 @@ from (
 `,
             [savedMemory.id, savedDiary.id],
         )
-        const retrievalRows = await querySql<{
-            count: number
-        }>(
-            repairedService.client,
+        const retrievalRows = await querySql(
+            context,
             `
 select count(*) as count
 from retrieval_documents
@@ -366,10 +335,8 @@ where (target_type = 'memory' and target_id = ?)
 `,
             [savedMemory.id, savedDiary.id],
         )
-        const retrievalFtsRows = await querySql<{
-            count: number
-        }>(
-            repairedService.client,
+        const retrievalFtsRows = await querySql(
+            context,
             `
 select count(*) as count
 from retrieval_documents_fts
@@ -378,10 +345,8 @@ where (target_type = 'memory' and target_id = ?)
 `,
             [savedMemory.id, savedDiary.id],
         )
-        const memoryFtsRows = await querySql<{
-            count: number
-        }>(
-            repairedService.client,
+        const memoryFtsRows = await querySql(
+            context,
             `
 select count(*) as count
 from memory_fts
@@ -389,7 +354,6 @@ where id in (?, ?)
 `,
             [savedMemory.id, savedDiary.id],
         )
-        await actionDb.syncTestActionDatabase(repairedService.client)
         const results = await searchMemory(repairedService, {
             limit: 5,
             query: 'repair preserve durable',
@@ -441,8 +405,8 @@ where id in (?, ?)
         await extractTestProject(context, 'reindex')
 
         const service = await openProjectDatabase(context)
-        const chunks = await querySql<{ count: number }>(
-            service.client,
+        const chunks = await querySql(
+            context,
             'select count(*) as count from chunks where path = ?',
             ['src/many.md'],
         )
@@ -485,8 +449,8 @@ where id in (?, ?)
         )
 
         const service = await openProjectDatabase(context)
-        const chunks = await querySql<{ count: number }>(
-            service.client,
+        const chunks = await querySql(
+            context,
             'select count(*) as count from chunks where path = ?',
             ['package.json'],
         )
@@ -512,8 +476,8 @@ where id in (?, ?)
         )
 
         const service = await openProjectDatabase(context)
-        const chunks = await querySql<{ count: number }>(
-            service.client,
+        const chunks = await querySql(
+            context,
             'select count(*) as count from chunks where path = ?',
             ['src/unselected.ts'],
         )
@@ -537,8 +501,8 @@ where id in (?, ?)
         )
         const manifest = JSON.parse(rawManifest)
         const service = await openProjectDatabase(context)
-        const chunks = await querySql<{ count: number }>(
-            service.client,
+        const chunks = await querySql(
+            context,
             'select count(*) as count from chunks',
         )
         await service.close()
@@ -563,18 +527,18 @@ where id in (?, ?)
         await extractTestProject(context, 'changed')
 
         const service = await openProjectDatabase(context)
-        const readmeChunks = await querySql<{ count: number }>(
-            service.client,
+        const readmeChunks = await querySql(
+            context,
             'select count(*) as count from chunks where path = ?',
             ['README.md'],
         )
-        const indexChunks = await querySql<{ count: number }>(
-            service.client,
+        const indexChunks = await querySql(
+            context,
             'select count(*) as count from chunks where path = ?',
             ['src/index.txt'],
         )
-        const newChunks = await querySql<{ count: number }>(
-            service.client,
+        const newChunks = await querySql(
+            context,
             'select count(*) as count from chunks where path = ?',
             ['src/new.txt'],
         )
@@ -598,8 +562,8 @@ where id in (?, ?)
         await extractTestProject(context, 'reindex')
 
         const service = await openProjectDatabase(context)
-        const readmeChunks = await querySql<{ count: number }>(
-            service.client,
+        const readmeChunks = await querySql(
+            context,
             'select count(*) as count from chunks where path = ?',
             ['README.md'],
         )

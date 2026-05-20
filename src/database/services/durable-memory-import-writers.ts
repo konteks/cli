@@ -24,8 +24,8 @@ export async function insertImportedObservation(
     })
     const createdAt = memory.createdAt || new Date().toISOString()
 
-    await withTransaction(db, async tx => {
-        await insertObservation(tx, {
+    await withTransaction(db, async () => {
+        await insertObservation({
             confidence: memory.confidence,
             contentHash: stored.contentHash,
             createdAt,
@@ -37,14 +37,14 @@ export async function insertImportedObservation(
             suppressedAt: memory.suppressedAt ?? null,
             textInline: stored.contentInline ?? memory.content.slice(0, 240),
         })
-        await indexSearchDocument(tx, {
+        await indexSearchDocument({
             content: memory.content,
             createdAt,
             id,
             kind: memory.kind,
             type: 'memory',
         })
-        await upsertRetrievalDocument(tx, {
+        await upsertRetrievalDocument({
             anchor: id,
             embeddingText: memory.content,
             ftsText: memory.content,
@@ -73,8 +73,8 @@ export async function insertImportedDiary(
     })
     const createdAt = diary.createdAt || new Date().toISOString()
 
-    await withTransaction(db, async tx => {
-        await insertDiaryEntry(tx, {
+    await withTransaction(db, async () => {
+        await insertDiaryEntry({
             contentHash: stored.contentHash,
             createdAt,
             deletedAt: diary.deletedAt ?? null,
@@ -86,14 +86,14 @@ export async function insertImportedDiary(
             suppressedAt: diary.suppressedAt ?? null,
             tagsJson: JSON.stringify(diary.tags),
         })
-        await indexSearchDocument(tx, {
+        await indexSearchDocument({
             content: text,
             createdAt,
             id,
             kind: 'diary',
             type: 'diary',
         })
-        await upsertRetrievalDocument(tx, {
+        await upsertRetrievalDocument({
             anchor: diary.subject ?? id,
             embeddingText: text,
             ftsText: text,

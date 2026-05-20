@@ -140,9 +140,8 @@ export default async function extractSections(
         }
 
         extractedFileCount += 1
-        await withTransaction(db, async tx => {
+        await withTransaction(db, async () => {
             sectionCount += await persistPreparedFileSections({
-                db: tx,
                 extractedAt,
                 preparedFile,
                 rootNodeId,
@@ -177,7 +176,7 @@ export default async function extractSections(
     })
     await withTransaction(db, async tx => {
         await rebuildModuleArtifacts(tx, extractedAt, options.metadata)
-        await reindexRetrievalDocumentFts(tx)
+        await reindexRetrievalDocumentFts()
 
         await appendMemoryEvent({
             actor: 'cli',

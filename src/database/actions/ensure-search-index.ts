@@ -1,10 +1,9 @@
 import { sql } from 'drizzle-orm'
-import type { SqliteConnection } from '@/database/actions/_db'
+import getDb from './_db'
 
-export default async function ensureSearchIndex(
-    service: SqliteConnection,
-): Promise<boolean> {
-    await service.db.run(sql`
+export default async function ensureSearchIndex(): Promise<boolean> {
+    const db = await getDb()
+    await db.run(sql`
 create table if not exists memory_fts_indexed (
     id text primary key,
     indexed_at text not null
@@ -12,7 +11,7 @@ create table if not exists memory_fts_indexed (
 `)
 
     try {
-        await service.db.run(sql`
+        await db.run(sql`
 create virtual table if not exists memory_fts using fts5(
     id unindexed,
     type unindexed,
@@ -26,12 +25,13 @@ create virtual table if not exists memory_fts using fts5(
         return false
     }
 
-    await backfillSearchIndex(service)
+    await backfillSearchIndex()
     return true
 }
 
-async function backfillSearchIndex(service: SqliteConnection): Promise<void> {
-    await service.db.run(sql`
+async function backfillSearchIndex(): Promise<void> {
+    const db = await getDb()
+    await db.run(sql`
 insert into memory_fts (id, type, kind, task, content, created_at)
 select o.id, 'memory', o.kind, null, coalesce(o.text_inline, ''), o.created_at
 from observations o
@@ -40,7 +40,7 @@ where i.id is null
   and o.deleted_at is null
   and o.suppressed_at is null;
 `)
-    await service.db.run(sql`
+    await db.run(sql`
 insert into memory_fts_indexed (id, indexed_at)
 select o.id, datetime('now')
 from observations o
@@ -49,7 +49,7 @@ where i.id is null
   and o.deleted_at is null
   and o.suppressed_at is null;
 `)
-    await service.db.run(sql`
+    await db.run(sql`
 insert into memory_fts (id, type, kind, task, content, created_at)
 select d.id, 'diary', 'diary', d.subject, d.summary, d.created_at
 from diary_entries d
@@ -58,7 +58,7 @@ where i.id is null
   and d.deleted_at is null
   and d.suppressed_at is null;
 `)
-    await service.db.run(sql`
+    await db.run(sql`
 insert into memory_fts_indexed (id, indexed_at)
 select d.id, datetime('now')
 from diary_entries d

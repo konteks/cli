@@ -2,13 +2,13 @@ import { randomUUID } from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import { entities, entityAliases } from '@/database/schema'
 import type { EntityInput, EntityRecord } from '@/database/services/graph'
-import db from './_db'
+import getDb from './_db'
 import findEntityByCanonicalName from './find-entity-by-canonical-name'
 
 export default async function upsertEntity(
     input: EntityInput,
 ): Promise<EntityRecord> {
-    await db.ensureActionDatabase()
+    const db = await getDb()
     const canonicalName = normalizeEntityName(input.name)
     const existing = await findEntityByCanonicalName(canonicalName)
     const now = new Date().toISOString()
@@ -67,6 +67,7 @@ async function addAliases(
     aliases: string[],
     createdAt: string,
 ): Promise<void> {
+    const db = await getDb()
     for (const alias of aliases) {
         await db.insert(entityAliases).values({
             createdAt,

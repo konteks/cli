@@ -1,5 +1,5 @@
 import { memoryEvents } from '@/database/schema'
-import db from './_db'
+import getDb from './_db'
 
 export type MemoryEventInput = {
     actor?: string
@@ -15,7 +15,7 @@ export type MemoryEventInput = {
 export default async function appendMemoryEvent(
     event: MemoryEventInput,
 ): Promise<void> {
-    await db.ensureActionDatabase()
+    const db = await getDb()
     await db.insert(memoryEvents).values({
         actor: event.actor ?? null,
         createdAt: new Date().toISOString(),

@@ -1,13 +1,13 @@
 import { and, asc, isNull } from 'drizzle-orm'
-import type { SqliteConnection } from '@/database/actions/_db'
 import { observations } from '@/database/schema'
 import type { ObservationExportRow } from '@/database/support/memory-transfer-types'
+import getDb from './_db'
 
-export default async function queryExportObservationRows(
-    db: SqliteConnection,
-    options: { includeInactive?: boolean },
-): Promise<ObservationExportRow[]> {
-    return await db.db
+export default async function queryExportObservationRows(options: {
+    includeInactive?: boolean
+}): Promise<ObservationExportRow[]> {
+    const db = await getDb()
+    return await db
         .select({
             confidence: observations.confidence,
             content_hash: observations.contentHash,

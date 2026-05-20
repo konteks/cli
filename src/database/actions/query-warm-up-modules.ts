@@ -1,6 +1,6 @@
 import { desc } from 'drizzle-orm'
 import { modules } from '@/database/schema'
-import db from './_db'
+import getDb from './_db'
 
 export type WarmUpModuleRow = {
     path: string
@@ -9,6 +9,7 @@ export type WarmUpModuleRow = {
 }
 
 export default async function queryWarmUpModules(): Promise<WarmUpModuleRow[]> {
+    const db = await getDb()
     return db
         .select({
             path: modules.path,
