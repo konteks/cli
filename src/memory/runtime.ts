@@ -1,9 +1,9 @@
 import type { SaveOptions } from '@/contracts/repositories/memory-repository'
+import type { SqliteConnection } from '@/database/actions/_db'
+import { openProjectDatabase } from '@/database/actions/_db'
 import type { LoadedProjectContext } from '@/models/project'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
-import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
-import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import { loadProjectContext } from '@/providers/project/context'
 
 type SaveProjectUpdate = NonNullable<SaveOptions['projectUpdate']>

@@ -1,10 +1,10 @@
+import type { SqliteConnection } from '@/database/actions/_db'
 import queryWarmUpHighlightRows from '@/database/actions/query-warm-up-highlight-rows'
 import queryWarmUpModules from '@/database/actions/query-warm-up-modules'
 import queryWarmUpObservations from '@/database/actions/query-warm-up-observations'
 import type { WarmUpContext, WarmUpHighlight } from '@/models/memory'
 import type { Project } from '@/models/project'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
-import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import {
     guidanceFromObservations,
     recencyBoost,

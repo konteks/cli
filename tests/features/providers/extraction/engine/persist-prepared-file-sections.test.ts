@@ -3,15 +3,12 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import type { SqliteConnection } from '@/database/actions/_db'
+import { openProjectDatabase, withTransaction } from '@/database/actions/_db'
 import { upsertNode } from '@/database/services/taxonomy'
 import type { Project } from '@/models/project'
 import persistPreparedFileSections from '@/providers/extraction/engine/persist-prepared-file-sections'
 import type { PreparedFile } from '@/providers/extraction/engine/prepare-file-sections'
-import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
-import {
-    openProjectDatabase,
-    withTransaction,
-} from '@/providers/persistence/sqlite/database'
 import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 
 const tempDirs: string[] = []

@@ -3,13 +3,13 @@ import { join } from 'node:path'
 import BaseCommand from '@/commands/_base-command'
 import createInitProgressReporter from '@/commands/init-command/utils/init-progress-reporter'
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
+import { ensureProjectDatabase } from '@/database/actions/_db'
 import createProjectExtractor from '@/extraction/create-project-extractor'
 import type { ExtractProjectResponse } from '@/models/extraction'
 import type { Project } from '@/models/project'
 import { reviewDetectedGrammars } from '@/providers/cli/grammar-selection'
 import { scanProjectFiles } from '@/providers/extraction/engine/file-scan'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
-import { ensureProjectDatabase } from '@/providers/persistence/sqlite/database'
 import {
     createDefaultConfig,
     loadProjectContext,

@@ -1,5 +1,5 @@
+import type { SqliteConnection } from '@/database/actions/_db'
 import { clearModules } from '@/database/actions/save-module'
-import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import {
     executeSql,
     querySql,

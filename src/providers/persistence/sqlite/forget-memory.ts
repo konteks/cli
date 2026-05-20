@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import type { ForgetInput } from '@/contracts/repositories/memory-repository'
+import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
 import queryDiaries from '@/database/actions/query-diaries'
 import queryObservations from '@/database/actions/query-observations'
 import { invalidateRelation } from '@/database/services/graph'
-import { type SqliteConnection, withTransaction } from './database'
 import { executeSql } from './libsql-helpers'
 
 // import { GraphStore } from ./graph-store.js'

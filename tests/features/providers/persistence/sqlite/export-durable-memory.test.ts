@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
+import { openProjectDatabase } from '@/database/actions/_db'
 import exportDurableMemory from '@/providers/persistence/sqlite/export-durable-memory'
 import { executeSql } from '@/providers/persistence/sqlite/libsql-helpers'
 import {

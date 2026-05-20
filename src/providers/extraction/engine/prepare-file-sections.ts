@@ -1,10 +1,10 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import type { SqliteConnection } from '@/database/actions/_db'
 import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
 import type createToonStore from '@/providers/persistence/objects/create-toon-store'
 import storePayload from '@/providers/persistence/objects/store-payload'
-import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import { buildChunkRetrievalTexts } from '@/providers/persistence/sqlite/retrieval-documents'
 import {
     classifySourceRole,

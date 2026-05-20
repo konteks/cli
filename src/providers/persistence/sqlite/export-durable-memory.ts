@@ -1,7 +1,7 @@
+import type { SqliteConnection } from '@/database/actions/_db'
 import type { DurableMemoryExport } from '@/models/memory-transfer'
 import type { Project } from '@/models/project'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
-import type { SqliteConnection } from './database'
 import {
     exportDiaryRow,
     exportObservationRow,

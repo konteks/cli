@@ -11,7 +11,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
-import actionDb from '@/database/actions/_db'
+import actionDb, { openProjectDatabase } from '@/database/actions/_db'
 import searchMemory from '@/database/services/search-memory'
 import {
     getExtractionFreshness,
@@ -19,7 +19,6 @@ import {
 } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
-import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import {
     executeSql,
     querySql,

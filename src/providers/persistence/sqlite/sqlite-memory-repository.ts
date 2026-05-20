@@ -8,6 +8,7 @@ import type {
     SaveOptions,
     SaveSessionInput,
 } from '@/contracts/repositories/memory-repository'
+import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import {
     addRelation,
     findEntityByCanonicalName,
@@ -27,7 +28,6 @@ import type {
     SaveResult,
 } from '@/models/memory'
 import type { Project } from '@/models/project'
-import { type SqliteConnection, withTransaction } from './database'
 import forgetMemory from './forget-memory'
 import {
     saveKonteksDiary,

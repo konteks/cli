@@ -1,12 +1,12 @@
 import BaseCommand from '@/commands/_base-command'
-import type { Project } from '@/models/project'
-import { getExtractionFreshness } from '@/providers/extraction/engine/manifest'
-import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
-import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
+import type { SqliteConnection } from '@/database/actions/_db'
 import {
     openProjectDatabase,
     projectDatabasePath,
-} from '@/providers/persistence/sqlite/database'
+} from '@/database/actions/_db'
+import type { Project } from '@/models/project'
+import { getExtractionFreshness } from '@/providers/extraction/engine/manifest'
+import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
 import {
     querySql,
     type SqliteParams,

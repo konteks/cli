@@ -6,6 +6,7 @@ import type {
     SaveOptions,
     SaveSessionInput,
 } from '@/contracts/repositories/memory-repository'
+import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
 import type { SaveResult } from '@/models/memory'
 import type { Project } from '@/models/project'
@@ -13,7 +14,6 @@ import { contentHash } from '@/providers/persistence/objects/content'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
 import storePayload from '@/providers/persistence/objects/store-payload'
 import { upsertRetrievalDocument } from '@/providers/persistence/sqlite/retrieval-documents'
-import { type SqliteConnection, withTransaction } from './database'
 import { executeSql, querySql } from './libsql-helpers'
 import {
     importanceToConfidence,

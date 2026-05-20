@@ -9,6 +9,7 @@ import {
     writeFile,
 } from 'node:fs/promises'
 import { basename, dirname, join, resolve } from 'node:path'
+import { openProjectDatabase } from '@/database/actions/_db'
 import type {
     DurableMemoryExport,
     DurableMemoryExportOptions,
@@ -18,7 +19,6 @@ import type {
     MemoryRestoreOptions,
     MemoryRestoreResult,
 } from '@/models/memory-transfer'
-import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import {
     exportDurableMemory,
     importDurableMemory,

@@ -1,6 +1,6 @@
 import type { MemoryRepositoryContract } from '@/contracts/repositories/memory-repository'
+import type { SqliteConnection } from '@/database/actions/_db'
 import type { Project } from '@/models/project'
-import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import SQLiteMemoryRepository from '@/providers/persistence/sqlite/sqlite-memory-repository'
 
 export default function createMemoryRepository(
