@@ -1,5 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
+import { upsertRetrievalDocument } from '@/database/actions/retrieval-documents'
+import { indexSearchDocument } from '@/database/actions/search-index'
+import { executeSql } from '@/database/support/libsql'
 import type {
     DurableMemoryExportDiary,
     DurableMemoryExportMemory,
@@ -7,9 +10,6 @@ import type {
 import type { Project } from '@/models/project'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
 import storePayload from '@/providers/persistence/objects/store-payload'
-import { upsertRetrievalDocument } from '@/providers/persistence/sqlite/retrieval-documents'
-import { indexSearchDocument } from '@/providers/persistence/sqlite/search-index'
-import { executeSql } from './libsql-helpers'
 
 export async function insertImportedObservation(
     db: SqliteConnection,

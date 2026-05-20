@@ -3,13 +3,13 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import actionDb, { openProjectDatabase } from '@/database/actions/_db'
-import searchMemory from '@/database/services/search-memory'
-import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import {
     saveKonteksDiary,
     saveKonteksMemories,
     saveKonteksMemory,
-} from '@/providers/persistence/sqlite/save-konteks-input'
+} from '@/database/services/save-memory'
+import searchMemory from '@/database/services/search-memory'
+import { querySql } from '@/database/support/libsql'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []

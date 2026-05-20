@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
+import SQLiteMemoryRepository from '@/database/repositories/sqlite-memory-repository'
 import createMemoryRepository from '@/memory/create-memory-repository'
 import type { Project } from '@/models/project'
-import SQLiteMemoryRepository from '@/providers/persistence/sqlite/sqlite-memory-repository'
 
 describe('memory/repository', () => {
     it('creates the SQLite-backed memory repository implementation', () => {

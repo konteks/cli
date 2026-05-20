@@ -1,9 +1,6 @@
 import { sql } from 'drizzle-orm'
+import { chunks, retrievalDocuments } from '@/database/schema'
 import type { WarmUpHighlight } from '@/models/memory'
-import {
-    chunks,
-    retrievalDocuments,
-} from '@/providers/persistence/sqlite/schema'
 import db from './_db'
 
 export type WarmUpHighlightRow = {

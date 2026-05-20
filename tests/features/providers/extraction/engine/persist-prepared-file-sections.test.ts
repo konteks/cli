@@ -6,10 +6,10 @@ import { join } from 'node:path'
 import type { SqliteConnection } from '@/database/actions/_db'
 import { openProjectDatabase, withTransaction } from '@/database/actions/_db'
 import { upsertNode } from '@/database/services/taxonomy'
+import { querySql } from '@/database/support/libsql'
 import type { Project } from '@/models/project'
 import persistPreparedFileSections from '@/providers/extraction/engine/persist-prepared-file-sections'
 import type { PreparedFile } from '@/providers/extraction/engine/prepare-file-sections'
-import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 
 const tempDirs: string[] = []
 

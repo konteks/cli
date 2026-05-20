@@ -17,15 +17,12 @@ import {
     restoreMemory,
 } from '@/composition/memory-transfer'
 import { openProjectDatabase } from '@/database/actions/_db'
-import searchMemory from '@/database/services/search-memory'
-import {
-    executeSql,
-    querySql,
-} from '@/providers/persistence/sqlite/libsql-helpers'
 import {
     saveKonteksDiary,
     saveKonteksMemory,
-} from '@/providers/persistence/sqlite/save-konteks-input'
+} from '@/database/services/save-memory'
+import searchMemory from '@/database/services/search-memory'
+import { executeSql, querySql } from '@/database/support/libsql'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []

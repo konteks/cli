@@ -4,6 +4,7 @@ import type { ExtractionEngineContract } from '@/contracts/services/extraction-e
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import type { SqliteConnection } from '@/database/actions/_db'
 import { openProjectDatabase } from '@/database/actions/_db'
+import { querySql } from '@/database/support/libsql'
 import type {
     ExtractProjectRequest,
     ExtractProjectResponse,
@@ -29,7 +30,6 @@ import {
 } from '@/providers/extraction/engine/manifest'
 import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
-import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 
 export async function extractProject(
     project: Project,

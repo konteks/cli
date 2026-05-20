@@ -8,11 +8,11 @@ import type { SqliteConnection } from '@/database/actions/_db'
 import actionDb, { openProjectDatabase } from '@/database/actions/_db'
 import insertChunk from '@/database/actions/insert-chunk'
 import insertSource from '@/database/actions/insert-source'
+import { querySql } from '@/database/support/libsql'
 import type { Project } from '@/models/project'
 import extractSections from '@/providers/extraction/engine/extract-sections'
 import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import { contentHash } from '@/providers/persistence/objects/content'
-import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 
 const tempDirs: string[] = []
 

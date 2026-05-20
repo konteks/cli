@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/database/actions/_db'
-import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
+import { querySql } from '@/database/support/libsql'
 import { loadProjectContext } from '@/providers/project/context'
 import { graphApi } from '../../../../../support/sqlite-action-api'
 

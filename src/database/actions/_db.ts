@@ -5,16 +5,16 @@ import { dirname, join, resolve } from 'node:path'
 import type { Client, Transaction } from '@libsql/client'
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
+import { ensureSearchIndex } from '@/database/actions/search-index'
 import initialSchemaSql from '@/database/migrations/001_initial_schema.sql?raw'
-import type { Project } from '@/models/project'
+import * as schema from '@/database/schema'
 import {
     executeSql,
     querySql,
     type SqliteExecutor,
-} from '@/providers/persistence/sqlite/libsql-helpers'
-import * as schema from '@/providers/persistence/sqlite/schema'
-import { ensureSearchIndex } from '@/providers/persistence/sqlite/search-index'
-import { isSqliteTestRuntime } from '@/providers/persistence/sqlite/test-runtime'
+} from '@/database/support/libsql'
+import { isSqliteTestRuntime } from '@/database/support/test-runtime'
+import type { Project } from '@/models/project'
 
 type Database = ReturnType<typeof drizzle>
 type ProjectDatabase = ReturnType<typeof drizzle<typeof schema>>

@@ -6,13 +6,13 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { promisify } from 'node:util'
 import { openProjectDatabase } from '@/database/actions/_db'
-import type { DurableMemoryExport } from '@/models/memory-transfer'
-import { extractProject } from '@/providers/extraction/extract-project'
-import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import {
     saveKonteksDiary,
     saveKonteksMemory,
-} from '@/providers/persistence/sqlite/save-konteks-input'
+} from '@/database/services/save-memory'
+import { querySql } from '@/database/support/libsql'
+import type { DurableMemoryExport } from '@/models/memory-transfer'
+import { extractProject } from '@/providers/extraction/extract-project'
 import {
     loadProjectContext,
     writeProjectConfig,

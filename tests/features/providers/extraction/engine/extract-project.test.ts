@@ -12,21 +12,18 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
 import actionDb, { openProjectDatabase } from '@/database/actions/_db'
+import {
+    saveKonteksDiary,
+    saveKonteksMemory,
+} from '@/database/services/save-memory'
 import searchMemory from '@/database/services/search-memory'
+import { executeSql, querySql } from '@/database/support/libsql'
 import {
     getExtractionFreshness,
     readExtractionManifest,
 } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
-import {
-    executeSql,
-    querySql,
-} from '@/providers/persistence/sqlite/libsql-helpers'
-import {
-    saveKonteksDiary,
-    saveKonteksMemory,
-} from '@/providers/persistence/sqlite/save-konteks-input'
 import { loadProjectContext } from '@/providers/project/context'
 import FakeEmbeddingProvider from '../../../../fake/fake-embedding-provider'
 import { taxonomyApi } from '../../../../support/sqlite-action-api'

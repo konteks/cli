@@ -8,13 +8,9 @@ import type {
 } from '@/contracts/repositories/memory-repository'
 import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
-import type { SaveResult } from '@/models/memory'
-import type { Project } from '@/models/project'
-import { contentHash } from '@/providers/persistence/objects/content'
-import createToonStore from '@/providers/persistence/objects/create-toon-store'
-import storePayload from '@/providers/persistence/objects/store-payload'
-import { upsertRetrievalDocument } from '@/providers/persistence/sqlite/retrieval-documents'
-import { executeSql, querySql } from './libsql-helpers'
+import { upsertRetrievalDocument } from '@/database/actions/retrieval-documents'
+import { indexSearchDocument } from '@/database/actions/search-index'
+import { executeSql, querySql } from '@/database/support/libsql'
 import {
     importanceToConfidence,
     isSkippableMemoryError,
@@ -22,8 +18,12 @@ import {
     validateMemoryQuality,
     validateSessionQuality,
     withProjectUpdateSummary,
-} from './save-policy'
-import { indexSearchDocument } from './search-index'
+} from '@/database/support/save-policy'
+import type { SaveResult } from '@/models/memory'
+import type { Project } from '@/models/project'
+import { contentHash } from '@/providers/persistence/objects/content'
+import createToonStore from '@/providers/persistence/objects/create-toon-store'
+import storePayload from '@/providers/persistence/objects/store-payload'
 
 export async function saveKonteksMemory(
     db: SqliteConnection,

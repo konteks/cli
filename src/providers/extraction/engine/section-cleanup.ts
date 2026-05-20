@@ -1,10 +1,7 @@
 import type { SqliteConnection } from '@/database/actions/_db'
+import { deleteRetrievalDocuments } from '@/database/actions/retrieval-documents'
 import { clearModules } from '@/database/actions/save-module'
-import {
-    executeSql,
-    querySql,
-} from '@/providers/persistence/sqlite/libsql-helpers'
-import { deleteRetrievalDocuments } from '@/providers/persistence/sqlite/retrieval-documents'
+import { executeSql, querySql } from '@/database/support/libsql'
 
 /**
  * Compatibility cleanup: extraction code calls these units "sections", but

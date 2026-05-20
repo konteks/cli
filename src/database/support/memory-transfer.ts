@@ -1,13 +1,13 @@
 import type {
+    DiaryExportRow,
+    ObservationExportRow,
+} from '@/database/support/memory-transfer-types'
+import type {
     DurableMemoryExportDiary,
     DurableMemoryExportMemory,
 } from '@/models/memory-transfer'
 import { contentHash } from '@/providers/persistence/objects/content'
 import type createToonStore from '@/providers/persistence/objects/create-toon-store'
-import type {
-    DiaryExportRow,
-    ObservationExportRow,
-} from './durable-memory-transfer-types'
 
 export async function exportObservationRow(
     row: ObservationExportRow,

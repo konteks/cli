@@ -3,12 +3,12 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import actionDb, { openProjectDatabase } from '@/database/actions/_db'
-import searchMemory from '@/database/services/search-memory'
-import { executeSql } from '@/providers/persistence/sqlite/libsql-helpers'
 import {
     ensureSearchIndex,
     hasSearchIndex,
-} from '@/providers/persistence/sqlite/search-index'
+} from '@/database/actions/search-index'
+import searchMemory from '@/database/services/search-memory'
+import { executeSql } from '@/database/support/libsql'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []

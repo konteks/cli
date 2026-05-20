@@ -1,4 +1,4 @@
-import { chunks } from '@/providers/persistence/sqlite/schema'
+import { chunks } from '@/database/schema'
 import db from './_db'
 
 export type InsertChunkInput = {

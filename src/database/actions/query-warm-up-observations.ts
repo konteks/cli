@@ -1,5 +1,5 @@
 import { and, desc, isNull } from 'drizzle-orm'
-import { observations } from '@/providers/persistence/sqlite/schema'
+import { observations } from '@/database/schema'
 import type { WarmUpObservationRow } from '@/providers/project/warm-up-ranking'
 import db from './_db'
 

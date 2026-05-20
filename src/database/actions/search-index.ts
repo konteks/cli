@@ -1,5 +1,5 @@
 import type { SqliteConnection } from '@/database/actions/_db'
-import { executeSql, querySql } from './libsql-helpers'
+import { executeSql, querySql } from '@/database/support/libsql'
 
 type SearchDocument = {
     id: string

@@ -6,7 +6,7 @@ import {
     openProjectDatabase,
     projectDatabasePath,
 } from '@/database/actions/_db'
-import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
+import { querySql } from '@/database/support/libsql'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []

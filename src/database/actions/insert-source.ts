@@ -1,4 +1,4 @@
-import { sources } from '@/providers/persistence/sqlite/schema'
+import { sources } from '@/database/schema'
 import db from './_db'
 
 export type SourceInput = {

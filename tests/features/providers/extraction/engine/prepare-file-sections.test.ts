@@ -5,12 +5,12 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { SqliteConnection } from '@/database/actions/_db'
 import { openProjectDatabase } from '@/database/actions/_db'
+import { executeSql } from '@/database/support/libsql'
 import type { Project } from '@/models/project'
 import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import prepareFileSections from '@/providers/extraction/engine/prepare-file-sections'
 import { contentHash } from '@/providers/persistence/objects/content'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
-import { executeSql } from '@/providers/persistence/sqlite/libsql-helpers'
 import FakeTreeSitterEngine from '../../../../fake/fake-tree-sitter-engine'
 
 const tempDirs: string[] = []
