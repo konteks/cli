@@ -9,6 +9,7 @@ import type {
     SaveSessionInput,
 } from '@/contracts/repositories/memory-repository'
 import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
+import forgetMemory from '@/database/services/forget-memory'
 import {
     addRelation,
     findEntityByCanonicalName,
@@ -17,6 +18,12 @@ import {
     traverseNeighbors,
     upsertEntity,
 } from '@/database/services/graph'
+import {
+    saveKonteksDiary,
+    saveKonteksMemories,
+    saveKonteksMemory,
+    saveKonteksSession,
+} from '@/database/services/save-memory'
 import searchMemory from '@/database/services/search-memory'
 import type {
     ForgetResult,
@@ -28,13 +35,6 @@ import type {
     SaveResult,
 } from '@/models/memory'
 import type { Project } from '@/models/project'
-import forgetMemory from './forget-memory'
-import {
-    saveKonteksDiary,
-    saveKonteksMemories,
-    saveKonteksMemory,
-    saveKonteksSession,
-} from './save-konteks-input'
 
 export default class SQLiteMemoryRepository
     implements MemoryRepositoryContract

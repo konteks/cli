@@ -1,8 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import {
-    executeSql,
-    querySql,
-} from '@/providers/persistence/sqlite/libsql-helpers'
+import { executeSql, querySql } from '@/database/support/libsql'
 import db from '../actions/_db'
 
 export type TaxonomyNodeInput = {

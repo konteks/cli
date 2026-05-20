@@ -1,5 +1,5 @@
 import { and, desc, isNull, or, sql } from 'drizzle-orm'
-import { diaryEntries } from '@/providers/persistence/sqlite/schema'
+import { diaryEntries } from '@/database/schema'
 import db from './_db'
 
 export type DiaryRow = {

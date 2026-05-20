@@ -10,6 +10,10 @@ import {
 } from 'node:fs/promises'
 import { basename, dirname, join, resolve } from 'node:path'
 import { openProjectDatabase } from '@/database/actions/_db'
+import {
+    exportDurableMemory,
+    importDurableMemory,
+} from '@/database/services/memory-transfer'
 import type {
     DurableMemoryExport,
     DurableMemoryExportOptions,
@@ -19,10 +23,6 @@ import type {
     MemoryRestoreOptions,
     MemoryRestoreResult,
 } from '@/models/memory-transfer'
-import {
-    exportDurableMemory,
-    importDurableMemory,
-} from '@/providers/persistence/sqlite/memory-transfer-store'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
 import CliUserError from '@/support/cli/cli-user-error'
 import { createTarGz, extractTarGz } from '@/support/targz'

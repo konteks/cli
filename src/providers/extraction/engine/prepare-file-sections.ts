@@ -1,11 +1,11 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { SqliteConnection } from '@/database/actions/_db'
+import { buildChunkRetrievalTexts } from '@/database/actions/retrieval-documents'
 import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
 import type createToonStore from '@/providers/persistence/objects/create-toon-store'
 import storePayload from '@/providers/persistence/objects/store-payload'
-import { buildChunkRetrievalTexts } from '@/providers/persistence/sqlite/retrieval-documents'
 import {
     classifySourceRole,
     detectLanguage,

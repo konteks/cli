@@ -1,4 +1,4 @@
-import { memoryEvents } from '@/providers/persistence/sqlite/schema'
+import { memoryEvents } from '@/database/schema'
 import db from './_db'
 
 export type MemoryEventInput = {

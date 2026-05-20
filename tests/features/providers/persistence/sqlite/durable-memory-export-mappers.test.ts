@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test'
-import { contentHash } from '@/providers/persistence/objects/content'
-import type { ToonStore } from '@/providers/persistence/objects/create-toon-store'
 import {
     exportDiaryRow,
     exportObservationRow,
-} from '@/providers/persistence/sqlite/durable-memory-export-mappers'
+} from '@/database/support/memory-transfer'
+import { contentHash } from '@/providers/persistence/objects/content'
+import type { ToonStore } from '@/providers/persistence/objects/create-toon-store'
 
 describe('durable memory export mappers', () => {
     it('maps observation rows and resolves payload content', async () => {

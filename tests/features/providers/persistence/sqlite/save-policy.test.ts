@@ -6,7 +6,7 @@ import {
     validateMemoryQuality,
     validateSessionQuality,
     withProjectUpdateSummary,
-} from '@/providers/persistence/sqlite/save-policy'
+} from '@/database/support/save-policy'
 
 describe('providers/persistence/sqlite/save-policy', () => {
     it('normalizes summaries and truncates long content', () => {

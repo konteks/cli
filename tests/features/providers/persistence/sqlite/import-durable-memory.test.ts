@@ -4,10 +4,10 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/database/actions/_db'
+import importDurableMemory from '@/database/services/import-durable-memory'
+import { querySql } from '@/database/support/libsql'
 import type { DurableMemoryExport } from '@/models/memory-transfer'
 import { contentHash } from '@/providers/persistence/objects/content'
-import importDurableMemory from '@/providers/persistence/sqlite/import-durable-memory'
-import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []

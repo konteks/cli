@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
+import { querySql } from '@/database/support/libsql'
 import type {
     DurableMemoryExport,
     DurableMemoryImportResult,
@@ -10,7 +11,6 @@ import {
     insertImportedDiary,
     insertImportedObservation,
 } from './durable-memory-import-writers'
-import { querySql } from './libsql-helpers'
 
 export default async function importDurableMemory(
     db: SqliteConnection,

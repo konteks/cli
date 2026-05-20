@@ -1,5 +1,5 @@
 import { desc } from 'drizzle-orm'
-import { modules } from '@/providers/persistence/sqlite/schema'
+import { modules } from '@/database/schema'
 import db from './_db'
 
 export type WarmUpModuleRow = {

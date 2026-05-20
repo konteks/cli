@@ -5,7 +5,7 @@ import appendMemoryEvent from '@/database/actions/append-memory-event'
 import queryDiaries from '@/database/actions/query-diaries'
 import queryObservations from '@/database/actions/query-observations'
 import { invalidateRelation } from '@/database/services/graph'
-import { executeSql } from './libsql-helpers'
+import { executeSql } from '@/database/support/libsql'
 
 // import { GraphStore } from ./graph-store.js'
 

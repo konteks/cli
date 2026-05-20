@@ -4,7 +4,7 @@ import {
     retrievalDocuments,
     retrievalDocumentsFts,
     targetEmbeddings,
-} from '@/providers/persistence/sqlite/schema'
+} from '@/database/schema'
 import db from './_db'
 
 export type RetrievalDocumentRow = {

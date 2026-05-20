@@ -1,13 +1,10 @@
 import type { SqliteConnection } from '@/database/actions/_db'
-import { contentHash } from '@/providers/persistence/objects/content'
-import {
-    executeSql,
-    querySql,
-} from '@/providers/persistence/sqlite/libsql-helpers'
 import {
     deleteRetrievalDocuments,
     upsertRetrievalDocument,
-} from '@/providers/persistence/sqlite/retrieval-documents'
+} from '@/database/actions/retrieval-documents'
+import { executeSql, querySql } from '@/database/support/libsql'
+import { contentHash } from '@/providers/persistence/objects/content'
 import type {
     PackageManifestMetadata,
     ProjectMetadata,

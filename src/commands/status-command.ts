@@ -4,13 +4,10 @@ import {
     openProjectDatabase,
     projectDatabasePath,
 } from '@/database/actions/_db'
+import { querySql, type SqliteParams } from '@/database/support/libsql'
 import type { Project } from '@/models/project'
 import { getExtractionFreshness } from '@/providers/extraction/engine/manifest'
 import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
-import {
-    querySql,
-    type SqliteParams,
-} from '@/providers/persistence/sqlite/libsql-helpers'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
 import { formatInteger } from '@/support/format/number'
 import createColorPalette, {

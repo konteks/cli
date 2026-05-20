@@ -1,6 +1,6 @@
 import type { SqliteConnection } from '@/database/actions/_db'
+import { executeSql } from '@/database/support/libsql'
 import { contentHash } from '@/providers/persistence/objects/content'
-import { executeSql } from './libsql-helpers'
 
 const maxChunkContentChars = 3000
 const maxEmbeddingTextChars = 2500

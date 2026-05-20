@@ -1,5 +1,5 @@
 import { and, desc, isNull, or, sql } from 'drizzle-orm'
-import { observations } from '@/providers/persistence/sqlite/schema'
+import { observations } from '@/database/schema'
 import db from './_db'
 
 export type ObservationRow = {

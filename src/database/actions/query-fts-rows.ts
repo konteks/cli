@@ -1,9 +1,5 @@
 import { eq, sql } from 'drizzle-orm'
-import {
-    chunks,
-    memoryFts,
-    observations,
-} from '@/providers/persistence/sqlite/schema'
+import { chunks, memoryFts, observations } from '@/database/schema'
 import db from './_db'
 
 export type FtsRow = {

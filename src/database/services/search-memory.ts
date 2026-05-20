@@ -13,8 +13,8 @@ import queryObservations, {
 import queryRetrievalDocuments, {
     type RetrievalDocumentRow,
 } from '@/database/actions/query-retrieval-documents'
+import { hasSearchIndex } from '@/database/actions/search-index'
 import type { MemorySearchResult } from '@/models/memory'
-import { hasSearchIndex } from '@/providers/persistence/sqlite/search-index'
 import { classifySourceRole } from '@/providers/project/source-classification'
 import { estimateTextTokens } from '@/support/format/tokens'
 import {

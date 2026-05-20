@@ -4,12 +4,12 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/database/actions/_db'
-import exportDurableMemory from '@/providers/persistence/sqlite/export-durable-memory'
-import { executeSql } from '@/providers/persistence/sqlite/libsql-helpers'
+import exportDurableMemory from '@/database/services/export-durable-memory'
 import {
     saveKonteksDiary,
     saveKonteksMemory,
-} from '@/providers/persistence/sqlite/save-konteks-input'
+} from '@/database/services/save-memory'
+import { executeSql } from '@/database/support/libsql'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []

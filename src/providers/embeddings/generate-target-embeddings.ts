@@ -1,11 +1,8 @@
 import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import type { SqliteConnection } from '@/database/actions/_db'
+import { executeSql, querySql } from '@/database/support/libsql'
 import { contentHash } from '@/providers/persistence/objects/content'
-import {
-    executeSql,
-    querySql,
-} from '@/providers/persistence/sqlite/libsql-helpers'
 
 type TargetType = 'chunk' | 'diary' | 'memory' | 'module'
 
