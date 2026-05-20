@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { buildChunkRetrievalTexts } from '@/database/actions/retrieval-documents'
+import { buildChunkRetrievalTexts } from '@/database/support/retrieval-texts'
 
 describe('buildChunkRetrievalTexts', () => {
     it('keeps FTS and embedding text bounded', () => {

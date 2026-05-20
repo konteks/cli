@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto'
-import { eq } from 'drizzle-orm'
 import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
-import { diaryEntries, observations } from '@/database/schema'
+import hasDiaryHash from '@/database/actions/has-diary-hash'
+import hasObservationHash from '@/database/actions/has-observation-hash'
 import type {
     DurableMemoryExport,
     DurableMemoryImportResult,
@@ -64,28 +64,4 @@ export default async function importDurableMemory(
     }
 
     return result
-}
-
-async function hasObservationHash(
-    db: SqliteConnection,
-    hash: string,
-): Promise<boolean> {
-    const rows = await db.db
-        .select({ id: observations.id })
-        .from(observations)
-        .where(eq(observations.contentHash, hash))
-        .limit(1)
-    return rows.length > 0
-}
-
-async function hasDiaryHash(
-    db: SqliteConnection,
-    hash: string,
-): Promise<boolean> {
-    const rows = await db.db
-        .select({ id: diaryEntries.id })
-        .from(diaryEntries)
-        .where(eq(diaryEntries.contentHash, hash))
-        .limit(1)
-    return rows.length > 0
 }

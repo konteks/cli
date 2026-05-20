@@ -4,10 +4,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { executeSql } from 'tests/support/sqlite-libsql'
 import actionDb, { openProjectDatabase } from '@/database/actions/_db'
-import {
-    ensureSearchIndex,
-    hasSearchIndex,
-} from '@/database/actions/search-index'
+import ensureSearchIndex from '@/database/actions/ensure-search-index'
+import hasSearchIndex from '@/database/actions/has-search-index'
 import searchMemory from '@/database/services/search-memory'
 import { loadProjectContext } from '@/providers/project/context'
 

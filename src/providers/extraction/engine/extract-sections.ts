@@ -1,7 +1,7 @@
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
-import { reindexRetrievalDocumentFts } from '@/database/actions/retrieval-documents'
+import reindexRetrievalDocumentFts from '@/database/actions/reindex-retrieval-document-fts'
 import { upsertNode } from '@/database/services/taxonomy'
 import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'

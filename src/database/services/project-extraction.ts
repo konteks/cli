@@ -1,15 +1,14 @@
-import { count, eq } from 'drizzle-orm'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import { openProjectDatabase } from '@/database/actions/_db'
-import { chunks, sources } from '@/database/schema'
+import countExtractedSections from '@/database/actions/count-extracted-sections'
+import readExtractedProjectPathsAction from '@/database/actions/read-extracted-project-paths'
 import type { Project } from '@/models/project'
 import generateTargetEmbeddings from '@/providers/embeddings/generate-target-embeddings'
 import type { ProjectMetadata } from '@/providers/extraction/engine/extract-project-metadata'
 import extractSections from '@/providers/extraction/engine/extract-sections'
 import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import type { ExtractionMode } from '@/providers/extraction/engine/manifest'
-import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
 
 type ExtractProjectSectionsOptions = {
     beforeExtract?: () => Promise<void>
@@ -36,13 +35,7 @@ export async function readExtractedProjectPaths(
 ): Promise<Set<string>> {
     const connection = await openProjectDatabase(context)
     try {
-        const rows = await connection.db
-            .selectDistinct({ path: sources.uri })
-            .from(sources)
-            .innerJoin(chunks, eq(chunks.sourceId, sources.id))
-            .where(eq(sources.type, EXTRACTED_FILE_SOURCE_TYPE))
-
-        return new Set(rows.flatMap(row => (row.path ? [row.path] : [])))
+        return await readExtractedProjectPathsAction(connection)
     } finally {
         await connection.close()
     }
@@ -66,7 +59,7 @@ export async function extractProjectSectionsWithDatabase(
                 onProgress: options.onProgress,
             },
         )
-        const totalSectionCount = await readTotalSectionCount(connection)
+        const totalSectionCount = await countExtractedSections(connection)
         if (options.mode === 'resume') {
             options.onProgress?.({
                 chunkCount: totalSectionCount,
@@ -96,11 +89,4 @@ export async function extractProjectSectionsWithDatabase(
     } finally {
         await connection.close()
     }
-}
-
-async function readTotalSectionCount(
-    connection: Awaited<ReturnType<typeof openProjectDatabase>>,
-): Promise<number> {
-    const rows = await connection.db.select({ count: count() }).from(chunks)
-    return rows[0]?.count ?? 0
 }
