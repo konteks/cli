@@ -1,14 +1,12 @@
 import z from 'zod'
-import type { SqliteConnection } from '@/database/actions/_db'
-import readWarmUpContext from '@/database/services/read-warm-up-context'
+import { withMemoryRepository } from '@/database/services/memory-repository'
+import { readProjectWarmUpContext } from '@/database/services/warm-up-memory'
 import formatMemory from '@/mcp/tools/utils/format-memory'
 import inline from '@/mcp/tools/utils/inline'
-import createMemoryRepository from '@/memory/create-memory-repository'
 import recallRepositoryMemory from '@/memory/recall-repository-memory'
 import {
     loadMcpProjectContext,
     updateChangedProjectMemorySilently,
-    withProjectDatabaseContext,
 } from '@/memory/runtime'
 import type {
     RecallPackage,
@@ -16,7 +14,6 @@ import type {
     WarmUpGuidance,
     WarmUpHighlight,
 } from '@/models/memory'
-import type { Project } from '@/models/project'
 import { estimateCharacterTokens } from '@/support/format/tokens'
 import BaseMcpTool from './_base-mcp-tool'
 import toBullets from './utils/to-bullets'
@@ -61,31 +58,17 @@ async function warmUpMemory(input: {
     const context = await loadMcpProjectContext()
     await updateChangedProjectMemorySilently(context)
 
-    return await withProjectDatabaseContext(context, service =>
-        warmUpRepositoryMemory({
-            input,
-            memoryRepository: createMemoryRepository(service, context),
-            project: context,
-            service,
-        }),
-    )
-}
-
-async function warmUpRepositoryMemory(input: {
-    input: { maxTokens?: number; topic?: string }
-    memoryRepository: ReturnType<typeof createMemoryRepository>
-    project: Project
-    service: SqliteConnection
-}): Promise<WarmUpResult> {
-    const rawWarmUp = await readWarmUpContext(input.project, input.service)
-    const warmUp = limitWarmUpContext(rawWarmUp, input.input.maxTokens ?? 2000)
+    const rawWarmUp = await readProjectWarmUpContext(context)
+    const warmUp = limitWarmUpContext(rawWarmUp, input.maxTokens ?? 2000)
 
     let recall: RecallPackage | undefined
-    if (input.input.topic) {
-        recall = await recallRepositoryMemory(input.memoryRepository, {
-            maxTokens: input.input.maxTokens ?? 2000,
-            task: input.input.topic,
-        })
+    if (input.topic) {
+        recall = await withMemoryRepository(context, repository =>
+            recallRepositoryMemory(repository, {
+                maxTokens: input.maxTokens ?? 2000,
+                task: input.topic ?? '',
+            }),
+        )
     }
 
     return { recall, warmUp }

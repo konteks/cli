@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { executeSql, querySql } from '@/database/support/libsql'
+import { sql } from 'drizzle-orm'
 import db from '../actions/_db'
 
 export type TaxonomyNodeInput = {
@@ -25,7 +25,7 @@ export type TaxonomyLink = TaxonomyLinkInput & {
     id: string
 }
 
-export type TaxonomyTreeNode = TaxonomyNode & {
+type TaxonomyTreeNode = TaxonomyNode & {
     depth: number
 }
 
@@ -60,14 +60,12 @@ export async function upsertNode(
     const now = new Date().toISOString()
 
     if (existing) {
-        await executeSql(
-            db.currentClient(),
-            `update taxonomy_nodes
-set summary = coalesce(?, summary), updated_at = ?
-where id = ?
-`,
-            [input.summary ?? null, now, existing.id],
-        )
+        await db.run(sql`
+update taxonomy_nodes
+set summary = coalesce(${input.summary ?? null}, summary),
+    updated_at = ${now}
+where id = ${existing.id}
+`)
         return {
             ...existing,
             summary: input.summary ?? existing.summary,
@@ -80,20 +78,10 @@ where id = ?
         parentId: input.parentId,
         summary: input.summary,
     }
-    await executeSql(
-        db.currentClient(),
-        `insert into taxonomy_nodes (id, parent_id, name, summary, created_at, updated_at)
-values (?, ?, ?, ?, ?, ?)
-`,
-        [
-            node.id,
-            input.parentId ?? null,
-            input.name,
-            input.summary ?? null,
-            now,
-            now,
-        ],
-    )
+    await db.run(sql`
+insert into taxonomy_nodes (id, parent_id, name, summary, created_at, updated_at)
+values (${node.id}, ${input.parentId ?? null}, ${input.name}, ${input.summary ?? null}, ${now}, ${now})
+`)
 
     return node
 }
@@ -113,34 +101,22 @@ export async function linkTarget(
         targetId: input.targetId,
         targetType: input.targetType,
     }
-    await executeSql(
-        db.currentClient(),
-        `insert into taxonomy_links (id, node_id, target_type, target_id, created_at)
-values (?, ?, ?, ?, ?)
-`,
-        [
-            link.id,
-            input.nodeId,
-            input.targetType,
-            input.targetId,
-            new Date().toISOString(),
-        ],
-    )
+    await db.run(sql`
+insert into taxonomy_links (id, node_id, target_type, target_id, created_at)
+values (${link.id}, ${input.nodeId}, ${input.targetType}, ${input.targetId}, ${new Date().toISOString()})
+`)
 
     return link
 }
 
 export async function listLinks(nodeId: string): Promise<TaxonomyLink[]> {
     await db.ensureActionDatabase()
-    const rows = await querySql<TaxonomyLinkRow>(
-        db.currentClient(),
-        `select id, node_id, target_type, target_id
+    const rows = await db.all<TaxonomyLinkRow>(sql`
+select id, node_id, target_type, target_id
 from taxonomy_links
-where node_id = ?
+where node_id = ${nodeId}
 order by target_type, target_id
-`,
-        [nodeId],
-    )
+`)
 
     return rows.map(taxonomyLinkFromRow)
 }
@@ -151,25 +127,24 @@ export async function getSubtree(
 ): Promise<TaxonomyTreeNode[]> {
     await db.ensureActionDatabase()
     const maxDepth = clampDepth(options.maxDepth ?? 4)
-    const rows = await querySql<TaxonomyTreeRow>(
-        db.currentClient(),
+    const rows = await db.all<TaxonomyTreeRow>(
         rootId
-            ? `
+            ? sql`
 with recursive tree(depth, id, parent_id, name, summary) as (
     select 0, id, parent_id, name, summary
     from taxonomy_nodes
-    where id = ?
+    where id = ${rootId}
     union all
     select tree.depth + 1, n.id, n.parent_id, n.name, n.summary
     from taxonomy_nodes n
     join tree on n.parent_id = tree.id
-    where tree.depth < ?
+    where tree.depth < ${maxDepth}
 )
 select depth, id, parent_id, name, summary
 from tree
 order by depth, name
 `
-            : `
+            : sql`
 with recursive tree(depth, id, parent_id, name, summary) as (
     select 0, id, parent_id, name, summary
     from taxonomy_nodes
@@ -178,13 +153,12 @@ with recursive tree(depth, id, parent_id, name, summary) as (
     select tree.depth + 1, n.id, n.parent_id, n.name, n.summary
     from taxonomy_nodes n
     join tree on n.parent_id = tree.id
-    where tree.depth < ?
+    where tree.depth < ${maxDepth}
 )
 select depth, id, parent_id, name, summary
 from tree
 order by depth, name
 `,
-        rootId ? [rootId, maxDepth] : [maxDepth],
     )
 
     return rows.map(row => ({
@@ -195,12 +169,11 @@ order by depth, name
 
 export async function getPath(nodeId: string): Promise<TaxonomyNode[]> {
     await db.ensureActionDatabase()
-    const rows = await querySql<TaxonomyPathRow>(
-        db.currentClient(),
-        `with recursive ancestors(id, parent_id, id_path, name_path) as (
+    const rows = await db.all<TaxonomyPathRow>(sql`
+with recursive ancestors(id, parent_id, id_path, name_path) as (
     select id, parent_id, id, name
     from taxonomy_nodes
-    where id = ?
+    where id = ${nodeId}
     union all
     select n.id, n.parent_id, n.id || '>' || ancestors.id_path, n.name || '>' || ancestors.name_path
     from taxonomy_nodes n
@@ -210,9 +183,7 @@ select id_path, name_path
 from ancestors
 where parent_id is null
 limit 1
-`,
-        [nodeId],
-    )
+`)
     const row = rows[0]
     if (!row) {
         return []
@@ -230,15 +201,13 @@ async function findSiblingByName(
     parentId: string | undefined,
     name: string,
 ): Promise<TaxonomyNode | undefined> {
-    const rows = await querySql<TaxonomyNodeRow>(
-        db.currentClient(),
-        `select id, parent_id, name, summary
+    const rows = await db.all<TaxonomyNodeRow>(sql`
+select id, parent_id, name, summary
 from taxonomy_nodes
-where ${parentId ? 'parent_id = ?' : 'parent_id is null'} and lower(name) = lower(?)
+where ${parentId ? sql`parent_id = ${parentId}` : sql`parent_id is null`}
+  and lower(name) = lower(${name})
 limit 1
-`,
-        parentId ? [parentId, name] : [name],
-    )
+`)
 
     return rows[0] ? taxonomyNodeFromRow(rows[0]) : undefined
 }
@@ -246,15 +215,14 @@ limit 1
 async function findLink(
     input: TaxonomyLinkInput,
 ): Promise<TaxonomyLink | undefined> {
-    const rows = await querySql<TaxonomyLinkRow>(
-        db.currentClient(),
-        `select id, node_id, target_type, target_id
+    const rows = await db.all<TaxonomyLinkRow>(sql`
+select id, node_id, target_type, target_id
 from taxonomy_links
-where node_id = ? and target_type = ? and target_id = ?
+where node_id = ${input.nodeId}
+  and target_type = ${input.targetType}
+  and target_id = ${input.targetId}
 limit 1
-`,
-        [input.nodeId, input.targetType, input.targetId],
-    )
+`)
 
     return rows[0] ? taxonomyLinkFromRow(rows[0]) : undefined
 }

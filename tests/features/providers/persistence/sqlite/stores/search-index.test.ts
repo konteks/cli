@@ -2,13 +2,13 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { executeSql } from 'tests/support/sqlite-libsql'
 import actionDb, { openProjectDatabase } from '@/database/actions/_db'
 import {
     ensureSearchIndex,
     hasSearchIndex,
 } from '@/database/actions/search-index'
 import searchMemory from '@/database/services/search-memory'
-import { executeSql } from '@/database/support/libsql'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []

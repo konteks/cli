@@ -9,10 +9,9 @@ import {
     writeFile,
 } from 'node:fs/promises'
 import { basename, dirname, join, resolve } from 'node:path'
-import { openProjectDatabase } from '@/database/actions/_db'
 import {
-    exportDurableMemory,
-    importDurableMemory,
+    exportProjectDurableMemory,
+    importProjectDurableMemory,
 } from '@/database/services/memory-transfer'
 import type {
     DurableMemoryExport,
@@ -31,24 +30,16 @@ export async function exportMemory(
     options: DurableMemoryExportOptions,
 ): Promise<DurableMemoryExportResult> {
     const context = await loadProjectContext()
-    const service = await openProjectDatabase(context)
-    try {
-        const payload = await exportDurableMemory(service, context, {
-            includeInactive: options.includeInactive,
-        })
-        payload.project.name = basename(context.projectRoot)
-        await mkdir(dirname(resolve(options.outputPath)), { recursive: true })
-        await writeFile(
-            options.outputPath,
-            `${JSON.stringify(payload, null, 2)}\n`,
-        )
-        return {
-            diaries: payload.diaries.length,
-            memories: payload.memories.length,
-            outputPath: resolve(options.outputPath),
-        }
-    } finally {
-        await service.close()
+    const payload = await exportProjectDurableMemory(context, {
+        includeInactive: options.includeInactive,
+    })
+    payload.project.name = basename(context.projectRoot)
+    await mkdir(dirname(resolve(options.outputPath)), { recursive: true })
+    await writeFile(options.outputPath, `${JSON.stringify(payload, null, 2)}\n`)
+    return {
+        diaries: payload.diaries.length,
+        memories: payload.memories.length,
+        outputPath: resolve(options.outputPath),
     }
 }
 
@@ -59,14 +50,9 @@ export async function importMemory(
     const payload = parseDurableMemoryExport(
         await readFile(options.inputPath, 'utf8'),
     )
-    const service = await openProjectDatabase(context)
-    try {
-        return await importDurableMemory(service, context, payload, {
-            dryRun: options.dryRun,
-        })
-    } finally {
-        await service.close()
-    }
+    return await importProjectDurableMemory(context, payload, {
+        dryRun: options.dryRun,
+    })
 }
 
 export async function restoreMemory(

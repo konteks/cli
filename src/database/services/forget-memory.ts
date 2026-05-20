@@ -1,11 +1,19 @@
 import { randomUUID } from 'node:crypto'
+import { eq } from 'drizzle-orm'
 import type { ForgetInput } from '@/contracts/repositories/memory-repository'
 import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
 import queryDiaries from '@/database/actions/query-diaries'
 import queryObservations from '@/database/actions/query-observations'
+import {
+    chunks,
+    diaryEntries,
+    memoryFts,
+    memoryFtsIndexed,
+    observations,
+    taxonomyLinks,
+} from '@/database/schema'
 import { invalidateRelation } from '@/database/services/graph'
-import { executeSql } from '@/database/support/libsql'
 
 // import { GraphStore } from ./graph-store.js'
 
@@ -116,20 +124,25 @@ async function markForgotten(
     target: ForgetTarget,
     reason: string | undefined,
 ): Promise<boolean> {
-    const table = tableForKind(target.kind)
-    if (!table) {
+    const values = {
+        deletedAt: new Date().toISOString(),
+        forgetReason: reason ?? null,
+    }
+    if (target.kind === 'chunk') {
+        await db.db.update(chunks).set(values).where(eq(chunks.id, target.id))
+    } else if (target.kind === 'observation') {
+        await db.db
+            .update(observations)
+            .set(values)
+            .where(eq(observations.id, target.id))
+    } else if (target.kind === 'diary_entry') {
+        await db.db
+            .update(diaryEntries)
+            .set(values)
+            .where(eq(diaryEntries.id, target.id))
+    } else {
         return false
     }
-
-    await executeSql(
-        db.client,
-        `
-update ${table}
-set deleted_at = ?, forget_reason = ?
-where id = ?
-`,
-        [new Date().toISOString(), reason ?? null, target.id],
-    )
     return true
 }
 
@@ -138,20 +151,25 @@ async function markSuppressed(
     target: ForgetTarget,
     reason: string | undefined,
 ): Promise<boolean> {
-    const table = tableForKind(target.kind)
-    if (!table) {
+    const values = {
+        forgetReason: reason ?? null,
+        suppressedAt: new Date().toISOString(),
+    }
+    if (target.kind === 'chunk') {
+        await db.db.update(chunks).set(values).where(eq(chunks.id, target.id))
+    } else if (target.kind === 'observation') {
+        await db.db
+            .update(observations)
+            .set(values)
+            .where(eq(observations.id, target.id))
+    } else if (target.kind === 'diary_entry') {
+        await db.db
+            .update(diaryEntries)
+            .set(values)
+            .where(eq(diaryEntries.id, target.id))
+    } else {
         return false
     }
-
-    await executeSql(
-        db.client,
-        `
-update ${table}
-set suppressed_at = ?, forget_reason = ?
-where id = ?
-`,
-        [new Date().toISOString(), reason ?? null, target.id],
-    )
     return true
 }
 
@@ -160,21 +178,20 @@ async function hardDelete(
     target: ForgetTarget,
 ): Promise<boolean> {
     if (target.kind === 'chunk') {
-        await executeSql(
-            db.client,
-            'delete from taxonomy_links where target_id = ?',
-            [target.id],
-        )
+        await db.db
+            .delete(taxonomyLinks)
+            .where(eq(taxonomyLinks.targetId, target.id))
     }
 
-    const table = tableForKind(target.kind)
-    if (!table) {
+    if (target.kind === 'chunk') {
+        await db.db.delete(chunks).where(eq(chunks.id, target.id))
+    } else if (target.kind === 'observation') {
+        await db.db.delete(observations).where(eq(observations.id, target.id))
+    } else if (target.kind === 'diary_entry') {
+        await db.db.delete(diaryEntries).where(eq(diaryEntries.id, target.id))
+    } else {
         return false
     }
-
-    await executeSql(db.client, `delete from ${table} where id = ?`, [
-        target.id,
-    ])
     return true
 }
 
@@ -182,14 +199,8 @@ async function removeFromSearchIndex(
     db: SqliteConnection,
     id: string,
 ): Promise<void> {
-    await executeSql(
-        db.client,
-        'delete from memory_fts where rowid in (select rowid from memory_fts where id = ?)',
-        [id],
-    )
-    await executeSql(db.client, 'delete from memory_fts_indexed where id = ?', [
-        id,
-    ])
+    await db.db.delete(memoryFts).where(eq(memoryFts.id, id))
+    await db.db.delete(memoryFtsIndexed).where(eq(memoryFtsIndexed.id, id))
 }
 
 function inferKind(id: string): TargetKind {
@@ -204,20 +215,6 @@ function inferKind(id: string): TargetKind {
     }
 
     return 'observation'
-}
-
-function tableForKind(kind: TargetKind): string | undefined {
-    if (kind === 'chunk') {
-        return 'chunks'
-    }
-    if (kind === 'observation') {
-        return 'observations'
-    }
-    if (kind === 'diary_entry') {
-        return 'diary_entries'
-    }
-
-    return undefined
 }
 
 function tokenize(query: string): string[] {

@@ -1,10 +1,7 @@
 import z from 'zod'
-import createMemoryRepository from '@/memory/create-memory-repository'
+import { withMemoryRepository } from '@/database/services/memory-repository'
 import recallRepositoryMemory from '@/memory/recall-repository-memory'
-import {
-    loadMcpProjectContext,
-    withProjectDatabaseContext,
-} from '@/memory/runtime'
+import { loadMcpProjectContext } from '@/memory/runtime'
 import type {
     RecallGraphItem,
     RecallHistoryItem,
@@ -40,11 +37,8 @@ export default class RecallMcpTool extends BaseMcpTool<Input> {
 
     public async handle(input: Input): Promise<string> {
         const context = await loadMcpProjectContext()
-        const result = await withProjectDatabaseContext(context, service =>
-            recallRepositoryMemory(
-                createMemoryRepository(service, context),
-                input,
-            ),
+        const result = await withMemoryRepository(context, repository =>
+            recallRepositoryMemory(repository, input),
         )
 
         return formatRecallText({

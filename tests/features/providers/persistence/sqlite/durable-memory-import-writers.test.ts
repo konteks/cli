@@ -3,12 +3,12 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { querySql } from 'tests/support/sqlite-libsql'
 import { openProjectDatabase } from '@/database/actions/_db'
 import {
     insertImportedDiary,
     insertImportedObservation,
 } from '@/database/services/durable-memory-import-writers'
-import { querySql } from '@/database/support/libsql'
 import { contentHash } from '@/providers/persistence/objects/content'
 import { loadProjectContext } from '@/providers/project/context'
 

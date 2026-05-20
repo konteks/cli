@@ -1,7 +1,8 @@
+import { and, eq, inArray } from 'drizzle-orm'
 import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import type { SqliteConnection } from '@/database/actions/_db'
-import { executeSql, querySql } from '@/database/support/libsql'
+import { retrievalDocuments, targetEmbeddings } from '@/database/schema'
 import { contentHash } from '@/providers/persistence/objects/content'
 
 type TargetType = 'chunk' | 'diary' | 'memory' | 'module'
@@ -10,10 +11,6 @@ type RetrievalDocumentRow = {
     target_id: string
     target_type: TargetType
     embedding_text: string
-}
-
-type ExistingEmbeddingRow = {
-    embedding_hash: string
 }
 
 type EmbeddingWorkItem = {
@@ -40,40 +37,32 @@ export default async function generateTargetEmbeddings(
         return { embeddedCount: 0, reusedCount: 0 }
     }
 
-    const placeholders = targetTypes.map(() => '?').join(', ')
-    const rows = await querySql<RetrievalDocumentRow>(
-        db.client,
-        `
-select target_id, target_type, embedding_text
-from retrieval_documents
-where target_type in (${placeholders})
-`,
-        targetTypes,
-    )
+    const rows = await db.db
+        .select({
+            embedding_text: retrievalDocuments.embeddingText,
+            target_id: retrievalDocuments.targetId,
+            target_type: retrievalDocuments.targetType,
+        })
+        .from(retrievalDocuments)
+        .where(inArray(retrievalDocuments.targetType, targetTypes))
 
     let embeddedCount = 0
     let reusedCount = 0
     const workItems: EmbeddingWorkItem[] = []
 
     for (const row of rows) {
-        const existing = await querySql<ExistingEmbeddingRow>(
-            db.client,
-            `
-select embedding_hash
-from target_embeddings
-where target_id = ?
-  and target_type = ?
-  and model = ?
-  and dimensions = ?
-limit 1
-`,
-            [
-                row.target_id,
-                row.target_type,
-                provider.model,
-                provider.dimensions,
-            ],
-        )
+        const existing = await db.db
+            .select({ embedding_hash: targetEmbeddings.embeddingHash })
+            .from(targetEmbeddings)
+            .where(
+                and(
+                    eq(targetEmbeddings.targetId, row.target_id),
+                    eq(targetEmbeddings.targetType, row.target_type),
+                    eq(targetEmbeddings.model, provider.model),
+                    eq(targetEmbeddings.dimensions, provider.dimensions),
+                ),
+            )
+            .limit(1)
 
         const embeddingHash = contentHash(
             `${provider.model}:${row.embedding_text}`,
@@ -140,33 +129,34 @@ limit 1
             )
         }
 
-        await executeSql(
-            db.client,
-            `
-insert or replace into target_embeddings (
-    target_id,
-    target_type,
-    model,
-    dimensions,
-    dtype,
-    normalized,
-    embedding_hash,
-    vector_blob,
-    created_at
-) values (?, ?, ?, ?, ?, ?, ?, ?, ?)
-`,
-            [
-                row.target_id,
-                row.target_type,
-                provider.model,
-                provider.dimensions,
-                'float32',
-                1,
-                embeddingHash,
-                toBlob(vector),
+        await db.db
+            .insert(targetEmbeddings)
+            .values({
                 createdAt,
-            ],
-        )
+                dimensions: provider.dimensions,
+                dtype: 'float32',
+                embeddingHash,
+                model: provider.model,
+                normalized: 1,
+                targetId: row.target_id,
+                targetType: row.target_type,
+                vectorBlob: toBlob(vector),
+            })
+            .onConflictDoUpdate({
+                set: {
+                    createdAt,
+                    dimensions: provider.dimensions,
+                    dtype: 'float32',
+                    embeddingHash,
+                    normalized: 1,
+                    vectorBlob: toBlob(vector),
+                },
+                target: [
+                    targetEmbeddings.targetId,
+                    targetEmbeddings.targetType,
+                    targetEmbeddings.model,
+                ],
+            })
         embeddedCount += 1
         options.onProgress?.({
             current: index + 1,

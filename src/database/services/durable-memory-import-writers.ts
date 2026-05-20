@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import { upsertRetrievalDocument } from '@/database/actions/retrieval-documents'
 import { indexSearchDocument } from '@/database/actions/search-index'
-import { executeSql } from '@/database/support/libsql'
+import { diaryEntries, observations } from '@/database/schema'
 import type {
     DurableMemoryExportDiary,
     DurableMemoryExportMemory,
@@ -24,26 +24,18 @@ export async function insertImportedObservation(
     const createdAt = memory.createdAt || new Date().toISOString()
 
     await withTransaction(db, async tx => {
-        await executeSql(
-            tx.client,
-            `
-insert into observations (
-    id, kind, text_inline, payload_ref, content_hash, confidence, created_at, deleted_at, suppressed_at, forget_reason
-) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`,
-            [
-                id,
-                memory.kind,
-                stored.contentInline ?? memory.content.slice(0, 240),
-                stored.payloadRef ?? null,
-                stored.contentHash,
-                memory.confidence,
-                createdAt,
-                memory.deletedAt ?? null,
-                memory.suppressedAt ?? null,
-                memory.forgetReason ?? null,
-            ],
-        )
+        await tx.db.insert(observations).values({
+            confidence: memory.confidence,
+            contentHash: stored.contentHash,
+            createdAt,
+            deletedAt: memory.deletedAt ?? null,
+            forgetReason: memory.forgetReason ?? null,
+            id,
+            kind: memory.kind,
+            payloadRef: stored.payloadRef ?? null,
+            suppressedAt: memory.suppressedAt ?? null,
+            textInline: stored.contentInline ?? memory.content.slice(0, 240),
+        })
         await indexSearchDocument(tx, {
             content: memory.content,
             createdAt,
@@ -81,26 +73,18 @@ export async function insertImportedDiary(
     const createdAt = diary.createdAt || new Date().toISOString()
 
     await withTransaction(db, async tx => {
-        await executeSql(
-            tx.client,
-            `
-insert into diary_entries (
-    id, subject, summary, tags_json, payload_ref, content_hash, deleted_at, suppressed_at, forget_reason, created_at
-) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`,
-            [
-                id,
-                diary.subject ?? null,
-                diary.summary,
-                JSON.stringify(diary.tags),
-                stored.payloadRef ?? null,
-                stored.contentHash,
-                diary.deletedAt ?? null,
-                diary.suppressedAt ?? null,
-                diary.forgetReason ?? null,
-                createdAt,
-            ],
-        )
+        await tx.db.insert(diaryEntries).values({
+            contentHash: stored.contentHash,
+            createdAt,
+            deletedAt: diary.deletedAt ?? null,
+            forgetReason: diary.forgetReason ?? null,
+            id,
+            payloadRef: stored.payloadRef ?? null,
+            subject: diary.subject ?? null,
+            summary: diary.summary,
+            suppressedAt: diary.suppressedAt ?? null,
+            tagsJson: JSON.stringify(diary.tags),
+        })
         await indexSearchDocument(tx, {
             content: text,
             createdAt,

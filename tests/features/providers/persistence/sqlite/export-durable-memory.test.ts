@@ -3,13 +3,13 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { executeSql } from 'tests/support/sqlite-libsql'
 import { openProjectDatabase } from '@/database/actions/_db'
 import exportDurableMemory from '@/database/services/export-durable-memory'
 import {
     saveKonteksDiary,
     saveKonteksMemory,
 } from '@/database/services/save-memory'
-import { executeSql } from '@/database/support/libsql'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []

@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import BaseCommand from '@/commands/_base-command'
 import createInitProgressReporter from '@/commands/init-command/utils/init-progress-reporter'
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
-import { ensureProjectDatabase } from '@/database/actions/_db'
+import { ensureProjectMemory } from '@/database/services/project-memory'
 import createProjectExtractor from '@/extraction/create-project-extractor'
 import type { ExtractProjectResponse } from '@/models/extraction'
 import type { Project } from '@/models/project'
@@ -87,7 +87,7 @@ async function initializeProjectMemory(options: {
     }
 
     await writeInitialMemoryFiles(context, options.grammars ?? [])
-    await ensureProjectDatabase(await loadProjectContext())
+    await ensureProjectMemory(await loadProjectContext())
     await ensureKonteksGitignore(context.projectRoot)
 
     const extractor = createProjectExtractor({
