@@ -1,5 +1,5 @@
 import { contentHash } from '@/providers/persistence/objects/content'
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import { executeSql } from './libsql-helpers'
 
 const maxChunkContentChars = 3000
@@ -20,7 +20,7 @@ type RetrievalDocumentInput = {
 }
 
 export async function upsertRetrievalDocument(
-    db: DatabaseService,
+    db: SqliteConnection,
     input: RetrievalDocumentInput,
 ): Promise<void> {
     await executeSql(
@@ -88,7 +88,7 @@ insert into retrieval_documents_fts (
 }
 
 export async function deleteRetrievalDocuments(
-    db: DatabaseService,
+    db: SqliteConnection,
     targetType: RetrievalDocumentInput['targetType'],
     targetIds?: string[],
 ): Promise<void> {
@@ -132,7 +132,7 @@ where target_type = ?
 }
 
 export async function reindexRetrievalDocumentFts(
-    db: DatabaseService,
+    db: SqliteConnection,
 ): Promise<void> {
     await executeSql(db.client, 'delete from retrieval_documents_fts')
     await executeSql(

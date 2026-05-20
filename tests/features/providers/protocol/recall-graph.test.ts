@@ -6,8 +6,8 @@ import { join } from 'node:path'
 import recallRepositoryMemory from '@/memory/recall-repository-memory'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import SQLiteMemoryRepository from '@/providers/persistence/sqlite/sqlite-memory-repository'
-import GraphStore from '@/providers/persistence/sqlite/stores/graph-store'
 import { loadProjectContext } from '@/providers/project/context'
+import { graphApi } from '../../../support/sqlite-action-api'
 
 const tempDirs: string[] = []
 
@@ -36,7 +36,7 @@ async function makeGraph() {
     return {
         adapter,
         context,
-        graph: new GraphStore(adapter),
+        graph: graphApi(adapter),
     }
 }
 

@@ -5,19 +5,12 @@ import type {
     Row,
     Transaction,
 } from '@libsql/client'
-import type { LibSQLDatabase } from 'drizzle-orm/libsql'
-import type * as schema from './schema'
-
 export type SqliteParams = InArgs
 
 export type SqliteExecutor = Pick<
     Client | Transaction,
     'execute' | 'executeMultiple'
 >
-
-export type KonteksDatabase = LibSQLDatabase<typeof schema> & {
-    $client: Client
-}
 
 export async function executeSql(
     client: SqliteExecutor,

@@ -1,4 +1,5 @@
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import { clearModules } from '@/database/actions/save-module'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import {
     executeSql,
     querySql,
@@ -11,7 +12,7 @@ import { deleteRetrievalDocuments } from '@/providers/persistence/sqlite/retriev
  * 'chunk'` rows. These deletes intentionally use the legacy storage names.
  */
 export async function isExtractedSectionSuppressed(
-    db: DatabaseService,
+    db: SqliteConnection,
     path: string,
     anchor: string,
     contentHashValue: string,
@@ -34,7 +35,7 @@ limit 1
 }
 
 export async function clearExtractedSections(
-    db: DatabaseService,
+    db: SqliteConnection,
 ): Promise<void> {
     await recordExtractedSuppressions(db)
     await executeSql(
@@ -86,7 +87,7 @@ delete from target_embeddings
 where target_type = 'module';
 `,
     )
-    await db.modules.clear()
+    await clearModules()
     await executeSql(
         db.client,
         `
@@ -104,7 +105,7 @@ where type = 'mined_file';
 }
 
 export async function clearExtractedSectionsForPaths(
-    db: DatabaseService,
+    db: SqliteConnection,
     paths: string[],
 ): Promise<void> {
     const uniquePaths = [...new Set(paths)].filter(Boolean)
@@ -200,7 +201,7 @@ where type = 'mined_file'
 }
 
 async function recordExtractedSuppressions(
-    db: DatabaseService,
+    db: SqliteConnection,
     paths?: string[],
 ): Promise<void> {
     const pathFilter =

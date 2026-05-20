@@ -3,8 +3,8 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import GraphEntityStore from '@/providers/persistence/sqlite/stores/graph-entity-store'
 import { loadProjectContext } from '@/providers/project/context'
+import { graphApi } from '../../../../../support/sqlite-action-api'
 
 const tempDirs: string[] = []
 
@@ -62,7 +62,7 @@ describe('GraphEntityStore', () => {
 
 async function makeGraphEntityStore(): Promise<{
     close: () => Promise<void>
-    store: GraphEntityStore
+    store: ReturnType<typeof graphApi>
 }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-entity-test-'))
     tempDirs.push(projectRoot)
@@ -73,6 +73,6 @@ async function makeGraphEntityStore(): Promise<{
 
     return {
         close: () => service.close(),
-        store: new GraphEntityStore(service.client),
+        store: graphApi(service),
     }
 }

@@ -6,13 +6,14 @@ import type {
     SaveOptions,
     SaveSessionInput,
 } from '@/contracts/repositories/memory-repository'
+import appendMemoryEvent from '@/database/actions/append-memory-event'
 import type { SaveResult } from '@/models/memory'
 import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
 import storePayload from '@/providers/persistence/objects/store-payload'
 import { upsertRetrievalDocument } from '@/providers/persistence/sqlite/retrieval-documents'
-import type DatabaseService from './database-service'
+import { type SqliteConnection, withTransaction } from './database'
 import { executeSql, querySql } from './libsql-helpers'
 import {
     importanceToConfidence,
@@ -25,7 +26,7 @@ import {
 import { indexSearchDocument } from './search-index'
 
 export async function saveKonteksMemory(
-    db: DatabaseService,
+    db: SqliteConnection,
     context: Project,
     input: SaveMemoryInput,
     _options: SaveOptions = {},
@@ -50,7 +51,7 @@ export async function saveKonteksMemory(
     const summary = summarizeText(input.content)
     const createdAt = new Date().toISOString()
 
-    await db.transaction(async tx => {
+    await withTransaction(db, async tx => {
         await executeSql(
             tx.client,
             `
@@ -75,7 +76,7 @@ insert into observations (
             ],
         )
 
-        await tx.events.append({
+        await appendMemoryEvent({
             actor: 'mcp',
             eventType: 'memory_saved',
             id: `event_${randomUUID()}`,
@@ -113,7 +114,7 @@ insert into observations (
 }
 
 export async function saveKonteksMemories(
-    db: DatabaseService,
+    db: SqliteConnection,
     context: Project,
     input: SaveMemoriesInput,
     _options: SaveOptions = {},
@@ -122,7 +123,7 @@ export async function saveKonteksMemories(
     const memoryIds: string[] = []
     let skippedMemories = 0
 
-    await db.transaction(async tx => {
+    await withTransaction(db, async tx => {
         for (const memory of input.memories) {
             try {
                 const saved = await saveKonteksMemory(tx, context, memory)
@@ -145,7 +146,7 @@ export async function saveKonteksMemories(
 }
 
 export async function saveKonteksSession(
-    db: DatabaseService,
+    db: SqliteConnection,
     context: Project,
     input: SaveSessionInput,
     _options: SaveOptions = {},
@@ -159,7 +160,7 @@ export async function saveKonteksSession(
     })
     const createdAt = new Date().toISOString()
 
-    await db.transaction(async tx => {
+    await withTransaction(db, async tx => {
         await executeSql(
             tx.client,
             `
@@ -184,7 +185,7 @@ insert into diary_entries (
             ],
         )
 
-        await tx.events.append({
+        await appendMemoryEvent({
             actor: 'mcp',
             eventType: 'diary_entry_saved',
             id: `event_${randomUUID()}`,
@@ -211,7 +212,7 @@ insert into diary_entries (
 }
 
 export async function saveKonteksDiary(
-    db: DatabaseService,
+    db: SqliteConnection,
     context: Project,
     input: SaveDiaryInput,
     options: SaveOptions = {},
@@ -234,7 +235,7 @@ export async function saveKonteksDiary(
     })
     const createdAt = new Date().toISOString()
 
-    await db.transaction(async tx => {
+    await withTransaction(db, async tx => {
         await executeSql(
             tx.client,
             `
@@ -259,7 +260,7 @@ insert into diary_entries (
             ],
         )
 
-        await tx.events.append({
+        await appendMemoryEvent({
             actor: 'mcp',
             eventType: 'diary_entry_saved',
             id: `event_${randomUUID()}`,
@@ -297,7 +298,7 @@ insert into diary_entries (
 }
 
 async function findDuplicateObservation(
-    db: DatabaseService,
+    db: SqliteConnection,
     hash: string,
 ): Promise<{ id: string } | undefined> {
     const rows = await querySql<{ id: string }>(

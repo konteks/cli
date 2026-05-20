@@ -294,79 +294,103 @@ describe('cli/e2e', () => {
 async function createInitializedProject(
     options: { seededMemory?: boolean } = {},
 ): Promise<{ projectRoot: string }> {
-    const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-cli-e2e-'))
-    tempDirs.push(projectRoot)
+    return withFileBackedSqlite(async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-cli-e2e-'))
+        tempDirs.push(projectRoot)
 
-    await mkdir(projectRoot, { recursive: true })
-    await mkdir(join(projectRoot, '.git'), { recursive: true })
-    await mkdir(join(projectRoot, '.konteks'), { recursive: true })
-    await writeFile(join(projectRoot, 'README.md'), '# Fixture\n')
+        await mkdir(projectRoot, { recursive: true })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, '.konteks'), { recursive: true })
+        await writeFile(join(projectRoot, 'README.md'), '# Fixture\n')
 
-    const context = await withProjectRoot(projectRoot, () =>
-        loadProjectContext(),
-    )
-    await writeProjectConfig(context, context.config)
-    await extractProject(context, 'full', {
-        embeddingProvider: new FakeEmbeddingProvider(),
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        await writeProjectConfig(context, context.config)
+        await extractProject(context, 'full', {
+            embeddingProvider: new FakeEmbeddingProvider(),
+        })
+
+        if (options.seededMemory) {
+            await seedDurableMemory(projectRoot)
+        }
+
+        return { projectRoot }
     })
-
-    if (options.seededMemory) {
-        await seedDurableMemory(projectRoot)
-    }
-
-    return { projectRoot }
 }
 
 async function seedDurableMemory(projectRoot: string): Promise<void> {
-    const context = await withProjectRoot(projectRoot, () =>
-        loadProjectContext(),
-    )
-    const db = await openProjectDatabase(context)
+    return withFileBackedSqlite(async () => {
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        const db = await openProjectDatabase(context)
 
-    try {
-        await saveKonteksMemory(db, context, {
-            content:
-                'CLI e2e durable memory should survive export and restore.',
-            importance: 3,
-            kind: 'note',
-        })
-        await saveKonteksDiary(db, context, {
-            subject: 'cli e2e fixture',
-            summary: 'CLI e2e diary entries should survive export and restore.',
-            tags: ['cli', 'e2e'],
-        })
-    } finally {
-        await db.close()
-    }
+        try {
+            await saveKonteksMemory(db, context, {
+                content:
+                    'CLI e2e durable memory should survive export and restore.',
+                importance: 3,
+                kind: 'note',
+            })
+            await saveKonteksDiary(db, context, {
+                subject: 'cli e2e fixture',
+                summary:
+                    'CLI e2e diary entries should survive export and restore.',
+                tags: ['cli', 'e2e'],
+            })
+        } finally {
+            await db.close()
+        }
+    })
 }
 
 async function readActiveCounts(projectRoot: string): Promise<{
     diaries: number
     memories: number
 }> {
-    const context = await withProjectRoot(projectRoot, () =>
-        loadProjectContext(),
-    )
-    const db = await openProjectDatabase(context)
+    return withFileBackedSqlite(async () => {
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        const db = await openProjectDatabase(context)
+
+        try {
+            const [memoryRows, diaryRows] = await Promise.all([
+                querySql<{ count: number }>(
+                    db.client,
+                    'select count(*) as count from observations where deleted_at is null and suppressed_at is null',
+                ),
+                querySql<{ count: number }>(
+                    db.client,
+                    'select count(*) as count from diary_entries where deleted_at is null and suppressed_at is null',
+                ),
+            ])
+
+            return {
+                diaries: diaryRows[0]?.count ?? 0,
+                memories: memoryRows[0]?.count ?? 0,
+            }
+        } finally {
+            await db.close()
+        }
+    })
+}
+
+async function withFileBackedSqlite<T>(
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.env.KONTEKS_SQLITE_TEST_DATABASE
+    process.env.KONTEKS_SQLITE_TEST_DATABASE = 'file'
 
     try {
-        const [memoryRows, diaryRows] = await Promise.all([
-            querySql<{ count: number }>(
-                db.client,
-                'select count(*) as count from observations where deleted_at is null and suppressed_at is null',
-            ),
-            querySql<{ count: number }>(
-                db.client,
-                'select count(*) as count from diary_entries where deleted_at is null and suppressed_at is null',
-            ),
-        ])
-
-        return {
-            diaries: diaryRows[0]?.count ?? 0,
-            memories: memoryRows[0]?.count ?? 0,
-        }
+        return await operation()
     } finally {
-        await db.close()
+        if (previous === undefined) {
+            delete process.env.KONTEKS_SQLITE_TEST_DATABASE
+        } else {
+            process.env.KONTEKS_SQLITE_TEST_DATABASE = previous
+        }
     }
 }
 
@@ -454,6 +478,7 @@ function commandEnv(homeDir: string): Record<string, string> {
         ),
         HOME: homeDir,
         KONTEKS_MODEL_CACHE_DIR: join(homeDir, '.cache', 'konteks', 'models'),
+        KONTEKS_SQLITE_TEST_DATABASE: 'file',
         NO_COLOR: '1',
     }
 }

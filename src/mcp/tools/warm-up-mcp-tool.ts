@@ -16,7 +16,7 @@ import type {
     WarmUpHighlight,
 } from '@/models/memory'
 import type { Project } from '@/models/project'
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import { estimateCharacterTokens } from '@/support/format/tokens'
 import BaseMcpTool from './_base-mcp-tool'
 import toBullets from './utils/to-bullets'
@@ -75,7 +75,7 @@ async function warmUpRepositoryMemory(input: {
     input: { maxTokens?: number; topic?: string }
     memoryRepository: ReturnType<typeof createMemoryRepository>
     project: Project
-    service: DatabaseService
+    service: SqliteConnection
 }): Promise<WarmUpResult> {
     const rawWarmUp = await readWarmUpContext(input.project, input.service)
     const warmUp = limitWarmUpContext(rawWarmUp, input.input.maxTokens ?? 2000)

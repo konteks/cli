@@ -1,21 +1,25 @@
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
-import { type Client, createClient } from '@libsql/client'
+import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
 import {
     querySql,
     type SqliteExecutor,
 } from '@/providers/persistence/sqlite/libsql-helpers'
 import initialSchemaSql from '@/providers/persistence/sqlite/migrations/001_initial_schema.sql?raw'
+import { isSqliteTestRuntime } from '@/providers/persistence/sqlite/test-runtime'
 
 type Database = ReturnType<typeof drizzle>
 type LibsqlValue = Uint8Array | boolean | number | string | null
 type DatabaseEntry = {
-    client: Client
+    client: SqliteExecutor
     db: Database
+    initialized?: Promise<void>
 }
 
 const databases = new Map<string, DatabaseEntry>()
+const actionDatabaseBinding = new AsyncLocalStorage<DatabaseEntry>()
 
 const syncedTables = [
     'sources',
@@ -31,11 +35,25 @@ const syncedTables = [
 ] as const
 
 function currentDatabase(): Database {
+    const bound = actionDatabaseBinding.getStore()
+    if (bound) {
+        return bound.db
+    }
+
     return currentDatabaseEntry().db
 }
 
+function currentClient(): SqliteExecutor {
+    const bound = actionDatabaseBinding.getStore()
+    if (bound) {
+        return bound.client
+    }
+
+    return currentDatabaseEntry().client
+}
+
 function currentDatabaseEntry(): DatabaseEntry {
-    const databaseUrl = isTestRuntime()
+    const databaseUrl = isSqliteTestRuntime()
         ? ':memory:'
         : `file:${resolveDatabasePathFromCwd()}`
     const existing = databases.get(databaseUrl)
@@ -52,17 +70,10 @@ function currentDatabaseEntry(): DatabaseEntry {
     return entry
 }
 
-function isTestRuntime(): boolean {
-    return (
-        process.env.NODE_ENV === 'test' &&
-        process.argv.some(argument => argument.includes('.test.'))
-    )
-}
-
 async function syncTestActionDatabase(
     sourceClient: SqliteExecutor,
 ): Promise<void> {
-    if (!isTestRuntime()) {
+    if (!isSqliteTestRuntime()) {
         throw new Error('syncTestActionDatabase can only run in tests.')
     }
 
@@ -79,14 +90,24 @@ async function syncTestActionDatabase(
     }
 }
 
-async function clearSyncedTables(client: Client): Promise<void> {
+async function ensureActionDatabase(): Promise<void> {
+    if (actionDatabaseBinding.getStore()) {
+        return
+    }
+
+    const entry = currentDatabaseEntry()
+    entry.initialized ??= entry.client.executeMultiple(initialSchemaSql)
+    await entry.initialized
+}
+
+async function clearSyncedTables(client: SqliteExecutor): Promise<void> {
     for (const table of [...syncedTables].reverse()) {
         await client.execute(`delete from ${table}`)
     }
 }
 
 async function insertRows(
-    client: Client,
+    client: SqliteExecutor,
     table: string,
     rows: Record<string, unknown>[],
 ): Promise<void> {
@@ -103,6 +124,14 @@ async function insertRows(
             sql: `insert into ${table} (${columnList}) values (${placeholders})`,
         })
     }
+}
+
+async function withActionDatabase<T>(
+    client: SqliteExecutor,
+    db: Database,
+    operation: () => Promise<T>,
+): Promise<T> {
+    return actionDatabaseBinding.run({ client, db }, operation)
 }
 
 function resolveDatabasePathFromCwd(): string {
@@ -130,8 +159,20 @@ function findProjectRoot(start: string): string {
 }
 
 const db = new Proxy(
-    { syncTestActionDatabase } as Database & {
+    {
+        currentClient,
+        ensureActionDatabase,
+        syncTestActionDatabase,
+        withActionDatabase,
+    } as Database & {
+        currentClient(): SqliteExecutor
+        ensureActionDatabase(): Promise<void>
         syncTestActionDatabase(client: SqliteExecutor): Promise<void>
+        withActionDatabase<T>(
+            client: SqliteExecutor,
+            db: Database,
+            operation: () => Promise<T>,
+        ): Promise<T>
     },
     {
         get(target, property, receiver) {

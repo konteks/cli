@@ -3,10 +3,8 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import GraphEntityStore from '@/providers/persistence/sqlite/stores/graph-entity-store'
-import GraphRelationStore from '@/providers/persistence/sqlite/stores/graph-relation-store'
-import GraphTraversalStore from '@/providers/persistence/sqlite/stores/graph-traversal-store'
 import { loadProjectContext } from '@/providers/project/context'
+import { graphApi } from '../../../../../support/sqlite-action-api'
 
 const tempDirs: string[] = []
 
@@ -130,9 +128,9 @@ describe('GraphTraversalStore', () => {
 
 async function makeGraphTraversalStore(): Promise<{
     close: () => Promise<void>
-    entities: GraphEntityStore
-    relations: GraphRelationStore
-    traversal: GraphTraversalStore
+    entities: ReturnType<typeof graphApi>
+    relations: ReturnType<typeof graphApi>
+    traversal: ReturnType<typeof graphApi>
 }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-traversal-test-'))
     tempDirs.push(projectRoot)
@@ -144,8 +142,8 @@ async function makeGraphTraversalStore(): Promise<{
 
     return {
         close: () => service.close(),
-        entities: new GraphEntityStore(service.client),
-        relations: new GraphRelationStore(service.client),
-        traversal: new GraphTraversalStore(service.client),
+        entities: graphApi(service),
+        relations: graphApi(service),
+        traversal: graphApi(service),
     }
 }

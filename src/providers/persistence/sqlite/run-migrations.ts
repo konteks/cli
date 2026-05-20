@@ -1,4 +1,4 @@
-import type DatabaseService from './database-service'
+import { type SqliteConnection, withTransaction } from './database'
 import { executeSql, querySql } from './libsql-helpers'
 import initialSchemaSql from './migrations/001_initial_schema.sql?raw'
 
@@ -15,9 +15,9 @@ const migrations: Migration[] = [
 ]
 
 export default async function runMigrations(
-    service: DatabaseService,
+    service: SqliteConnection,
 ): Promise<void> {
-    await service.transaction(async tx => {
+    await withTransaction(service, async tx => {
         await executeSql(
             tx.client,
             `

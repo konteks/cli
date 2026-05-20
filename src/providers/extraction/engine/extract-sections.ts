@@ -1,8 +1,13 @@
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
+import appendMemoryEvent from '@/database/actions/append-memory-event'
+import { upsertNode } from '@/database/services/taxonomy'
 import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import {
+    type SqliteConnection,
+    withTransaction,
+} from '@/providers/persistence/sqlite/database'
 import { reindexRetrievalDocumentFts } from '@/providers/persistence/sqlite/retrieval-documents'
 import { terminal } from '@/support/terminal/service'
 import type { ProjectMetadata } from './extract-project-metadata'
@@ -26,7 +31,7 @@ type ExtractSectionsResult = {
 }
 
 export default async function extractSections(
-    db: DatabaseService,
+    db: SqliteConnection,
     context: Project,
     files: ScannedFile[],
     extractedAt: string,
@@ -86,7 +91,7 @@ export default async function extractSections(
         phase: 'database',
         status: 'progress',
     })
-    await db.transaction(async tx => {
+    await withTransaction(db, async tx => {
         if (options.mode === 'changed') {
             await clearExtractedSectionsForPaths(tx, [
                 ...files.map(file => file.path),
@@ -95,7 +100,7 @@ export default async function extractSections(
         } else if (options.mode !== 'resume') {
             await clearExtractedSections(tx)
         }
-        const rootNode = await tx.taxonomy.upsertNode({
+        const rootNode = await upsertNode({
             name: 'Project Files',
             summary: 'Files extracted from the current project.',
         })
@@ -138,13 +143,12 @@ export default async function extractSections(
         }
 
         extractedFileCount += 1
-        await db.transaction(async tx => {
+        await withTransaction(db, async tx => {
             sectionCount += await persistPreparedFileSections({
                 db: tx,
                 extractedAt,
                 preparedFile,
                 rootNodeId,
-                taxonomy: tx.taxonomy,
             })
         })
         progress?.({
@@ -174,11 +178,11 @@ export default async function extractSections(
         phase: 'modules',
         status: 'start',
     })
-    await db.transaction(async tx => {
+    await withTransaction(db, async tx => {
         await rebuildModuleArtifacts(tx, extractedAt, options.metadata)
         await reindexRetrievalDocumentFts(tx)
 
-        await tx.events.append({
+        await appendMemoryEvent({
             actor: 'cli',
             eventType: 'project_mined',
             id: `event_${contentHash(`${context.projectRoot}:${extractedAt}`).slice(0, 32)}`,

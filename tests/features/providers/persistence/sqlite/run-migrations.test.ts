@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
-import DatabaseService from '@/providers/persistence/sqlite/database-service'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import runMigrations from '@/providers/persistence/sqlite/run-migrations'
 import * as schema from '@/providers/persistence/sqlite/schema'
@@ -24,7 +24,11 @@ describe('migrations', () => {
         const tempDir = await mkdtemp(join(tmpdir(), 'konteks-migration-'))
         tempDirs.push(tempDir)
         const client = createClient({ url: `file:${join(tempDir, 'test.db')}` })
-        const service = new DatabaseService(client, drizzle(client, { schema }))
+        const service: SqliteConnection = {
+            client,
+            close: async () => client.close(),
+            db: drizzle(client, { schema }),
+        }
 
         await runMigrations(service)
         const migrations = await querySql<{ id: string }>(

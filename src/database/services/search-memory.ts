@@ -3,6 +3,7 @@ import type {
     MemorySearchInput,
 } from '@/contracts/repositories/memory-repository'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
+import actionDb from '@/database/actions/_db'
 import queryDiaries, { type DiaryRow } from '@/database/actions/query-diaries'
 import queryFtsRows from '@/database/actions/query-fts-rows'
 import queryObservations, {
@@ -12,7 +13,7 @@ import queryRetrievalDocuments, {
     type RetrievalDocumentRow,
 } from '@/database/actions/query-retrieval-documents'
 import type { MemorySearchResult } from '@/models/memory'
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import { hasSearchIndex } from '@/providers/persistence/sqlite/search-index'
 import { classifySourceRole } from '@/providers/project/source-classification'
 import { estimateTextTokens } from '@/support/format/tokens'
@@ -37,9 +38,19 @@ type SearchMemoryOptions = {
     embeddingProvider?: EmbeddingProvider
 }
 export default async function searchMemory(
-    db: DatabaseService,
+    db: SqliteConnection,
     input: MemorySearchInput | MemoryRecallInput,
     options: SearchMemoryOptions = {},
+): Promise<MemorySearchResult[]> {
+    return actionDb.withActionDatabase(db.client, db.db, () =>
+        searchBoundMemory(db, input, options),
+    )
+}
+
+async function searchBoundMemory(
+    db: SqliteConnection,
+    input: MemorySearchInput | MemoryRecallInput,
+    options: SearchMemoryOptions,
 ): Promise<MemorySearchResult[]> {
     const mode: SearchMode = 'query' in input ? 'search' : 'recall'
     const limit = 'limit' in input ? (input.limit ?? 10) : 10

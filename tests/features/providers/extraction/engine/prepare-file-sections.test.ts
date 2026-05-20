@@ -8,8 +8,8 @@ import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import prepareFileSections from '@/providers/extraction/engine/prepare-file-sections'
 import { contentHash } from '@/providers/persistence/objects/content'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 import { executeSql } from '@/providers/persistence/sqlite/libsql-helpers'
 import FakeTreeSitterEngine from '../../../../fake/fake-tree-sitter-engine'
 
@@ -234,7 +234,7 @@ async function createProject(input: {
     path: string
     selectedGrammars?: string[]
     text: string
-}): Promise<{ context: Project; db: DatabaseService }> {
+}): Promise<{ context: Project; db: SqliteConnection }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-sections-'))
     tempDirs.push(projectRoot)
     await mkdir(join(projectRoot, '.konteks'), { recursive: true })

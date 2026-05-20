@@ -1,7 +1,9 @@
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import insertChunk from '@/database/actions/insert-chunk'
+import insertSource from '@/database/actions/insert-source'
+import { linkTarget, upsertNode } from '@/database/services/taxonomy'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import { upsertRetrievalDocument } from '@/providers/persistence/sqlite/retrieval-documents'
 import { indexSearchDocument } from '@/providers/persistence/sqlite/search-index'
-import type TaxonomyStore from '@/providers/persistence/sqlite/stores/taxonomy-store'
 import type { PreparedFile } from './prepare-file-sections'
 import { EXTRACTED_FILE_SOURCE_TYPE } from './source-types'
 
@@ -12,15 +14,14 @@ import { EXTRACTED_FILE_SOURCE_TYPE } from './source-types'
  * without an explicit migration and compatibility plan.
  */
 export default async function persistPreparedFileSections(input: {
-    db: DatabaseService
+    db: SqliteConnection
     extractedAt: string
     preparedFile: PreparedFile
     rootNodeId: string
-    taxonomy: TaxonomyStore
 }): Promise<number> {
-    const { db, extractedAt, preparedFile, rootNodeId, taxonomy } = input
+    const { db, extractedAt, preparedFile, rootNodeId } = input
 
-    await db.sources.insert({
+    await insertSource({
         entities_json: JSON.stringify([]),
         excerpt_ref: null,
         id: preparedFile.sourceId,
@@ -32,14 +33,10 @@ export default async function persistPreparedFileSections(input: {
         uri: preparedFile.path,
     })
 
-    const taxonomyNode = await ensurePathTaxonomy(
-        taxonomy,
-        rootNodeId,
-        preparedFile.path,
-    )
+    const taxonomyNode = await ensurePathTaxonomy(rootNodeId, preparedFile.path)
 
     for (const section of preparedFile.sections) {
-        await db.chunks.insert({
+        await insertChunk({
             anchor: section.anchor,
             anchor_type: section.anchorType,
             content_hash: section.contentHash,
@@ -63,7 +60,7 @@ export default async function persistPreparedFileSections(input: {
             topics_json: JSON.stringify(section.topics),
         })
 
-        await taxonomy.linkTarget({
+        await linkTarget({
             nodeId: taxonomyNode.id,
             targetId: section.id,
             targetType: 'chunk',
@@ -93,24 +90,20 @@ export default async function persistPreparedFileSections(input: {
     return preparedFile.sections.length
 }
 
-async function ensurePathTaxonomy(
-    taxonomy: TaxonomyStore,
-    rootNodeId: string,
-    path: string,
-) {
+async function ensurePathTaxonomy(rootNodeId: string, path: string) {
     const parts = path.split('/')
     const directories = parts.slice(0, -1)
     let parentId = rootNodeId
 
     for (const directory of directories) {
-        const node = await taxonomy.upsertNode({
+        const node = await upsertNode({
             name: directory,
             parentId,
         })
         parentId = node.id
     }
 
-    return taxonomy.upsertNode({
+    return upsertNode({
         name: parts.at(-1) ?? path,
         parentId,
     })

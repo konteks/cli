@@ -3,11 +3,15 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { upsertNode } from '@/database/services/taxonomy'
 import type { Project } from '@/models/project'
 import persistPreparedFileSections from '@/providers/extraction/engine/persist-prepared-file-sections'
 import type { PreparedFile } from '@/providers/extraction/engine/prepare-file-sections'
-import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
+import {
+    openProjectDatabase,
+    withTransaction,
+} from '@/providers/persistence/sqlite/database'
 import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 
 const tempDirs: string[] = []
@@ -24,16 +28,20 @@ describe('providers/extraction/engine/persist-prepared-file-sections', () => {
     it('stores source, section, taxonomy, search, and retrieval rows', async () => {
         const { db } = await createProject()
         try {
-            const rootNode = await db.taxonomy.upsertNode({
-                name: 'Project Files',
-            })
+            const rootNode = await withTransaction(db, () =>
+                upsertNode({
+                    name: 'Project Files',
+                }),
+            )
 
-            const count = await persistPreparedFileSections({
-                db,
-                extractedAt: '2026-01-01T00:00:00.000Z',
-                preparedFile: preparedFile(),
-                rootNodeId: rootNode.id,
-                taxonomy: db.taxonomy,
+            let count = 0
+            await withTransaction(db, async tx => {
+                count = await persistPreparedFileSections({
+                    db: tx,
+                    extractedAt: '2026-01-01T00:00:00.000Z',
+                    preparedFile: preparedFile(),
+                    rootNodeId: rootNode.id,
+                })
             })
 
             expect(count).toBe(1)
@@ -74,7 +82,7 @@ describe('providers/extraction/engine/persist-prepared-file-sections', () => {
 
 async function createProject(): Promise<{
     context: Project
-    db: DatabaseService
+    db: SqliteConnection
 }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-persist-'))
     tempDirs.push(projectRoot)

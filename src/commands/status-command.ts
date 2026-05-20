@@ -2,11 +2,11 @@ import BaseCommand from '@/commands/_base-command'
 import type { Project } from '@/models/project'
 import { getExtractionFreshness } from '@/providers/extraction/engine/manifest'
 import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import {
     openProjectDatabase,
     projectDatabasePath,
 } from '@/providers/persistence/sqlite/database'
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 import {
     querySql,
     type SqliteParams,
@@ -249,7 +249,7 @@ async function readMemoryStats(
 }
 
 async function countRows(
-    service: DatabaseService,
+    service: SqliteConnection,
     sql: string,
     params: SqliteParams = [],
 ): Promise<number> {

@@ -4,12 +4,15 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { ExtractionProgressEvent } from '@/contracts/services/progress'
+import actionDb from '@/database/actions/_db'
+import insertChunk from '@/database/actions/insert-chunk'
+import insertSource from '@/database/actions/insert-source'
 import type { Project } from '@/models/project'
 import extractSections from '@/providers/extraction/engine/extract-sections'
 import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import { contentHash } from '@/providers/persistence/objects/content'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 
 const tempDirs: string[] = []
@@ -111,7 +114,7 @@ describe('providers/extraction/engine/extract-sections', () => {
 async function createProject(input: {
     path: string
     text: string
-}): Promise<{ context: Project; db: DatabaseService }> {
+}): Promise<{ context: Project; db: SqliteConnection }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-store-'))
     tempDirs.push(projectRoot)
     await mkdir(join(projectRoot, '.konteks'), { recursive: true })
@@ -148,41 +151,45 @@ function scannedFile(path: string, text: string): ScannedFile {
 }
 
 async function seedExtractedSection(
-    db: DatabaseService,
+    db: SqliteConnection,
     path: string,
 ): Promise<void> {
-    await db.sources.insert({
-        entities_json: JSON.stringify([]),
-        excerpt_ref: null,
-        id: 'source_existing',
-        language: 'typescript',
-        metadata_json: JSON.stringify({}),
-        source_role: 'source',
-        topics_json: JSON.stringify([]),
-        type: 'mined_file',
-        uri: path,
-    })
-    await db.chunks.insert({
-        anchor: 'file',
-        anchor_type: 'file',
-        content_hash: 'hash_existing',
-        content_inline: 'existing',
-        end_line: null,
-        entities_json: JSON.stringify([]),
-        heading: null,
-        id: 'chunk_existing',
-        json_path: null,
-        kind: 'code',
-        language: 'typescript',
-        metadata_json: JSON.stringify({}),
-        path,
-        payload_ref: null,
-        source_id: 'source_existing',
-        source_role: 'source',
-        start_line: null,
-        summary: 'existing section',
-        symbol: null,
-        token_count: 1,
-        topics_json: JSON.stringify([]),
-    })
+    await actionDb.withActionDatabase(db.client, db.db, () =>
+        insertSource({
+            entities_json: JSON.stringify([]),
+            excerpt_ref: null,
+            id: 'source_existing',
+            language: 'typescript',
+            metadata_json: JSON.stringify({}),
+            source_role: 'source',
+            topics_json: JSON.stringify([]),
+            type: 'mined_file',
+            uri: path,
+        }),
+    )
+    await actionDb.withActionDatabase(db.client, db.db, () =>
+        insertChunk({
+            anchor: 'file',
+            anchor_type: 'file',
+            content_hash: 'hash_existing',
+            content_inline: 'existing',
+            end_line: null,
+            entities_json: JSON.stringify([]),
+            heading: null,
+            id: 'chunk_existing',
+            json_path: null,
+            kind: 'code',
+            language: 'typescript',
+            metadata_json: JSON.stringify({}),
+            path,
+            payload_ref: null,
+            source_id: 'source_existing',
+            source_role: 'source',
+            start_line: null,
+            summary: 'existing section',
+            symbol: null,
+            token_count: 1,
+            topics_json: JSON.stringify([]),
+        }),
+    )
 }
