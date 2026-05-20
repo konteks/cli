@@ -2,6 +2,8 @@ import { mkdir } from 'node:fs/promises'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
 import type { ExtractionEngineContract } from '@/contracts/services/extraction-engine'
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
+import type { SqliteConnection } from '@/database/actions/_db'
+import { openProjectDatabase } from '@/database/actions/_db'
 import type {
     ExtractProjectRequest,
     ExtractProjectResponse,
@@ -27,8 +29,6 @@ import {
 } from '@/providers/extraction/engine/manifest'
 import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
-import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
-import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 
 export async function extractProject(

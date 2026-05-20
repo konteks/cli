@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import {
     openProjectDatabase,
     projectDatabasePath,
-} from '@/providers/persistence/sqlite/database'
+} from '@/database/actions/_db'
 import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import { loadProjectContext } from '@/providers/project/context'
 

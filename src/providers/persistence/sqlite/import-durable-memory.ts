@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto'
+import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
 import type {
     DurableMemoryExport,
     DurableMemoryImportResult,
 } from '@/models/memory-transfer'
 import type { Project } from '@/models/project'
-import { type SqliteConnection, withTransaction } from './database'
 import {
     insertImportedDiary,
     insertImportedObservation,

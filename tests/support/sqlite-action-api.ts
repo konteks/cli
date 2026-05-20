@@ -1,9 +1,6 @@
+import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import * as graph from '@/database/services/graph'
 import * as taxonomy from '@/database/services/taxonomy'
-import {
-    type SqliteConnection,
-    withTransaction,
-} from '@/providers/persistence/sqlite/database'
 
 export function graphApi(connection: SqliteConnection) {
     return {

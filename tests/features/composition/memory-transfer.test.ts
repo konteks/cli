@@ -16,8 +16,8 @@ import {
     importMemory,
     restoreMemory,
 } from '@/composition/memory-transfer'
+import { openProjectDatabase } from '@/database/actions/_db'
 import searchMemory from '@/database/services/search-memory'
-import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import {
     executeSql,
     querySql,

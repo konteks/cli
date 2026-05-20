@@ -1,4 +1,4 @@
-import type { SqliteConnection } from './database'
+import type { SqliteConnection } from '@/database/actions/_db'
 import { executeSql, querySql } from './libsql-helpers'
 
 type SearchDocument = {

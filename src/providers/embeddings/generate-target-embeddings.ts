@@ -1,7 +1,7 @@
 import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
+import type { SqliteConnection } from '@/database/actions/_db'
 import { contentHash } from '@/providers/persistence/objects/content'
-import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import {
     executeSql,
     querySql,

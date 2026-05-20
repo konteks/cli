@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
+import { openProjectDatabase } from '@/database/actions/_db'
 import { loadProjectContext } from '@/providers/project/context'
 import { taxonomyApi } from '../../../../../support/sqlite-action-api'
 

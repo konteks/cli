@@ -1,7 +1,7 @@
+import type { SqliteConnection } from '@/database/actions/_db'
 import insertChunk from '@/database/actions/insert-chunk'
 import insertSource from '@/database/actions/insert-source'
 import { linkTarget, upsertNode } from '@/database/services/taxonomy'
-import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import { upsertRetrievalDocument } from '@/providers/persistence/sqlite/retrieval-documents'
 import { indexSearchDocument } from '@/providers/persistence/sqlite/search-index'
 import type { PreparedFile } from './prepare-file-sections'

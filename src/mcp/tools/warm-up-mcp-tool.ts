@@ -1,4 +1,5 @@
 import z from 'zod'
+import type { SqliteConnection } from '@/database/actions/_db'
 import readWarmUpContext from '@/database/services/read-warm-up-context'
 import formatMemory from '@/mcp/tools/utils/format-memory'
 import inline from '@/mcp/tools/utils/inline'
@@ -16,7 +17,6 @@ import type {
     WarmUpHighlight,
 } from '@/models/memory'
 import type { Project } from '@/models/project'
-import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import { estimateCharacterTokens } from '@/support/format/tokens'
 import BaseMcpTool from './_base-mcp-tool'
 import toBullets from './utils/to-bullets'

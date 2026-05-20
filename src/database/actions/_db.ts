@@ -1,24 +1,54 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { existsSync } from 'node:fs'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
+import type { Client, Transaction } from '@libsql/client'
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
+import initialSchemaSql from '@/database/migrations/001_initial_schema.sql?raw'
+import type { Project } from '@/models/project'
 import {
+    executeSql,
     querySql,
     type SqliteExecutor,
 } from '@/providers/persistence/sqlite/libsql-helpers'
-import initialSchemaSql from '@/providers/persistence/sqlite/migrations/001_initial_schema.sql?raw'
+import * as schema from '@/providers/persistence/sqlite/schema'
+import { ensureSearchIndex } from '@/providers/persistence/sqlite/search-index'
 import { isSqliteTestRuntime } from '@/providers/persistence/sqlite/test-runtime'
 
 type Database = ReturnType<typeof drizzle>
+type ProjectDatabase = ReturnType<typeof drizzle<typeof schema>>
 type LibsqlValue = Uint8Array | boolean | number | string | null
 type DatabaseEntry = {
     client: SqliteExecutor
     db: Database
     initialized?: Promise<void>
 }
+type ProjectDatabaseEntry = {
+    client: Client
+    db: ProjectDatabase
+}
+
+type Migration = {
+    id: string
+    sql: string
+}
+
+export type SqliteConnection = {
+    client: Client | Transaction
+    close(): Promise<void>
+    db: ProjectDatabase
+}
+
+const migrations: Migration[] = [
+    {
+        id: '001_initial_schema',
+        sql: initialSchemaSql,
+    },
+]
 
 const databases = new Map<string, DatabaseEntry>()
+const testDatabases = new Map<string, ProjectDatabaseEntry>()
 const actionDatabaseBinding = new AsyncLocalStorage<DatabaseEntry>()
 
 const syncedTables = [
@@ -68,6 +98,127 @@ function currentDatabaseEntry(): DatabaseEntry {
     }
     databases.set(databaseUrl, entry)
     return entry
+}
+
+export function projectDatabasePath(context: Project): string {
+    return join(context.memoryDir, 'memory.sqlite')
+}
+
+export async function openProjectDatabase(
+    context: Project,
+): Promise<SqliteConnection> {
+    await ensureConfigFile(context)
+    const { client, db, ownsClient } = openDatabaseClient(context)
+    const connection = createConnection(client, db, ownsClient)
+    await runMigrations(connection)
+    await ensureSearchIndex(connection)
+
+    return connection
+}
+
+export async function ensureProjectDatabase(context: Project): Promise<void> {
+    const connection = await openProjectDatabase(context)
+    await connection.close()
+}
+
+export async function withTransaction<T>(
+    connection: SqliteConnection,
+    operation: (tx: SqliteConnection) => Promise<T>,
+): Promise<T> {
+    if (isSqliteTestRuntime() || !('transaction' in connection.client)) {
+        return withActionDatabase(connection.client, connection.db, () =>
+            operation(connection),
+        )
+    }
+
+    const transaction = await connection.client.transaction('write')
+    const txDb = drizzle(transaction as unknown as Client, { schema })
+    const txConnection = createConnection(transaction, txDb, false)
+
+    try {
+        const result = await withActionDatabase(transaction, txDb, () =>
+            operation(txConnection),
+        )
+        await transaction.commit()
+        return result
+    } catch (error) {
+        await transaction.rollback()
+        throw error
+    }
+}
+
+function openDatabaseClient(context: Project): ProjectDatabaseEntry & {
+    ownsClient: boolean
+} {
+    if (isSqliteTestRuntime()) {
+        const key = projectDatabasePath(context)
+        const existing = testDatabases.get(key)
+        if (existing) {
+            return { ...existing, ownsClient: false }
+        }
+
+        const client = createClient({ url: ':memory:' })
+        const db = drizzle(client, { schema })
+        const entry = { client, db }
+        testDatabases.set(key, entry)
+        return { ...entry, ownsClient: false }
+    }
+
+    const databasePath = projectDatabasePath(context)
+    const client = createClient({ url: `file:${databasePath}` })
+    return { client, db: drizzle(client, { schema }), ownsClient: true }
+}
+
+function createConnection(
+    client: Client | Transaction,
+    db: ProjectDatabase,
+    ownsClient: boolean,
+): SqliteConnection {
+    return {
+        client,
+        async close() {
+            if (ownsClient && 'close' in client) {
+                client.close()
+            }
+        },
+        db,
+    }
+}
+
+async function runMigrations(connection: SqliteConnection): Promise<void> {
+    await withTransaction(connection, async tx => {
+        await executeSql(
+            tx.client,
+            `
+create table if not exists schema_migrations (
+    id text primary key,
+    applied_at text not null
+);
+`,
+        )
+
+        const applied = new Set(
+            (
+                await querySql<{ id: string }>(
+                    tx.client,
+                    'select id from schema_migrations',
+                )
+            ).map(row => row.id),
+        )
+
+        for (const migration of migrations) {
+            if (applied.has(migration.id)) {
+                continue
+            }
+
+            await tx.client.executeMultiple(migration.sql)
+            await executeSql(
+                tx.client,
+                'insert into schema_migrations (id, applied_at) values (?, ?)',
+                [migration.id, new Date().toISOString()],
+            )
+        }
+    })
 }
 
 async function syncTestActionDatabase(
@@ -132,6 +283,23 @@ async function withActionDatabase<T>(
     operation: () => Promise<T>,
 ): Promise<T> {
     return actionDatabaseBinding.run({ client, db }, operation)
+}
+
+async function ensureConfigFile(context: Project): Promise<void> {
+    if (context.configExists) {
+        return
+    }
+
+    await mkdir(context.memoryDir, { recursive: true })
+    await writeFile(
+        context.configPath,
+        `${JSON.stringify(context.config, null, 2)}\n`,
+        { flag: 'wx' },
+    ).catch(error => {
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
+            throw error
+        }
+    })
 }
 
 function resolveDatabasePathFromCwd(): string {
