@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { afterEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import {
     mkdir,
     mkdtemp,
@@ -16,7 +16,6 @@ import {
     importMemory,
     restoreMemory,
 } from '@/composition/memory-transfer'
-import actionDb from '@/database/actions/_db'
 import searchMemory from '@/database/services/search-memory'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import {
@@ -30,6 +29,7 @@ import {
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []
+let previousSqliteTestDatabase: string | undefined
 
 async function makeInitializedProject(prefix = 'konteks-transfer-test-') {
     const projectRoot = await mkdtemp(join(tmpdir(), prefix))
@@ -40,7 +40,18 @@ async function makeInitializedProject(prefix = 'konteks-transfer-test-') {
     return projectRoot
 }
 
+beforeEach(() => {
+    previousSqliteTestDatabase = process.env.KONTEKS_SQLITE_TEST_DATABASE
+    process.env.KONTEKS_SQLITE_TEST_DATABASE = 'file'
+})
+
 afterEach(async () => {
+    if (previousSqliteTestDatabase === undefined) {
+        delete process.env.KONTEKS_SQLITE_TEST_DATABASE
+    } else {
+        process.env.KONTEKS_SQLITE_TEST_DATABASE = previousSqliteTestDatabase
+    }
+
     await Promise.all(
         tempDirs
             .splice(0)
@@ -159,11 +170,12 @@ describe('memory transfer', () => {
         targetDb = await openProjectDatabase(
             await withProjectRoot(targetRoot, () => loadProjectContext()),
         )
-        await actionDb.syncTestActionDatabase(targetDb.client)
-        const results = await searchMemory(targetDb, {
-            limit: 5,
-            query: 'searchable recall',
-        })
+        const results = await withProjectRoot(targetRoot, () =>
+            searchMemory(targetDb, {
+                limit: 5,
+                query: 'searchable recall',
+            }),
+        )
         await targetDb.close()
 
         expect(imported).toMatchObject({

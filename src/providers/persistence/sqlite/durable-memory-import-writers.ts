@@ -8,11 +8,11 @@ import createToonStore from '@/providers/persistence/objects/create-toon-store'
 import storePayload from '@/providers/persistence/objects/store-payload'
 import { upsertRetrievalDocument } from '@/providers/persistence/sqlite/retrieval-documents'
 import { indexSearchDocument } from '@/providers/persistence/sqlite/search-index'
-import type DatabaseService from './database-service'
+import { type SqliteConnection, withTransaction } from './database'
 import { executeSql } from './libsql-helpers'
 
 export async function insertImportedObservation(
-    db: DatabaseService,
+    db: SqliteConnection,
     context: Project,
     memory: DurableMemoryExportMemory,
 ): Promise<void> {
@@ -23,7 +23,7 @@ export async function insertImportedObservation(
     })
     const createdAt = memory.createdAt || new Date().toISOString()
 
-    await db.transaction(async tx => {
+    await withTransaction(db, async tx => {
         await executeSql(
             tx.client,
             `
@@ -66,7 +66,7 @@ insert into observations (
 }
 
 export async function insertImportedDiary(
-    db: DatabaseService,
+    db: SqliteConnection,
     context: Project,
     diary: DurableMemoryExportDiary,
 ): Promise<void> {
@@ -80,7 +80,7 @@ export async function insertImportedDiary(
     })
     const createdAt = diary.createdAt || new Date().toISOString()
 
-    await db.transaction(async tx => {
+    await withTransaction(db, async tx => {
         await executeSql(
             tx.client,
             `

@@ -8,8 +8,8 @@ import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import forgetMemory from '@/providers/persistence/sqlite/forget-memory'
 import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 import { saveKonteksMemory } from '@/providers/persistence/sqlite/save-konteks-input'
-import GraphStore from '@/providers/persistence/sqlite/stores/graph-store'
 import { loadProjectContext } from '@/providers/project/context'
+import { graphApi } from '../../../../../support/sqlite-action-api'
 
 const tempDirs: string[] = []
 
@@ -133,7 +133,7 @@ describe('forgetMemory', () => {
 
     it('invalidates relations through the forget path', async () => {
         const { adapter } = await makeAdapter()
-        const graph = new GraphStore(adapter)
+        const graph = graphApi(adapter)
         const project = await graph.upsertEntity({
             name: 'Konteks',
             type: 'project',

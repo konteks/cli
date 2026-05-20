@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto'
+import appendMemoryEvent from '@/database/actions/append-memory-event'
 import type {
     DurableMemoryExport,
     DurableMemoryImportResult,
 } from '@/models/memory-transfer'
 import type { Project } from '@/models/project'
-import type DatabaseService from './database-service'
+import { type SqliteConnection, withTransaction } from './database'
 import {
     insertImportedDiary,
     insertImportedObservation,
@@ -12,7 +13,7 @@ import {
 import { querySql } from './libsql-helpers'
 
 export default async function importDurableMemory(
-    db: DatabaseService,
+    db: SqliteConnection,
     context: Project,
     payload: DurableMemoryExport,
     options: { dryRun?: boolean },
@@ -50,20 +51,22 @@ export default async function importDurableMemory(
     }
 
     if (!options.dryRun) {
-        await db.events.append({
-            actor: 'cli',
-            eventType: 'memory_imported',
-            id: `event_${randomUUID()}`,
-            subjectType: 'memory_import',
-            summary: `Imported ${result.memoriesImported} memories and ${result.diariesImported} diary entries; skipped ${result.memoriesSkipped + result.diariesSkipped} duplicates.`,
-        })
+        await withTransaction(db, async () =>
+            appendMemoryEvent({
+                actor: 'cli',
+                eventType: 'memory_imported',
+                id: `event_${randomUUID()}`,
+                subjectType: 'memory_import',
+                summary: `Imported ${result.memoriesImported} memories and ${result.diariesImported} diary entries; skipped ${result.memoriesSkipped + result.diariesSkipped} duplicates.`,
+            }),
+        )
     }
 
     return result
 }
 
 async function hasObservationHash(
-    db: DatabaseService,
+    db: SqliteConnection,
     hash: string,
 ): Promise<boolean> {
     const rows = await querySql<{ id: string }>(
@@ -80,7 +83,7 @@ limit 1
 }
 
 async function hasDiaryHash(
-    db: DatabaseService,
+    db: SqliteConnection,
     hash: string,
 ): Promise<boolean> {
     const rows = await querySql<{ id: string }>(

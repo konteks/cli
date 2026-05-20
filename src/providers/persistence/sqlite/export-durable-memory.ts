@@ -1,7 +1,7 @@
 import type { DurableMemoryExport } from '@/models/memory-transfer'
 import type { Project } from '@/models/project'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
-import type DatabaseService from './database-service'
+import type { SqliteConnection } from './database'
 import {
     exportDiaryRow,
     exportObservationRow,
@@ -13,7 +13,7 @@ import type {
 import { querySql } from './libsql-helpers'
 
 export default async function exportDurableMemory(
-    db: DatabaseService,
+    db: SqliteConnection,
     context: Project,
     options: { includeInactive?: boolean },
 ): Promise<DurableMemoryExport> {

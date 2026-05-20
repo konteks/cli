@@ -360,29 +360,48 @@ async function createInitializedProject(prefix: string): Promise<{
     cleanup(): Promise<void>
     projectRoot: string
 }> {
-    const projectRoot = await mkdtemp(join(tmpdir(), prefix))
+    return withFileBackedSqlite(async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), prefix))
 
-    await mkdir(join(projectRoot, 'src'), { recursive: true })
-    await mkdir(join(projectRoot, '.git'), { recursive: true })
-    await writeFile(
-        join(projectRoot, 'src', 'index.txt'),
-        'export const run = () => "stdio fixture"\n',
-    )
-    await mkdir(join(projectRoot, '.konteks'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await writeFile(
+            join(projectRoot, 'src', 'index.txt'),
+            'export const run = () => "stdio fixture"\n',
+        )
+        await mkdir(join(projectRoot, '.konteks'), { recursive: true })
 
-    const context = await withProjectRoot(projectRoot, () =>
-        loadProjectContext(),
-    )
-    await writeProjectConfig(context, context.config)
-    await extractProject(context, 'full', {
-        embeddingProvider: new FakeEmbeddingProvider(),
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        await writeProjectConfig(context, context.config)
+        await extractProject(context, 'full', {
+            embeddingProvider: new FakeEmbeddingProvider(),
+        })
+
+        return {
+            async cleanup() {
+                await rm(projectRoot, { force: true, recursive: true })
+            },
+            projectRoot,
+        }
     })
+}
 
-    return {
-        async cleanup() {
-            await rm(projectRoot, { force: true, recursive: true })
-        },
-        projectRoot,
+async function withFileBackedSqlite<T>(
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.env.KONTEKS_SQLITE_TEST_DATABASE
+    process.env.KONTEKS_SQLITE_TEST_DATABASE = 'file'
+
+    try {
+        return await operation()
+    } finally {
+        if (previous === undefined) {
+            delete process.env.KONTEKS_SQLITE_TEST_DATABASE
+        } else {
+            process.env.KONTEKS_SQLITE_TEST_DATABASE = previous
+        }
     }
 }
 
@@ -517,11 +536,15 @@ function isRecord(value: Json): value is Record<string, Json> {
 }
 
 function commandEnv(): Record<string, string> {
-    return Object.fromEntries(
-        Object.entries(process.env).filter(
-            (entry): entry is [string, string] => typeof entry[1] === 'string',
+    return {
+        ...Object.fromEntries(
+            Object.entries(process.env).filter(
+                (entry): entry is [string, string] =>
+                    typeof entry[1] === 'string',
+            ),
         ),
-    )
+        KONTEKS_SQLITE_TEST_DATABASE: 'file',
+    }
 }
 
 function shellQuote(value: string): string {

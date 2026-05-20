@@ -1,4 +1,4 @@
-import type DatabaseService from './database-service'
+import type { SqliteConnection } from './database'
 import { executeSql, querySql } from './libsql-helpers'
 
 type SearchDocument = {
@@ -15,7 +15,7 @@ type FtsTableRow = {
 }
 
 export async function ensureSearchIndex(
-    service: DatabaseService,
+    service: SqliteConnection,
 ): Promise<boolean> {
     await executeSql(
         service.client,
@@ -50,7 +50,7 @@ create virtual table if not exists memory_fts using fts5(
 }
 
 export async function hasSearchIndex(
-    service: DatabaseService,
+    service: SqliteConnection,
 ): Promise<boolean> {
     const rows = await querySql<FtsTableRow>(
         service.client,
@@ -66,7 +66,7 @@ limit 1
 }
 
 export async function indexSearchDocument(
-    service: DatabaseService,
+    service: SqliteConnection,
     document: SearchDocument,
 ): Promise<void> {
     if (!(await hasSearchIndex(service))) {
@@ -91,7 +91,7 @@ values (?, ?, ?, ?, ?, ?)
     await markIndexed(service, document.id)
 }
 
-async function backfillSearchIndex(service: DatabaseService): Promise<void> {
+async function backfillSearchIndex(service: SqliteConnection): Promise<void> {
     await executeSql(
         service.client,
         `
@@ -143,7 +143,7 @@ where i.id is null
 }
 
 async function markIndexed(
-    service: DatabaseService,
+    service: SqliteConnection,
     id: string,
 ): Promise<void> {
     await executeSql(

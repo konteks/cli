@@ -4,9 +4,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
 import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
-import GraphEntityStore from '@/providers/persistence/sqlite/stores/graph-entity-store'
-import GraphRelationStore from '@/providers/persistence/sqlite/stores/graph-relation-store'
 import { loadProjectContext } from '@/providers/project/context'
+import { graphApi } from '../../../../../support/sqlite-action-api'
 
 const tempDirs: string[] = []
 
@@ -75,9 +74,9 @@ describe('GraphRelationStore', () => {
 
 async function makeGraphRelationStore(): Promise<{
     close: () => Promise<void>
-    entities: GraphEntityStore
+    entities: ReturnType<typeof graphApi>
     queryRelations: () => Promise<Array<{ id: string; status: string }>>
-    relations: GraphRelationStore
+    relations: ReturnType<typeof graphApi>
 }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-relation-test-'))
     tempDirs.push(projectRoot)
@@ -89,12 +88,12 @@ async function makeGraphRelationStore(): Promise<{
 
     return {
         close: () => service.close(),
-        entities: new GraphEntityStore(service.client),
+        entities: graphApi(service),
         queryRelations: () =>
             querySql<{ id: string; status: string }>(
                 service.client,
                 'select id, status from relations order by created_at',
             ),
-        relations: new GraphRelationStore(service.client),
+        relations: graphApi(service),
     }
 }

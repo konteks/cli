@@ -27,8 +27,8 @@ import {
 } from '@/providers/extraction/engine/manifest'
 import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 import { querySql } from '@/providers/persistence/sqlite/libsql-helpers'
 
 export async function extractProject(
@@ -312,7 +312,7 @@ function selectFilesForMode(
     return { deletedPaths, filesToExtract }
 }
 
-async function readExtractedPaths(db: DatabaseService): Promise<Set<string>> {
+async function readExtractedPaths(db: SqliteConnection): Promise<Set<string>> {
     const rows = await querySql<{ path: string }>(
         db.client,
         `
@@ -328,7 +328,7 @@ where sources.type = ?
     return new Set(rows.map(row => row.path))
 }
 
-async function readTotalSectionCount(db: DatabaseService): Promise<number> {
+async function readTotalSectionCount(db: SqliteConnection): Promise<number> {
     // Compatibility: extracted sections are persisted in the legacy `chunks` table.
     const rows = await querySql<{ count: number }>(
         db.client,

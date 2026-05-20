@@ -4,7 +4,7 @@ import queryWarmUpObservations from '@/database/actions/query-warm-up-observatio
 import type { WarmUpContext, WarmUpHighlight } from '@/models/memory'
 import type { Project } from '@/models/project'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import {
     guidanceFromObservations,
     recencyBoost,
@@ -15,7 +15,7 @@ import { estimateTextTokens } from '@/support/format/tokens'
 
 export default async function readWarmUpContext(
     context: Project,
-    _service: DatabaseService,
+    _service: SqliteConnection,
 ): Promise<WarmUpContext> {
     const manifest = await readExtractionManifest(context.memoryDir)
     if (!manifest) {

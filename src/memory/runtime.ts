@@ -2,8 +2,8 @@ import type { SaveOptions } from '@/contracts/repositories/memory-repository'
 import type { LoadedProjectContext } from '@/models/project'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
 import { loadProjectContext } from '@/providers/project/context'
 
 type SaveProjectUpdate = NonNullable<SaveOptions['projectUpdate']>
@@ -15,7 +15,7 @@ export async function loadMcpProjectContext(): Promise<McpProjectContext> {
 
 export async function withProjectDatabaseContext<T>(
     context: McpProjectContext,
-    operation: (service: DatabaseService) => Promise<T>,
+    operation: (service: SqliteConnection) => Promise<T>,
 ): Promise<T> {
     const service = await openProjectDatabase(context)
 

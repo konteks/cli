@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import type { ForgetInput } from '@/contracts/repositories/memory-repository'
+import appendMemoryEvent from '@/database/actions/append-memory-event'
 import queryDiaries from '@/database/actions/query-diaries'
 import queryObservations from '@/database/actions/query-observations'
-import type DatabaseService from './database-service'
+import { invalidateRelation } from '@/database/services/graph'
+import { type SqliteConnection, withTransaction } from './database'
 import { executeSql } from './libsql-helpers'
 
 // import { GraphStore } from ./graph-store.js'
@@ -21,14 +23,14 @@ type ForgetTarget = {
 }
 
 export default async function forgetMemory(
-    db: DatabaseService,
+    db: SqliteConnection,
     input: ForgetInput,
 ): Promise<ForgetResult> {
     const mode = input.mode ?? 'soft_delete'
     const targets = await resolveTargets(input)
     const affectedIds: string[] = []
 
-    await db.transaction(async tx => {
+    await withTransaction(db, async tx => {
         for (const target of targets) {
             const changed = await applyForget(tx, target, mode, input.reason)
             if (!changed) {
@@ -37,7 +39,7 @@ export default async function forgetMemory(
 
             await removeFromSearchIndex(tx, target.id)
 
-            await tx.events.append({
+            await appendMemoryEvent({
                 actor: 'mcp',
                 eventType: `memory_${mode}`,
                 id: `event_${randomUUID()}`,
@@ -88,13 +90,13 @@ async function resolveTargets(input: ForgetInput): Promise<ForgetTarget[]> {
 }
 
 async function applyForget(
-    db: DatabaseService,
+    db: SqliteConnection,
     target: ForgetTarget,
     mode: NonNullable<ForgetInput['mode']>,
     reason: string | undefined,
 ): Promise<boolean> {
     if (target.kind === 'relation') {
-        await db.graph.invalidateRelation(target.id)
+        await invalidateRelation(target.id)
         return true
     }
 
@@ -110,7 +112,7 @@ async function applyForget(
 }
 
 async function markForgotten(
-    db: DatabaseService,
+    db: SqliteConnection,
     target: ForgetTarget,
     reason: string | undefined,
 ): Promise<boolean> {
@@ -132,7 +134,7 @@ where id = ?
 }
 
 async function markSuppressed(
-    db: DatabaseService,
+    db: SqliteConnection,
     target: ForgetTarget,
     reason: string | undefined,
 ): Promise<boolean> {
@@ -154,7 +156,7 @@ where id = ?
 }
 
 async function hardDelete(
-    db: DatabaseService,
+    db: SqliteConnection,
     target: ForgetTarget,
 ): Promise<boolean> {
     if (target.kind === 'chunk') {
@@ -177,7 +179,7 @@ async function hardDelete(
 }
 
 async function removeFromSearchIndex(
-    db: DatabaseService,
+    db: SqliteConnection,
     id: string,
 ): Promise<void> {
     await executeSql(

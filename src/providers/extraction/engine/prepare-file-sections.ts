@@ -4,7 +4,7 @@ import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
 import type createToonStore from '@/providers/persistence/objects/create-toon-store'
 import storePayload from '@/providers/persistence/objects/store-payload'
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import { buildChunkRetrievalTexts } from '@/providers/persistence/sqlite/retrieval-documents'
 import {
     classifySourceRole,
@@ -58,7 +58,7 @@ export type PreparedFile = {
 const defaultMaxSectionsPerFile = 200
 
 export default async function prepareFileSections(input: {
-    db: DatabaseService
+    db: SqliteConnection
     context: Project
     engine?: TreeSitterEngine
     file: ScannedFile

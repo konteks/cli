@@ -30,6 +30,7 @@ import {
 } from '@/providers/persistence/sqlite/save-konteks-input'
 import { loadProjectContext } from '@/providers/project/context'
 import FakeEmbeddingProvider from '../../../../fake/fake-embedding-provider'
+import { taxonomyApi } from '../../../../support/sqlite-action-api'
 
 const tempDirs: string[] = []
 
@@ -156,8 +157,9 @@ order by target_type, source_role
             limit: 5,
             query: 'Fixture',
         })
-        const taxonomy = service.taxonomy
-        const roots = await taxonomy.getSubtree(undefined, { maxDepth: 2 })
+        const roots = await taxonomyApi(service).getSubtree(undefined, {
+            maxDepth: 2,
+        })
         const events = await querySql<{ event_type: string }>(
             service.client,
             'select event_type from memory_events where event_type = ?',

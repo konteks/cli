@@ -1,5 +1,5 @@
 import { contentHash } from '@/providers/persistence/objects/content'
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import {
     executeSql,
     querySql,
@@ -21,7 +21,7 @@ type ModuleSummaryRow = {
 }
 
 export default async function rebuildModuleArtifacts(
-    db: DatabaseService,
+    db: SqliteConnection,
     extractedAt: string,
     metadata?: ProjectMetadata,
 ): Promise<void> {
@@ -129,7 +129,7 @@ function moduleTopics(path: string): string[] {
 }
 
 async function insertPackageModule(
-    db: DatabaseService,
+    db: SqliteConnection,
     metadata: ProjectMetadata,
     extractedAt: string,
 ): Promise<void> {

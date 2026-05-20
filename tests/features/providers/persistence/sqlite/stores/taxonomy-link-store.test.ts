@@ -3,9 +3,8 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/providers/persistence/sqlite/database'
-import TaxonomyLinkStore from '@/providers/persistence/sqlite/stores/taxonomy-link-store'
-import TaxonomyNodeStore from '@/providers/persistence/sqlite/stores/taxonomy-node-store'
 import { loadProjectContext } from '@/providers/project/context'
+import { taxonomyApi } from '../../../../../support/sqlite-action-api'
 
 const tempDirs: string[] = []
 
@@ -66,8 +65,8 @@ describe('TaxonomyLinkStore', () => {
 
 async function makeTaxonomyLinkStore(): Promise<{
     close: () => Promise<void>
-    links: TaxonomyLinkStore
-    nodes: TaxonomyNodeStore
+    links: ReturnType<typeof taxonomyApi>
+    nodes: ReturnType<typeof taxonomyApi>
 }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-tax-link-test-'))
     tempDirs.push(projectRoot)
@@ -79,7 +78,7 @@ async function makeTaxonomyLinkStore(): Promise<{
 
     return {
         close: () => service.close(),
-        links: new TaxonomyLinkStore(service.client),
-        nodes: new TaxonomyNodeStore(service.client),
+        links: taxonomyApi(service),
+        nodes: taxonomyApi(service),
     }
 }

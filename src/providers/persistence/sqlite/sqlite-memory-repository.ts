@@ -8,6 +8,14 @@ import type {
     SaveOptions,
     SaveSessionInput,
 } from '@/contracts/repositories/memory-repository'
+import {
+    addRelation,
+    findEntityByCanonicalName,
+    historicalRelations,
+    searchEntities,
+    traverseNeighbors,
+    upsertEntity,
+} from '@/database/services/graph'
 import searchMemory from '@/database/services/search-memory'
 import type {
     ForgetResult,
@@ -19,7 +27,7 @@ import type {
     SaveResult,
 } from '@/models/memory'
 import type { Project } from '@/models/project'
-import type DatabaseService from './database-service'
+import { type SqliteConnection, withTransaction } from './database'
 import forgetMemory from './forget-memory'
 import {
     saveKonteksDiary,
@@ -32,7 +40,7 @@ export default class SQLiteMemoryRepository
     implements MemoryRepositoryContract
 {
     public constructor(
-        private readonly db: DatabaseService,
+        private readonly db: SqliteConnection,
         private readonly project: Project,
     ) {}
 
@@ -91,12 +99,14 @@ export default class SQLiteMemoryRepository
     public async upsertEntity(
         entity: Partial<MemoryEntity> & { name: string; type: string },
     ): Promise<MemoryEntity> {
-        const record = await this.db.graph.upsertEntity({
-            name: entity.name,
-            properties: entity.properties,
-            summary: entity.summary,
-            type: entity.type,
-        })
+        const record = await withTransaction(this.db, () =>
+            upsertEntity({
+                name: entity.name,
+                properties: entity.properties,
+                summary: entity.summary,
+                type: entity.type,
+            }),
+        )
         return {
             canonicalName: record.canonicalName,
             id: record.id,
@@ -109,15 +119,17 @@ export default class SQLiteMemoryRepository
     public async addRelation(
         relation: Omit<MemoryRelation, 'id' | 'status'>,
     ): Promise<MemoryRelation> {
-        const record = await this.db.graph.addRelation({
-            confidence: relation.confidence,
-            objectId: relation.objectId,
-            predicate: relation.predicate,
-            properties: relation.properties,
-            subjectId: relation.subjectId,
-            validFrom: relation.validFrom,
-            validTo: relation.validTo,
-        })
+        const record = await withTransaction(this.db, () =>
+            addRelation({
+                confidence: relation.confidence,
+                objectId: relation.objectId,
+                predicate: relation.predicate,
+                properties: relation.properties,
+                subjectId: relation.subjectId,
+                validFrom: relation.validFrom,
+                validTo: relation.validTo,
+            }),
+        )
         return {
             confidence: record.confidence,
             id: record.id,
@@ -133,7 +145,9 @@ export default class SQLiteMemoryRepository
     public async findEntityByCanonicalName(
         name: string,
     ): Promise<MemoryEntity | undefined> {
-        const record = await this.db.graph.findEntityByCanonicalName(name)
+        const record = await withTransaction(this.db, () =>
+            findEntityByCanonicalName(name),
+        )
         if (!record) return undefined
         return {
             canonicalName: record.canonicalName,
@@ -148,7 +162,9 @@ export default class SQLiteMemoryRepository
         query: string,
         limit?: number,
     ): Promise<MemoryEntity[]> {
-        const records = await this.db.graph.searchEntities(query, { limit })
+        const records = await withTransaction(this.db, () =>
+            searchEntities(query, { limit }),
+        )
         return records.map(record => ({
             canonicalName: record.canonicalName,
             id: record.id,
@@ -162,13 +178,17 @@ export default class SQLiteMemoryRepository
         entityId: string,
         options?: { maxDepth?: number; limit?: number },
     ): Promise<GraphNeighbor[]> {
-        return await this.db.graph.traverseNeighbors(entityId, options)
+        return await withTransaction(this.db, () =>
+            traverseNeighbors(entityId, options),
+        )
     }
 
     public async historicalRelations(
         entityId: string,
         limit?: number,
     ): Promise<HistoricalRelation[]> {
-        return await this.db.graph.historicalRelations(entityId, { limit })
+        return await withTransaction(this.db, () =>
+            historicalRelations(entityId, { limit }),
+        )
     }
 }

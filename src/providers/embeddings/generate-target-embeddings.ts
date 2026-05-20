@@ -1,7 +1,7 @@
 import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import { contentHash } from '@/providers/persistence/objects/content'
-import type DatabaseService from '@/providers/persistence/sqlite/database-service'
+import type { SqliteConnection } from '@/providers/persistence/sqlite/database'
 import {
     executeSql,
     querySql,
@@ -31,7 +31,7 @@ type EmbeddingRunResult = {
 }
 
 export default async function generateTargetEmbeddings(
-    db: DatabaseService,
+    db: SqliteConnection,
     provider: EmbeddingProviderContract,
     targetTypes: TargetType[],
     createdAt: string,
