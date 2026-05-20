@@ -1,4 +1,3 @@
-import type { SqliteConnection } from '@/database/actions/_db'
 import indexSearchDocument from '@/database/actions/index-search-document'
 import insertChunk from '@/database/actions/insert-chunk'
 import insertSource from '@/database/actions/insert-source'
@@ -14,12 +13,11 @@ import { EXTRACTED_FILE_SOURCE_TYPE } from './source-types'
  * without an explicit migration and compatibility plan.
  */
 export default async function persistPreparedFileSections(input: {
-    db: SqliteConnection
     extractedAt: string
     preparedFile: PreparedFile
     rootNodeId: string
 }): Promise<number> {
-    const { db, extractedAt, preparedFile, rootNodeId } = input
+    const { extractedAt, preparedFile, rootNodeId } = input
 
     await insertSource({
         entities_json: JSON.stringify([]),
@@ -65,7 +63,7 @@ export default async function persistPreparedFileSections(input: {
             targetId: section.id,
             targetType: 'chunk',
         })
-        await indexSearchDocument(db, {
+        await indexSearchDocument({
             content: section.contentInline ?? section.summary,
             createdAt: extractedAt,
             id: section.id,
@@ -73,7 +71,7 @@ export default async function persistPreparedFileSections(input: {
             task: section.path,
             type: 'chunk',
         })
-        await upsertRetrievalDocument(db, {
+        await upsertRetrievalDocument({
             anchor: section.anchor,
             embeddingText: section.retrievalTexts.embeddingText,
             ftsText: section.retrievalTexts.ftsText,

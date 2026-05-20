@@ -1,6 +1,6 @@
 import { and, desc, isNull, or, sql } from 'drizzle-orm'
 import { observations } from '@/database/schema'
-import db from './_db'
+import getDb from './_db'
 
 export type ObservationRow = {
     id: string
@@ -14,6 +14,7 @@ export default async function queryObservations(
     terms: string[],
     limit: number,
 ): Promise<ObservationRow[]> {
+    const db = await getDb()
     return db
         .select({
             confidence: observations.confidence,

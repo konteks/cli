@@ -13,12 +13,10 @@ import type { SqliteExecutor } from '@/database/support/libsql'
 import { isSqliteTestRuntime } from '@/database/support/test-runtime'
 import type { Project } from '@/models/project'
 
-type Database = ReturnType<typeof drizzle>
 type ProjectDatabase = ReturnType<typeof drizzle<typeof schema>>
-type LibsqlValue = Uint8Array | boolean | number | string | null
 type DatabaseEntry = {
     client: SqliteExecutor
-    db: Database
+    db: ProjectDatabase
     initialized?: Promise<void>
 }
 type ProjectDatabaseEntry = {
@@ -48,28 +46,6 @@ const databases = new Map<string, DatabaseEntry>()
 const testDatabases = new Map<string, ProjectDatabaseEntry>()
 const actionDatabaseBinding = new AsyncLocalStorage<DatabaseEntry>()
 
-const syncedTables = [
-    'sources',
-    'chunks',
-    'observations',
-    'diary_entries',
-    'retrieval_documents',
-    'target_embeddings',
-    'modules',
-    'memory_fts',
-    'memory_fts_indexed',
-    'retrieval_documents_fts',
-] as const
-
-function currentDatabase(): Database {
-    const bound = actionDatabaseBinding.getStore()
-    if (bound) {
-        return bound.db
-    }
-
-    return currentDatabaseEntry().db
-}
-
 function currentDatabaseEntry(): DatabaseEntry {
     const databaseUrl = isSqliteTestRuntime()
         ? ':memory:'
@@ -82,7 +58,7 @@ function currentDatabaseEntry(): DatabaseEntry {
     const client = createClient({ url: databaseUrl })
     const entry = {
         client,
-        db: drizzle(client),
+        db: drizzle(client as Client, { schema }),
     }
     databases.set(databaseUrl, entry)
     return entry
@@ -99,7 +75,9 @@ export async function openProjectDatabase(
     const { client, db, ownsClient } = openDatabaseClient(context)
     const connection = createConnection(client, db, ownsClient)
     await runMigrations(connection)
-    await ensureSearchIndex(connection)
+    await withActionDatabase(connection.client, connection.db, () =>
+        ensureSearchIndex(),
+    )
 
     return connection
 }
@@ -203,70 +181,24 @@ create table if not exists schema_migrations (
     })
 }
 
-async function syncTestActionDatabase(
-    sourceClient: SqliteExecutor,
-): Promise<void> {
-    if (!isSqliteTestRuntime()) {
-        throw new Error('syncTestActionDatabase can only run in tests.')
-    }
-
-    const { client: targetClient } = currentDatabaseEntry()
-    await targetClient.executeMultiple(initialSchemaSql)
-    await clearSyncedTables(targetClient)
-    const targetDb = drizzle(targetClient as Client)
-
-    const sourceDb = drizzle(sourceClient as Client)
-    for (const table of syncedTables) {
-        const rows = await sourceDb.all<Record<string, unknown>>(
-            sql.raw(`select * from ${table}`),
-        )
-        await insertRows(targetDb, table, rows)
-    }
+export async function withActionDatabase<T>(
+    client: SqliteExecutor,
+    db: ProjectDatabase,
+    operation: () => Promise<T>,
+): Promise<T> {
+    return actionDatabaseBinding.run({ client, db }, operation)
 }
 
-async function ensureActionDatabase(): Promise<void> {
-    if (actionDatabaseBinding.getStore()) {
-        return
+export default async function getDb(): Promise<ProjectDatabase> {
+    const bound = actionDatabaseBinding.getStore()
+    if (bound) {
+        return bound.db
     }
 
     const entry = currentDatabaseEntry()
     entry.initialized ??= entry.client.executeMultiple(initialSchemaSql)
     await entry.initialized
-}
-
-async function clearSyncedTables(client: SqliteExecutor): Promise<void> {
-    for (const table of [...syncedTables].reverse()) {
-        await client.execute(`delete from ${table}`)
-    }
-}
-
-async function insertRows(
-    database: Database,
-    table: string,
-    rows: Record<string, unknown>[],
-): Promise<void> {
-    for (const row of rows) {
-        const columns = Object.keys(row)
-        if (columns.length === 0) {
-            continue
-        }
-
-        const columnList = columns.map(column => `"${column}"`).join(', ')
-        await database.run(
-            sql`insert into ${sql.raw(table)} (${sql.raw(columnList)}) values (${sql.join(
-                columns.map(column => sql`${row[column] as LibsqlValue}`),
-                sql`, `,
-            )})`,
-        )
-    }
-}
-
-async function withActionDatabase<T>(
-    client: SqliteExecutor,
-    db: Database,
-    operation: () => Promise<T>,
-): Promise<T> {
-    return actionDatabaseBinding.run({ client, db }, operation)
+    return entry.db
 }
 
 async function ensureConfigFile(context: Project): Promise<void> {
@@ -309,30 +241,3 @@ function findProjectRoot(start: string): string {
         current = parent
     }
 }
-
-const db = new Proxy(
-    {
-        ensureActionDatabase,
-        syncTestActionDatabase,
-        withActionDatabase,
-    } as Database & {
-        ensureActionDatabase(): Promise<void>
-        syncTestActionDatabase(client: SqliteExecutor): Promise<void>
-        withActionDatabase<T>(
-            client: SqliteExecutor,
-            db: Database,
-            operation: () => Promise<T>,
-        ): Promise<T>
-    },
-    {
-        get(target, property, receiver) {
-            if (property in target) {
-                return Reflect.get(target, property, receiver)
-            }
-
-            return Reflect.get(currentDatabase(), property, receiver)
-        },
-    },
-)
-
-export default db

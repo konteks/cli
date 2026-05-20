@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import db from './_db'
+import getDb from './_db'
 
 export type TaxonomyNodeRow = {
     id: string
@@ -16,6 +16,7 @@ export default async function queryTaxonomySubtreeRows(
     rootId: string | undefined,
     maxDepth: number,
 ): Promise<TaxonomyTreeRow[]> {
+    const db = await getDb()
     return await db.all<TaxonomyTreeRow>(
         rootId
             ? sql`

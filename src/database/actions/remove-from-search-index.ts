@@ -1,11 +1,9 @@
 import { eq } from 'drizzle-orm'
-import type { SqliteConnection } from '@/database/actions/_db'
 import { memoryFts, memoryFtsIndexed } from '@/database/schema'
+import getDb from './_db'
 
-export default async function removeFromSearchIndex(
-    db: SqliteConnection,
-    id: string,
-): Promise<void> {
-    await db.db.delete(memoryFts).where(eq(memoryFts.id, id))
-    await db.db.delete(memoryFtsIndexed).where(eq(memoryFtsIndexed.id, id))
+export default async function removeFromSearchIndex(id: string): Promise<void> {
+    const db = await getDb()
+    await db.delete(memoryFts).where(eq(memoryFts.id, id))
+    await db.delete(memoryFtsIndexed).where(eq(memoryFtsIndexed.id, id))
 }

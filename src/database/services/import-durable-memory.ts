@@ -3,6 +3,7 @@ import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
 import hasDiaryHash from '@/database/actions/has-diary-hash'
 import hasObservationHash from '@/database/actions/has-observation-hash'
+import withBoundActionDatabase from '@/database/actions/with-bound-action-database'
 import type {
     DurableMemoryExport,
     DurableMemoryImportResult,
@@ -27,29 +28,31 @@ export default async function importDurableMemory(
         memoriesSkipped: 0,
     }
 
-    for (const memory of payload.memories) {
-        const duplicate = await hasObservationHash(db, memory.contentHash)
-        if (duplicate) {
-            result.memoriesSkipped += 1
-            continue
+    await withBoundActionDatabase(db, async () => {
+        for (const memory of payload.memories) {
+            const duplicate = await hasObservationHash(memory.contentHash)
+            if (duplicate) {
+                result.memoriesSkipped += 1
+                continue
+            }
+            if (!options.dryRun) {
+                await insertImportedObservation(db, context, memory)
+            }
+            result.memoriesImported += 1
         }
-        if (!options.dryRun) {
-            await insertImportedObservation(db, context, memory)
-        }
-        result.memoriesImported += 1
-    }
 
-    for (const diary of payload.diaries) {
-        const duplicate = await hasDiaryHash(db, diary.contentHash)
-        if (duplicate) {
-            result.diariesSkipped += 1
-            continue
+        for (const diary of payload.diaries) {
+            const duplicate = await hasDiaryHash(diary.contentHash)
+            if (duplicate) {
+                result.diariesSkipped += 1
+                continue
+            }
+            if (!options.dryRun) {
+                await insertImportedDiary(db, context, diary)
+            }
+            result.diariesImported += 1
         }
-        if (!options.dryRun) {
-            await insertImportedDiary(db, context, diary)
-        }
-        result.diariesImported += 1
-    }
+    })
 
     if (!options.dryRun) {
         await withTransaction(db, async () =>

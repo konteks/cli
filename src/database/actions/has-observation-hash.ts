@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm'
-import type { SqliteConnection } from '@/database/actions/_db'
 import { observations } from '@/database/schema'
+import getDb from './_db'
 
 export default async function hasObservationHash(
-    db: SqliteConnection,
     hash: string,
 ): Promise<boolean> {
-    const rows = await db.db
+    const db = await getDb()
+    const rows = await db
         .select({ id: observations.id })
         .from(observations)
         .where(eq(observations.contentHash, hash))

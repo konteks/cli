@@ -1,6 +1,6 @@
-import type { SqliteConnection } from '@/database/actions/_db'
 import { observations } from '@/database/schema'
 import type { ObservationKind } from '@/models/memory'
+import getDb from './_db'
 
 export type InsertObservationInput = {
     confidence: number
@@ -16,10 +16,10 @@ export type InsertObservationInput = {
 }
 
 export default async function insertObservation(
-    db: SqliteConnection,
     input: InsertObservationInput,
 ): Promise<void> {
-    await db.db.insert(observations).values({
+    const db = await getDb()
+    await db.insert(observations).values({
         confidence: input.confidence,
         contentHash: input.contentHash,
         createdAt: input.createdAt,

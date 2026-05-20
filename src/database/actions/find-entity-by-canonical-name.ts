@@ -1,13 +1,13 @@
 import { eq } from 'drizzle-orm'
 import { entities } from '@/database/schema'
 import type { EntityRecord } from '@/database/services/graph'
-import db from './_db'
+import getDb from './_db'
 import type { EntityRow } from './query-entity-search-rows'
 
 export default async function findEntityByCanonicalName(
     canonicalName: string,
 ): Promise<EntityRecord | undefined> {
-    await db.ensureActionDatabase()
+    const db = await getDb()
     const rows = await db
         .select({
             canonical_name: entities.canonicalName,

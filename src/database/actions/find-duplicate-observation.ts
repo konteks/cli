@@ -1,12 +1,12 @@
 import { and, eq, isNull } from 'drizzle-orm'
-import type { SqliteConnection } from '@/database/actions/_db'
 import { observations } from '@/database/schema'
+import getDb from './_db'
 
 export default async function findDuplicateObservation(
-    db: SqliteConnection,
     hash: string,
 ): Promise<{ id: string } | undefined> {
-    const rows = await db.db
+    const db = await getDb()
+    const rows = await db
         .select({ id: observations.id })
         .from(observations)
         .where(

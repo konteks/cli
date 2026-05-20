@@ -1,12 +1,13 @@
 import { eq } from 'drizzle-orm'
-import type { SqliteConnection } from '@/database/actions/_db'
 import { chunks, sources } from '@/database/schema'
 import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
+import getDb from './_db'
 
-export default async function readExtractedProjectPaths(
-    connection: SqliteConnection,
-): Promise<Set<string>> {
-    const rows = await connection.db
+export default async function readExtractedProjectPaths(): Promise<
+    Set<string>
+> {
+    const db = await getDb()
+    const rows = await db
         .selectDistinct({ path: sources.uri })
         .from(sources)
         .innerJoin(chunks, eq(chunks.sourceId, sources.id))

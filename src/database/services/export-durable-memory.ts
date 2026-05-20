@@ -1,6 +1,7 @@
 import type { SqliteConnection } from '@/database/actions/_db'
 import queryExportDiaryRows from '@/database/actions/query-export-diary-rows'
 import queryExportObservationRows from '@/database/actions/query-export-observation-rows'
+import withBoundActionDatabase from '@/database/actions/with-bound-action-database'
 import {
     exportDiaryRow,
     exportObservationRow,
@@ -15,8 +16,13 @@ export default async function exportDurableMemory(
     options: { includeInactive?: boolean },
 ): Promise<DurableMemoryExport> {
     const toonStore = createToonStore(context.memoryDir)
-    const memoryRows = await queryExportObservationRows(db, options)
-    const diaryRows = await queryExportDiaryRows(db, options)
+    const { diaryRows, memoryRows } = await withBoundActionDatabase(
+        db,
+        async () => ({
+            diaryRows: await queryExportDiaryRows(options),
+            memoryRows: await queryExportObservationRows(options),
+        }),
+    )
 
     return {
         diaries: await Promise.all(

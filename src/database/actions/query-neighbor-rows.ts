@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import db from './_db'
+import getDb from './_db'
 import type { EntityRow } from './query-entity-search-rows'
 
 export type NeighborRow = EntityRow & {
@@ -14,6 +14,7 @@ export default async function queryNeighborRows(
     maxDepth: number,
     limit: number,
 ): Promise<NeighborRow[]> {
+    const db = await getDb()
     return await db.all<NeighborRow>(sql`
 with recursive walk(depth, entity_id, relation_id, predicate, direction, visited) as (
     select 1, r.object_id, r.id, r.predicate, 'outgoing', ${entityId} || ',' || r.object_id

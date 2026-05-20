@@ -3,9 +3,9 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { executeSql } from 'tests/support/sqlite-libsql'
 import type { SqliteConnection } from '@/database/actions/_db'
-import { openProjectDatabase } from '@/database/actions/_db'
+import { openProjectDatabase, withActionDatabase } from '@/database/actions/_db'
+import insertMinedSuppression from '@/database/actions/insert-mined-suppression'
 import type { Project } from '@/models/project'
 import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import prepareFileSections from '@/providers/extraction/engine/prepare-file-sections'
@@ -195,24 +195,14 @@ describe('providers/extraction/engine/prepare-file-sections', () => {
             })
             expect(first.sections).toHaveLength(1)
 
-            await executeSql(
-                db.client,
-                `
-insert into mined_suppressions (
-    path,
-    anchor,
-    content_hash,
-    reason,
-    created_at
-) values (?, ?, ?, ?, ?)
-`,
-                [
-                    'README.md',
-                    'suppressed',
-                    contentHash(text.trim()),
-                    'test',
-                    new Date().toISOString(),
-                ],
+            await withActionDatabase(db.client, db.db, () =>
+                insertMinedSuppression({
+                    anchor: 'suppressed',
+                    contentHash: contentHash(text.trim()),
+                    createdAt: new Date().toISOString(),
+                    path: 'README.md',
+                    reason: 'test',
+                }),
             )
 
             const suppressed = await prepareFileSections({

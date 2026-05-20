@@ -42,13 +42,10 @@ export default async function searchMemory(
     input: MemorySearchInput | MemoryRecallInput,
     options: SearchMemoryOptions = {},
 ): Promise<MemorySearchResult[]> {
-    return withBoundActionDatabase(db, () =>
-        searchBoundMemory(db, input, options),
-    )
+    return withBoundActionDatabase(db, () => searchBoundMemory(input, options))
 }
 
 async function searchBoundMemory(
-    db: SqliteConnection,
     input: MemorySearchInput | MemoryRecallInput,
     options: SearchMemoryOptions,
 ): Promise<MemorySearchResult[]> {
@@ -73,7 +70,7 @@ async function searchBoundMemory(
         return retrievalResults
     }
 
-    if (await hasSearchIndex(db)) {
+    if (await hasSearchIndex()) {
         const ftsResults = await searchFts(terms, limit, mode, intent)
         if (ftsResults.length > 0) {
             return ftsResults

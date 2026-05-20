@@ -29,6 +29,8 @@ export function buildChunkRetrievalTexts(input: {
         embeddingText: [metadata, contentExcerpt]
             .join('\n\n')
             .slice(0, maxEmbeddingTextChars),
-        ftsText: [metadata, input.content].join('\n\n').slice(0, maxFtsTextChars),
+        ftsText: [metadata, input.content]
+            .join('\n\n')
+            .slice(0, maxFtsTextChars),
     }
 }

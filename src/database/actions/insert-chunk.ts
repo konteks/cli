@@ -1,5 +1,5 @@
 import { chunks } from '@/database/schema'
-import db from './_db'
+import getDb from './_db'
 
 export type InsertChunkInput = {
     anchor: string | null
@@ -30,7 +30,7 @@ export default async function insertChunk(
 ): Promise<void> {
     const now = new Date().toISOString()
 
-    await db.ensureActionDatabase()
+    const db = await getDb()
     await db.insert(chunks).values({
         anchor: chunk.anchor,
         anchorType: chunk.anchor_type,

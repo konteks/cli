@@ -5,7 +5,7 @@ import type {
     TaxonomyLink,
     TaxonomyLinkInput,
 } from '@/database/services/taxonomy'
-import db from './_db'
+import getDb from './_db'
 
 type TaxonomyLinkRow = {
     id: string
@@ -17,7 +17,7 @@ type TaxonomyLinkRow = {
 export default async function linkTaxonomyTarget(
     input: TaxonomyLinkInput,
 ): Promise<TaxonomyLink> {
-    await db.ensureActionDatabase()
+    const db = await getDb()
     const existing = await findLink(input)
     if (existing) {
         return existing
@@ -43,6 +43,7 @@ export default async function linkTaxonomyTarget(
 async function findLink(
     input: TaxonomyLinkInput,
 ): Promise<TaxonomyLink | undefined> {
+    const db = await getDb()
     const rows = await db
         .select({
             id: taxonomyLinks.id,

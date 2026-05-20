@@ -1,7 +1,7 @@
 import { asc, eq } from 'drizzle-orm'
 import { taxonomyLinks } from '@/database/schema'
 import type { TaxonomyLink } from '@/database/services/taxonomy'
-import db from './_db'
+import getDb from './_db'
 
 type TaxonomyLinkRow = {
     id: string
@@ -13,7 +13,7 @@ type TaxonomyLinkRow = {
 export default async function listTaxonomyLinks(
     nodeId: string,
 ): Promise<TaxonomyLink[]> {
-    await db.ensureActionDatabase()
+    const db = await getDb()
     const rows = await db
         .select({
             id: taxonomyLinks.id,

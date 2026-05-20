@@ -5,13 +5,13 @@ import type {
     TaxonomyNode,
     TaxonomyNodeInput,
 } from '@/database/services/taxonomy'
-import db from './_db'
+import getDb from './_db'
 import findTaxonomySiblingByName from './find-taxonomy-sibling-by-name'
 
 export default async function upsertTaxonomyNode(
     input: TaxonomyNodeInput,
 ): Promise<TaxonomyNode> {
-    await db.ensureActionDatabase()
+    const db = await getDb()
     const existing = await findTaxonomySiblingByName(input.parentId, input.name)
     const now = new Date().toISOString()
 

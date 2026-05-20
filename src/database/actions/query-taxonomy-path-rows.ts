@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import db from './_db'
+import getDb from './_db'
 
 export type TaxonomyPathRow = {
     id_path: string
@@ -9,6 +9,7 @@ export type TaxonomyPathRow = {
 export default async function queryTaxonomyPathRows(
     nodeId: string,
 ): Promise<TaxonomyPathRow[]> {
+    const db = await getDb()
     return await db.all<TaxonomyPathRow>(sql`
 with recursive ancestors(id, parent_id, id_path, name_path) as (
     select id, parent_id, id, name

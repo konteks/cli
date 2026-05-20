@@ -25,14 +25,14 @@ export default async function forgetMemory(
     const targets = await resolveTargets(input)
     const affectedIds: string[] = []
 
-    await withTransaction(db, async tx => {
+    await withTransaction(db, async () => {
         for (const target of targets) {
-            const changed = await applyForget(tx, target, mode, input.reason)
+            const changed = await applyForget(target, mode, input.reason)
             if (!changed) {
                 continue
             }
 
-            await removeFromSearchIndex(tx, target.id)
+            await removeFromSearchIndex(target.id)
 
             await appendMemoryEvent({
                 actor: 'mcp',
@@ -85,7 +85,6 @@ async function resolveTargets(input: ForgetInput): Promise<ForgetTarget[]> {
 }
 
 async function applyForget(
-    db: SqliteConnection,
     target: ForgetTarget,
     mode: NonNullable<ForgetInput['mode']>,
     reason: string | undefined,
@@ -96,14 +95,14 @@ async function applyForget(
     }
 
     if (mode === 'invalidate') {
-        return markSuppressed(db, target, reason)
+        return markSuppressed(target, reason)
     }
 
     if (mode === 'hard_delete') {
-        return hardDeleteForgetTarget(db, target)
+        return hardDeleteForgetTarget(target)
     }
 
-    return markForgotten(db, target, reason)
+    return markForgotten(target, reason)
 }
 
 function inferKind(id: string): TargetKind {

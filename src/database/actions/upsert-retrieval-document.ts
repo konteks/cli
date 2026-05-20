@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm'
-import type { SqliteConnection } from '@/database/actions/_db'
 import { retrievalDocuments, retrievalDocumentsFts } from '@/database/schema'
 import { contentHash } from '@/providers/persistence/objects/content'
+import getDb from './_db'
 
 export type RetrievalDocumentInput = {
     anchor?: string
@@ -17,9 +17,9 @@ export type RetrievalDocumentInput = {
 }
 
 export default async function upsertRetrievalDocument(
-    db: SqliteConnection,
     input: RetrievalDocumentInput,
 ): Promise<void> {
+    const db = await getDb()
     const value = {
         anchor: input.anchor ?? null,
         embeddingHash: contentHash(input.embeddingText),
@@ -34,7 +34,7 @@ export default async function upsertRetrievalDocument(
         targetType: input.targetType,
         updatedAt: input.updatedAt,
     }
-    await db.db
+    await db
         .insert(retrievalDocuments)
         .values(value)
         .onConflictDoUpdate({
@@ -44,7 +44,7 @@ export default async function upsertRetrievalDocument(
                 retrievalDocuments.targetType,
             ],
         })
-    await db.db
+    await db
         .delete(retrievalDocumentsFts)
         .where(
             and(
@@ -52,7 +52,7 @@ export default async function upsertRetrievalDocument(
                 eq(retrievalDocumentsFts.targetType, input.targetType),
             ),
         )
-    await db.db.insert(retrievalDocumentsFts).values({
+    await db.insert(retrievalDocumentsFts).values({
         ftsText: input.ftsText,
         targetId: input.targetId,
         targetType: input.targetType,

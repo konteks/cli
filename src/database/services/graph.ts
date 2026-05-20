@@ -23,28 +23,6 @@ export type EntityRecord = {
     summary?: string
 }
 
-export type RelationInput = {
-    subjectId: string
-    predicate: string
-    objectId: string
-    confidence?: number
-    validFrom?: string
-    validTo?: string
-    supersedesRelationId?: string
-    properties?: Record<string, unknown>
-}
-
-export type RelationRecord = {
-    id: string
-    subjectId: string
-    predicate: string
-    objectId: string
-    confidence: number
-    status: 'active' | 'invalidated' | 'superseded'
-    validFrom?: string
-    validTo?: string
-}
-
 export type GraphNeighbor = {
     depth: number
     relationId: string

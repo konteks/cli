@@ -1,5 +1,5 @@
-import type { SqliteConnection } from '@/database/actions/_db'
 import { diaryEntries } from '@/database/schema'
+import getDb from './_db'
 
 export type InsertDiaryEntryInput = {
     contentHash: string | null
@@ -15,10 +15,10 @@ export type InsertDiaryEntryInput = {
 }
 
 export default async function insertDiaryEntry(
-    db: SqliteConnection,
     input: InsertDiaryEntryInput,
 ): Promise<void> {
-    await db.db.insert(diaryEntries).values({
+    const db = await getDb()
+    await db.insert(diaryEntries).values({
         contentHash: input.contentHash,
         createdAt: input.createdAt,
         deletedAt: input.deletedAt ?? null,

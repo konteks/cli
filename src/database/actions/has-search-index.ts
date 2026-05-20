@@ -1,14 +1,13 @@
 import { sql } from 'drizzle-orm'
-import type { SqliteConnection } from '@/database/actions/_db'
+import getDb from './_db'
 
 type FtsTableRow = {
     name: string
 }
 
-export default async function hasSearchIndex(
-    service: SqliteConnection,
-): Promise<boolean> {
-    const rows = await service.db.all<FtsTableRow>(sql`
+export default async function hasSearchIndex(): Promise<boolean> {
+    const db = await getDb()
+    const rows = await db.all<FtsTableRow>(sql`
 select name
 from sqlite_master
 where type = 'table' and name = 'memory_fts'

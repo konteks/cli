@@ -3,6 +3,7 @@ import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import { openProjectDatabase } from '@/database/actions/_db'
 import countExtractedSections from '@/database/actions/count-extracted-sections'
 import readExtractedProjectPathsAction from '@/database/actions/read-extracted-project-paths'
+import withBoundActionDatabase from '@/database/actions/with-bound-action-database'
 import type { Project } from '@/models/project'
 import generateTargetEmbeddings from '@/providers/embeddings/generate-target-embeddings'
 import type { ProjectMetadata } from '@/providers/extraction/engine/extract-project-metadata'
@@ -35,7 +36,9 @@ export async function readExtractedProjectPaths(
 ): Promise<Set<string>> {
     const connection = await openProjectDatabase(context)
     try {
-        return await readExtractedProjectPathsAction(connection)
+        return await withBoundActionDatabase(connection, () =>
+            readExtractedProjectPathsAction(),
+        )
     } finally {
         await connection.close()
     }
@@ -59,7 +62,10 @@ export async function extractProjectSectionsWithDatabase(
                 onProgress: options.onProgress,
             },
         )
-        const totalSectionCount = await countExtractedSections(connection)
+        const totalSectionCount = await withBoundActionDatabase(
+            connection,
+            () => countExtractedSections(),
+        )
         if (options.mode === 'resume') {
             options.onProgress?.({
                 chunkCount: totalSectionCount,

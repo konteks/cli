@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import { querySql } from 'tests/support/sqlite-libsql'
-import actionDb, { openProjectDatabase } from '@/database/actions/_db'
+import { openProjectDatabase } from '@/database/actions/_db'
 import mcpTools from '@/mcp/tools'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
@@ -161,8 +161,8 @@ describe('retrieval quality evals', () => {
         const text = extractText(result)
         const manifest = await readExtractionManifest(context.memoryDir)
         const adapter = await openProjectDatabase(context)
-        const diaryRows = await querySql<{ summary: string }>(
-            adapter.client,
+        const diaryRows = await querySql(
+            context,
             `
 select summary
 from diary_entries
@@ -293,8 +293,8 @@ limit 1
         )
         await extractProject(context, 'full', extractionOptions())
         const adapter = await openProjectDatabase(context)
-        const rows = await querySql<{ count: number }>(
-            adapter.client,
+        const rows = await querySql(
+            context,
             'select count(*) as count from retrieval_documents',
         )
         await adapter.close()
@@ -319,7 +319,6 @@ async function syncProjectActionDatabase(
     context: Awaited<ReturnType<typeof loadProjectContext>>,
 ) {
     const service = await openProjectDatabase(context)
-    await actionDb.syncTestActionDatabase(service.client)
     await service.close()
 }
 
