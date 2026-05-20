@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { querySql } from 'tests/support/sqlite-libsql'
 import type { ExtractionProgressEvent } from '@/contracts/services/progress'
 import type { SqliteConnection } from '@/database/actions/_db'
-import { openProjectDatabase, withActionDatabase } from '@/database/actions/_db'
+import { openProjectDatabase, withTransaction } from '@/database/actions/_db'
 import insertChunk from '@/database/actions/insert-chunk'
 import insertSource from '@/database/actions/insert-source'
 import type { Project } from '@/models/project'
@@ -153,7 +153,7 @@ async function seedExtractedSection(
     db: SqliteConnection,
     path: string,
 ): Promise<void> {
-    await withActionDatabase(db.client, db.db, () =>
+    await withTransaction(db, () =>
         insertSource({
             entities_json: JSON.stringify([]),
             excerpt_ref: null,
@@ -166,7 +166,7 @@ async function seedExtractedSection(
             uri: path,
         }),
     )
-    await withActionDatabase(db.client, db.db, () =>
+    await withTransaction(db, () =>
         insertChunk({
             anchor: 'file',
             anchor_type: 'file',

@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { SqliteConnection } from '@/database/actions/_db'
-import { openProjectDatabase, withActionDatabase } from '@/database/actions/_db'
+import { openProjectDatabase, withTransaction } from '@/database/actions/_db'
 import insertMinedSuppression from '@/database/actions/insert-mined-suppression'
 import type { Project } from '@/models/project'
 import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
@@ -195,7 +195,7 @@ describe('providers/extraction/engine/prepare-file-sections', () => {
             })
             expect(first.sections).toHaveLength(1)
 
-            await withActionDatabase(db.client, db.db, () =>
+            await withTransaction(db, () =>
                 insertMinedSuppression({
                     anchor: 'suppressed',
                     contentHash: contentHash(text.trim()),

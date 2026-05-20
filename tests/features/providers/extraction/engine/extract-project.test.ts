@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { querySql } from 'tests/support/sqlite-libsql'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
-import { openProjectDatabase, withActionDatabase } from '@/database/actions/_db'
+import { openProjectDatabase, withTransaction } from '@/database/actions/_db'
 import markSuppressed from '@/database/actions/mark-suppressed'
 import {
     saveKonteksDiary,
@@ -252,7 +252,7 @@ limit 1
         )
         const chunk = chunks[0]
         expect(chunk).toBeDefined()
-        await withActionDatabase(service.client, service.db, () =>
+        await withTransaction(service, () =>
             markSuppressed(
                 { id: chunk?.id ?? '', kind: 'chunk' },
                 'test suppression',
