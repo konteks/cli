@@ -1,34 +1,21 @@
 import { randomUUID } from 'node:crypto'
-import { eq } from 'drizzle-orm'
 import type { ForgetInput } from '@/contracts/repositories/memory-repository'
 import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
+import hardDeleteForgetTarget from '@/database/actions/hard-delete-forget-target'
+import markForgotten from '@/database/actions/mark-forgotten'
+import markSuppressed from '@/database/actions/mark-suppressed'
 import queryDiaries from '@/database/actions/query-diaries'
 import queryObservations from '@/database/actions/query-observations'
-import {
-    chunks,
-    diaryEntries,
-    memoryFts,
-    memoryFtsIndexed,
-    observations,
-    taxonomyLinks,
-} from '@/database/schema'
+import removeFromSearchIndex from '@/database/actions/remove-from-search-index'
 import { invalidateRelation } from '@/database/services/graph'
+import type {
+    ForgetResult,
+    ForgetTarget,
+    TargetKind,
+} from '@/database/support/forget-target'
 
 // import { GraphStore } from ./graph-store.js'
-
-type ForgetResult = {
-    accepted: boolean
-    mode: NonNullable<ForgetInput['mode']>
-    affectedIds: string[]
-}
-
-type TargetKind = 'chunk' | 'diary_entry' | 'observation' | 'relation'
-
-type ForgetTarget = {
-    id: string
-    kind: TargetKind
-}
 
 export default async function forgetMemory(
     db: SqliteConnection,
@@ -113,94 +100,10 @@ async function applyForget(
     }
 
     if (mode === 'hard_delete') {
-        return hardDelete(db, target)
+        return hardDeleteForgetTarget(db, target)
     }
 
     return markForgotten(db, target, reason)
-}
-
-async function markForgotten(
-    db: SqliteConnection,
-    target: ForgetTarget,
-    reason: string | undefined,
-): Promise<boolean> {
-    const values = {
-        deletedAt: new Date().toISOString(),
-        forgetReason: reason ?? null,
-    }
-    if (target.kind === 'chunk') {
-        await db.db.update(chunks).set(values).where(eq(chunks.id, target.id))
-    } else if (target.kind === 'observation') {
-        await db.db
-            .update(observations)
-            .set(values)
-            .where(eq(observations.id, target.id))
-    } else if (target.kind === 'diary_entry') {
-        await db.db
-            .update(diaryEntries)
-            .set(values)
-            .where(eq(diaryEntries.id, target.id))
-    } else {
-        return false
-    }
-    return true
-}
-
-async function markSuppressed(
-    db: SqliteConnection,
-    target: ForgetTarget,
-    reason: string | undefined,
-): Promise<boolean> {
-    const values = {
-        forgetReason: reason ?? null,
-        suppressedAt: new Date().toISOString(),
-    }
-    if (target.kind === 'chunk') {
-        await db.db.update(chunks).set(values).where(eq(chunks.id, target.id))
-    } else if (target.kind === 'observation') {
-        await db.db
-            .update(observations)
-            .set(values)
-            .where(eq(observations.id, target.id))
-    } else if (target.kind === 'diary_entry') {
-        await db.db
-            .update(diaryEntries)
-            .set(values)
-            .where(eq(diaryEntries.id, target.id))
-    } else {
-        return false
-    }
-    return true
-}
-
-async function hardDelete(
-    db: SqliteConnection,
-    target: ForgetTarget,
-): Promise<boolean> {
-    if (target.kind === 'chunk') {
-        await db.db
-            .delete(taxonomyLinks)
-            .where(eq(taxonomyLinks.targetId, target.id))
-    }
-
-    if (target.kind === 'chunk') {
-        await db.db.delete(chunks).where(eq(chunks.id, target.id))
-    } else if (target.kind === 'observation') {
-        await db.db.delete(observations).where(eq(observations.id, target.id))
-    } else if (target.kind === 'diary_entry') {
-        await db.db.delete(diaryEntries).where(eq(diaryEntries.id, target.id))
-    } else {
-        return false
-    }
-    return true
-}
-
-async function removeFromSearchIndex(
-    db: SqliteConnection,
-    id: string,
-): Promise<void> {
-    await db.db.delete(memoryFts).where(eq(memoryFts.id, id))
-    await db.db.delete(memoryFtsIndexed).where(eq(memoryFtsIndexed.id, id))
 }
 
 function inferKind(id: string): TargetKind {

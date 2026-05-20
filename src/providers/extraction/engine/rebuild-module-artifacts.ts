@@ -1,9 +1,7 @@
 import { eq, sql } from 'drizzle-orm'
 import type { SqliteConnection } from '@/database/actions/_db'
-import {
-    deleteRetrievalDocuments,
-    upsertRetrievalDocument,
-} from '@/database/actions/retrieval-documents'
+import deleteRetrievalDocuments from '@/database/actions/delete-retrieval-documents'
+import upsertRetrievalDocument from '@/database/actions/upsert-retrieval-document'
 import { modules, targetEmbeddings } from '@/database/schema'
 import { contentHash } from '@/providers/persistence/objects/content'
 import type {

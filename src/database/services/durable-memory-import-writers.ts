@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
-import { upsertRetrievalDocument } from '@/database/actions/retrieval-documents'
-import { indexSearchDocument } from '@/database/actions/search-index'
-import { diaryEntries, observations } from '@/database/schema'
+import indexSearchDocument from '@/database/actions/index-search-document'
+import insertDiaryEntry from '@/database/actions/insert-diary-entry'
+import insertObservation from '@/database/actions/insert-observation'
+import upsertRetrievalDocument from '@/database/actions/upsert-retrieval-document'
 import type {
     DurableMemoryExportDiary,
     DurableMemoryExportMemory,
@@ -24,7 +25,7 @@ export async function insertImportedObservation(
     const createdAt = memory.createdAt || new Date().toISOString()
 
     await withTransaction(db, async tx => {
-        await tx.db.insert(observations).values({
+        await insertObservation(tx, {
             confidence: memory.confidence,
             contentHash: stored.contentHash,
             createdAt,
@@ -73,7 +74,7 @@ export async function insertImportedDiary(
     const createdAt = diary.createdAt || new Date().toISOString()
 
     await withTransaction(db, async tx => {
-        await tx.db.insert(diaryEntries).values({
+        await insertDiaryEntry(tx, {
             contentHash: stored.contentHash,
             createdAt,
             deletedAt: diary.deletedAt ?? null,

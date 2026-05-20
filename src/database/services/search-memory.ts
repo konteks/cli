@@ -4,7 +4,7 @@ import type {
 } from '@/contracts/repositories/memory-repository'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
 import type { SqliteConnection } from '@/database/actions/_db'
-import actionDb from '@/database/actions/_db'
+import hasSearchIndex from '@/database/actions/has-search-index'
 import queryDiaries, { type DiaryRow } from '@/database/actions/query-diaries'
 import queryFtsRows from '@/database/actions/query-fts-rows'
 import queryObservations, {
@@ -13,7 +13,7 @@ import queryObservations, {
 import queryRetrievalDocuments, {
     type RetrievalDocumentRow,
 } from '@/database/actions/query-retrieval-documents'
-import { hasSearchIndex } from '@/database/actions/search-index'
+import withBoundActionDatabase from '@/database/actions/with-bound-action-database'
 import type { MemorySearchResult } from '@/models/memory'
 import { classifySourceRole } from '@/providers/project/source-classification'
 import { estimateTextTokens } from '@/support/format/tokens'
@@ -42,7 +42,7 @@ export default async function searchMemory(
     input: MemorySearchInput | MemoryRecallInput,
     options: SearchMemoryOptions = {},
 ): Promise<MemorySearchResult[]> {
-    return actionDb.withActionDatabase(db.client, db.db, () =>
+    return withBoundActionDatabase(db, () =>
         searchBoundMemory(db, input, options),
     )
 }

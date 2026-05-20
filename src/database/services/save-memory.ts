@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto'
-import { and, eq, isNull } from 'drizzle-orm'
 import type {
     SaveDiaryInput,
     SaveMemoriesInput,
@@ -9,9 +8,11 @@ import type {
 } from '@/contracts/repositories/memory-repository'
 import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
-import { upsertRetrievalDocument } from '@/database/actions/retrieval-documents'
-import { indexSearchDocument } from '@/database/actions/search-index'
-import { diaryEntries, observations } from '@/database/schema'
+import findDuplicateObservation from '@/database/actions/find-duplicate-observation'
+import indexSearchDocument from '@/database/actions/index-search-document'
+import insertDiaryEntry from '@/database/actions/insert-diary-entry'
+import insertObservation from '@/database/actions/insert-observation'
+import upsertRetrievalDocument from '@/database/actions/upsert-retrieval-document'
 import {
     importanceToConfidence,
     isSkippableMemoryError,
@@ -53,7 +54,7 @@ export async function saveKonteksMemory(
     const createdAt = new Date().toISOString()
 
     await withTransaction(db, async tx => {
-        await tx.db.insert(observations).values({
+        await insertObservation(tx, {
             confidence: importanceToConfidence(input.importance),
             contentHash: stored.contentHash,
             createdAt,
@@ -148,7 +149,7 @@ export async function saveKonteksSession(
     const createdAt = new Date().toISOString()
 
     await withTransaction(db, async tx => {
-        await tx.db.insert(diaryEntries).values({
+        await insertDiaryEntry(tx, {
             contentHash: stored.contentHash,
             createdAt,
             id,
@@ -209,7 +210,7 @@ export async function saveKonteksDiary(
     const createdAt = new Date().toISOString()
 
     await withTransaction(db, async tx => {
-        await tx.db.insert(diaryEntries).values({
+        await insertDiaryEntry(tx, {
             contentHash: stored.contentHash,
             createdAt,
             id,
@@ -254,23 +255,4 @@ export async function saveKonteksDiary(
         diaryId: id,
         id,
     }
-}
-
-async function findDuplicateObservation(
-    db: SqliteConnection,
-    hash: string,
-): Promise<{ id: string } | undefined> {
-    const rows = await db.db
-        .select({ id: observations.id })
-        .from(observations)
-        .where(
-            and(
-                eq(observations.contentHash, hash),
-                isNull(observations.deletedAt),
-                isNull(observations.suppressedAt),
-            ),
-        )
-        .limit(1)
-
-    return rows[0]
 }

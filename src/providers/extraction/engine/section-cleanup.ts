@@ -1,7 +1,7 @@
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { SqliteConnection } from '@/database/actions/_db'
-import { deleteRetrievalDocuments } from '@/database/actions/retrieval-documents'
-import { clearModules } from '@/database/actions/save-module'
+import clearModules from '@/database/actions/clear-modules'
+import deleteRetrievalDocuments from '@/database/actions/delete-retrieval-documents'
 import { chunks, minedSuppressions, sources } from '@/database/schema'
 
 /**

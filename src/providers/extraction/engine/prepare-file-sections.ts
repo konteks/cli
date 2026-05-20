@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { SqliteConnection } from '@/database/actions/_db'
-import { buildChunkRetrievalTexts } from '@/database/actions/retrieval-documents'
+import { buildChunkRetrievalTexts } from '@/database/support/retrieval-texts'
 import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
 import type createToonStore from '@/providers/persistence/objects/create-toon-store'
