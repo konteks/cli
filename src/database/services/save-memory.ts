@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { and, eq, isNull } from 'drizzle-orm'
 import type {
     SaveDiaryInput,
     SaveMemoriesInput,
@@ -10,7 +11,7 @@ import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
 import { upsertRetrievalDocument } from '@/database/actions/retrieval-documents'
 import { indexSearchDocument } from '@/database/actions/search-index'
-import { executeSql, querySql } from '@/database/support/libsql'
+import { diaryEntries, observations } from '@/database/schema'
 import {
     importanceToConfidence,
     isSkippableMemoryError,
@@ -52,29 +53,15 @@ export async function saveKonteksMemory(
     const createdAt = new Date().toISOString()
 
     await withTransaction(db, async tx => {
-        await executeSql(
-            tx.client,
-            `
-insert into observations (
-    id,
-    kind,
-    text_inline,
-    payload_ref,
-    content_hash,
-    confidence,
-    created_at
-) values (?, ?, ?, ?, ?, ?, ?)
-`,
-            [
-                id,
-                input.kind,
-                stored.contentInline ?? summary,
-                stored.payloadRef ?? null,
-                stored.contentHash,
-                importanceToConfidence(input.importance),
-                createdAt,
-            ],
-        )
+        await tx.db.insert(observations).values({
+            confidence: importanceToConfidence(input.importance),
+            contentHash: stored.contentHash,
+            createdAt,
+            id,
+            kind: input.kind,
+            payloadRef: stored.payloadRef ?? null,
+            textInline: stored.contentInline ?? summary,
+        })
 
         await appendMemoryEvent({
             actor: 'mcp',
@@ -161,29 +148,15 @@ export async function saveKonteksSession(
     const createdAt = new Date().toISOString()
 
     await withTransaction(db, async tx => {
-        await executeSql(
-            tx.client,
-            `
-insert into diary_entries (
-    id,
-    subject,
-    summary,
-    tags_json,
-    payload_ref,
-    content_hash,
-    created_at
-) values (?, ?, ?, ?, ?, ?, ?)
-`,
-            [
-                id,
-                input.task,
-                input.summary,
-                JSON.stringify([input.status]),
-                stored.payloadRef ?? null,
-                stored.contentHash,
-                createdAt,
-            ],
-        )
+        await tx.db.insert(diaryEntries).values({
+            contentHash: stored.contentHash,
+            createdAt,
+            id,
+            payloadRef: stored.payloadRef ?? null,
+            subject: input.task,
+            summary: input.summary,
+            tagsJson: JSON.stringify([input.status]),
+        })
 
         await appendMemoryEvent({
             actor: 'mcp',
@@ -236,29 +209,15 @@ export async function saveKonteksDiary(
     const createdAt = new Date().toISOString()
 
     await withTransaction(db, async tx => {
-        await executeSql(
-            tx.client,
-            `
-insert into diary_entries (
-    id,
-    subject,
-    summary,
-    tags_json,
-    payload_ref,
-    content_hash,
-    created_at
-) values (?, ?, ?, ?, ?, ?, ?)
-`,
-            [
-                id,
-                formattedInput.subject ?? null,
-                formattedInput.summary,
-                JSON.stringify(formattedInput.tags ?? []),
-                stored.payloadRef ?? null,
-                stored.contentHash,
-                createdAt,
-            ],
-        )
+        await tx.db.insert(diaryEntries).values({
+            contentHash: stored.contentHash,
+            createdAt,
+            id,
+            payloadRef: stored.payloadRef ?? null,
+            subject: formattedInput.subject ?? null,
+            summary: formattedInput.summary,
+            tagsJson: JSON.stringify(formattedInput.tags ?? []),
+        })
 
         await appendMemoryEvent({
             actor: 'mcp',
@@ -301,18 +260,17 @@ async function findDuplicateObservation(
     db: SqliteConnection,
     hash: string,
 ): Promise<{ id: string } | undefined> {
-    const rows = await querySql<{ id: string }>(
-        db.client,
-        `
-select id
-from observations
-where content_hash = ?
-  and deleted_at is null
-  and suppressed_at is null
-limit 1
-`,
-        [hash],
-    )
+    const rows = await db.db
+        .select({ id: observations.id })
+        .from(observations)
+        .where(
+            and(
+                eq(observations.contentHash, hash),
+                isNull(observations.deletedAt),
+                isNull(observations.suppressedAt),
+            ),
+        )
+        .limit(1)
 
     return rows[0]
 }

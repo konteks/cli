@@ -1,5 +1,6 @@
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { SqliteConnection } from '@/database/actions/_db'
-import { executeSql } from '@/database/support/libsql'
+import { retrievalDocuments, retrievalDocumentsFts } from '@/database/schema'
 import { contentHash } from '@/providers/persistence/objects/content'
 
 const maxChunkContentChars = 3000
@@ -23,68 +24,43 @@ export async function upsertRetrievalDocument(
     db: SqliteConnection,
     input: RetrievalDocumentInput,
 ): Promise<void> {
-    await executeSql(
-        db.client,
-        `
-insert or replace into retrieval_documents (
-    target_id,
-    target_type,
-    source_id,
-    source_role,
-    path,
-    anchor,
-    summary,
-    fts_text,
-    fts_hash,
-    embedding_text,
-    embedding_hash,
-    updated_at
-) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`,
-        [
-            input.targetId,
-            input.targetType,
-            input.sourceId ?? null,
-            input.sourceRole ?? null,
-            input.path ?? null,
-            input.anchor ?? null,
-            input.summary ?? null,
-            input.ftsText,
-            contentHash(input.ftsText),
-            input.embeddingText,
-            contentHash(input.embeddingText),
-            input.updatedAt,
-        ],
-    )
-    await executeSql(
-        db.client,
-        `
-delete from retrieval_documents_fts
-where target_id = ? and target_type = ?
-`,
-        [input.targetId, input.targetType],
-    )
-    await executeSql(
-        db.client,
-        `
-insert into retrieval_documents_fts (
-    target_id,
-    target_type,
-    source_role,
-    path,
-    anchor,
-    fts_text
-) values (?, ?, ?, ?, ?, ?)
-`,
-        [
-            input.targetId,
-            input.targetType,
-            input.sourceRole ?? null,
-            input.path ?? null,
-            input.anchor ?? null,
-            input.ftsText,
-        ],
-    )
+    const value = {
+        anchor: input.anchor ?? null,
+        embeddingHash: contentHash(input.embeddingText),
+        embeddingText: input.embeddingText,
+        ftsHash: contentHash(input.ftsText),
+        ftsText: input.ftsText,
+        path: input.path ?? null,
+        sourceId: input.sourceId ?? null,
+        sourceRole: input.sourceRole ?? null,
+        summary: input.summary ?? null,
+        targetId: input.targetId,
+        targetType: input.targetType,
+        updatedAt: input.updatedAt,
+    }
+    await db.db
+        .insert(retrievalDocuments)
+        .values(value)
+        .onConflictDoUpdate({
+            set: value,
+            target: [
+                retrievalDocuments.targetId,
+                retrievalDocuments.targetType,
+            ],
+        })
+    await db.db
+        .delete(retrievalDocumentsFts)
+        .where(
+            and(
+                eq(retrievalDocumentsFts.targetId, input.targetId),
+                eq(retrievalDocumentsFts.targetType, input.targetType),
+            ),
+        )
+    await db.db.insert(retrievalDocumentsFts).values({
+        ftsText: input.ftsText,
+        targetId: input.targetId,
+        targetType: input.targetType,
+    })
 }
 
 export async function deleteRetrievalDocuments(
@@ -97,47 +73,38 @@ export async function deleteRetrievalDocuments(
     }
 
     if (targetIds) {
-        const placeholders = targetIds.map(() => '?').join(', ')
-        await executeSql(
-            db.client,
-            `
-delete from retrieval_documents_fts
-where target_type = ?
-  and target_id in (${placeholders})
-`,
-            [targetType, ...targetIds],
-        )
-        await executeSql(
-            db.client,
-            `
-delete from retrieval_documents
-where target_type = ?
-  and target_id in (${placeholders})
-`,
-            [targetType, ...targetIds],
-        )
+        await db.db
+            .delete(retrievalDocumentsFts)
+            .where(
+                and(
+                    eq(retrievalDocumentsFts.targetType, targetType),
+                    inArray(retrievalDocumentsFts.targetId, targetIds),
+                ),
+            )
+        await db.db
+            .delete(retrievalDocuments)
+            .where(
+                and(
+                    eq(retrievalDocuments.targetType, targetType),
+                    inArray(retrievalDocuments.targetId, targetIds),
+                ),
+            )
         return
     }
 
-    await executeSql(
-        db.client,
-        'delete from retrieval_documents_fts where target_type = ?',
-        [targetType],
-    )
-    await executeSql(
-        db.client,
-        'delete from retrieval_documents where target_type = ?',
-        [targetType],
-    )
+    await db.db
+        .delete(retrievalDocumentsFts)
+        .where(eq(retrievalDocumentsFts.targetType, targetType))
+    await db.db
+        .delete(retrievalDocuments)
+        .where(eq(retrievalDocuments.targetType, targetType))
 }
 
 export async function reindexRetrievalDocumentFts(
     db: SqliteConnection,
 ): Promise<void> {
-    await executeSql(db.client, 'delete from retrieval_documents_fts')
-    await executeSql(
-        db.client,
-        `
+    await db.db.delete(retrievalDocumentsFts)
+    await db.db.run(sql`
 insert into retrieval_documents_fts (
     target_id,
     target_type,
@@ -154,8 +121,7 @@ select
     anchor,
     fts_text
 from retrieval_documents
-`,
-    )
+`)
 }
 
 export function buildChunkRetrievalTexts(input: {

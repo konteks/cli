@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { querySql } from 'tests/support/sqlite-libsql'
 import actionDb, { openProjectDatabase } from '@/database/actions/_db'
 import {
     saveKonteksDiary,
@@ -9,7 +10,6 @@ import {
     saveKonteksMemory,
 } from '@/database/services/save-memory'
 import searchMemory from '@/database/services/search-memory'
-import { querySql } from '@/database/support/libsql'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []

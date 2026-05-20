@@ -1,9 +1,6 @@
 import z from 'zod'
-import createMemoryRepository from '@/memory/create-memory-repository'
-import {
-    loadMcpProjectContext,
-    withProjectDatabaseContext,
-} from '@/memory/runtime'
+import { withMemoryRepository } from '@/database/services/memory-repository'
+import { loadMcpProjectContext } from '@/memory/runtime'
 import type { ForgetResult } from '@/models/memory'
 import BaseMcpTool from './_base-mcp-tool'
 
@@ -37,8 +34,8 @@ export default class ForgetMcpTool extends BaseMcpTool<Input> {
 
     public async handle(input: Input): Promise<ForgetResult> {
         const context = await loadMcpProjectContext()
-        return await withProjectDatabaseContext(context, service =>
-            createMemoryRepository(service, context).forget(input),
+        return await withMemoryRepository(context, repository =>
+            repository.forget(input),
         )
     }
 }

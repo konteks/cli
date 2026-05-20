@@ -1,9 +1,10 @@
+import { eq, sql } from 'drizzle-orm'
 import type { SqliteConnection } from '@/database/actions/_db'
 import {
     deleteRetrievalDocuments,
     upsertRetrievalDocument,
 } from '@/database/actions/retrieval-documents'
-import { executeSql, querySql } from '@/database/support/libsql'
+import { modules, targetEmbeddings } from '@/database/schema'
 import { contentHash } from '@/providers/persistence/objects/content'
 import type {
     PackageManifestMetadata,
@@ -23,16 +24,12 @@ export default async function rebuildModuleArtifacts(
     metadata?: ProjectMetadata,
 ): Promise<void> {
     await deleteRetrievalDocuments(db, 'module')
-    await executeSql(
-        db.client,
-        'delete from target_embeddings where target_type = ?',
-        ['module'],
-    )
-    await executeSql(db.client, 'delete from modules')
+    await db.db
+        .delete(targetEmbeddings)
+        .where(eq(targetEmbeddings.targetType, 'module'))
+    await db.db.delete(modules)
 
-    const rows = await querySql<ModuleSummaryRow>(
-        db.client,
-        `
+    const rows = await db.db.all<ModuleSummaryRow>(sql`
 select
     case
         when instr(path, '/') > 0 then substr(path, 1, instr(path, '/') - 1)
@@ -46,47 +43,27 @@ where deleted_at is null
   and suppressed_at is null
 group by module_path, source_role
 order by chunk_count desc, module_path
-`,
-    )
+`)
 
     for (const row of rows) {
         const moduleId = `module_${contentHash(`${row.module_path}:${row.source_role ?? 'unknown'}`).slice(0, 32)}`
         const summary = summarizeModule(row)
         const topics = moduleTopics(row.module_path)
 
-        await executeSql(
-            db.client,
-            `
-insert into modules (
-    id,
-    path,
-    source_role,
-    package_name,
-    summary,
-    file_count,
-    chunk_count,
-    exported_symbols_json,
-    imports_json,
-    topics_json,
-    entities_json,
-    updated_at
-) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`,
-            [
-                moduleId,
-                row.module_path,
-                row.source_role,
-                null,
-                summary,
-                row.file_count,
-                row.chunk_count,
-                JSON.stringify([]),
-                JSON.stringify([]),
-                JSON.stringify(topics),
-                JSON.stringify([]),
-                extractedAt,
-            ],
-        )
+        await db.db.insert(modules).values({
+            chunkCount: row.chunk_count,
+            entitiesJson: JSON.stringify([]),
+            exportedSymbolsJson: JSON.stringify([]),
+            fileCount: row.file_count,
+            id: moduleId,
+            importsJson: JSON.stringify([]),
+            packageName: null,
+            path: row.module_path,
+            sourceRole: row.source_role,
+            summary,
+            topicsJson: JSON.stringify(topics),
+            updatedAt: extractedAt,
+        })
 
         const ftsText = [
             `module: ${row.module_path}`,
@@ -153,39 +130,20 @@ async function insertPackageModule(
         ...dependencyNames.slice(0, 24),
     ].filter((value): value is string => Boolean(value))
 
-    await executeSql(
-        db.client,
-        `
-insert into modules (
-    id,
-    path,
-    source_role,
-    package_name,
-    summary,
-    file_count,
-    chunk_count,
-    exported_symbols_json,
-    imports_json,
-    topics_json,
-    entities_json,
-    updated_at
-) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`,
-        [
-            moduleId,
-            modulePath,
-            'package_config',
-            metadata.name ?? null,
-            summary,
-            1,
-            0,
-            JSON.stringify([]),
-            JSON.stringify(dependencyNames),
-            JSON.stringify(topics),
-            JSON.stringify([]),
-            extractedAt,
-        ],
-    )
+    await db.db.insert(modules).values({
+        chunkCount: 0,
+        entitiesJson: JSON.stringify([]),
+        exportedSymbolsJson: JSON.stringify([]),
+        fileCount: 1,
+        id: moduleId,
+        importsJson: JSON.stringify(dependencyNames),
+        packageName: metadata.name ?? null,
+        path: modulePath,
+        sourceRole: 'package_config',
+        summary,
+        topicsJson: JSON.stringify(topics),
+        updatedAt: extractedAt,
+    })
 
     const text = [
         `module: ${modulePath}`,

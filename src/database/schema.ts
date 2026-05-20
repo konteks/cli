@@ -7,6 +7,7 @@ import {
     sqliteTable,
     text,
 } from 'drizzle-orm/sqlite-core'
+import type { ObservationKind } from '@/models/memory'
 
 export const sources = sqliteTable('sources', {
     createdAt: text('created_at').notNull(),
@@ -108,7 +109,7 @@ export const observations = sqliteTable('observations', {
     deletedAt: text('deleted_at'),
     forgetReason: text('forget_reason'),
     id: text('id').primaryKey(),
-    kind: text('kind').notNull(),
+    kind: text('kind').$type<ObservationKind>().notNull(),
     payloadRef: text('payload_ref'),
     suppressedAt: text('suppressed_at'),
     textInline: text('text_inline'),

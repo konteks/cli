@@ -1,13 +1,10 @@
+import { and, asc, isNull } from 'drizzle-orm'
 import type { SqliteConnection } from '@/database/actions/_db'
-import { querySql } from '@/database/support/libsql'
+import { diaryEntries, observations } from '@/database/schema'
 import {
     exportDiaryRow,
     exportObservationRow,
 } from '@/database/support/memory-transfer'
-import type {
-    DiaryExportRow,
-    ObservationExportRow,
-} from '@/database/support/memory-transfer-types'
 import type { DurableMemoryExport } from '@/models/memory-transfer'
 import type { Project } from '@/models/project'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
@@ -18,27 +15,54 @@ export default async function exportDurableMemory(
     options: { includeInactive?: boolean },
 ): Promise<DurableMemoryExport> {
     const toonStore = createToonStore(context.memoryDir)
-    const activeFilter = options.includeInactive
-        ? ''
-        : 'where deleted_at is null and suppressed_at is null'
-    const memoryRows = await querySql<ObservationExportRow>(
-        db.client,
-        `
-select id, kind, text_inline, payload_ref, content_hash, confidence, created_at, deleted_at, suppressed_at, forget_reason
-from observations
-${activeFilter}
-order by created_at asc
-`,
-    )
-    const diaryRows = await querySql<DiaryExportRow>(
-        db.client,
-        `
-select id, subject, summary, tags_json, payload_ref, content_hash, deleted_at, suppressed_at, forget_reason, created_at
-from diary_entries
-${activeFilter}
-order by created_at asc
-`,
-    )
+    const memoryRows = await db.db
+        .select({
+            confidence: observations.confidence,
+            content_hash: observations.contentHash,
+            created_at: observations.createdAt,
+            deleted_at: observations.deletedAt,
+            forget_reason: observations.forgetReason,
+            id: observations.id,
+            kind: observations.kind,
+            payload_ref: observations.payloadRef,
+            suppressed_at: observations.suppressedAt,
+            text_inline: observations.textInline,
+        })
+        .from(observations)
+        .$dynamic()
+        .where(
+            options.includeInactive
+                ? undefined
+                : and(
+                      isNull(observations.deletedAt),
+                      isNull(observations.suppressedAt),
+                  ),
+        )
+        .orderBy(asc(observations.createdAt))
+    const diaryRows = await db.db
+        .select({
+            content_hash: diaryEntries.contentHash,
+            created_at: diaryEntries.createdAt,
+            deleted_at: diaryEntries.deletedAt,
+            forget_reason: diaryEntries.forgetReason,
+            id: diaryEntries.id,
+            payload_ref: diaryEntries.payloadRef,
+            subject: diaryEntries.subject,
+            summary: diaryEntries.summary,
+            suppressed_at: diaryEntries.suppressedAt,
+            tags_json: diaryEntries.tagsJson,
+        })
+        .from(diaryEntries)
+        .$dynamic()
+        .where(
+            options.includeInactive
+                ? undefined
+                : and(
+                      isNull(diaryEntries.deletedAt),
+                      isNull(diaryEntries.suppressedAt),
+                  ),
+        )
+        .orderBy(asc(diaryEntries.createdAt))
 
     return {
         diaries: await Promise.all(

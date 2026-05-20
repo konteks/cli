@@ -4,15 +4,12 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import type { Client, Transaction } from '@libsql/client'
 import { createClient } from '@libsql/client'
+import { sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/libsql'
 import { ensureSearchIndex } from '@/database/actions/search-index'
 import initialSchemaSql from '@/database/migrations/001_initial_schema.sql?raw'
 import * as schema from '@/database/schema'
-import {
-    executeSql,
-    querySql,
-    type SqliteExecutor,
-} from '@/database/support/libsql'
+import type { SqliteExecutor } from '@/database/support/libsql'
 import { isSqliteTestRuntime } from '@/database/support/test-runtime'
 import type { Project } from '@/models/project'
 
@@ -71,15 +68,6 @@ function currentDatabase(): Database {
     }
 
     return currentDatabaseEntry().db
-}
-
-function currentClient(): SqliteExecutor {
-    const bound = actionDatabaseBinding.getStore()
-    if (bound) {
-        return bound.client
-    }
-
-    return currentDatabaseEntry().client
 }
 
 function currentDatabaseEntry(): DatabaseEntry {
@@ -187,21 +175,17 @@ function createConnection(
 
 async function runMigrations(connection: SqliteConnection): Promise<void> {
     await withTransaction(connection, async tx => {
-        await executeSql(
-            tx.client,
-            `
+        await tx.db.run(sql`
 create table if not exists schema_migrations (
     id text primary key,
     applied_at text not null
 );
-`,
-        )
+`)
 
         const applied = new Set(
             (
-                await querySql<{ id: string }>(
-                    tx.client,
-                    'select id from schema_migrations',
+                await tx.db.all<{ id: string }>(
+                    sql`select id from schema_migrations`,
                 )
             ).map(row => row.id),
         )
@@ -212,10 +196,8 @@ create table if not exists schema_migrations (
             }
 
             await tx.client.executeMultiple(migration.sql)
-            await executeSql(
-                tx.client,
-                'insert into schema_migrations (id, applied_at) values (?, ?)',
-                [migration.id, new Date().toISOString()],
+            await tx.db.run(
+                sql`insert into schema_migrations (id, applied_at) values (${migration.id}, ${new Date().toISOString()})`,
             )
         }
     })
@@ -231,13 +213,14 @@ async function syncTestActionDatabase(
     const { client: targetClient } = currentDatabaseEntry()
     await targetClient.executeMultiple(initialSchemaSql)
     await clearSyncedTables(targetClient)
+    const targetDb = drizzle(targetClient as Client)
 
+    const sourceDb = drizzle(sourceClient as Client)
     for (const table of syncedTables) {
-        const rows = await querySql<Record<string, unknown>>(
-            sourceClient,
-            `select * from ${table}`,
+        const rows = await sourceDb.all<Record<string, unknown>>(
+            sql.raw(`select * from ${table}`),
         )
-        await insertRows(targetClient, table, rows)
+        await insertRows(targetDb, table, rows)
     }
 }
 
@@ -258,7 +241,7 @@ async function clearSyncedTables(client: SqliteExecutor): Promise<void> {
 }
 
 async function insertRows(
-    client: SqliteExecutor,
+    database: Database,
     table: string,
     rows: Record<string, unknown>[],
 ): Promise<void> {
@@ -268,12 +251,13 @@ async function insertRows(
             continue
         }
 
-        const placeholders = columns.map(() => '?').join(', ')
         const columnList = columns.map(column => `"${column}"`).join(', ')
-        await client.execute({
-            args: columns.map(column => row[column] as LibsqlValue),
-            sql: `insert into ${table} (${columnList}) values (${placeholders})`,
-        })
+        await database.run(
+            sql`insert into ${sql.raw(table)} (${sql.raw(columnList)}) values (${sql.join(
+                columns.map(column => sql`${row[column] as LibsqlValue}`),
+                sql`, `,
+            )})`,
+        )
     }
 }
 
@@ -328,12 +312,10 @@ function findProjectRoot(start: string): string {
 
 const db = new Proxy(
     {
-        currentClient,
         ensureActionDatabase,
         syncTestActionDatabase,
         withActionDatabase,
     } as Database & {
-        currentClient(): SqliteExecutor
         ensureActionDatabase(): Promise<void>
         syncTestActionDatabase(client: SqliteExecutor): Promise<void>
         withActionDatabase<T>(

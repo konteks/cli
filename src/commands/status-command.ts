@@ -1,13 +1,11 @@
 import BaseCommand from '@/commands/_base-command'
-import type { SqliteConnection } from '@/database/actions/_db'
+import { projectMemoryDatabasePath } from '@/database/services/project-memory'
 import {
-    openProjectDatabase,
-    projectDatabasePath,
-} from '@/database/actions/_db'
-import { querySql, type SqliteParams } from '@/database/support/libsql'
+    type ProjectMemoryStats,
+    readProjectMemoryStats,
+} from '@/database/services/project-status'
 import type { Project } from '@/models/project'
 import { getExtractionFreshness } from '@/providers/extraction/engine/manifest'
-import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
 import { formatInteger } from '@/support/format/number'
 import createColorPalette, {
@@ -37,16 +35,7 @@ type ProjectStatus = {
     configExists: boolean
     databasePath: string
     databaseExists: boolean
-    memoryStats: {
-        files: number
-        sections: number
-        modules: number
-        memories: number
-        diaryEntries: number
-        retrievalDocuments: number
-        embeddings: number
-        events: number
-    }
+    memoryStats: ProjectMemoryStats
     freshness: {
         status: 'missing' | 'fresh' | 'stale'
         reason: string
@@ -146,7 +135,7 @@ function formatDate(value: string): string {
 
 class ProjectStatusReader implements ProjectStatusReaderContract {
     public async read(context: Project): Promise<ProjectStatus> {
-        const databasePath = projectDatabasePath(context)
+        const databasePath = projectMemoryDatabasePath(context)
         const memoryDirExists = await pathExists(context.memoryDir)
         const databaseExists = await pathExists(databasePath)
         const initialized = memoryDirExists && context.configExists
@@ -166,7 +155,7 @@ class ProjectStatusReader implements ProjectStatusReaderContract {
             memoryDir: context.memoryDir,
             memoryDirExists,
             memoryStats: databaseExists
-                ? await readMemoryStats(context)
+                ? await readProjectMemoryStats(context)
                 : emptyMemoryStats(),
             projectRoot: context.projectRoot,
         }
@@ -184,72 +173,4 @@ function emptyMemoryStats(): ProjectStatus['memoryStats'] {
         retrievalDocuments: 0,
         sections: 0,
     }
-}
-
-async function readMemoryStats(
-    context: Project,
-): Promise<ProjectStatus['memoryStats']> {
-    const service = await openProjectDatabase(context)
-    try {
-        const [
-            files,
-            sections,
-            modules,
-            memories,
-            diaryEntries,
-            retrievalDocuments,
-            embeddings,
-            events,
-        ] = await Promise.all([
-            countRows(
-                service,
-                'select count(*) as count from sources where type = ?',
-                [EXTRACTED_FILE_SOURCE_TYPE],
-            ),
-            countRows(
-                service,
-                'select count(*) as count from chunks where deleted_at is null and suppressed_at is null',
-            ),
-            countRows(service, 'select count(*) as count from modules'),
-            countRows(
-                service,
-                'select count(*) as count from observations where deleted_at is null and suppressed_at is null',
-            ),
-            countRows(
-                service,
-                'select count(*) as count from diary_entries where deleted_at is null and suppressed_at is null',
-            ),
-            countRows(
-                service,
-                'select count(*) as count from retrieval_documents',
-            ),
-            countRows(
-                service,
-                'select count(*) as count from target_embeddings',
-            ),
-            countRows(service, 'select count(*) as count from memory_events'),
-        ])
-
-        return {
-            diaryEntries,
-            embeddings,
-            events,
-            files,
-            memories,
-            modules,
-            retrievalDocuments,
-            sections,
-        }
-    } finally {
-        await service.close()
-    }
-}
-
-async function countRows(
-    service: SqliteConnection,
-    sql: string,
-    params: SqliteParams = [],
-): Promise<number> {
-    const rows = await querySql<{ count: number }>(service.client, sql, params)
-    return rows[0]?.count ?? 0
 }

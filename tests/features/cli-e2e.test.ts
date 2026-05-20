@@ -5,12 +5,12 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { promisify } from 'node:util'
+import { querySql } from 'tests/support/sqlite-libsql'
 import { openProjectDatabase } from '@/database/actions/_db'
 import {
     saveKonteksDiary,
     saveKonteksMemory,
 } from '@/database/services/save-memory'
-import { querySql } from '@/database/support/libsql'
 import type { DurableMemoryExport } from '@/models/memory-transfer'
 import { extractProject } from '@/providers/extraction/extract-project'
 import {

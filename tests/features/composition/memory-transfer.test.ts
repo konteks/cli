@@ -10,6 +10,7 @@ import {
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { executeSql, querySql } from 'tests/support/sqlite-libsql'
 import BackupCommand from '@/commands/backup-command'
 import {
     exportMemory,
@@ -22,7 +23,6 @@ import {
     saveKonteksMemory,
 } from '@/database/services/save-memory'
 import searchMemory from '@/database/services/search-memory'
-import { executeSql, querySql } from '@/database/support/libsql'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []

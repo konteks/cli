@@ -2,7 +2,7 @@
 import { Command } from 'commander'
 import { commands, memoryCommands } from '@/commands'
 import type { BaseCommandContext } from '@/commands/_base-command'
-import { projectDatabasePath } from '@/database/actions/_db'
+import { projectMemoryDatabasePath } from '@/database/services/project-memory'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
 import CliUserError from '@/support/cli/cli-user-error'
@@ -61,7 +61,7 @@ async function ensureCliProjectInitialized(): Promise<void> {
         throw createUninitializedCliError()
     }
 
-    if (!(await pathExists(projectDatabasePath(context)))) {
+    if (!(await pathExists(projectMemoryDatabasePath(context)))) {
         throw createUninitializedCliError()
     }
 }

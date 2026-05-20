@@ -2,17 +2,16 @@ import { mkdir } from 'node:fs/promises'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
 import type { ExtractionEngineContract } from '@/contracts/services/extraction-engine'
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
-import type { SqliteConnection } from '@/database/actions/_db'
-import { openProjectDatabase } from '@/database/actions/_db'
-import { querySql } from '@/database/support/libsql'
+import {
+    extractProjectSectionsWithDatabase,
+    readExtractedProjectPaths,
+} from '@/database/services/project-extraction'
 import type {
     ExtractProjectRequest,
     ExtractProjectResponse,
 } from '@/models/extraction'
 import type { Project } from '@/models/project'
-import generateTargetEmbeddings from '@/providers/embeddings/generate-target-embeddings'
 import extractProjectMetadata from '@/providers/extraction/engine/extract-project-metadata'
-import extractSections from '@/providers/extraction/engine/extract-sections'
 import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import { scanProjectFilesWithDiagnostics } from '@/providers/extraction/engine/file-scan'
 import formatProjectSummaryToon from '@/providers/extraction/engine/format-project-summary-toon'
@@ -28,7 +27,6 @@ import {
     readExtractionManifest,
     writeExtractionManifest,
 } from '@/providers/extraction/engine/manifest'
-import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
 
 export async function extractProject(
@@ -111,14 +109,15 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
             phase: 'database',
             status: 'start',
         })
-        const db = await openProjectDatabase(context)
         progress?.({
             message: 'Local memory database ready',
             phase: 'database',
             status: 'done',
         })
         const alreadyExtractedPaths =
-            mode === 'resume' ? await readExtractedPaths(db) : undefined
+            mode === 'resume'
+                ? await readExtractedProjectPaths(context)
+                : undefined
         const { deletedPaths, filesToExtract } = selectFilesForMode(
             files,
             previousManifest,
@@ -138,42 +137,25 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
                       await options.embeddingProvider?.prepare?.()
                   }
                 : undefined
-        const extractedSections = await extractSections(
-            db,
-            context,
-            filesToExtract,
+        const extractionPersistence = await extractProjectSectionsWithDatabase({
+            beforeExtract,
+            deletedPaths,
+            embeddingProvider: options.embeddingProvider,
             extractedAt,
-            {
-                beforeExtract,
-                deletedPaths,
-                metadata,
-                mode,
-                onProgress: progress,
-            },
-        )
-        const totalSectionCount = await readTotalSectionCount(db)
-        if (mode === 'resume') {
-            progress?.({
-                chunkCount: totalSectionCount,
-                current: files.length,
-                message: `Resumed extraction from ${files.length} files`,
-                phase: 'chunks',
-                status: 'done',
-                total: files.length,
-            })
+            files: filesToExtract,
+            metadata,
+            mode,
+            onProgress: progress,
+            project: context,
+            totalFileCount: files.length,
+        })
+        const { extractedSections, totalSectionCount } = extractionPersistence
+        const embeddingRun = {
+            embeddedCount: extractionPersistence.embeddedCount,
+            reusedCount: extractionPersistence.embeddingReusedCount,
         }
-        const embeddingRun = options.embeddingProvider
-            ? await generateTargetEmbeddings(
-                  db,
-                  options.embeddingProvider,
-                  ['chunk', 'module'],
-                  extractedAt,
-                  { onProgress: progress },
-              )
-            : { embeddedCount: 0, reusedCount: 0 }
         const vectorCount =
             embeddingRun.embeddedCount + embeddingRun.reusedCount
-        await db.close()
         const toonStore = createToonStore(context.memoryDir)
         progress?.({
             message: 'Writing project summary',
@@ -310,32 +292,6 @@ function selectFilesForMode(
         .map(file => file.path)
 
     return { deletedPaths, filesToExtract }
-}
-
-async function readExtractedPaths(db: SqliteConnection): Promise<Set<string>> {
-    const rows = await querySql<{ path: string }>(
-        db.client,
-        `
-select distinct sources.uri as path
-from sources
-inner join chunks on chunks.source_id = sources.id
-where sources.type = ?
-  and sources.uri is not null
-`,
-        [EXTRACTED_FILE_SOURCE_TYPE],
-    )
-
-    return new Set(rows.map(row => row.path))
-}
-
-async function readTotalSectionCount(db: SqliteConnection): Promise<number> {
-    // Compatibility: extracted sections are persisted in the legacy `chunks` table.
-    const rows = await querySql<{ count: number }>(
-        db.client,
-        'select count(*) as count from chunks',
-    )
-
-    return rows[0]?.count ?? 0
 }
 
 function hasFileChanged(previous: ScannedFile, current: ScannedFile): boolean {
