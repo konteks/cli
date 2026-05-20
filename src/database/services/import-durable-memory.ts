@@ -3,7 +3,6 @@ import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
 import hasDiaryHash from '@/database/actions/has-diary-hash'
 import hasObservationHash from '@/database/actions/has-observation-hash'
-import withBoundActionDatabase from '@/database/actions/with-bound-action-database'
 import type {
     DurableMemoryExport,
     DurableMemoryImportResult,
@@ -28,7 +27,7 @@ export default async function importDurableMemory(
         memoriesSkipped: 0,
     }
 
-    await withBoundActionDatabase(db, async () => {
+    await withTransaction(db, async () => {
         for (const memory of payload.memories) {
             const duplicate = await hasObservationHash(memory.contentHash)
             if (duplicate) {

@@ -13,7 +13,6 @@ import indexSearchDocument from '@/database/actions/index-search-document'
 import insertDiaryEntry from '@/database/actions/insert-diary-entry'
 import insertObservation from '@/database/actions/insert-observation'
 import upsertRetrievalDocument from '@/database/actions/upsert-retrieval-document'
-import withBoundActionDatabase from '@/database/actions/with-bound-action-database'
 import {
     importanceToConfidence,
     isSkippableMemoryError,
@@ -36,7 +35,7 @@ export async function saveKonteksMemory(
 ): Promise<SaveResult> {
     validateMemoryQuality(input.content)
     const hash = contentHash(input.content)
-    const duplicate = await withBoundActionDatabase(db, () =>
+    const duplicate = await withTransaction(db, () =>
         findDuplicateObservation(hash),
     )
     if (duplicate) {

@@ -1,9 +1,8 @@
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
-import { openProjectDatabase } from '@/database/actions/_db'
+import { openProjectDatabase, withTransaction } from '@/database/actions/_db'
 import countExtractedSections from '@/database/actions/count-extracted-sections'
 import readExtractedProjectPathsAction from '@/database/actions/read-extracted-project-paths'
-import withBoundActionDatabase from '@/database/actions/with-bound-action-database'
 import type { Project } from '@/models/project'
 import generateTargetEmbeddings from '@/providers/embeddings/generate-target-embeddings'
 import type { ProjectMetadata } from '@/providers/extraction/engine/extract-project-metadata'
@@ -36,7 +35,7 @@ export async function readExtractedProjectPaths(
 ): Promise<Set<string>> {
     const connection = await openProjectDatabase(context)
     try {
-        return await withBoundActionDatabase(connection, () =>
+        return await withTransaction(connection, () =>
             readExtractedProjectPathsAction(),
         )
     } finally {
@@ -62,9 +61,8 @@ export async function extractProjectSectionsWithDatabase(
                 onProgress: options.onProgress,
             },
         )
-        const totalSectionCount = await withBoundActionDatabase(
-            connection,
-            () => countExtractedSections(),
+        const totalSectionCount = await withTransaction(connection, () =>
+            countExtractedSections(),
         )
         if (options.mode === 'resume') {
             options.onProgress?.({

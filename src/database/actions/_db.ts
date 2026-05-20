@@ -44,7 +44,7 @@ const migrations: Migration[] = [
 
 const databases = new Map<string, DatabaseEntry>()
 const testDatabases = new Map<string, ProjectDatabaseEntry>()
-const actionDatabaseBinding = new AsyncLocalStorage<DatabaseEntry>()
+const currentConnection = new AsyncLocalStorage<SqliteConnection>()
 
 function currentDatabaseEntry(): DatabaseEntry {
     const databaseUrl = isSqliteTestRuntime()
@@ -75,9 +75,7 @@ export async function openProjectDatabase(
     const { client, db, ownsClient } = openDatabaseClient(context)
     const connection = createConnection(client, db, ownsClient)
     await runMigrations(connection)
-    await withActionDatabase(connection.client, connection.db, () =>
-        ensureSearchIndex(),
-    )
+    await runWithConnection(connection, () => ensureSearchIndex())
 
     return connection
 }
@@ -91,10 +89,13 @@ export async function withTransaction<T>(
     connection: SqliteConnection,
     operation: (tx: SqliteConnection) => Promise<T>,
 ): Promise<T> {
+    const activeConnection = currentConnection.getStore()
+    if (activeConnection) {
+        return operation(activeConnection)
+    }
+
     if (isSqliteTestRuntime() || !('transaction' in connection.client)) {
-        return withActionDatabase(connection.client, connection.db, () =>
-            operation(connection),
-        )
+        return runWithConnection(connection, () => operation(connection))
     }
 
     const transaction = await connection.client.transaction('write')
@@ -102,7 +103,7 @@ export async function withTransaction<T>(
     const txConnection = createConnection(transaction, txDb, false)
 
     try {
-        const result = await withActionDatabase(transaction, txDb, () =>
+        const result = await runWithConnection(txConnection, () =>
             operation(txConnection),
         )
         await transaction.commit()
@@ -181,16 +182,15 @@ create table if not exists schema_migrations (
     })
 }
 
-export async function withActionDatabase<T>(
-    client: SqliteExecutor,
-    db: ProjectDatabase,
+async function runWithConnection<T>(
+    connection: SqliteConnection,
     operation: () => Promise<T>,
 ): Promise<T> {
-    return actionDatabaseBinding.run({ client, db }, operation)
+    return currentConnection.run(connection, operation)
 }
 
 export default async function getDb(): Promise<ProjectDatabase> {
-    const bound = actionDatabaseBinding.getStore()
+    const bound = currentConnection.getStore()
     if (bound) {
         return bound.db
     }

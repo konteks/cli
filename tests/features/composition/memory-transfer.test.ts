@@ -17,7 +17,7 @@ import {
     importMemory,
     restoreMemory,
 } from '@/composition/memory-transfer'
-import { openProjectDatabase, withActionDatabase } from '@/database/actions/_db'
+import { openProjectDatabase, withTransaction } from '@/database/actions/_db'
 import markSuppressed from '@/database/actions/mark-suppressed'
 import {
     saveKonteksDiary,
@@ -215,7 +215,7 @@ describe('memory transfer', () => {
             importance: 3,
             kind: 'note',
         })
-        await withActionDatabase(db.client, db.db, () =>
+        await withTransaction(db, () =>
             markSuppressed(
                 { id: saved.id, kind: 'observation' },
                 'test inactive export',
