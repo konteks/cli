@@ -1,5 +1,6 @@
 import z from 'zod'
-import { withMemoryRepository } from '@/database/services/memory-repository'
+import { openProjectDatabase } from '@/database/actions/_db'
+import searchMemory from '@/database/services/search-memory'
 import formatMemory from '@/mcp/tools/utils/format-memory'
 import inline from '@/mcp/tools/utils/inline'
 import { loadMcpProjectContext } from '@/memory/runtime'
@@ -30,15 +31,18 @@ export default class SearchMcpTool extends BaseMcpTool<Input> {
 
     public async handle(input: Input): Promise<string> {
         const context = await loadMcpProjectContext()
-        const results = await withMemoryRepository(context, repository =>
-            repository.search(input),
-        )
+        const db = await openProjectDatabase(context)
+        try {
+            const results = await searchMemory(db, input)
 
-        return formatSearchText({
-            limit: input.limit ?? 10,
-            query: input.query,
-            results,
-        })
+            return formatSearchText({
+                limit: input.limit ?? 10,
+                query: input.query,
+                results,
+            })
+        } finally {
+            await db.close()
+        }
     }
 }
 

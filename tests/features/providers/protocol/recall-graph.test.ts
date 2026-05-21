@@ -4,7 +4,6 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openProjectDatabase } from '@/database/actions/_db'
-import SQLiteMemoryRepository from '@/database/repositories/sqlite-memory-repository'
 import recallRepositoryMemory from '@/memory/recall-repository-memory'
 import { loadProjectContext } from '@/providers/project/context'
 import { graphApi } from '../../../support/sqlite-action-api'
@@ -50,7 +49,7 @@ afterEach(async () => {
 
 describe('recallGraph', () => {
     it('returns compact active graph context for task-matched entities', async () => {
-        const { adapter, context, graph } = await makeGraph()
+        const { adapter, graph } = await makeGraph()
         const project = await graph.upsertEntity({
             aliases: ['memory system'],
             name: 'Konteks',
@@ -76,8 +75,7 @@ describe('recallGraph', () => {
             supersedesRelationId: oldRelation.id,
         })
 
-        const repo = new SQLiteMemoryRepository(adapter, context)
-        const recall = await recallRepositoryMemory(repo, {
+        const recall = await recallRepositoryMemory(adapter, {
             task: 'memory system runtime',
         })
         const items = recall.graph
@@ -96,7 +94,7 @@ describe('recallGraph', () => {
     })
 
     it('only returns historical graph context when the task asks for it', async () => {
-        const { adapter, context, graph } = await makeGraph()
+        const { adapter, graph } = await makeGraph()
         const project = await graph.upsertEntity({
             aliases: ['memory system'],
             name: 'Konteks',
@@ -122,13 +120,12 @@ describe('recallGraph', () => {
             supersedesRelationId: oldRelation.id,
         })
 
-        const repo = new SQLiteMemoryRepository(adapter, context)
-        const normalRecall = await recallRepositoryMemory(repo, {
+        const normalRecall = await recallRepositoryMemory(adapter, {
             task: 'work on memory system',
         })
         const normal = normalRecall.history
 
-        const historicalRecall = await recallRepositoryMemory(repo, {
+        const historicalRecall = await recallRepositoryMemory(adapter, {
             task: 'why did the previous memory system storage decision change',
         })
         const historical = historicalRecall.history

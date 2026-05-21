@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test'
-import type { MemoryRepositoryContract } from '@/contracts/repositories/memory-repository'
-import recallRepositoryMemory from '@/memory/recall-repository-memory'
+import {
+    type RecallMemorySource,
+    recallMemoryFromSource,
+} from '@/memory/recall-repository-memory'
 import type {
     MemoryEntity,
     MemorySearchResult,
@@ -40,8 +42,8 @@ describe('memory/recall', () => {
             type: 'chunk',
         })
 
-        const result = recallRepositoryMemory(
-            memoryRepository({ memories: [first, duplicate, second] }),
+        const result = recallMemoryFromSource(
+            memorySource({ memories: [first, duplicate, second] }),
             { task: 'continue recall work' },
         )
 
@@ -54,8 +56,8 @@ describe('memory/recall', () => {
     })
 
     it('keeps source detail when requested and preserves full graph/history evidence', () => {
-        const result = recallRepositoryMemory(
-            memoryRepository({
+        const result = recallMemoryFromSource(
+            memorySource({
                 entities: [entity({ id: 'project', name: 'Project' })],
                 histories: Array.from({ length: 6 }, (_, index) => ({
                     object: entity({
@@ -105,7 +107,7 @@ describe('memory/recall', () => {
             subjectEntityId: 'project',
             subjectEntityName: 'Konteks',
         }
-        const repository = memoryRepository({
+        const source = memorySource({
             entities: [root, root],
             histories: [
                 {
@@ -128,7 +130,7 @@ describe('memory/recall', () => {
             ],
         })
 
-        const recall = await recallRepositoryMemory(repository, {
+        const recall = await recallMemoryFromSource(source, {
             task: 'why did runtime change',
         })
 
@@ -144,16 +146,12 @@ describe('memory/recall', () => {
     })
 })
 
-function memoryRepository(input: {
+function memorySource(input: {
     entities?: MemoryEntity[]
-    histories?: Awaited<
-        ReturnType<MemoryRepositoryContract['historicalRelations']>
-    >
+    histories?: Awaited<ReturnType<RecallMemorySource['historicalRelations']>>
     memories?: MemorySearchResult[]
-    neighbors?: Awaited<
-        ReturnType<MemoryRepositoryContract['traverseNeighbors']>
-    >
-}): MemoryRepositoryContract {
+    neighbors?: Awaited<ReturnType<RecallMemorySource['traverseNeighbors']>>
+}): RecallMemorySource {
     return {
         async historicalRelations() {
             return input.histories ?? []
@@ -167,5 +165,5 @@ function memoryRepository(input: {
         async traverseNeighbors() {
             return input.neighbors ?? []
         },
-    } as unknown as MemoryRepositoryContract
+    }
 }

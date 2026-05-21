@@ -1,7 +1,7 @@
 import type {
     SaveDiaryInput,
     SaveOptions,
-} from '@/contracts/repositories/memory-repository'
+} from '@/database/services/save-memory'
 
 type SaveProjectUpdate = NonNullable<SaveOptions['projectUpdate']>
 

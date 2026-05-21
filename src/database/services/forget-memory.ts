@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto'
-import type { ForgetInput } from '@/contracts/repositories/memory-repository'
 import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
 import hardDeleteForgetTarget from '@/database/actions/hard-delete-forget-target'
@@ -15,7 +14,12 @@ import type {
     TargetKind,
 } from '@/database/support/forget-target'
 
-// import { GraphStore } from ./graph-store.js'
+export type ForgetInput = {
+    id?: string
+    query?: string
+    mode?: 'hard_delete' | 'invalidate' | 'soft_delete'
+    reason?: string
+}
 
 export default async function forgetMemory(
     db: SqliteConnection,
