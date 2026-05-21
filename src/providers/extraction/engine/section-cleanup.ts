@@ -1,5 +1,5 @@
 import { and, eq, inArray, sql } from 'drizzle-orm'
-import type { SqliteConnection } from '@/database/actions/_db'
+import getDb from '@/database/actions/_db'
 import clearModules from '@/database/actions/clear-modules'
 import deleteRetrievalDocuments from '@/database/actions/delete-retrieval-documents'
 import { chunks, minedSuppressions, sources } from '@/database/schema'
@@ -10,13 +10,13 @@ import { chunks, minedSuppressions, sources } from '@/database/schema'
  * 'chunk'` rows. These deletes intentionally use the legacy storage names.
  */
 export async function isExtractedSectionSuppressed(
-    db: SqliteConnection,
     path: string,
     anchor: string,
     contentHashValue: string,
 ): Promise<boolean> {
+    const db = await getDb()
     // "Mined" is legacy terminology; persisted compatibility keeps the table name stable.
-    const rows = await db.db
+    const rows = await db
         .select({ content_hash: minedSuppressions.contentHash })
         .from(minedSuppressions)
         .where(
@@ -31,24 +31,23 @@ export async function isExtractedSectionSuppressed(
     return rows.length > 0
 }
 
-export async function clearExtractedSections(
-    db: SqliteConnection,
-): Promise<void> {
-    await recordExtractedSuppressions(db)
-    await db.db.run(sql`
+export async function clearExtractedSections(): Promise<void> {
+    const db = await getDb()
+    await recordExtractedSuppressions()
+    await db.run(sql`
 delete from memory_fts_indexed
 where id in (select id from chunks where source_id in (select id from sources where type = 'mined_file'));
 `)
-    await db.db.run(sql`
+    await db.run(sql`
 delete from memory_fts
 where id in (select id from chunks where source_id in (select id from sources where type = 'mined_file'));
 `)
-    await db.db.run(sql`
+    await db.run(sql`
 delete from taxonomy_links
 where target_type = 'chunk'
   and target_id in (select id from chunks where source_id in (select id from sources where type = 'mined_file'));
 `)
-    const chunkIds = await db.db.all<{ id: string }>(sql`
+    const chunkIds = await db.all<{ id: string }>(sql`
 select id from chunks where source_id in (select id from sources where type = 'mined_file');
 `)
     await deleteRetrievalDocuments(
@@ -56,56 +55,56 @@ select id from chunks where source_id in (select id from sources where type = 'm
         chunkIds.map(row => row.id),
     )
     await deleteRetrievalDocuments('module')
-    await db.db.run(sql`
+    await db.run(sql`
 delete from target_embeddings
 where target_type = 'chunk'
   and target_id in (select id from chunks where source_id in (select id from sources where type = 'mined_file'));
 `)
-    await db.db.run(sql`
+    await db.run(sql`
 delete from target_embeddings
 where target_type = 'module';
 `)
     await clearModules()
-    await db.db.run(sql`
+    await db.run(sql`
 delete from chunks
 where source_id in (select id from sources where type = 'mined_file');
 `)
-    await db.db.run(sql`
+    await db.run(sql`
 delete from sources
 where type = 'mined_file';
 `)
 }
 
 export async function clearExtractedSectionsForPaths(
-    db: SqliteConnection,
     paths: string[],
 ): Promise<void> {
+    const db = await getDb()
     const uniquePaths = [...new Set(paths)].filter(Boolean)
     if (uniquePaths.length === 0) {
         return
     }
 
-    await recordExtractedSuppressions(db, uniquePaths)
-    const chunkIds = await db.db
+    await recordExtractedSuppressions(uniquePaths)
+    const chunkIds = await db
         .select({ id: chunks.id })
         .from(chunks)
         .where(inArray(chunks.path, uniquePaths))
 
-    await db.db.run(sql`
+    await db.run(sql`
 delete from memory_fts_indexed
 where id in (select id from chunks where path in (${sql.join(
         uniquePaths.map(path => sql`${path}`),
         sql`, `,
     )}));
 `)
-    await db.db.run(sql`
+    await db.run(sql`
 delete from memory_fts
 where id in (select id from chunks where path in (${sql.join(
         uniquePaths.map(path => sql`${path}`),
         sql`, `,
     )}));
 `)
-    await db.db.run(sql`
+    await db.run(sql`
 delete from taxonomy_links
 where target_type = 'chunk'
   and target_id in (select id from chunks where path in (${sql.join(
@@ -117,7 +116,7 @@ where target_type = 'chunk'
         'chunk',
         chunkIds.map(row => row.id),
     )
-    await db.db.run(sql`
+    await db.run(sql`
 delete from target_embeddings
 where target_type = 'chunk'
   and target_id in (select id from chunks where path in (${sql.join(
@@ -125,8 +124,8 @@ where target_type = 'chunk'
       sql`, `,
   )}));
 `)
-    await db.db.delete(chunks).where(inArray(chunks.path, uniquePaths))
-    await db.db
+    await db.delete(chunks).where(inArray(chunks.path, uniquePaths))
+    await db
         .delete(sources)
         .where(
             and(
@@ -136,11 +135,9 @@ where target_type = 'chunk'
         )
 }
 
-async function recordExtractedSuppressions(
-    db: SqliteConnection,
-    paths?: string[],
-): Promise<void> {
-    await db.db.run(sql`
+async function recordExtractedSuppressions(paths?: string[]): Promise<void> {
+    const db = await getDb()
+    await db.run(sql`
 insert or ignore into mined_suppressions (
     path,
     anchor,

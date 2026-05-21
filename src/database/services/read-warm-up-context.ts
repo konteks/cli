@@ -1,4 +1,3 @@
-import type { SqliteConnection } from '@/database/actions/_db'
 import queryWarmUpHighlightRows from '@/database/actions/query-warm-up-highlight-rows'
 import queryWarmUpModules from '@/database/actions/query-warm-up-modules'
 import queryWarmUpObservations from '@/database/actions/query-warm-up-observations'
@@ -15,7 +14,6 @@ import { estimateTextTokens } from '@/support/format/tokens'
 
 export default async function readWarmUpContext(
     context: Project,
-    _service: SqliteConnection,
 ): Promise<WarmUpContext> {
     const manifest = await readExtractionManifest(context.memoryDir)
     if (!manifest) {

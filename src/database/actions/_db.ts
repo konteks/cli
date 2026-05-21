@@ -1,7 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
-import { existsSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
-import { dirname, join, resolve } from 'node:path'
+import { join } from 'node:path'
 import type { Client, Transaction } from '@libsql/client'
 import { createClient } from '@libsql/client'
 import { sql } from 'drizzle-orm'
@@ -9,19 +8,14 @@ import { drizzle } from 'drizzle-orm/libsql'
 import ensureSearchIndex from '@/database/actions/ensure-search-index'
 import initialSchemaSql from '@/database/migrations/001_initial_schema.sql?raw'
 import * as schema from '@/database/schema'
-import type { SqliteExecutor } from '@/database/support/libsql'
 import { isSqliteTestRuntime } from '@/database/support/test-runtime'
 import type { Project } from '@/models/project'
+import { loadProjectContext } from '@/providers/project/context'
 
 type ProjectDatabase = ReturnType<typeof drizzle<typeof schema>>
 type DatabaseEntry = {
-    client: SqliteExecutor
-    db: ProjectDatabase
+    connection: SqliteConnection
     initialized?: Promise<void>
-}
-type ProjectDatabaseEntry = {
-    client: Client
-    db: ProjectDatabase
 }
 
 type Migration = {
@@ -29,7 +23,7 @@ type Migration = {
     sql: string
 }
 
-export type SqliteConnection = {
+type SqliteConnection = {
     client: Client | Transaction
     close(): Promise<void>
     db: ProjectDatabase
@@ -43,22 +37,41 @@ const migrations: Migration[] = [
 ]
 
 const databases = new Map<string, DatabaseEntry>()
-const testDatabases = new Map<string, ProjectDatabaseEntry>()
 const currentConnection = new AsyncLocalStorage<SqliteConnection>()
 
-function currentDatabaseEntry(): DatabaseEntry {
-    const databaseUrl = isSqliteTestRuntime()
-        ? ':memory:'
-        : `file:${resolveDatabasePathFromCwd()}`
+async function currentDatabaseEntry(): Promise<DatabaseEntry> {
+    if (isSqliteTestRuntime()) {
+        return databaseEntry(':memory:', false)
+    }
+
+    const context = await loadProjectContext()
+    const databaseUrl = `file:${projectDatabasePath(context)}`
     const existing = databases.get(databaseUrl)
     if (existing) {
         return existing
     }
 
+    await ensureConfigFile(context)
+    return databaseEntry(databaseUrl, true)
+}
+
+function databaseEntry(
+    databaseUrl: string,
+    ownsClient: boolean,
+): DatabaseEntry {
+    const existing = databases.get(databaseUrl)
+    if (existing) {
+        return existing
+    }
     const client = createClient({ url: databaseUrl })
-    const entry = {
+    const connection = createConnection(
         client,
-        db: drizzle(client as Client, { schema }),
+        drizzle(client as Client, { schema }),
+        ownsClient,
+    )
+    const entry = {
+        connection,
+        initialized: initializeDatabase(connection),
     }
     databases.set(databaseUrl, entry)
     return entry
@@ -68,34 +81,20 @@ export function projectDatabasePath(context: Project): string {
     return join(context.memoryDir, 'memory.sqlite')
 }
 
-export async function openProjectDatabase(
-    context: Project,
-): Promise<SqliteConnection> {
-    await ensureConfigFile(context)
-    const { client, db, ownsClient } = openDatabaseClient(context)
-    const connection = createConnection(client, db, ownsClient)
-    await runMigrations(connection)
-    await runWithConnection(connection, () => ensureSearchIndex())
-
-    return connection
-}
-
-export async function ensureProjectDatabase(context: Project): Promise<void> {
-    const connection = await openProjectDatabase(context)
-    await connection.close()
-}
-
 export async function withTransaction<T>(
-    connection: SqliteConnection,
-    operation: (tx: SqliteConnection) => Promise<T>,
+    operation: () => Promise<T>,
 ): Promise<T> {
     const activeConnection = currentConnection.getStore()
     if (activeConnection) {
-        return operation(activeConnection)
+        return operation()
     }
 
+    const entry = await currentDatabaseEntry()
+    await entry.initialized
+    const { connection } = entry
+
     if (isSqliteTestRuntime() || !('transaction' in connection.client)) {
-        return runWithConnection(connection, () => operation(connection))
+        return runWithConnection(connection, operation)
     }
 
     const transaction = await connection.client.transaction('write')
@@ -103,37 +102,13 @@ export async function withTransaction<T>(
     const txConnection = createConnection(transaction, txDb, false)
 
     try {
-        const result = await runWithConnection(txConnection, () =>
-            operation(txConnection),
-        )
+        const result = await runWithConnection(txConnection, () => operation())
         await transaction.commit()
         return result
     } catch (error) {
         await transaction.rollback()
         throw error
     }
-}
-
-function openDatabaseClient(context: Project): ProjectDatabaseEntry & {
-    ownsClient: boolean
-} {
-    if (isSqliteTestRuntime()) {
-        const key = projectDatabasePath(context)
-        const existing = testDatabases.get(key)
-        if (existing) {
-            return { ...existing, ownsClient: false }
-        }
-
-        const client = createClient({ url: ':memory:' })
-        const db = drizzle(client, { schema })
-        const entry = { client, db }
-        testDatabases.set(key, entry)
-        return { ...entry, ownsClient: false }
-    }
-
-    const databasePath = projectDatabasePath(context)
-    const client = createClient({ url: `file:${databasePath}` })
-    return { client, db: drizzle(client, { schema }), ownsClient: true }
 }
 
 function createConnection(
@@ -153,8 +128,8 @@ function createConnection(
 }
 
 async function runMigrations(connection: SqliteConnection): Promise<void> {
-    await withTransaction(connection, async tx => {
-        await tx.db.run(sql`
+    await runWithConnection(connection, async () => {
+        await connection.db.run(sql`
 create table if not exists schema_migrations (
     id text primary key,
     applied_at text not null
@@ -163,7 +138,7 @@ create table if not exists schema_migrations (
 
         const applied = new Set(
             (
-                await tx.db.all<{ id: string }>(
+                await connection.db.all<{ id: string }>(
                     sql`select id from schema_migrations`,
                 )
             ).map(row => row.id),
@@ -174,12 +149,17 @@ create table if not exists schema_migrations (
                 continue
             }
 
-            await tx.client.executeMultiple(migration.sql)
-            await tx.db.run(
+            await connection.client.executeMultiple(migration.sql)
+            await connection.db.run(
                 sql`insert into schema_migrations (id, applied_at) values (${migration.id}, ${new Date().toISOString()})`,
             )
         }
     })
+}
+
+async function initializeDatabase(connection: SqliteConnection): Promise<void> {
+    await runMigrations(connection)
+    await runWithConnection(connection, () => ensureSearchIndex())
 }
 
 async function runWithConnection<T>(
@@ -195,10 +175,9 @@ export default async function getDb(): Promise<ProjectDatabase> {
         return bound.db
     }
 
-    const entry = currentDatabaseEntry()
-    entry.initialized ??= entry.client.executeMultiple(initialSchemaSql)
+    const entry = await currentDatabaseEntry()
     await entry.initialized
-    return entry.db
+    return entry.connection.db
 }
 
 async function ensureConfigFile(context: Project): Promise<void> {
@@ -216,28 +195,4 @@ async function ensureConfigFile(context: Project): Promise<void> {
             throw error
         }
     })
-}
-
-function resolveDatabasePathFromCwd(): string {
-    const projectRoot = findProjectRoot(process.cwd())
-    return join(projectRoot, '.konteks', 'memory.sqlite')
-}
-
-function findProjectRoot(start: string): string {
-    let current = resolve(start)
-
-    while (true) {
-        if (
-            existsSync(join(current, '.git')) ||
-            existsSync(join(current, 'package.json'))
-        ) {
-            return current
-        }
-
-        const parent = dirname(current)
-        if (parent === current) {
-            return resolve(start)
-        }
-        current = parent
-    }
 }

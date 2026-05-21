@@ -12,11 +12,11 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { querySql } from 'tests/support/sqlite-libsql'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
-import { openProjectDatabase, withTransaction } from '@/database/actions/_db'
+import { withTransaction } from '@/database/actions/_db'
 import markSuppressed from '@/database/actions/mark-suppressed'
 import {
     saveKonteksDiary,
-    saveKonteksMemory,
+    saveKonteksMemories,
 } from '@/database/services/save-memory'
 import searchMemory from '@/database/services/search-memory'
 import {
@@ -30,13 +30,16 @@ import FakeEmbeddingProvider from '../../../../fake/fake-embedding-provider'
 import { taxonomyApi } from '../../../../support/sqlite-action-api'
 
 const tempDirs: string[] = []
+const originalCwd = process.cwd()
 
 async function extractTestProject(
     context: Awaited<ReturnType<typeof loadProjectContext>>,
     mode: Parameters<typeof extractProject>[1],
     options: Parameters<typeof extractProject>[2] = {},
 ) {
-    return await extractProject(context, mode, options)
+    return await withProjectRoot(context.projectRoot, () =>
+        extractProject(context, mode, options),
+    )
 }
 
 const throwingEmbeddingProvider: EmbeddingProvider = {
@@ -69,10 +72,12 @@ async function makeTempProject(): Promise<string> {
     )
     await writeFile(join(projectRoot, '.env.local'), 'SECRET=hidden\n')
 
+    process.chdir(projectRoot)
     return projectRoot
 }
 
 afterEach(async () => {
+    process.chdir(originalCwd)
     await Promise.all(
         tempDirs
             .splice(0)
@@ -122,8 +127,6 @@ describe('extractProject', () => {
         )
 
         await extractTestProject(context, 'reindex')
-
-        const service = await openProjectDatabase(context)
         const chunks = await querySql(
             context,
             'select id, path, source_role, language, anchor from chunks order by path',
@@ -140,11 +143,11 @@ order by target_type, source_role
             context,
             'select path from modules order by path',
         )
-        const searchResults = await searchMemory(service, {
+        const searchResults = await searchMemory({
             limit: 5,
             query: 'Fixture',
         })
-        const roots = await taxonomyApi(service).getSubtree(undefined, {
+        const roots = await taxonomyApi().getSubtree(undefined, {
             maxDepth: 2,
         })
         const events = await querySql(
@@ -152,7 +155,6 @@ order by target_type, source_role
             'select event_type from memory_events where event_type = ?',
             ['project_mined'],
         )
-        await service.close()
 
         expect(chunks.some(chunk => chunk.path === 'README.md')).toBe(true)
         expect(chunks.some(chunk => chunk.source_role === 'product_doc')).toBe(
@@ -187,10 +189,7 @@ order by target_type, source_role
         const embeddingProvider = new FakeEmbeddingProvider()
 
         await extractTestProject(context, 'reindex', { embeddingProvider })
-
-        const service = await openProjectDatabase(context)
         const vectorResults = await searchMemory(
-            service,
             {
                 limit: 5,
                 query: 'Fixture',
@@ -198,7 +197,6 @@ order by target_type, source_role
             { embeddingProvider },
         )
         const fallbackResults = await searchMemory(
-            service,
             {
                 limit: 5,
                 query: 'Fixture',
@@ -206,14 +204,12 @@ order by target_type, source_role
             { embeddingProvider: throwingEmbeddingProvider },
         )
         const mismatchedResults = await searchMemory(
-            service,
             {
                 limit: 5,
                 query: 'Fixture',
             },
             { embeddingProvider: mismatchedEmbeddingProvider },
         )
-        await service.close()
 
         expect(vectorResults[0]?.type).toBe('chunk')
         expect(vectorResults[0]?.sourceRole).toBeTruthy()
@@ -238,8 +234,6 @@ order by target_type, source_role
         )
 
         await extractTestProject(context, 'reindex')
-
-        const service = await openProjectDatabase(context)
         const chunks = await querySql(
             context,
             `
@@ -252,17 +246,14 @@ limit 1
         )
         const chunk = chunks[0]
         expect(chunk).toBeDefined()
-        await withTransaction(service, () =>
+        await withTransaction(() =>
             markSuppressed(
                 { id: chunk?.id ?? '', kind: 'chunk' },
                 'test suppression',
             ),
         )
-        await service.close()
 
         await extractTestProject(context, 'reindex')
-
-        const reindexedService = await openProjectDatabase(context)
         const restored = await querySql(
             context,
             `
@@ -281,7 +272,6 @@ where path = ? and anchor = ? and content_hash = ?
 `,
             [chunk?.path ?? '', chunk?.anchor ?? '', chunk?.content_hash ?? ''],
         )
-        await reindexedService.close()
 
         expect(restored[0]?.count).toBe(0)
         expect(suppressions[0]?.count).toBe(1)
@@ -294,25 +284,24 @@ where path = ? and anchor = ? and content_hash = ?
         )
 
         await extractTestProject(context, 'reindex')
-
-        const service = await openProjectDatabase(context)
-        const savedMemory = await saveKonteksMemory(service, context, {
-            content:
-                'Repair must preserve durable observations during reindex operations.',
-            importance: 3,
-            kind: 'constraint',
+        const savedMemory = await saveKonteksMemories(context, {
+            memories: [
+                {
+                    content:
+                        'Repair must preserve durable observations during reindex operations.',
+                    importance: 3,
+                    kind: 'constraint',
+                },
+            ],
         })
-        const savedDiary = await saveKonteksDiary(service, context, {
+        const savedDiary = await saveKonteksDiary(context, {
             subject: 'repair durability',
             summary:
                 'Verified repair keeps durable diary entries and retrieval indexes available.',
             tags: ['repair'],
         })
-        await service.close()
 
         await extractTestProject(context, 'reindex')
-
-        const repairedService = await openProjectDatabase(context)
         const durableRows = await querySql(
             context,
             `
@@ -354,11 +343,10 @@ where id in (?, ?)
 `,
             [savedMemory.id, savedDiary.id],
         )
-        const results = await searchMemory(repairedService, {
+        const results = await searchMemory({
             limit: 5,
             query: 'repair preserve durable',
         })
-        await repairedService.close()
 
         expect(durableRows[0]?.count).toBe(2)
         expect(retrievalRows[0]?.count).toBe(2)
@@ -403,14 +391,11 @@ where id in (?, ?)
         )
 
         await extractTestProject(context, 'reindex')
-
-        const service = await openProjectDatabase(context)
         const chunks = await querySql(
             context,
             'select count(*) as count from chunks where path = ?',
             ['src/many.md'],
         )
-        await service.close()
         const manifest = await readExtractionManifest(context.memoryDir)
 
         expect(chunks[0]?.count).toBe(200)
@@ -447,14 +432,11 @@ where id in (?, ?)
                 ok: true,
             },
         )
-
-        const service = await openProjectDatabase(context)
         const chunks = await querySql(
             context,
             'select count(*) as count from chunks where path = ?',
             ['package.json'],
         )
-        await service.close()
 
         expect(chunks[0]?.count).toBeGreaterThan(0)
     })
@@ -474,14 +456,11 @@ where id in (?, ?)
                 ok: true,
             },
         )
-
-        const service = await openProjectDatabase(context)
         const chunks = await querySql(
             context,
             'select count(*) as count from chunks where path = ?',
             ['src/unselected.ts'],
         )
-        await service.close()
 
         expect(chunks[0]?.count).toBe(0)
     })
@@ -500,12 +479,10 @@ where id in (?, ?)
             'utf8',
         )
         const manifest = JSON.parse(rawManifest)
-        const service = await openProjectDatabase(context)
         const chunks = await querySql(
             context,
             'select count(*) as count from chunks',
         )
-        await service.close()
 
         expect(manifest.mode).toBe('reindex')
         expect(chunks[0]?.count).toBeGreaterThan(0)
@@ -525,8 +502,6 @@ where id in (?, ?)
             'export const n = 1\n',
         )
         await extractTestProject(context, 'changed')
-
-        const service = await openProjectDatabase(context)
         const readmeChunks = await querySql(
             context,
             'select count(*) as count from chunks where path = ?',
@@ -542,7 +517,6 @@ where id in (?, ?)
             'select count(*) as count from chunks where path = ?',
             ['src/new.txt'],
         )
-        await service.close()
 
         expect(readmeChunks[0]?.count).toBe(0)
         expect(indexChunks[0]?.count).toBeGreaterThan(0)
@@ -560,14 +534,11 @@ where id in (?, ?)
         )
 
         await extractTestProject(context, 'reindex')
-
-        const service = await openProjectDatabase(context)
         const readmeChunks = await querySql(
             context,
             'select count(*) as count from chunks where path = ?',
             ['README.md'],
         )
-        await service.close()
 
         expect(readmeChunks[0]?.count).toBe(2)
     })

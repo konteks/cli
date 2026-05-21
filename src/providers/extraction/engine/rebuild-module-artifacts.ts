@@ -1,5 +1,5 @@
 import { eq, sql } from 'drizzle-orm'
-import type { SqliteConnection } from '@/database/actions/_db'
+import getDb from '@/database/actions/_db'
 import deleteRetrievalDocuments from '@/database/actions/delete-retrieval-documents'
 import upsertRetrievalDocument from '@/database/actions/upsert-retrieval-document'
 import { modules, targetEmbeddings } from '@/database/schema'
@@ -17,17 +17,17 @@ type ModuleSummaryRow = {
 }
 
 export default async function rebuildModuleArtifacts(
-    db: SqliteConnection,
     extractedAt: string,
     metadata?: ProjectMetadata,
 ): Promise<void> {
+    const db = await getDb()
     await deleteRetrievalDocuments('module')
-    await db.db
+    await db
         .delete(targetEmbeddings)
         .where(eq(targetEmbeddings.targetType, 'module'))
-    await db.db.delete(modules)
+    await db.delete(modules)
 
-    const rows = await db.db.all<ModuleSummaryRow>(sql`
+    const rows = await db.all<ModuleSummaryRow>(sql`
 select
     case
         when instr(path, '/') > 0 then substr(path, 1, instr(path, '/') - 1)
@@ -48,7 +48,7 @@ order by chunk_count desc, module_path
         const summary = summarizeModule(row)
         const topics = moduleTopics(row.module_path)
 
-        await db.db.insert(modules).values({
+        await db.insert(modules).values({
             chunkCount: row.chunk_count,
             entitiesJson: JSON.stringify([]),
             exportedSymbolsJson: JSON.stringify([]),
@@ -84,7 +84,7 @@ order by chunk_count desc, module_path
     }
 
     if (metadata && (metadata.packageManifests ?? []).length > 0) {
-        await insertPackageModule(db, metadata, extractedAt)
+        await insertPackageModule(metadata, extractedAt)
     }
 }
 
@@ -101,10 +101,10 @@ function moduleTopics(path: string): string[] {
 }
 
 async function insertPackageModule(
-    db: SqliteConnection,
     metadata: ProjectMetadata,
     extractedAt: string,
 ): Promise<void> {
+    const db = await getDb()
     const packageManifests = metadata.packageManifests ?? []
     const primaryManifest = packageManifests[0]
     if (!primaryManifest) {
@@ -128,7 +128,7 @@ async function insertPackageModule(
         ...dependencyNames.slice(0, 24),
     ].filter((value): value is string => Boolean(value))
 
-    await db.db.insert(modules).values({
+    await db.insert(modules).values({
         chunkCount: 0,
         entitiesJson: JSON.stringify([]),
         exportedSymbolsJson: JSON.stringify([]),

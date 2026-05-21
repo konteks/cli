@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
+import { withTransaction } from '@/database/actions/_db'
 import indexSearchDocument from '@/database/actions/index-search-document'
 import insertDiaryEntry from '@/database/actions/insert-diary-entry'
 import insertObservation from '@/database/actions/insert-observation'
@@ -13,7 +13,6 @@ import createToonStore from '@/providers/persistence/objects/create-toon-store'
 import storePayload from '@/providers/persistence/objects/store-payload'
 
 export async function insertImportedObservation(
-    db: SqliteConnection,
     context: Project,
     memory: DurableMemoryExportMemory,
 ): Promise<void> {
@@ -24,7 +23,7 @@ export async function insertImportedObservation(
     })
     const createdAt = memory.createdAt || new Date().toISOString()
 
-    await withTransaction(db, async () => {
+    await withTransaction(async () => {
         await insertObservation({
             confidence: memory.confidence,
             contentHash: stored.contentHash,
@@ -59,7 +58,6 @@ export async function insertImportedObservation(
 }
 
 export async function insertImportedDiary(
-    db: SqliteConnection,
     context: Project,
     diary: DurableMemoryExportDiary,
 ): Promise<void> {
@@ -73,7 +71,7 @@ export async function insertImportedDiary(
     })
     const createdAt = diary.createdAt || new Date().toISOString()
 
-    await withTransaction(db, async () => {
+    await withTransaction(async () => {
         await insertDiaryEntry({
             contentHash: stored.contentHash,
             createdAt,

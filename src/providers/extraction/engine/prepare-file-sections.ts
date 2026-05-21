@@ -1,6 +1,5 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { SqliteConnection } from '@/database/actions/_db'
 import { buildChunkRetrievalTexts } from '@/database/support/retrieval-texts'
 import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
@@ -58,7 +57,6 @@ export type PreparedFile = {
 const defaultMaxSectionsPerFile = 200
 
 export default async function prepareFileSections(input: {
-    db: SqliteConnection
     context: Project
     engine?: TreeSitterEngine
     file: ScannedFile
@@ -135,7 +133,6 @@ export default async function prepareFileSections(input: {
         })
         if (
             await isExtractedSectionSuppressed(
-                input.db,
                 input.file.path,
                 section.anchor,
                 stored.contentHash,

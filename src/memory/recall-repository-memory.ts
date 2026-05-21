@@ -1,4 +1,4 @@
-import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
+import { withTransaction } from '@/database/actions/_db'
 import {
     historicalRelations,
     searchEntities,
@@ -32,15 +32,14 @@ export type RecallMemorySource = {
 }
 
 export default async function recallRepositoryMemory(
-    db: SqliteConnection,
     input: MemoryRecallInput,
 ): Promise<RecallPackage> {
-    return await withTransaction(db, () =>
+    return await withTransaction(() =>
         recallMemoryFromSource(
             {
                 historicalRelations: (entityId, limit) =>
                     historicalRelations(entityId, { limit }),
-                search: searchInput => searchMemory(db, searchInput),
+                search: searchInput => searchMemory(searchInput),
                 searchEntities: (query, limit) =>
                     searchEntities(query, { limit }),
                 traverseNeighbors,

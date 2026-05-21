@@ -1,18 +1,13 @@
 import { randomUUID } from 'node:crypto'
-import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
 import hardDeleteForgetTarget from '@/database/actions/hard-delete-forget-target'
+import invalidateRelation from '@/database/actions/invalidate-relation'
 import markForgotten from '@/database/actions/mark-forgotten'
 import markSuppressed from '@/database/actions/mark-suppressed'
 import queryDiaries from '@/database/actions/query-diaries'
 import queryObservations from '@/database/actions/query-observations'
 import removeFromSearchIndex from '@/database/actions/remove-from-search-index'
-import { invalidateRelation } from '@/database/services/graph'
-import type {
-    ForgetResult,
-    ForgetTarget,
-    TargetKind,
-} from '@/database/support/forget-target'
+import type { ForgetTarget, TargetKind } from '@/database/support/forget-target'
 
 export type ForgetInput = {
     id?: string
@@ -21,34 +16,37 @@ export type ForgetInput = {
     reason?: string
 }
 
+type ForgetResult = {
+    accepted: boolean
+    mode: NonNullable<ForgetInput['mode']>
+    affectedIds: string[]
+}
+
 export default async function forgetMemory(
-    db: SqliteConnection,
     input: ForgetInput,
 ): Promise<ForgetResult> {
     const mode = input.mode ?? 'soft_delete'
     const targets = await resolveTargets(input)
     const affectedIds: string[] = []
 
-    await withTransaction(db, async () => {
-        for (const target of targets) {
-            const changed = await applyForget(target, mode, input.reason)
-            if (!changed) {
-                continue
-            }
-
-            await removeFromSearchIndex(target.id)
-
-            await appendMemoryEvent({
-                actor: 'mcp',
-                eventType: `memory_${mode}`,
-                id: `event_${randomUUID()}`,
-                subjectId: target.id,
-                subjectType: target.kind,
-                summary: input.reason ?? `Applied ${mode} to ${target.id}.`,
-            })
-            affectedIds.push(target.id)
+    for (const target of targets) {
+        const changed = await applyForget(target, mode, input.reason)
+        if (!changed) {
+            continue
         }
-    })
+
+        await removeFromSearchIndex(target.id)
+
+        await appendMemoryEvent({
+            actor: 'mcp',
+            eventType: `memory_${mode}`,
+            id: `event_${randomUUID()}`,
+            subjectId: target.id,
+            subjectType: target.kind,
+            summary: input.reason ?? `Applied ${mode} to ${target.id}.`,
+        })
+        affectedIds.push(target.id)
+    }
 
     return {
         accepted: affectedIds.length > 0,

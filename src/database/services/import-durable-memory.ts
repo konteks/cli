@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
+import { withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
 import hasDiaryHash from '@/database/actions/has-diary-hash'
 import hasObservationHash from '@/database/actions/has-observation-hash'
@@ -14,7 +14,6 @@ import {
 } from './durable-memory-import-writers'
 
 export default async function importDurableMemory(
-    db: SqliteConnection,
     context: Project,
     payload: DurableMemoryExport,
     options: { dryRun?: boolean },
@@ -27,7 +26,7 @@ export default async function importDurableMemory(
         memoriesSkipped: 0,
     }
 
-    await withTransaction(db, async () => {
+    await withTransaction(async () => {
         for (const memory of payload.memories) {
             const duplicate = await hasObservationHash(memory.contentHash)
             if (duplicate) {
@@ -35,7 +34,7 @@ export default async function importDurableMemory(
                 continue
             }
             if (!options.dryRun) {
-                await insertImportedObservation(db, context, memory)
+                await insertImportedObservation(context, memory)
             }
             result.memoriesImported += 1
         }
@@ -47,14 +46,14 @@ export default async function importDurableMemory(
                 continue
             }
             if (!options.dryRun) {
-                await insertImportedDiary(db, context, diary)
+                await insertImportedDiary(context, diary)
             }
             result.diariesImported += 1
         }
     })
 
     if (!options.dryRun) {
-        await withTransaction(db, async () =>
+        await withTransaction(async () =>
             appendMemoryEvent({
                 actor: 'cli',
                 eventType: 'memory_imported',

@@ -3,12 +3,12 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { openProjectDatabase } from '@/database/actions/_db'
 import recallRepositoryMemory from '@/memory/recall-repository-memory'
 import { loadProjectContext } from '@/providers/project/context'
 import { graphApi } from '../../../support/sqlite-action-api'
 
 const tempDirs: string[] = []
+const originalCwd = process.cwd()
 
 async function withProjectRoot<T>(
     projectRoot: string,
@@ -31,15 +31,15 @@ async function makeGraph() {
     const context = await withProjectRoot(projectRoot, () =>
         loadProjectContext(),
     )
-    const adapter = await openProjectDatabase(context)
+    process.chdir(projectRoot)
     return {
-        adapter,
         context,
-        graph: graphApi(adapter),
+        graph: graphApi(),
     }
 }
 
 afterEach(async () => {
+    process.chdir(originalCwd)
     await Promise.all(
         tempDirs
             .splice(0)
@@ -49,7 +49,7 @@ afterEach(async () => {
 
 describe('recallGraph', () => {
     it('returns compact active graph context for task-matched entities', async () => {
-        const { adapter, graph } = await makeGraph()
+        const { graph } = await makeGraph()
         const project = await graph.upsertEntity({
             aliases: ['memory system'],
             name: 'Konteks',
@@ -75,7 +75,7 @@ describe('recallGraph', () => {
             supersedesRelationId: oldRelation.id,
         })
 
-        const recall = await recallRepositoryMemory(adapter, {
+        const recall = await recallRepositoryMemory({
             task: 'memory system runtime',
         })
         const items = recall.graph
@@ -90,11 +90,10 @@ describe('recallGraph', () => {
                 relatedEntityName: 'Bun',
             }),
         )
-        await adapter.close()
     })
 
     it('only returns historical graph context when the task asks for it', async () => {
-        const { adapter, graph } = await makeGraph()
+        const { graph } = await makeGraph()
         const project = await graph.upsertEntity({
             aliases: ['memory system'],
             name: 'Konteks',
@@ -120,12 +119,12 @@ describe('recallGraph', () => {
             supersedesRelationId: oldRelation.id,
         })
 
-        const normalRecall = await recallRepositoryMemory(adapter, {
+        const normalRecall = await recallRepositoryMemory({
             task: 'work on memory system',
         })
         const normal = normalRecall.history
 
-        const historicalRecall = await recallRepositoryMemory(adapter, {
+        const historicalRecall = await recallRepositoryMemory({
             task: 'why did the previous memory system storage decision change',
         })
         const historical = historicalRecall.history
@@ -139,6 +138,5 @@ describe('recallGraph', () => {
                 subjectEntityName: 'Konteks',
             }),
         )
-        await adapter.close()
     })
 })

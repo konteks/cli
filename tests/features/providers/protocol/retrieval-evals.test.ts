@@ -6,7 +6,6 @@ import { join } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
 import { querySql } from 'tests/support/sqlite-libsql'
-import { openProjectDatabase } from '@/database/actions/_db'
 import mcpTools from '@/mcp/tools'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
@@ -58,8 +57,9 @@ describe('retrieval quality evals', () => {
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
-        await extractProject(context, 'full', extractionOptions())
-        await syncProjectActionDatabase(context)
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', extractionOptions()),
+        )
 
         const result = await withProjectRoot(projectRoot, () =>
             callKonteksTool('konteks_recall', {
@@ -81,7 +81,9 @@ describe('retrieval quality evals', () => {
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
-        await extractProject(context, 'full', extractionOptions())
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', extractionOptions()),
+        )
 
         await expect(
             withProjectRoot(projectRoot, () =>
@@ -106,7 +108,9 @@ describe('retrieval quality evals', () => {
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
-        await extractProject(context, 'full', extractionOptions())
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', extractionOptions()),
+        )
         await writeFile(
             join(projectRoot, 'src', 'should-not-refresh.txt'),
             'export const shouldNotRefresh = true\n',
@@ -146,7 +150,9 @@ describe('retrieval quality evals', () => {
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
-        await extractProject(context, 'full', extractionOptions())
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', extractionOptions()),
+        )
         await writeFile(
             join(projectRoot, 'src', 'saved-change.txt'),
             'export const savedChange = true\n',
@@ -160,7 +166,6 @@ describe('retrieval quality evals', () => {
         )
         const text = extractText(result)
         const manifest = await readExtractionManifest(context.memoryDir)
-        const adapter = await openProjectDatabase(context)
         const diaryRows = await querySql(
             context,
             `
@@ -170,7 +175,6 @@ order by created_at desc
 limit 1
 `,
         )
-        await adapter.close()
 
         expect(manifest?.mode).toBe('changed')
         expect(manifest?.files.map(file => file.path)).toContain(
@@ -196,7 +200,9 @@ limit 1
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
-        await extractProject(context, 'full', extractionOptions())
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', extractionOptions()),
+        )
 
         const result = await withProjectRoot(projectRoot, () =>
             callKonteksTool('konteks_warm_up', {
@@ -221,8 +227,9 @@ limit 1
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
-        await extractProject(context, 'full', extractionOptions())
-        await syncProjectActionDatabase(context)
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', extractionOptions()),
+        )
 
         const result = await withProjectRoot(projectRoot, () =>
             callKonteksTool('konteks_recall', {
@@ -260,8 +267,9 @@ limit 1
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
-        await extractProject(context, 'full', extractionOptions())
-        await syncProjectActionDatabase(context)
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', extractionOptions()),
+        )
 
         const result = await withProjectRoot(projectRoot, () =>
             callKonteksTool('konteks_recall', {
@@ -291,13 +299,13 @@ limit 1
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
-        await extractProject(context, 'full', extractionOptions())
-        const adapter = await openProjectDatabase(context)
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', extractionOptions()),
+        )
         const rows = await querySql(
             context,
             'select count(*) as count from retrieval_documents',
         )
-        await adapter.close()
         expect(rows[0]?.count).toBeGreaterThan(0)
     })
 })
@@ -313,13 +321,6 @@ async function callKonteksTool(
     }
 
     return await registeredHandlerFor(tool)(input)
-}
-
-async function syncProjectActionDatabase(
-    context: Awaited<ReturnType<typeof loadProjectContext>>,
-) {
-    const service = await openProjectDatabase(context)
-    await service.close()
 }
 
 function registeredHandlerFor(inputTool: (typeof mcpTools)[number]) {

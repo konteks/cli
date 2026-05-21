@@ -1,8 +1,5 @@
 import z from 'zod'
-import { openProjectDatabase } from '@/database/actions/_db'
 import forgetMemory from '@/database/services/forget-memory'
-import { loadMcpProjectContext } from '@/memory/runtime'
-import type { ForgetResult } from '@/models/memory'
 import BaseMcpTool from './_base-mcp-tool'
 
 const INPUT_SCHEMA = z
@@ -33,13 +30,7 @@ export default class ForgetMcpTool extends BaseMcpTool<Input> {
 
     public readonly name = 'konteks_forget'
 
-    public async handle(input: Input): Promise<ForgetResult> {
-        const context = await loadMcpProjectContext()
-        const db = await openProjectDatabase(context)
-        try {
-            return await forgetMemory(db, input)
-        } finally {
-            await db.close()
-        }
+    public async handle(input: Input) {
+        return await forgetMemory(input)
     }
 }

@@ -4,16 +4,17 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { querySql } from 'tests/support/sqlite-libsql'
-import type { SqliteConnection } from '@/database/actions/_db'
-import { openProjectDatabase, withTransaction } from '@/database/actions/_db'
+import { withTransaction } from '@/database/actions/_db'
 import { upsertNode } from '@/database/services/taxonomy'
 import type { Project } from '@/models/project'
 import persistPreparedFileSections from '@/providers/extraction/engine/persist-prepared-file-sections'
 import type { PreparedFile } from '@/providers/extraction/engine/prepare-file-sections'
 
 const tempDirs: string[] = []
+const originalCwd = process.cwd()
 
 afterEach(async () => {
+    process.chdir(originalCwd)
     await Promise.all(
         tempDirs
             .splice(0)
@@ -23,63 +24,56 @@ afterEach(async () => {
 
 describe('providers/extraction/engine/persist-prepared-file-sections', () => {
     it('stores source, section, taxonomy, search, and retrieval rows', async () => {
-        const { context, db } = await createProject()
-        try {
-            const rootNode = await withTransaction(db, () =>
-                upsertNode({
-                    name: 'Project Files',
-                }),
-            )
+        const { context } = await createProject()
+        const rootNode = await withTransaction(() =>
+            upsertNode({
+                name: 'Project Files',
+            }),
+        )
 
-            let count = 0
-            await withTransaction(db, async () => {
-                count = await persistPreparedFileSections({
-                    extractedAt: '2026-01-01T00:00:00.000Z',
-                    preparedFile: preparedFile(),
-                    rootNodeId: rootNode.id,
-                })
+        let count = 0
+        await withTransaction(async () => {
+            count = await persistPreparedFileSections({
+                extractedAt: '2026-01-01T00:00:00.000Z',
+                preparedFile: preparedFile(),
+                rootNodeId: rootNode.id,
             })
+        })
 
-            expect(count).toBe(1)
-            await expect(
-                querySql(context, 'select * from sources where id = ?', [
-                    'source_fixture',
-                ]),
-            ).resolves.toHaveLength(1)
-            await expect(
-                querySql(context, 'select * from chunks where id = ?', [
-                    'chunk_fixture',
-                ]),
-            ).resolves.toHaveLength(1)
-            await expect(
-                querySql(
-                    context,
-                    'select * from taxonomy_links where target_id = ?',
-                    ['chunk_fixture'],
-                ),
-            ).resolves.toHaveLength(1)
-            await expect(
-                querySql(
-                    context,
-                    'select * from retrieval_documents where target_id = ?',
-                    ['chunk_fixture'],
-                ),
-            ).resolves.toHaveLength(1)
-            await expect(
-                querySql(context, 'select * from memory_fts where id = ?', [
-                    'chunk_fixture',
-                ]),
-            ).resolves.toHaveLength(1)
-        } finally {
-            await db.close()
-        }
+        expect(count).toBe(1)
+        await expect(
+            querySql(context, 'select * from sources where id = ?', [
+                'source_fixture',
+            ]),
+        ).resolves.toHaveLength(1)
+        await expect(
+            querySql(context, 'select * from chunks where id = ?', [
+                'chunk_fixture',
+            ]),
+        ).resolves.toHaveLength(1)
+        await expect(
+            querySql(
+                context,
+                'select * from taxonomy_links where target_id = ?',
+                ['chunk_fixture'],
+            ),
+        ).resolves.toHaveLength(1)
+        await expect(
+            querySql(
+                context,
+                'select * from retrieval_documents where target_id = ?',
+                ['chunk_fixture'],
+            ),
+        ).resolves.toHaveLength(1)
+        await expect(
+            querySql(context, 'select * from memory_fts where id = ?', [
+                'chunk_fixture',
+            ]),
+        ).resolves.toHaveLength(1)
     })
 })
 
-async function createProject(): Promise<{
-    context: Project
-    db: SqliteConnection
-}> {
+async function createProject(): Promise<{ context: Project }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-persist-'))
     tempDirs.push(projectRoot)
     await mkdir(join(projectRoot, '.konteks'), { recursive: true })
@@ -100,8 +94,8 @@ async function createProject(): Promise<{
         memoryDir: join(projectRoot, '.konteks'),
         projectRoot,
     }
-    const db = await openProjectDatabase(context)
-    return { context: { ...context, configExists: true }, db }
+    process.chdir(projectRoot)
+    return { context: { ...context, configExists: true } }
 }
 
 function preparedFile(): PreparedFile {
