@@ -15,6 +15,7 @@ import getVersion from '@/support/get-version'
 import FakeEmbeddingProvider from '../../fake/fake-embedding-provider'
 
 const execFileAsync = promisify(execFile)
+const repoRoot = process.cwd()
 
 describe('mcp/stdio interface', () => {
     it('exposes live server metadata and tool registrations over stdio', async () => {
@@ -375,9 +376,11 @@ async function createInitializedProject(prefix: string): Promise<{
             loadProjectContext(),
         )
         await writeProjectConfig(context, context.config)
-        await extractProject(context, 'full', {
-            embeddingProvider: new FakeEmbeddingProvider(),
-        })
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', {
+                embeddingProvider: new FakeEmbeddingProvider(),
+            }),
+        )
 
         return {
             async cleanup() {
@@ -430,7 +433,7 @@ async function runMcpExchange(
             .join('\n')
 
         await writeFile(inputPath, `${input}\n`)
-        const command = `node ${shellQuote(join(process.cwd(), 'dist', 'main.js'))} mcp < ${shellQuote(inputPath)} > ${shellQuote(outputPath)}`
+        const command = `node ${shellQuote(join(repoRoot, 'dist', 'main.js'))} mcp < ${shellQuote(inputPath)} > ${shellQuote(outputPath)}`
 
         await execFileAsync('sh', ['-lc', command], {
             cwd: projectRoot,

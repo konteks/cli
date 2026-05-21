@@ -1,5 +1,5 @@
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
-import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
+import { withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
 import reindexRetrievalDocumentFts from '@/database/actions/reindex-retrieval-document-fts'
 import { upsertNode } from '@/database/services/taxonomy'
@@ -28,7 +28,6 @@ type ExtractSectionsResult = {
 }
 
 export default async function extractSections(
-    db: SqliteConnection,
     context: Project,
     files: ScannedFile[],
     extractedAt: string,
@@ -88,14 +87,14 @@ export default async function extractSections(
         phase: 'database',
         status: 'progress',
     })
-    await withTransaction(db, async tx => {
+    await withTransaction(async () => {
         if (options.mode === 'changed') {
-            await clearExtractedSectionsForPaths(tx, [
+            await clearExtractedSectionsForPaths([
                 ...files.map(file => file.path),
                 ...(options.deletedPaths ?? []),
             ])
         } else if (options.mode !== 'resume') {
-            await clearExtractedSections(tx)
+            await clearExtractedSections()
         }
         const rootNode = await upsertNode({
             name: 'Project Files',
@@ -115,7 +114,6 @@ export default async function extractSections(
     for (const [fileIndex, file] of files.entries()) {
         const preparedFile = await prepareFileSections({
             context,
-            db,
             engine,
             file,
             toonStore,
@@ -140,7 +138,7 @@ export default async function extractSections(
         }
 
         extractedFileCount += 1
-        await withTransaction(db, async () => {
+        await withTransaction(async () => {
             sectionCount += await persistPreparedFileSections({
                 extractedAt,
                 preparedFile,
@@ -174,8 +172,8 @@ export default async function extractSections(
         phase: 'modules',
         status: 'start',
     })
-    await withTransaction(db, async tx => {
-        await rebuildModuleArtifacts(tx, extractedAt, options.metadata)
+    await withTransaction(async () => {
+        await rebuildModuleArtifacts(extractedAt, options.metadata)
         await reindexRetrievalDocumentFts()
 
         await appendMemoryEvent({

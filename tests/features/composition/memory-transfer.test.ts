@@ -17,11 +17,11 @@ import {
     importMemory,
     restoreMemory,
 } from '@/composition/memory-transfer'
-import { openProjectDatabase, withTransaction } from '@/database/actions/_db'
+import { withTransaction } from '@/database/actions/_db'
 import markSuppressed from '@/database/actions/mark-suppressed'
 import {
     saveKonteksDiary,
-    saveKonteksMemory,
+    saveKonteksMemories,
 } from '@/database/services/save-memory'
 import searchMemory from '@/database/services/search-memory'
 import { loadProjectContext } from '@/providers/project/context'
@@ -74,23 +74,25 @@ async function withProjectRoot<T>(
 describe('memory transfer', () => {
     it('exports durable memories and diaries as portable JSON', async () => {
         const projectRoot = await makeInitializedProject()
-        const context = await withProjectRoot(projectRoot, () =>
-            loadProjectContext(),
-        )
-        context.config.storage.inlinePayloadMaxBytes = 8
-        const db = await openProjectDatabase(context)
-        await saveKonteksMemory(db, context, {
-            content:
-                'Portable export must resolve large durable memory payloads from object storage.',
-            importance: 3,
-            kind: 'decision',
+        await withProjectRoot(projectRoot, async () => {
+            const context = await loadProjectContext()
+            context.config.storage.inlinePayloadMaxBytes = 8
+            await saveKonteksMemories(context, {
+                memories: [
+                    {
+                        content:
+                            'Portable export must resolve large durable memory payloads from object storage.',
+                        importance: 3,
+                        kind: 'decision',
+                    },
+                ],
+            })
+            await saveKonteksDiary(context, {
+                subject: 'portable export',
+                summary: 'Durable diary entries are included in JSON exports.',
+                tags: ['export'],
+            })
         })
-        await saveKonteksDiary(db, context, {
-            subject: 'portable export',
-            summary: 'Durable diary entries are included in JSON exports.',
-            tags: ['export'],
-        })
-        await db.close()
 
         const outputPath = join(projectRoot, 'memory-export.json')
         const result = await withProjectRoot(projectRoot, () =>
@@ -111,21 +113,24 @@ describe('memory transfer', () => {
 
     it('imports durable memory, rebuilds search indexes, and skips duplicates', async () => {
         const sourceRoot = await makeInitializedProject('konteks-transfer-src-')
-        const sourceContext = await withProjectRoot(sourceRoot, () =>
-            loadProjectContext(),
-        )
-        const sourceDb = await openProjectDatabase(sourceContext)
-        await saveKonteksMemory(sourceDb, sourceContext, {
-            content: 'Imported durable memory should be searchable by recall.',
-            importance: 3,
-            kind: 'code_insight',
+        await withProjectRoot(sourceRoot, async () => {
+            const sourceContext = await loadProjectContext()
+            await saveKonteksMemories(sourceContext, {
+                memories: [
+                    {
+                        content:
+                            'Imported durable memory should be searchable by recall.',
+                        importance: 3,
+                        kind: 'code_insight',
+                    },
+                ],
+            })
+            await saveKonteksDiary(sourceContext, {
+                subject: 'import diary',
+                summary: 'Imported diary entries should also be searchable.',
+                tags: ['import'],
+            })
         })
-        await saveKonteksDiary(sourceDb, sourceContext, {
-            subject: 'import diary',
-            summary: 'Imported diary entries should also be searchable.',
-            tags: ['import'],
-        })
-        await sourceDb.close()
 
         const exportPath = join(sourceRoot, 'memory-export.json')
         await withProjectRoot(sourceRoot, () =>
@@ -139,14 +144,10 @@ describe('memory transfer', () => {
                 inputPath: exportPath,
             }),
         )
-        let targetDb = await openProjectDatabase(
-            await withProjectRoot(targetRoot, () => loadProjectContext()),
-        )
         const rows = await querySql(
             join(targetRoot, '.konteks', 'memory.sqlite'),
             'select count(*) as count from observations',
         )
-        await targetDb.close()
 
         expect(dryRun).toMatchObject({
             diariesImported: 1,
@@ -165,16 +166,12 @@ describe('memory transfer', () => {
                 inputPath: exportPath,
             }),
         )
-        targetDb = await openProjectDatabase(
-            await withProjectRoot(targetRoot, () => loadProjectContext()),
-        )
         const results = await withProjectRoot(targetRoot, () =>
-            searchMemory(targetDb, {
+            searchMemory({
                 limit: 5,
                 query: 'searchable recall',
             }),
         )
-        await targetDb.close()
 
         expect(imported).toMatchObject({
             diariesImported: 1,
@@ -206,22 +203,25 @@ describe('memory transfer', () => {
 
     it('exports inactive durable memory only when requested', async () => {
         const projectRoot = await makeInitializedProject()
-        const context = await withProjectRoot(projectRoot, () =>
-            loadProjectContext(),
-        )
-        const db = await openProjectDatabase(context)
-        const saved = await saveKonteksMemory(db, context, {
-            content: 'Inactive memory should require an explicit export flag.',
-            importance: 3,
-            kind: 'note',
+        await withProjectRoot(projectRoot, async () => {
+            const context = await loadProjectContext()
+            const result = await saveKonteksMemories(context, {
+                memories: [
+                    {
+                        content:
+                            'Inactive memory should require an explicit export flag.',
+                        importance: 3,
+                        kind: 'note',
+                    },
+                ],
+            })
+            await withTransaction(() =>
+                markSuppressed(
+                    { id: result.id, kind: 'observation' },
+                    'test inactive export',
+                ),
+            )
         })
-        await withTransaction(db, () =>
-            markSuppressed(
-                { id: saved.id, kind: 'observation' },
-                'test inactive export',
-            ),
-        )
-        await db.close()
 
         const activeOnlyPath = join(projectRoot, 'active.json')
         const inactivePath = join(projectRoot, 'inactive.json')
@@ -244,16 +244,19 @@ describe('memory transfer', () => {
 
     it('backs up and restores the full memory directory archive', async () => {
         const projectRoot = await makeInitializedProject('konteks-backup-src-')
-        const context = await withProjectRoot(projectRoot, () =>
-            loadProjectContext(),
-        )
-        const db = await openProjectDatabase(context)
-        await saveKonteksMemory(db, context, {
-            content: 'Full backup should restore the exact memory database.',
-            importance: 3,
-            kind: 'fact',
+        await withProjectRoot(projectRoot, async () => {
+            const context = await loadProjectContext()
+            await saveKonteksMemories(context, {
+                memories: [
+                    {
+                        content:
+                            'Full backup should restore the exact memory database.',
+                        importance: 3,
+                        kind: 'fact',
+                    },
+                ],
+            })
         })
-        await db.close()
 
         const archivePath = join(projectRoot, 'konteks-backup.tar.gz')
         await withProjectRoot(projectRoot, () =>
@@ -270,34 +273,29 @@ describe('memory transfer', () => {
         await withProjectRoot(projectRoot, () =>
             restoreMemory({ inputPath: archivePath }),
         )
-        const restoredDb = await openProjectDatabase(
-            await withProjectRoot(projectRoot, () => loadProjectContext()),
-        )
         const rows = await querySql(
             join(projectRoot, '.konteks', 'memory.sqlite'),
             'select count(*) as count from observations',
         )
-        await restoredDb.close()
 
         expect(rows[0]?.count).toBe(1)
     })
 
     it('refuses restore over non-empty memory unless forced and creates a safety backup', async () => {
         const sourceRoot = await makeInitializedProject('konteks-backup-src-')
-        const sourceDb = await openProjectDatabase(
-            await withProjectRoot(sourceRoot, () => loadProjectContext()),
-        )
-        await saveKonteksMemory(
-            sourceDb,
-            await withProjectRoot(sourceRoot, () => loadProjectContext()),
-            {
-                content:
-                    'Backup source memory content is intentionally distinct.',
-                importance: 3,
-                kind: 'fact',
-            },
-        )
-        await sourceDb.close()
+        await withProjectRoot(sourceRoot, async () => {
+            const sourceContext = await loadProjectContext()
+            await saveKonteksMemories(sourceContext, {
+                memories: [
+                    {
+                        content:
+                            'Backup source memory content is intentionally distinct.',
+                        importance: 3,
+                        kind: 'fact',
+                    },
+                ],
+            })
+        })
         const archivePath = join(sourceRoot, 'konteks-backup.tar.gz')
         await withProjectRoot(sourceRoot, () =>
             new BackupCommand().handle({

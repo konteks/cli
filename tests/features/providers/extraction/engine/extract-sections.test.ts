@@ -5,8 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { querySql } from 'tests/support/sqlite-libsql'
 import type { ExtractionProgressEvent } from '@/contracts/services/progress'
-import type { SqliteConnection } from '@/database/actions/_db'
-import { openProjectDatabase, withTransaction } from '@/database/actions/_db'
+import { withTransaction } from '@/database/actions/_db'
 import insertChunk from '@/database/actions/insert-chunk'
 import insertSource from '@/database/actions/insert-source'
 import type { Project } from '@/models/project'
@@ -15,8 +14,10 @@ import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import { contentHash } from '@/providers/persistence/objects/content'
 
 const tempDirs: string[] = []
+const originalCwd = process.cwd()
 
 afterEach(async () => {
+    process.chdir(originalCwd)
     await Promise.all(
         tempDirs
             .splice(0)
@@ -27,93 +28,80 @@ afterEach(async () => {
 describe('providers/extraction/engine/extract-sections', () => {
     it('extracts markdown sections and reports progress totals', async () => {
         const text = '# Intro\nHello\n\n## Usage\nRun it\n'
-        const { context, db } = await createProject({
+        const { context } = await createProject({
             path: 'README.md',
             text,
         })
         const events: ExtractionProgressEvent[] = []
-        try {
-            const result = await extractSections(
-                db,
-                context,
-                [scannedFile('README.md', text)],
-                '2026-01-01T00:00:00.000Z',
-                {
-                    mode: 'full',
-                    onProgress: event => events.push(event),
-                },
-            )
+        const result = await extractSections(
+            context,
+            [scannedFile('README.md', text)],
+            '2026-01-01T00:00:00.000Z',
+            {
+                mode: 'full',
+                onProgress: event => events.push(event),
+            },
+        )
 
-            expect(result).toEqual({
-                chunkCount: 2,
-                filesTruncatedByChunkLimit: 0,
-                loadedParserCount: 0,
-                parserFallbackFiles: 0,
-                parserUsedFiles: 0,
-            })
-            expect(
-                events.some(
-                    event =>
-                        event.phase === 'chunks' &&
-                        event.status === 'done' &&
-                        event.chunkCount === 2,
-                ),
-            ).toBe(true)
-        } finally {
-            await db.close()
-        }
+        expect(result).toEqual({
+            chunkCount: 2,
+            filesTruncatedByChunkLimit: 0,
+            loadedParserCount: 0,
+            parserFallbackFiles: 0,
+            parserUsedFiles: 0,
+        })
+        expect(
+            events.some(
+                event =>
+                    event.phase === 'chunks' &&
+                    event.status === 'done' &&
+                    event.chunkCount === 2,
+            ),
+        ).toBe(true)
     })
 
     it('does not clear existing extracted sections in resume mode', async () => {
-        const { context, db } = await createProject({
+        const { context } = await createProject({
             path: 'README.md',
             text: '# Intro\nHello\n',
         })
-        try {
-            await seedExtractedSection(db, 'README.md')
+        await seedExtractedSection('README.md')
 
-            await extractSections(db, context, [], '2026-01-01T00:00:00.000Z', {
-                mode: 'resume',
-            })
+        await extractSections(context, [], '2026-01-01T00:00:00.000Z', {
+            mode: 'resume',
+        })
 
-            await expect(
-                querySql(context, 'select * from chunks where id = ?', [
-                    'chunk_existing',
-                ]),
-            ).resolves.toHaveLength(1)
-        } finally {
-            await db.close()
-        }
+        await expect(
+            querySql(context, 'select * from chunks where id = ?', [
+                'chunk_existing',
+            ]),
+        ).resolves.toHaveLength(1)
     })
 
     it('clears changed and deleted paths before extraction', async () => {
-        const { context, db } = await createProject({
+        const { context } = await createProject({
             path: 'README.md',
             text: '# Intro\nHello\n',
         })
-        try {
-            await seedExtractedSection(db, 'src/deleted.ts')
+        await seedExtractedSection('src/deleted.ts')
 
-            await extractSections(db, context, [], '2026-01-01T00:00:00.000Z', {
-                deletedPaths: ['src/deleted.ts'],
-                mode: 'changed',
-            })
+        await extractSections(context, [], '2026-01-01T00:00:00.000Z', {
+            deletedPaths: ['src/deleted.ts'],
+            mode: 'changed',
+        })
 
-            await expect(
-                querySql(context, 'select * from chunks where id = ?', [
-                    'chunk_existing',
-                ]),
-            ).resolves.toHaveLength(0)
-        } finally {
-            await db.close()
-        }
+        await expect(
+            querySql(context, 'select * from chunks where id = ?', [
+                'chunk_existing',
+            ]),
+        ).resolves.toHaveLength(0)
     })
 })
 
 async function createProject(input: {
     path: string
     text: string
-}): Promise<{ context: Project; db: SqliteConnection }> {
+}): Promise<{ context: Project }> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-store-'))
     tempDirs.push(projectRoot)
     await mkdir(join(projectRoot, '.konteks'), { recursive: true })
@@ -136,8 +124,8 @@ async function createProject(input: {
         memoryDir: join(projectRoot, '.konteks'),
         projectRoot,
     }
-    const db = await openProjectDatabase(context)
-    return { context: { ...context, configExists: true }, db }
+    process.chdir(projectRoot)
+    return { context: { ...context, configExists: true } }
 }
 
 function scannedFile(path: string, text: string): ScannedFile {
@@ -149,11 +137,8 @@ function scannedFile(path: string, text: string): ScannedFile {
     }
 }
 
-async function seedExtractedSection(
-    db: SqliteConnection,
-    path: string,
-): Promise<void> {
-    await withTransaction(db, () =>
+async function seedExtractedSection(path: string): Promise<void> {
+    await withTransaction(() =>
         insertSource({
             entities_json: JSON.stringify([]),
             excerpt_ref: null,
@@ -166,7 +151,7 @@ async function seedExtractedSection(
             uri: path,
         }),
     )
-    await withTransaction(db, () =>
+    await withTransaction(() =>
         insertChunk({
             anchor: 'file',
             anchor_type: 'file',

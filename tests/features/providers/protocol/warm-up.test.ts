@@ -5,7 +5,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
-import { openProjectDatabase } from '@/database/actions/_db'
 import mcpTools from '@/mcp/tools'
 import { extractProject } from '@/providers/extraction/extract-project'
 import { loadProjectContext } from '@/providers/project/context'
@@ -54,7 +53,9 @@ describe('konteks_warm_up', () => {
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
-        await extractProject(context, 'full', extractionOptions())
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', extractionOptions()),
+        )
 
         // Seed some durable memories
         await withProjectRoot(projectRoot, () =>
@@ -87,7 +88,6 @@ describe('konteks_warm_up', () => {
             }),
         )
 
-        await syncProjectActionDatabase(context)
         const result = await withProjectRoot(projectRoot, () =>
             callKonteksTool('konteks_warm_up', { maxTokens: 500 }),
         )
@@ -117,13 +117,14 @@ describe('konteks_warm_up', () => {
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
-        await extractProject(context, 'full', extractionOptions())
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', extractionOptions()),
+        )
         await writeFile(
             join(projectRoot, 'src', 'later.txt'),
             'export const later = true\n',
         )
 
-        await syncProjectActionDatabase(context)
         const result = await withProjectRoot(projectRoot, () =>
             callKonteksTool('konteks_warm_up', { maxTokens: 500 }),
         )
@@ -157,9 +158,10 @@ describe('konteks_warm_up', () => {
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
-        await extractProject(context, 'full', extractionOptions())
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', extractionOptions()),
+        )
 
-        await syncProjectActionDatabase(context)
         const result = await withProjectRoot(projectRoot, () =>
             callKonteksTool('konteks_warm_up', {
                 maxTokens: 500,
@@ -179,13 +181,6 @@ async function readExtractionManifest(memoryDir: string) {
         '@/providers/extraction/engine/manifest'
     )
     return read(memoryDir)
-}
-
-async function syncProjectActionDatabase(
-    context: Awaited<ReturnType<typeof loadProjectContext>>,
-) {
-    const service = await openProjectDatabase(context)
-    await service.close()
 }
 
 async function callKonteksTool(

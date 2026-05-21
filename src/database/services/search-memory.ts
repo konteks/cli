@@ -1,5 +1,5 @@
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
-import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
+import { withTransaction } from '@/database/actions/_db'
 import hasSearchIndex from '@/database/actions/has-search-index'
 import queryDiaries, { type DiaryRow } from '@/database/actions/query-diaries'
 import queryFtsRows from '@/database/actions/query-fts-rows'
@@ -45,11 +45,10 @@ export type MemoryRecallInput = {
 }
 
 export default async function searchMemory(
-    db: SqliteConnection,
     input: MemorySearchInput | MemoryRecallInput,
     options: SearchMemoryOptions = {},
 ): Promise<MemorySearchResult[]> {
-    return withTransaction(db, () => searchBoundMemory(input, options))
+    return withTransaction(() => searchBoundMemory(input, options))
 }
 
 async function searchBoundMemory(

@@ -1,9 +1,7 @@
 import z from 'zod'
-import { openProjectDatabase } from '@/database/actions/_db'
 import searchMemory from '@/database/services/search-memory'
 import formatMemory from '@/mcp/tools/utils/format-memory'
 import inline from '@/mcp/tools/utils/inline'
-import { loadMcpProjectContext } from '@/memory/runtime'
 import type { MemorySearchResult } from '@/models/memory'
 import BaseMcpTool from './_base-mcp-tool'
 
@@ -30,19 +28,13 @@ export default class SearchMcpTool extends BaseMcpTool<Input> {
     public readonly name = 'konteks_search'
 
     public async handle(input: Input): Promise<string> {
-        const context = await loadMcpProjectContext()
-        const db = await openProjectDatabase(context)
-        try {
-            const results = await searchMemory(db, input)
+        const results = await searchMemory(input)
 
-            return formatSearchText({
-                limit: input.limit ?? 10,
-                query: input.query,
-                results,
-            })
-        } finally {
-            await db.close()
-        }
+        return formatSearchText({
+            limit: input.limit ?? 10,
+            query: input.query,
+            results,
+        })
     }
 }
 

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
+import { withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
 import findDuplicateObservation from '@/database/actions/find-duplicate-observation'
 import indexSearchDocument from '@/database/actions/index-search-document'
@@ -20,7 +20,7 @@ import { contentHash } from '@/providers/persistence/objects/content'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
 import storePayload from '@/providers/persistence/objects/store-payload'
 
-export type SaveMemoryInput = {
+type SaveMemoryInput = {
     content: string
     kind: ObservationKind
     importance: 1 | 2 | 3 | 4 | 5
@@ -34,19 +34,6 @@ export type SaveDiaryInput = {
     tags?: string[]
 }
 
-export type SaveSessionInput = {
-    task: string
-    summary: string
-    status: 'blocked' | 'done' | 'partial'
-    blockers?: string[]
-    decisions?: string[]
-    entities?: string[]
-    filesTouched?: string[]
-    nextSteps?: string[]
-    openQuestions?: string[]
-    testsRun?: string[]
-}
-
 export type SaveMemoriesInput = {
     memories: SaveMemoryInput[]
 }
@@ -58,15 +45,14 @@ export type SaveOptions = {
     }
 }
 
-export async function saveKonteksMemory(
-    db: SqliteConnection,
+async function saveKonteksMemory(
     context: Project,
     input: SaveMemoryInput,
     _options: SaveOptions = {},
 ): Promise<SaveResult> {
     validateMemoryQuality(input.content)
     const hash = contentHash(input.content)
-    const duplicate = await withTransaction(db, () =>
+    const duplicate = await withTransaction(() =>
         findDuplicateObservation(hash),
     )
     if (duplicate) {
@@ -86,7 +72,7 @@ export async function saveKonteksMemory(
     const summary = summarizeText(input.content)
     const createdAt = new Date().toISOString()
 
-    await withTransaction(db, async () => {
+    await withTransaction(async () => {
         await insertObservation({
             confidence: importanceToConfidence(input.importance),
             contentHash: stored.contentHash,
@@ -135,7 +121,6 @@ export async function saveKonteksMemory(
 }
 
 export async function saveKonteksMemories(
-    db: SqliteConnection,
     context: Project,
     input: SaveMemoriesInput,
     _options: SaveOptions = {},
@@ -144,10 +129,10 @@ export async function saveKonteksMemories(
     const memoryIds: string[] = []
     let skippedMemories = 0
 
-    await withTransaction(db, async tx => {
+    await withTransaction(async () => {
         for (const memory of input.memories) {
             try {
-                const saved = await saveKonteksMemory(tx, context, memory)
+                const saved = await saveKonteksMemory(context, memory)
                 memoryIds.push(saved.id)
             } catch (error) {
                 if (!isSkippableMemoryError(error)) {
@@ -166,60 +151,7 @@ export async function saveKonteksMemories(
     }
 }
 
-export async function saveKonteksSession(
-    db: SqliteConnection,
-    context: Project,
-    input: SaveSessionInput,
-    _options: SaveOptions = {},
-): Promise<SaveResult> {
-    validateSessionQuality(input.summary)
-    const id = `diary_${randomUUID()}`
-    const payload = JSON.stringify(input, null, 2)
-    const stored = await storePayload(payload, {
-        inlineMaxBytes: context.config.storage.inlinePayloadMaxBytes,
-        toonStore: createToonStore(context.memoryDir),
-    })
-    const createdAt = new Date().toISOString()
-
-    await withTransaction(db, async () => {
-        await insertDiaryEntry({
-            contentHash: stored.contentHash,
-            createdAt,
-            id,
-            payloadRef: stored.payloadRef ?? null,
-            subject: input.task,
-            summary: input.summary,
-            tagsJson: JSON.stringify([input.status]),
-        })
-
-        await appendMemoryEvent({
-            actor: 'mcp',
-            eventType: 'diary_entry_saved',
-            id: `event_${randomUUID()}`,
-            payloadRef: stored.payloadRef,
-            subjectId: id,
-            subjectType: 'diary_entry',
-            summary: input.summary,
-        })
-
-        await indexSearchDocument({
-            content: input.summary,
-            createdAt,
-            id,
-            kind: 'diary',
-            task: input.task,
-            type: 'diary',
-        })
-    })
-
-    return {
-        accepted: true,
-        id,
-    }
-}
-
 export async function saveKonteksDiary(
-    db: SqliteConnection,
     context: Project,
     input: SaveDiaryInput,
     options: SaveOptions = {},
@@ -242,7 +174,7 @@ export async function saveKonteksDiary(
     })
     const createdAt = new Date().toISOString()
 
-    await withTransaction(db, async () => {
+    await withTransaction(async () => {
         await insertDiaryEntry({
             contentHash: stored.contentHash,
             createdAt,

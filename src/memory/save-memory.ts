@@ -1,4 +1,3 @@
-import { openProjectDatabase } from '@/database/actions/_db'
 import type {
     SaveDiaryInput,
     SaveMemoriesInput,
@@ -18,25 +17,11 @@ export async function saveMemories(
 ): Promise<SaveResult> {
     const context = await loadMcpProjectContext()
     const projectUpdate = await updateChangedProjectMemorySilently(context)
-    const db = await openProjectDatabase(context)
-    try {
-        return await saveKonteksMemories(db, context, input, {
-            projectUpdate,
-        })
-    } finally {
-        await db.close()
-    }
+    return await saveKonteksMemories(context, input, { projectUpdate })
 }
 
 export async function saveDiary(input: SaveDiaryInput): Promise<SaveResult> {
     const context = await loadMcpProjectContext()
     const projectUpdate = await updateChangedProjectMemorySilently(context)
-    const db = await openProjectDatabase(context)
-    try {
-        return await saveKonteksDiary(db, context, input, {
-            projectUpdate,
-        })
-    } finally {
-        await db.close()
-    }
+    return await saveKonteksDiary(context, input, { projectUpdate })
 }

@@ -1,4 +1,3 @@
-import { openProjectDatabase } from '@/database/actions/_db'
 import type {
     DurableMemoryExport,
     DurableMemoryExportOptions,
@@ -13,14 +12,9 @@ export async function exportProjectDurableMemory(
     context: Project,
     options: Pick<DurableMemoryExportOptions, 'includeInactive'> = {},
 ): Promise<DurableMemoryExport> {
-    const connection = await openProjectDatabase(context)
-    try {
-        return await exportDurableMemory(connection, context, {
-            includeInactive: options.includeInactive,
-        })
-    } finally {
-        await connection.close()
-    }
+    return await exportDurableMemory(context, {
+        includeInactive: options.includeInactive,
+    })
 }
 
 export async function importProjectDurableMemory(
@@ -28,12 +22,7 @@ export async function importProjectDurableMemory(
     payload: DurableMemoryExport,
     options: Pick<DurableMemoryImportOptions, 'dryRun'> = {},
 ): Promise<DurableMemoryImportResult> {
-    const connection = await openProjectDatabase(context)
-    try {
-        return await importDurableMemory(connection, context, payload, {
-            dryRun: options.dryRun,
-        })
-    } finally {
-        await connection.close()
-    }
+    return await importDurableMemory(context, payload, {
+        dryRun: options.dryRun,
+    })
 }

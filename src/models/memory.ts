@@ -18,18 +18,6 @@ export type MemoryEntity = {
     properties?: Record<string, unknown>
 }
 
-export type MemoryRelation = {
-    id: string
-    subjectId: string
-    predicate: string
-    objectId: string
-    confidence: number
-    status: 'active' | 'invalidated' | 'superseded'
-    validFrom?: string
-    validTo?: string
-    properties?: Record<string, unknown>
-}
-
 export type MemorySearchResult = {
     id: string
     type: MemoryType
@@ -64,12 +52,6 @@ export type SaveResult = {
     diaryId?: string
     memoryIds?: string[]
     skippedMemories?: number
-}
-
-export type ForgetResult = {
-    accepted: boolean
-    mode: 'hard_delete' | 'invalidate' | 'soft_delete'
-    affectedIds: string[]
 }
 
 export type GraphNeighbor = {

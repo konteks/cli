@@ -1,4 +1,4 @@
-import { openProjectDatabase, withTransaction } from '@/database/actions/_db'
+import { withTransaction } from '@/database/actions/_db'
 import queryProjectMemoryStats from '@/database/actions/query-project-memory-stats'
 import type { Project } from '@/models/project'
 
@@ -16,12 +16,6 @@ export type ProjectMemoryStats = {
 export async function readProjectMemoryStats(
     context: Project,
 ): Promise<ProjectMemoryStats> {
-    const connection = await openProjectDatabase(context)
-    try {
-        return await withTransaction(connection, () =>
-            queryProjectMemoryStats(),
-        )
-    } finally {
-        await connection.close()
-    }
+    void context
+    return await withTransaction(() => queryProjectMemoryStats())
 }

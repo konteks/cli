@@ -1,5 +1,4 @@
 import z from 'zod'
-import { openProjectDatabase } from '@/database/actions/_db'
 import { readProjectWarmUpContext } from '@/database/services/warm-up-memory'
 import formatMemory from '@/mcp/tools/utils/format-memory'
 import inline from '@/mcp/tools/utils/inline'
@@ -63,15 +62,10 @@ async function warmUpMemory(input: {
 
     let recall: RecallPackage | undefined
     if (input.topic) {
-        const db = await openProjectDatabase(context)
-        try {
-            recall = await recallRepositoryMemory(db, {
-                maxTokens: input.maxTokens ?? 2000,
-                task: input.topic ?? '',
-            })
-        } finally {
-            await db.close()
-        }
+        recall = await recallRepositoryMemory({
+            maxTokens: input.maxTokens ?? 2000,
+            task: input.topic ?? '',
+        })
     }
 
     return { recall, warmUp }

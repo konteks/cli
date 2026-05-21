@@ -1,7 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
 import type { ExtractionProgressReporter } from '@/contracts/services/progress'
-import type { SqliteConnection } from '@/database/actions/_db'
+import getDb from '@/database/actions/_db'
 import { retrievalDocuments, targetEmbeddings } from '@/database/schema'
 import { contentHash } from '@/providers/persistence/objects/content'
 
@@ -25,7 +25,6 @@ type EmbeddingRunResult = {
 }
 
 export default async function generateTargetEmbeddings(
-    db: SqliteConnection,
     provider: EmbeddingProviderContract,
     targetTypes: TargetType[],
     createdAt: string,
@@ -33,11 +32,12 @@ export default async function generateTargetEmbeddings(
         onProgress?: ExtractionProgressReporter
     } = {},
 ): Promise<EmbeddingRunResult> {
+    const db = await getDb()
     if (targetTypes.length === 0) {
         return { embeddedCount: 0, reusedCount: 0 }
     }
 
-    const rows = await db.db
+    const rows = await db
         .select({
             embedding_text: retrievalDocuments.embeddingText,
             target_id: retrievalDocuments.targetId,
@@ -51,7 +51,7 @@ export default async function generateTargetEmbeddings(
     const workItems: EmbeddingWorkItem[] = []
 
     for (const row of rows) {
-        const existing = await db.db
+        const existing = await db
             .select({ embedding_hash: targetEmbeddings.embeddingHash })
             .from(targetEmbeddings)
             .where(
@@ -129,7 +129,7 @@ export default async function generateTargetEmbeddings(
             )
         }
 
-        await db.db
+        await db
             .insert(targetEmbeddings)
             .values({
                 createdAt,

@@ -5,6 +5,7 @@ const knipConfig: KnipConfig = {
     ignoreIssues: {
         'src/database/services/graph.ts': ['exports', 'types'],
         'src/database/services/taxonomy.ts': ['exports', 'types'],
+        'src/memory/recall-repository-memory.ts': ['exports', 'types'],
     },
 }
 
