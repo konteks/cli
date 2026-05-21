@@ -67,7 +67,7 @@ describe('retrieval quality evals', () => {
         )
         const text = extractText(result)
 
-        expect(text).toContain('recall:')
+        expect(text).not.toContain('recall:')
         expect(text).toContain('memories:')
     })
 
@@ -170,7 +170,7 @@ describe('retrieval quality evals', () => {
         expect(manifest?.files.map(file => file.path)).toContain(
             'src/saved-change.txt',
         )
-        expect(text).toContain('konteks: session diary saved')
+        expect(text).toContain('session diary saved')
         expect(text).not.toContain('mode')
         expect(text).not.toContain('Extraction complete')
     })
@@ -200,8 +200,8 @@ describe('retrieval quality evals', () => {
         )
         const text = extractText(result)
 
-        expect(text).toContain('warm_up:')
-        expect(text).toContain('highlights:')
+        expect(text).not.toContain('warm_up:')
+        expect(text).toContain('highlights')
     })
 
     it('keeps TOON output more compact than JSON-in-text for recall', async () => {
@@ -227,7 +227,7 @@ describe('retrieval quality evals', () => {
         )
         const text = extractText(result)
 
-        expect(text).toContain('recall:')
+        expect(text).not.toContain('recall:')
         expect(text).toContain('memories:')
     })
 
@@ -267,8 +267,8 @@ describe('retrieval quality evals', () => {
         )
         const text = extractText(result)
 
-        expect(text).toContain('brief:')
-        expect(text).toContain('primary_targets:')
+        expect(text).toContain('brief')
+        expect(text).toContain('primaryTargets')
         expect(text).toContain('src/mcp')
         expect(text).not.toContain('docs/getting-started')
         expect(text).not.toContain('- -')
@@ -299,7 +299,9 @@ describe('retrieval quality evals', () => {
         )
         const text = extractText(result)
 
-        expect(text).toContain('search:')
+        expect(text).not.toContain('search:')
+        expect(text).toContain('query: sqlite wasm local storage')
+        expect(text).toContain('results')
         expect(text).toContain('sqlite wasm local storage')
     })
 })

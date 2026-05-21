@@ -93,8 +93,10 @@ describe('konteks_warm_up', () => {
         )
         const text = extractText(result)
 
-        expect(text).toContain('warm_up:')
+        expect(text).not.toContain('warm_up:')
         expect(text).toContain('summary:')
+        expect(text).toContain('guidance')
+        expect(text).toContain('highlights')
         expect(text).toContain('Use Bun test for project verification.')
         expect(text).toContain(
             'Konteks save must preserve explicit constraints.',
@@ -172,7 +174,7 @@ describe('konteks_warm_up', () => {
 
         expect(text).toContain('recall:')
         expect(text).toContain('quality:')
-        expect(text).toContain('primary_targets:')
+        expect(text).toContain('primaryTargets')
     })
 })
 

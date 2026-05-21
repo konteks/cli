@@ -43,25 +43,8 @@ export default class SaveMemoriesMcpTool extends BaseMcpTool<Input> {
     public readonly name = 'konteks_save_memories'
 
     public async handle(input: Input): Promise<string> {
-        const result = await saveMemories(input)
+        await saveMemories(input)
 
-        return formatSaveMemoriesText(result)
+        return 'durable memories saved'
     }
-}
-
-function formatSaveMemoriesText(input: {
-    memoryIds?: string[]
-    skippedMemories?: number
-}): string {
-    const memoryCount = input.memoryIds?.length ?? 0
-    const parts = ['konteks: durable memories saved']
-
-    if (memoryCount > 0) {
-        parts.push(`${memoryCount} durable memories`)
-    }
-    if (input.skippedMemories && input.skippedMemories > 0) {
-        parts.push(`${input.skippedMemories} redundant items skipped`)
-    }
-
-    return `${parts.join(', ')}.`
 }

@@ -232,7 +232,8 @@ describe('cli/e2e', () => {
             '{"task":"project memory"}',
         ])
         expect(recall.exitCode).toBe(0)
-        expect(recall.output).toContain('recall:')
+        expect(recall.output).not.toContain('recall:')
+        expect(recall.output).toContain('evidenceCounts')
 
         const warmUp = await runKonteks(fixture.projectRoot, [
             'mcp',
@@ -241,7 +242,8 @@ describe('cli/e2e', () => {
             '{"maxTokens":200}',
         ])
         expect(warmUp.exitCode).toBe(0)
-        expect(warmUp.output).toContain('warm_up:')
+        expect(warmUp.output).not.toContain('warm_up:')
+        expect(warmUp.output).toContain('"summary"')
     }, 20000)
 })
 
