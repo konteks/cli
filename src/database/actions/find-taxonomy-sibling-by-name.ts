@@ -2,7 +2,13 @@ import { eq, isNull } from 'drizzle-orm'
 import { taxonomyNodes } from '@/database/schema'
 import type { TaxonomyNode } from '@/database/services/taxonomy'
 import getDb from './_db'
-import type { TaxonomyNodeRow } from './query-taxonomy-subtree-rows'
+
+type TaxonomyNodeRow = {
+    id: string
+    parent_id: string | null
+    name: string
+    summary: string | null
+}
 
 export default async function findTaxonomySiblingByName(
     parentId: string | undefined,

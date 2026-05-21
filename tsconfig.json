@@ -10,8 +10,7 @@
         "noImplicitOverride": true,
         "outDir": "dist",
         "paths": {
-            "@/*": ["./src/*"],
-            "tests/*": ["./tests/*"]
+            "@/*": ["./src/*"]
         },
         "resolveJsonModule": true,
         "rootDir": ".",
