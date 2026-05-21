@@ -30,7 +30,9 @@ export default class ForgetMcpTool extends BaseMcpTool<Input> {
 
     public readonly name = 'konteks_forget'
 
-    public async handle(input: Input) {
-        return await forgetMemory(input)
+    public async handle(input: Input): Promise<string> {
+        await forgetMemory(input)
+
+        return 'memory forgotten'
     }
 }
