@@ -5,7 +5,6 @@ export function projectMemoryDatabasePath(context: Project): string {
     return projectDatabasePath(context)
 }
 
-export async function ensureProjectMemory(context: Project): Promise<void> {
-    void context
+export async function ensureProjectMemory(): Promise<void> {
     await getDb()
 }

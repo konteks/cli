@@ -155,7 +155,7 @@ class ProjectStatusReader implements ProjectStatusReaderContract {
             memoryDir: context.memoryDir,
             memoryDirExists,
             memoryStats: databaseExists
-                ? await readProjectMemoryStats(context)
+                ? await readProjectMemoryStats()
                 : emptyMemoryStats(),
             projectRoot: context.projectRoot,
         }

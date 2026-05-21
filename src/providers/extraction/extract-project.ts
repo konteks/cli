@@ -115,9 +115,7 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
             status: 'done',
         })
         const alreadyExtractedPaths =
-            mode === 'resume'
-                ? await readExtractedProjectPaths(context)
-                : undefined
+            mode === 'resume' ? await readExtractedProjectPaths() : undefined
         const { deletedPaths, filesToExtract } = selectFilesForMode(
             files,
             previousManifest,
