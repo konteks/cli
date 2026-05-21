@@ -1,14 +1,12 @@
 import z from 'zod'
 import recallRepositoryMemory from '@/memory/recall-repository-memory'
 import type {
+    MemorySearchResult,
     RecallGraphItem,
     RecallHistoryItem,
     RecallPackage,
 } from '@/models/memory'
 import BaseMcpTool from './_base-mcp-tool'
-import formatMemory from './utils/format-memory'
-import inline from './utils/inline'
-import toBullets from './utils/to-bullets'
 
 const INPUT_SCHEMA = z.object({
     includeSources: z.boolean().optional(),
@@ -33,56 +31,84 @@ export default class RecallMcpTool extends BaseMcpTool<Input> {
 
     public readonly name = 'konteks_recall'
 
-    public async handle(input: Input): Promise<string> {
+    public async handle(input: Input): Promise<object> {
         const result = await recallRepositoryMemory(input)
 
-        return formatRecallText({
+        return toRecallOutput({
             includeSources: input.includeSources ?? false,
             recall: result,
         })
     }
 }
 
-function formatRecallText(input: {
+function toRecallOutput(input: {
     recall: RecallPackage
     includeSources?: boolean
-}): string {
+}): object {
     const { recall, includeSources } = input
-    return [
-        'recall:',
-        `  task: ${inline(recall.task)}`,
-        '  brief:',
-        ...toBullets(recall.brief, 4),
-        recall.primaryTargets.length > 0 ? '  primary_targets:' : null,
-        ...toBullets(recall.primaryTargets, 4, { empty: false }),
-        `  evidence_counts: memories=${recall.memories.length}, graph=${recall.graph.length}, history=${recall.history.length}`,
-        recall.graph.length > 0 ? '  graph_evidence:' : null,
-        ...toBullets(graphEvidenceLines(recall.graph), 4, { empty: false }),
-        recall.history.length > 0 ? '  history_evidence:' : null,
-        ...toBullets(historyEvidenceLines(recall.history), 4, { empty: false }),
-        '  memories:',
-        ...recall.memories
-            .slice(0, 8)
-            .map(memory => formatMemory(memory, 4, includeSources)),
-    ]
-        .filter((line): line is string => line !== null)
-        .join('\n')
+    return {
+        brief: recall.brief,
+        evidenceCounts: {
+            graph: recall.graph.length,
+            history: recall.history.length,
+            memories: recall.memories.length,
+        },
+        graphEvidence: recall.graph.slice(0, 6).map(toGraphEvidenceOutput),
+        historyEvidence: recall.history
+            .slice(0, 6)
+            .map(toHistoryEvidenceOutput),
+        memories: recall.memories.slice(0, 8).map(memory =>
+            toMemoryOutput(memory, {
+                includeSources: includeSources ?? false,
+            }),
+        ),
+        primaryTargets: recall.primaryTargets,
+        task: recall.task,
+    }
 }
 
-function graphEvidenceLines(graph: RecallGraphItem[]): string[] {
-    return graph
-        .slice(0, 6)
-        .map(
-            item =>
-                `${item.entityName} ${item.predicate} ${item.relatedEntityName} (depth=${item.depth})`,
-        )
+function toGraphEvidenceOutput(item: RecallGraphItem): object {
+    return {
+        depth: item.depth,
+        entityName: item.entityName,
+        predicate: item.predicate,
+        relatedEntityName: item.relatedEntityName,
+    }
 }
 
-function historyEvidenceLines(history: RecallHistoryItem[]): string[] {
-    return history
-        .slice(0, 6)
-        .map(
-            item =>
-                `${item.subjectEntityName} ${item.predicate} ${item.objectEntityName} [${item.status}]`,
-        )
+function toHistoryEvidenceOutput(item: RecallHistoryItem): object {
+    return {
+        objectEntityName: item.objectEntityName,
+        predicate: item.predicate,
+        status: item.status,
+        subjectEntityName: item.subjectEntityName,
+    }
+}
+
+function toMemoryOutput(
+    item: MemorySearchResult,
+    options: { includeSources: boolean },
+): object {
+    return {
+        excerpt: normalizeExcerpt(item.excerpt),
+        id: options.includeSources ? item.id : undefined,
+        role: item.sourceRole ?? item.kind,
+        score: item.score,
+        target: targetFor(item),
+        tokenCost: options.includeSources ? item.tokenCost : undefined,
+        type: item.type,
+    }
+}
+
+function targetFor(item: {
+    anchor?: string
+    id: string
+    path?: string
+}): string {
+    const target = item.path ?? item.id
+    return item.anchor ? `${target}#${item.anchor}` : target
+}
+
+function normalizeExcerpt(excerpt: string): string {
+    return excerpt.replaceAll(/\s+/gu, ' ').trim()
 }

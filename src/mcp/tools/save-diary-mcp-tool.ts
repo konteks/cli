@@ -28,6 +28,6 @@ export default class SaveDiaryMcpTool extends BaseMcpTool<Input> {
     public async handle(input: Input): Promise<string> {
         await saveDiary(input)
 
-        return 'konteks: session diary saved.'
+        return 'session diary saved'
     }
 }

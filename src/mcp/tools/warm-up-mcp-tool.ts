@@ -1,13 +1,12 @@
 import z from 'zod'
 import { readProjectWarmUpContext } from '@/database/services/warm-up-memory'
-import formatMemory from '@/mcp/tools/utils/format-memory'
-import inline from '@/mcp/tools/utils/inline'
 import recallRepositoryMemory from '@/memory/recall-repository-memory'
 import {
     loadMcpProjectContext,
     updateChangedProjectMemorySilently,
 } from '@/memory/runtime'
 import type {
+    MemorySearchResult,
     RecallPackage,
     WarmUpContext,
     WarmUpGuidance,
@@ -15,7 +14,6 @@ import type {
 } from '@/models/memory'
 import { estimateCharacterTokens } from '@/support/format/tokens'
 import BaseMcpTool from './_base-mcp-tool'
-import toBullets from './utils/to-bullets'
 
 const INPUT_ZOD_SCHEMA = z.object({
     maxTokens: z.number().int().min(1).max(8000).optional(),
@@ -39,95 +37,102 @@ export default class WarmUpMcpTool extends BaseMcpTool<Input> {
 
     public readonly name = 'konteks_warm_up'
 
-    public async handle(input: Input): Promise<string> {
-        const result = await warmUpMemory(input)
-        return formatWarmUpText(result)
+    public async handle(input: Input): Promise<object> {
+        const context = await loadMcpProjectContext()
+        await updateChangedProjectMemorySilently(context)
+
+        const rawWarmUp = await readProjectWarmUpContext(context)
+        const warmUp = limitWarmUpContext(rawWarmUp, input.maxTokens ?? 2000)
+
+        let recall: RecallPackage | undefined
+        if (input.topic) {
+            recall = await recallRepositoryMemory({
+                maxTokens: input.maxTokens ?? 2000,
+                task: input.topic ?? '',
+            })
+        }
+
+        return toWarmUpOutput({ recall, warmUp })
     }
 }
 
-type WarmUpResult = {
+function toWarmUpOutput(input: {
     warmUp: WarmUpContext
     recall?: RecallPackage
-}
-
-async function warmUpMemory(input: {
-    maxTokens?: number
-    topic?: string
-}): Promise<WarmUpResult> {
-    const context = await loadMcpProjectContext()
-    await updateChangedProjectMemorySilently(context)
-
-    const rawWarmUp = await readProjectWarmUpContext(context)
-    const warmUp = limitWarmUpContext(rawWarmUp, input.maxTokens ?? 2000)
-
-    let recall: RecallPackage | undefined
-    if (input.topic) {
-        recall = await recallRepositoryMemory({
-            maxTokens: input.maxTokens ?? 2000,
-            task: input.topic ?? '',
-        })
-    }
-
-    return { recall, warmUp }
-}
-
-function formatWarmUpText(input: WarmUpResult): string {
+}): object {
     const { warmUp, recall } = input
-    const lines = [
-        'warm_up:',
-        `  summary: ${inline(warmUp.summary)}`,
-        warmUp.description
-            ? `  description: ${inline(warmUp.description)}`
-            : null,
-        `  stack: ${list(warmUp.technologies)}`,
-        warmUp.entryPoints.length > 0
-            ? `  entry: ${list(warmUp.entryPoints)}`
-            : null,
-        '  highlights:',
-        ...warmUp.highlights
-            .slice(0, 8)
-            .map(highlight => formatWarmUpHighlight(highlight, 4)),
-        '  guidance:',
-        ...warmUp.guidance.slice(0, 10).map(item => formatGuidance(item, 4)),
-    ]
-
-    if (recall) {
-        lines.push(
-            '  recall:',
-            `    task: ${inline(recall.task)}`,
-            recall.quality ? `    quality: ${recall.quality}` : null,
-            '    brief:',
-            ...toBullets(recall.brief, 6),
-            recall.primaryTargets.length > 0 ? '    primary_targets:' : null,
-            ...toBullets(recall.primaryTargets, 6, { empty: false }),
-            `    evidence_counts: memories=${recall.memories.length}, sources=${recall.sourceCount}`,
-            '    memories:',
-            ...recall.memories
-                .slice(0, 6)
-                .map(memory => formatMemory(memory, 6)),
-        )
+    return {
+        description: warmUp.description,
+        entryPoints: warmUp.entryPoints,
+        guidance: warmUp.guidance.map(toGuidanceOutput),
+        highlights: warmUp.highlights.map(toWarmUpHighlightOutput),
+        recall: recall ? toFocusedRecallOutput(recall) : undefined,
+        summary: warmUp.summary,
+        technologies: warmUp.technologies,
     }
-
-    return lines.filter((line): line is string => line !== null).join('\n')
 }
 
-function formatWarmUpHighlight(item: WarmUpHighlight, indent: number): string {
-    const pad = ' '.repeat(indent)
-    const location = item.anchor
-        ? `${item.path ?? item.id}#${item.anchor}`
-        : (item.path ?? item.id)
-    const role = item.sourceRole ?? '-'
-    const summary = item.excerpt.replaceAll(/\s+/gu, ' ').trim()
-    return `${pad}- [${item.type}] score=${item.score} ${location} role=${role} :: ${inline(summary)}`
+function toWarmUpHighlightOutput(item: WarmUpHighlight): object {
+    return {
+        excerpt: normalizeExcerpt(item.excerpt),
+        role: item.sourceRole,
+        score: item.score,
+        target: targetFor(item),
+        type: item.type,
+    }
 }
 
-function formatGuidance(item: WarmUpGuidance, indent: number): string {
-    const pad = ' '.repeat(indent)
-    return `${pad}- [${item.kind}] ${inline(item.text)}`
+function toGuidanceOutput(item: WarmUpGuidance): object {
+    return {
+        kind: item.kind,
+        text: item.text,
+    }
 }
 
-function list(values: string[]): string {
-    return values.length > 0 ? values.join(', ') : '-'
+function toFocusedRecallOutput(recall: RecallPackage): object {
+    return {
+        brief: recall.brief,
+        evidenceCounts: {
+            memories: recall.memories.length,
+            sources: recall.sourceCount,
+        },
+        memories: recall.memories.slice(0, 6).map(memory =>
+            toMemoryOutput(memory, {
+                includeSources: false,
+            }),
+        ),
+        primaryTargets: recall.primaryTargets,
+        quality: recall.quality,
+        task: recall.task,
+    }
+}
+
+function toMemoryOutput(
+    item: MemorySearchResult,
+    options: { includeSources: boolean },
+): object {
+    return {
+        excerpt: normalizeExcerpt(item.excerpt),
+        id: options.includeSources ? item.id : undefined,
+        role: item.sourceRole ?? item.kind,
+        score: item.score,
+        target: targetFor(item),
+        tokenCost: options.includeSources ? item.tokenCost : undefined,
+        type: item.type,
+    }
+}
+
+function targetFor(item: {
+    anchor?: string
+    id: string
+    path?: string
+}): string {
+    const target = item.path ?? item.id
+    return item.anchor ? `${target}#${item.anchor}` : target
+}
+
+function normalizeExcerpt(excerpt: string): string {
+    return excerpt.replaceAll(/\s+/gu, ' ').trim()
 }
 
 function limitWarmUpContext(
