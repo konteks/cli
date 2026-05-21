@@ -87,7 +87,7 @@ async function initializeProjectMemory(options: {
     }
 
     await writeInitialMemoryFiles(context, options.grammars ?? [])
-    await ensureProjectMemory(await loadProjectContext())
+    await ensureProjectMemory()
     await ensureKonteksGitignore(context.projectRoot)
 
     const extractor = createProjectExtractor({

@@ -278,8 +278,6 @@ async function createInitializedProject(
 async function seedDurableMemory(projectRoot: string): Promise<void> {
     return withFileBackedSqlite(async () => {
         await withProjectRoot(projectRoot, async () => {
-            const context = await loadProjectContext()
-            void context
             await saveMemories({
                 memories: [
                     {

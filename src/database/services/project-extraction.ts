@@ -30,10 +30,7 @@ type ExtractProjectSectionsResult = {
     totalSectionCount: number
 }
 
-export async function readExtractedProjectPaths(
-    context: Project,
-): Promise<Set<string>> {
-    void context
+export async function readExtractedProjectPaths(): Promise<Set<string>> {
     return await withTransaction(() => readExtractedProjectPathsAction())
 }
 
