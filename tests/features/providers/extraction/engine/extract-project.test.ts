@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { afterEach, describe, expect, it } from 'bun:test'
 import {
     mkdir,
@@ -221,7 +220,7 @@ describe('extractProject', () => {
         const result = await extractTestProject(context, 'reindex')
         const manifest = await readExtractionManifest(context.memoryDir)
 
-        expect(result.chunkCount).toBe(manifest?.diagnostics.chunkCount)
+        expect(manifest?.diagnostics?.chunkCount).toBe(result.chunkCount)
         expect(result.chunkCount).toBeGreaterThanOrEqual(3)
     })
 
