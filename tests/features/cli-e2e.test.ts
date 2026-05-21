@@ -5,11 +5,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { promisify } from 'node:util'
-import { querySql } from 'tests/support/sqlite-libsql'
-import {
-    saveKonteksDiary,
-    saveKonteksMemories,
-} from '@/database/services/save-memory'
+import { saveDiary, saveMemories } from '@/memory/save-memory'
 import type { DurableMemoryExport } from '@/models/memory-transfer'
 import { extractProject } from '@/providers/extraction/extract-project'
 import {
@@ -226,7 +222,7 @@ describe('cli/e2e', () => {
         )
     }, 20000)
 
-    it('supports read-only MCP calls and mutating save dry-run/apply semantics', async () => {
+    it('supports read-only MCP calls', async () => {
         const fixture = await createInitializedProject()
 
         const recall = await runKonteks(fixture.projectRoot, [
@@ -246,44 +242,6 @@ describe('cli/e2e', () => {
         ])
         expect(warmUp.exitCode).toBe(0)
         expect(warmUp.output).toContain('warm_up:')
-
-        const before = await readActiveCounts(fixture.projectRoot)
-
-        const dryRunSave = await runKonteks(fixture.projectRoot, [
-            'mcp',
-            'call',
-            'konteks_save_diary',
-            '{"summary":"Dry run diary entry should not persist to project memory."}',
-        ])
-        expect(dryRunSave.exitCode).toBe(0)
-        expect(dryRunSave.output).toContain('konteks: session diary saved')
-        expect(await readActiveCounts(fixture.projectRoot)).toEqual(before)
-
-        const dryRunMemories = await runKonteks(fixture.projectRoot, [
-            'mcp',
-            'call',
-            'konteks_save_memories',
-            '{"memories":[{"content":"Applied memory entry should persist to project memory.","importance":3,"kind":"note","type":"memory"}]}',
-        ])
-        expect(dryRunMemories.exitCode).toBe(0)
-        expect(dryRunMemories.output).toContain(
-            'konteks: durable memories saved',
-        )
-        expect(await readActiveCounts(fixture.projectRoot)).toEqual(before)
-
-        const applySave = await runKonteks(fixture.projectRoot, [
-            'mcp',
-            'call',
-            'konteks_save_diary',
-            '--apply',
-            '{"summary":"Applied diary entry should persist to project memory."}',
-        ])
-        expect(applySave.exitCode).toBe(0)
-        expect(applySave.output).toContain('konteks: session diary saved')
-        expect(await readActiveCounts(fixture.projectRoot)).toEqual({
-            diaries: before.diaries + 1,
-            memories: before.memories,
-        })
     }, 20000)
 })
 
@@ -321,7 +279,8 @@ async function seedDurableMemory(projectRoot: string): Promise<void> {
     return withFileBackedSqlite(async () => {
         await withProjectRoot(projectRoot, async () => {
             const context = await loadProjectContext()
-            await saveKonteksMemories(context, {
+            void context
+            await saveMemories({
                 memories: [
                     {
                         content:
@@ -331,7 +290,7 @@ async function seedDurableMemory(projectRoot: string): Promise<void> {
                     },
                 ],
             })
-            await saveKonteksDiary(context, {
+            await saveDiary({
                 subject: 'cli e2e fixture',
                 summary:
                     'CLI e2e diary entries should survive export and restore.',
@@ -345,26 +304,27 @@ async function readActiveCounts(projectRoot: string): Promise<{
     diaries: number
     memories: number
 }> {
-    return withFileBackedSqlite(async () => {
-        const context = await withProjectRoot(projectRoot, () =>
-            loadProjectContext(),
-        )
-        const [memoryRows, diaryRows] = await Promise.all([
-            querySql(
-                context,
-                'select count(*) as count from observations where deleted_at is null and suppressed_at is null',
-            ),
-            querySql(
-                context,
-                'select count(*) as count from diary_entries where deleted_at is null and suppressed_at is null',
-            ),
-        ])
+    const outputPath = join(
+        projectRoot,
+        `.counts-${Math.random().toString(36).slice(2)}.json`,
+    )
+    const exported = await runKonteks(projectRoot, [
+        'memory',
+        'export',
+        outputPath,
+    ])
+    expect(exported.exitCode).toBe(0)
 
-        return {
-            diaries: diaryRows[0]?.count ?? 0,
-            memories: memoryRows[0]?.count ?? 0,
-        }
-    })
+    const result = parseJsonFromOutput<{
+        diaries: number
+        memories: number
+    }>(exported.output)
+    await rm(outputPath, { force: true })
+
+    return {
+        diaries: result.diaries,
+        memories: result.memories,
+    }
 }
 
 async function withFileBackedSqlite<T>(

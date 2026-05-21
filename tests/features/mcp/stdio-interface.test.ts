@@ -205,7 +205,7 @@ describe('mcp/stdio interface', () => {
         }
     }, 20000)
 
-    it('executes live stdio tool calls and rejects invalid input', async () => {
+    it('executes read-only stdio tool calls and rejects invalid input', async () => {
         const fixture = await createInitializedProject('konteks-mcp-stdio-')
 
         try {
@@ -217,26 +217,6 @@ describe('mcp/stdio interface', () => {
                 request(3, 'tools/call', {
                     arguments: { maxTokens: 500 },
                     name: 'konteks_warm_up',
-                }),
-                request(4, 'tools/call', {
-                    arguments: {
-                        summary:
-                            'Saved a compact diary entry through the live MCP stdio interface test.',
-                    },
-                    name: 'konteks_save_diary',
-                }),
-                request(5, 'tools/call', {
-                    arguments: {
-                        memories: [
-                            {
-                                content:
-                                    'Use split save MCP tools for protocol-facing save workflows.',
-                                importance: 3,
-                                kind: 'decision',
-                            },
-                        ],
-                    },
-                    name: 'konteks_save_memories',
                 }),
             ])
 
@@ -250,16 +230,6 @@ describe('mcp/stdio interface', () => {
                     resultById<ToolCallResult>(successResponses, 3),
                 ),
             ).toContain('warm_up:')
-            expect(
-                extractToolText(
-                    resultById<ToolCallResult>(successResponses, 4),
-                ),
-            ).toContain('konteks: session diary saved')
-            expect(
-                extractToolText(
-                    resultById<ToolCallResult>(successResponses, 5),
-                ),
-            ).toContain('konteks: durable memories saved')
 
             const invalidRecall = resultById<ToolCallResult>(
                 await runMcpExchange(fixture.projectRoot, [

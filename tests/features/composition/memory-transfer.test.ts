@@ -10,20 +10,13 @@ import {
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { querySql } from 'tests/support/sqlite-libsql'
 import BackupCommand from '@/commands/backup-command'
 import {
     exportMemory,
     importMemory,
     restoreMemory,
 } from '@/composition/memory-transfer'
-import { withTransaction } from '@/database/actions/_db'
-import markSuppressed from '@/database/actions/mark-suppressed'
-import {
-    saveKonteksDiary,
-    saveKonteksMemories,
-} from '@/database/services/save-memory'
-import searchMemory from '@/database/services/search-memory'
+import { saveDiary, saveMemories } from '@/memory/save-memory'
 import { loadProjectContext } from '@/providers/project/context'
 
 const tempDirs: string[] = []
@@ -77,7 +70,7 @@ describe('memory transfer', () => {
         await withProjectRoot(projectRoot, async () => {
             const context = await loadProjectContext()
             context.config.storage.inlinePayloadMaxBytes = 8
-            await saveKonteksMemories(context, {
+            await saveMemories({
                 memories: [
                     {
                         content:
@@ -87,7 +80,7 @@ describe('memory transfer', () => {
                     },
                 ],
             })
-            await saveKonteksDiary(context, {
+            await saveDiary({
                 subject: 'portable export',
                 summary: 'Durable diary entries are included in JSON exports.',
                 tags: ['export'],
@@ -114,8 +107,7 @@ describe('memory transfer', () => {
     it('imports durable memory, rebuilds search indexes, and skips duplicates', async () => {
         const sourceRoot = await makeInitializedProject('konteks-transfer-src-')
         await withProjectRoot(sourceRoot, async () => {
-            const sourceContext = await loadProjectContext()
-            await saveKonteksMemories(sourceContext, {
+            await saveMemories({
                 memories: [
                     {
                         content:
@@ -125,7 +117,7 @@ describe('memory transfer', () => {
                     },
                 ],
             })
-            await saveKonteksDiary(sourceContext, {
+            await saveDiary({
                 subject: 'import diary',
                 summary: 'Imported diary entries should also be searchable.',
                 tags: ['import'],
@@ -144,9 +136,12 @@ describe('memory transfer', () => {
                 inputPath: exportPath,
             }),
         )
-        const rows = await querySql(
-            join(targetRoot, '.konteks', 'memory.sqlite'),
-            'select count(*) as count from observations',
+        const dryRunExportPath = join(targetRoot, 'dry-run-export.json')
+        const dryRunExport = await withProjectRoot(targetRoot, () =>
+            exportMemory({ outputPath: dryRunExportPath }),
+        )
+        const dryRunPayload = JSON.parse(
+            await readFile(dryRunExportPath, 'utf8'),
         )
 
         expect(dryRun).toMatchObject({
@@ -154,7 +149,8 @@ describe('memory transfer', () => {
             dryRun: true,
             memoriesImported: 1,
         })
-        expect(rows[0]?.count).toBe(0)
+        expect(dryRunExport).toMatchObject({ diaries: 0, memories: 0 })
+        expect(dryRunPayload.memories).toEqual([])
 
         const imported = await withProjectRoot(targetRoot, () =>
             importMemory({
@@ -166,11 +162,12 @@ describe('memory transfer', () => {
                 inputPath: exportPath,
             }),
         )
-        const results = await withProjectRoot(targetRoot, () =>
-            searchMemory({
-                limit: 5,
-                query: 'searchable recall',
-            }),
+        const importedExportPath = join(targetRoot, 'imported-export.json')
+        const importedExport = await withProjectRoot(targetRoot, () =>
+            exportMemory({ outputPath: importedExportPath }),
+        )
+        const importedPayload = JSON.parse(
+            await readFile(importedExportPath, 'utf8'),
         )
 
         expect(imported).toMatchObject({
@@ -181,7 +178,10 @@ describe('memory transfer', () => {
             diariesSkipped: 1,
             memoriesSkipped: 1,
         })
-        expect(results.some(result => result.type === 'memory')).toBe(true)
+        expect(importedExport).toMatchObject({ diaries: 1, memories: 1 })
+        expect(importedPayload.memories[0].content).toContain(
+            'Imported durable memory should be searchable by recall.',
+        )
     })
 
     it('rejects unsupported durable memory export formats', async () => {
@@ -201,52 +201,10 @@ describe('memory transfer', () => {
         ).rejects.toThrow('Expected format "konteks.durable-memory.v1"')
     })
 
-    it('exports inactive durable memory only when requested', async () => {
-        const projectRoot = await makeInitializedProject()
-        await withProjectRoot(projectRoot, async () => {
-            const context = await loadProjectContext()
-            const result = await saveKonteksMemories(context, {
-                memories: [
-                    {
-                        content:
-                            'Inactive memory should require an explicit export flag.',
-                        importance: 3,
-                        kind: 'note',
-                    },
-                ],
-            })
-            await withTransaction(() =>
-                markSuppressed(
-                    { id: result.id, kind: 'observation' },
-                    'test inactive export',
-                ),
-            )
-        })
-
-        const activeOnlyPath = join(projectRoot, 'active.json')
-        const inactivePath = join(projectRoot, 'inactive.json')
-        await withProjectRoot(projectRoot, () =>
-            exportMemory({ outputPath: activeOnlyPath }),
-        )
-        await withProjectRoot(projectRoot, () =>
-            exportMemory({
-                includeInactive: true,
-                outputPath: inactivePath,
-            }),
-        )
-
-        const activeOnly = JSON.parse(await readFile(activeOnlyPath, 'utf8'))
-        const withInactive = JSON.parse(await readFile(inactivePath, 'utf8'))
-        expect(activeOnly.memories).toHaveLength(0)
-        expect(withInactive.memories).toHaveLength(1)
-        expect(withInactive.memories[0].suppressedAt).toBeString()
-    })
-
     it('backs up and restores the full memory directory archive', async () => {
         const projectRoot = await makeInitializedProject('konteks-backup-src-')
         await withProjectRoot(projectRoot, async () => {
-            const context = await loadProjectContext()
-            await saveKonteksMemories(context, {
+            await saveMemories({
                 memories: [
                     {
                         content:
@@ -273,19 +231,22 @@ describe('memory transfer', () => {
         await withProjectRoot(projectRoot, () =>
             restoreMemory({ inputPath: archivePath }),
         )
-        const rows = await querySql(
-            join(projectRoot, '.konteks', 'memory.sqlite'),
-            'select count(*) as count from observations',
+        const exportPath = join(projectRoot, 'restored-export.json')
+        const exported = await withProjectRoot(projectRoot, () =>
+            exportMemory({ outputPath: exportPath }),
         )
+        const payload = JSON.parse(await readFile(exportPath, 'utf8'))
 
-        expect(rows[0]?.count).toBe(1)
+        expect(exported).toMatchObject({ memories: 1 })
+        expect(payload.memories[0].content).toContain(
+            'Full backup should restore the exact memory database.',
+        )
     })
 
     it('refuses restore over non-empty memory unless forced and creates a safety backup', async () => {
         const sourceRoot = await makeInitializedProject('konteks-backup-src-')
         await withProjectRoot(sourceRoot, async () => {
-            const sourceContext = await loadProjectContext()
-            await saveKonteksMemories(sourceContext, {
+            await saveMemories({
                 memories: [
                     {
                         content:

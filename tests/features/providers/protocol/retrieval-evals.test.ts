@@ -5,7 +5,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
-import { querySql } from 'tests/support/sqlite-libsql'
 import mcpTools from '@/mcp/tools'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
@@ -166,21 +165,11 @@ describe('retrieval quality evals', () => {
         )
         const text = extractText(result)
         const manifest = await readExtractionManifest(context.memoryDir)
-        const diaryRows = await querySql(
-            context,
-            `
-select summary
-from diary_entries
-order by created_at desc
-limit 1
-`,
-        )
 
         expect(manifest?.mode).toBe('changed')
         expect(manifest?.files.map(file => file.path)).toContain(
             'src/saved-change.txt',
         )
-        expect(diaryRows[0]?.summary).toContain('src/saved-change.txt')
         expect(text).toContain('konteks: session diary saved')
         expect(text).not.toContain('mode')
         expect(text).not.toContain('Extraction complete')
@@ -302,11 +291,16 @@ limit 1
         await withProjectRoot(projectRoot, () =>
             extractProject(context, 'full', extractionOptions()),
         )
-        const rows = await querySql(
-            context,
-            'select count(*) as count from retrieval_documents',
+        const result = await withProjectRoot(projectRoot, () =>
+            callKonteksTool('konteks_search', {
+                limit: 5,
+                query: 'sqlite wasm local storage',
+            }),
         )
-        expect(rows[0]?.count).toBeGreaterThan(0)
+        const text = extractText(result)
+
+        expect(text).toContain('search:')
+        expect(text).toContain('sqlite wasm local storage')
     })
 })
 

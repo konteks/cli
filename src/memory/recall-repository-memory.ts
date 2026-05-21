@@ -18,7 +18,7 @@ import type {
     RecallPackage,
 } from '@/models/memory'
 
-export type RecallMemorySource = {
+type RecallMemorySource = {
     historicalRelations(
         entityId: string,
         limit?: number,
@@ -49,7 +49,7 @@ export default async function recallRepositoryMemory(
     )
 }
 
-export async function recallMemoryFromSource(
+async function recallMemoryFromSource(
     source: RecallMemorySource,
     input: MemoryRecallInput,
 ): Promise<RecallPackage> {
