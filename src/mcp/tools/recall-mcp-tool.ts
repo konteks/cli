@@ -1,5 +1,5 @@
 import z from 'zod'
-import { withMemoryRepository } from '@/database/services/memory-repository'
+import { openProjectDatabase } from '@/database/actions/_db'
 import recallRepositoryMemory from '@/memory/recall-repository-memory'
 import { loadMcpProjectContext } from '@/memory/runtime'
 import type {
@@ -37,14 +37,17 @@ export default class RecallMcpTool extends BaseMcpTool<Input> {
 
     public async handle(input: Input): Promise<string> {
         const context = await loadMcpProjectContext()
-        const result = await withMemoryRepository(context, repository =>
-            recallRepositoryMemory(repository, input),
-        )
+        const db = await openProjectDatabase(context)
+        try {
+            const result = await recallRepositoryMemory(db, input)
 
-        return formatRecallText({
-            includeSources: input.includeSources ?? false,
-            recall: result,
-        })
+            return formatRecallText({
+                includeSources: input.includeSources ?? false,
+                recall: result,
+            })
+        } finally {
+            await db.close()
+        }
     }
 }
 

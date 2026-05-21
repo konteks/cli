@@ -1,8 +1,16 @@
+import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
+import {
+    historicalRelations,
+    searchEntities,
+    traverseNeighbors,
+} from '@/database/services/graph'
+import searchMemory, {
+    type MemoryRecallInput,
+    type MemorySearchInput,
+} from '@/database/services/search-memory'
 import type {
-    MemoryRecallInput,
-    MemoryRepositoryContract,
-} from '@/contracts/repositories/memory-repository'
-import type {
+    GraphNeighbor,
+    HistoricalRelation,
     MemoryEntity,
     MemorySearchResult,
     RecallGraphItem,
@@ -10,15 +18,47 @@ import type {
     RecallPackage,
 } from '@/models/memory'
 
+export type RecallMemorySource = {
+    historicalRelations(
+        entityId: string,
+        limit?: number,
+    ): Promise<HistoricalRelation[]>
+    search(input: MemorySearchInput): Promise<MemorySearchResult[]>
+    searchEntities(query: string, limit?: number): Promise<MemoryEntity[]>
+    traverseNeighbors(
+        entityId: string,
+        options?: { maxDepth?: number; limit?: number },
+    ): Promise<GraphNeighbor[]>
+}
+
 export default async function recallRepositoryMemory(
-    memoryRepository: MemoryRepositoryContract,
+    db: SqliteConnection,
     input: MemoryRecallInput,
 ): Promise<RecallPackage> {
-    const memories = await memoryRepository.search({
+    return await withTransaction(db, () =>
+        recallMemoryFromSource(
+            {
+                historicalRelations: (entityId, limit) =>
+                    historicalRelations(entityId, { limit }),
+                search: searchInput => searchMemory(db, searchInput),
+                searchEntities: (query, limit) =>
+                    searchEntities(query, { limit }),
+                traverseNeighbors,
+            },
+            input,
+        ),
+    )
+}
+
+export async function recallMemoryFromSource(
+    source: RecallMemorySource,
+    input: MemoryRecallInput,
+): Promise<RecallPackage> {
+    const memories = await source.search({
         limit: 20,
         query: input.task,
     })
-    const rawEntities = await memoryRepository.searchEntities(input.task, 4)
+    const rawEntities = await source.searchEntities(input.task, 4)
     const entities = dedupeEntities(rawEntities)
 
     const graphItems: RecallGraphItem[] = []
@@ -27,10 +67,7 @@ export default async function recallRepositoryMemory(
     if (needsHistory(input.task)) {
         const seenRelations = new Set<string>()
         for (const entity of entities) {
-            const relations = await memoryRepository.historicalRelations(
-                entity.id,
-                6,
-            )
+            const relations = await source.historicalRelations(entity.id, 6)
             for (const relation of relations) {
                 if (seenRelations.has(relation.relationId)) continue
                 seenRelations.add(relation.relationId)
@@ -53,7 +90,7 @@ export default async function recallRepositoryMemory(
 
     const seenNeighbors = new Set<string>()
     for (const entity of entities) {
-        const neighbors = await memoryRepository.traverseNeighbors(entity.id, {
+        const neighbors = await source.traverseNeighbors(entity.id, {
             limit: 8,
             maxDepth: 2,
         })

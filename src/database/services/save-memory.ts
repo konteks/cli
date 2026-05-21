@@ -1,11 +1,4 @@
 import { randomUUID } from 'node:crypto'
-import type {
-    SaveDiaryInput,
-    SaveMemoriesInput,
-    SaveMemoryInput,
-    SaveOptions,
-    SaveSessionInput,
-} from '@/contracts/repositories/memory-repository'
 import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
 import findDuplicateObservation from '@/database/actions/find-duplicate-observation'
@@ -21,11 +14,49 @@ import {
     validateSessionQuality,
     withProjectUpdateSummary,
 } from '@/database/support/save-policy'
-import type { SaveResult } from '@/models/memory'
+import type { ObservationKind, SaveResult } from '@/models/memory'
 import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
 import storePayload from '@/providers/persistence/objects/store-payload'
+
+export type SaveMemoryInput = {
+    content: string
+    kind: ObservationKind
+    importance: 1 | 2 | 3 | 4 | 5
+    source?: string
+    tags?: string[]
+}
+
+export type SaveDiaryInput = {
+    subject?: string
+    summary: string
+    tags?: string[]
+}
+
+export type SaveSessionInput = {
+    task: string
+    summary: string
+    status: 'blocked' | 'done' | 'partial'
+    blockers?: string[]
+    decisions?: string[]
+    entities?: string[]
+    filesTouched?: string[]
+    nextSteps?: string[]
+    openQuestions?: string[]
+    testsRun?: string[]
+}
+
+export type SaveMemoriesInput = {
+    memories: SaveMemoryInput[]
+}
+
+export type SaveOptions = {
+    projectUpdate?: {
+        deletedFilePaths: string[]
+        updatedFilePaths: string[]
+    }
+}
 
 export async function saveKonteksMemory(
     db: SqliteConnection,

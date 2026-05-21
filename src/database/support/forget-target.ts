@@ -1,4 +1,4 @@
-import type { ForgetInput } from '@/contracts/repositories/memory-repository'
+import type { ForgetInput } from '@/database/services/forget-memory'
 
 export type ForgetResult = {
     accepted: boolean

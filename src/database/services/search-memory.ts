@@ -1,7 +1,3 @@
-import type {
-    MemoryRecallInput,
-    MemorySearchInput,
-} from '@/contracts/repositories/memory-repository'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
 import { type SqliteConnection, withTransaction } from '@/database/actions/_db'
 import hasSearchIndex from '@/database/actions/has-search-index'
@@ -36,6 +32,18 @@ import {
 type SearchMemoryOptions = {
     embeddingProvider?: EmbeddingProvider
 }
+
+export type MemorySearchInput = {
+    query: string
+    limit?: number
+}
+
+export type MemoryRecallInput = {
+    task: string
+    maxTokens?: number
+    includeSources?: boolean
+}
+
 export default async function searchMemory(
     db: SqliteConnection,
     input: MemorySearchInput | MemoryRecallInput,

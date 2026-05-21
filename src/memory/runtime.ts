@@ -1,4 +1,4 @@
-import type { SaveOptions } from '@/contracts/repositories/memory-repository'
+import type { SaveOptions } from '@/database/services/save-memory'
 import type { LoadedProjectContext } from '@/models/project'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
