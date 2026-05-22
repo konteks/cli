@@ -88,7 +88,7 @@ One continuous agent conversation inside a project. A session can contain one ta
 
 ## Storage Substrate
 
-The local persistence layer for Konteks memory, based on WASM SQLite (for metadata/graph) and a content-addressed object store (for full content).
+The local persistence layer for Konteks memory, based on SQLite (for metadata/graph) and a content-addressed object store (for full content).
 
 ## Taxonomy
 
