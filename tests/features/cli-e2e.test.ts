@@ -5,12 +5,12 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { promisify } from 'node:util'
-import { saveDiary, saveMemories } from '@/memory/save-memory'
-import { extractProject } from '@/providers/extraction/extract-project'
+import { extractProject } from '@/modules/extraction/extract-project'
+import { saveDiary, saveMemories } from '@/modules/memory/save-memory'
 import {
     loadProjectContext,
     writeProjectConfig,
-} from '@/providers/project/context'
+} from '@/modules/project/context'
 import getVersion from '@/support/get-version'
 import type { DurableMemoryExport } from '@/types/memory-transfer'
 import FakeEmbeddingProvider from '../fake/fake-embedding-provider'

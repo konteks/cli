@@ -8,7 +8,7 @@ import queryObservations, {
 import queryRetrievalDocuments, {
     type RetrievalDocumentRow,
 } from '@/database/actions/query-retrieval-documents'
-import { classifySourceRole } from '@/providers/project/source-classification'
+import { classifySourceRole } from '@/modules/project/source-classification'
 import { estimateTextTokens } from '@/support/format/tokens'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/types/embedding-provider'
 import type { MemorySearchResult } from '@/types/memory'

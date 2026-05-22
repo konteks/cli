@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import createIgnoreMatcher from '@/providers/extraction/engine/create-ignore-matcher'
+import createIgnoreMatcher from '@/modules/extraction/engine/create-ignore-matcher'
 
 describe('extraction ignore rules', () => {
     it('skips dependency, build, memory, secret, and binary paths', () => {

@@ -1,13 +1,13 @@
 import queryWarmUpHighlightRows from '@/database/actions/query-warm-up-highlight-rows'
 import queryWarmUpModules from '@/database/actions/query-warm-up-modules'
 import queryWarmUpObservations from '@/database/actions/query-warm-up-observations'
-import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
+import { readExtractionManifest } from '@/modules/extraction/engine/manifest'
 import {
     guidanceFromObservations,
     recencyBoost,
     roleImportance,
     targetImportance,
-} from '@/providers/project/warm-up-ranking'
+} from '@/modules/project/warm-up-ranking'
 import { estimateTextTokens } from '@/support/format/tokens'
 import type { WarmUpContext, WarmUpHighlight } from '@/types/memory'
 import type { Project } from '@/types/project'

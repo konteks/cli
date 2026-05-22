@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import {
     loadMcpProjectContext,
     updateChangedProjectMemorySilently,
-} from '@/memory/runtime'
+} from '@/modules/memory/runtime'
 
 const tempDirs: string[] = []
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import createProjectExtractor from '@/extraction/create-project-extractor'
+import createProjectExtractor from '@/modules/extraction/create-project-extractor'
 import type {
     ExtractProjectRequest,
     ExtractProjectResponse,

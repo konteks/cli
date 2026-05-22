@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import formatProjectSummaryToon from '@/providers/extraction/engine/format-project-summary-toon'
+import formatProjectSummaryToon from '@/modules/extraction/engine/format-project-summary-toon'
 
 describe('providers/extraction/engine/toon-summary', () => {
     it('formats project metadata and caps listed files', () => {

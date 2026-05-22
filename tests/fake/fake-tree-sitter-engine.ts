@@ -1,4 +1,4 @@
-import type { CodeMetadata } from '@/providers/extraction/engine/tree-sitter-engine'
+import type { CodeMetadata } from '@/modules/extraction/engine/tree-sitter-engine'
 
 export default class FakeTreeSitterEngine {
     public async init() {}

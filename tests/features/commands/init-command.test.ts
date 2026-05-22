@@ -356,7 +356,9 @@ describe('InitCommand', () => {
 })
 
 async function createCommand() {
-    const { default: InitCommand } = await import('@/commands/init-command')
+    const { default: InitCommand } = await import(
+        '@/entrypoints/cli/commands/init-command'
+    )
     return new InitCommand()
 }
 

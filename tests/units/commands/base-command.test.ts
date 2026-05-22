@@ -3,7 +3,7 @@ import { Command } from 'commander'
 import BaseCommand, {
     type BaseCommandContext,
     type BaseCommandInput,
-} from '@/commands/_base-command'
+} from '@/entrypoints/cli/commands/_base-command'
 
 describe('BaseCommand', () => {
     it('passes arguments and command options to handle', async () => {

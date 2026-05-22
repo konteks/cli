@@ -12,10 +12,10 @@ import { join } from 'node:path'
 import {
     getExtractionFreshness,
     readExtractionManifest,
-} from '@/providers/extraction/engine/manifest'
-import { extractProject } from '@/providers/extraction/extract-project'
-import createToonStore from '@/providers/persistence/objects/create-toon-store'
-import { loadProjectContext } from '@/providers/project/context'
+} from '@/modules/extraction/engine/manifest'
+import { extractProject } from '@/modules/extraction/extract-project'
+import createToonStore from '@/modules/persistence/objects/create-toon-store'
+import { loadProjectContext } from '@/modules/project/context'
 
 const tempDirs: string[] = []
 const originalCwd = process.cwd()

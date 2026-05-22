@@ -4,7 +4,7 @@ import z from 'zod'
 import {
     createMcpPromptError,
     createMcpToolErrorResult,
-} from '@/mcp/error-handling'
+} from '@/entrypoints/mcp/error-handling'
 import CliUserError from '@/support/cli/cli-user-error'
 
 describe('mcp/error-handling', () => {

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'bun:test'
-import type { WarmUpObservationRow } from '@/providers/project/warm-up-ranking'
+import type { WarmUpObservationRow } from '@/modules/project/warm-up-ranking'
 import {
     guidanceFromObservations,
     recencyBoost,
     roleImportance,
     targetImportance,
-} from '@/providers/project/warm-up-ranking'
+} from '@/modules/project/warm-up-ranking'
 
 describe('providers/project/warm-up-ranking', () => {
     it.each([

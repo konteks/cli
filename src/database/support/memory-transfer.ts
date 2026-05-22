@@ -2,8 +2,8 @@ import type {
     DiaryExportRow,
     ObservationExportRow,
 } from '@/database/support/memory-transfer-types'
-import { contentHash } from '@/providers/persistence/objects/content'
-import type createToonStore from '@/providers/persistence/objects/create-toon-store'
+import { contentHash } from '@/modules/persistence/objects/content'
+import type createToonStore from '@/modules/persistence/objects/create-toon-store'
 import type {
     DurableMemoryExportDiary,
     DurableMemoryExportMemory,

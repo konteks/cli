@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'bun:test'
-import { getKonteksSkillFiles, registerKonteksPrompts } from '@/mcp/prompts'
+import {
+    getKonteksSkillFiles,
+    registerKonteksPrompts,
+} from '@/entrypoints/mcp/prompts'
 
 type PromptRegistration = {
     config: {

@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm'
 import { retrievalDocuments, retrievalDocumentsFts } from '@/database/schema'
-import { contentHash } from '@/providers/persistence/objects/content'
+import { contentHash } from '@/modules/persistence/objects/content'
 import getDb from './_db'
 
 export type RetrievalDocumentInput = {

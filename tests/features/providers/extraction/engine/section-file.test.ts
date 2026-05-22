@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import sectionFile from '@/providers/extraction/engine/section-file'
+import sectionFile from '@/modules/extraction/engine/section-file'
 
 const file = {
     contentHash: 'hash',

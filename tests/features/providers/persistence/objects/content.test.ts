@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import {
     contentAddressPath,
     contentHash,
-} from '@/providers/persistence/objects/content'
+} from '@/modules/persistence/objects/content'
 
 describe('providers/persistence/objects/content', () => {
     it('hashes content with stable SHA-256 output', () => {

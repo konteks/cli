@@ -4,10 +4,10 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
-import mcpTools from '@/mcp/tools'
-import { extractProject } from '@/providers/extraction/extract-project'
-import { loadProjectContext } from '@/providers/project/context'
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
+import mcpTools from '@/entrypoints/mcp/tools'
+import { extractProject } from '@/modules/extraction/extract-project'
+import { loadProjectContext } from '@/modules/project/context'
 import FakeEmbeddingProvider from '../../../fake/fake-embedding-provider'
 
 function extractionOptions() {
@@ -180,7 +180,7 @@ describe('konteks_warm_up', () => {
 
 async function readExtractionManifest(memoryDir: string) {
     const { readExtractionManifest: read } = await import(
-        '@/providers/extraction/engine/manifest'
+        '@/modules/extraction/engine/manifest'
     )
     return read(memoryDir)
 }

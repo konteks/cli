@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import extractProjectMetadata from '@/providers/extraction/engine/extract-project-metadata'
-import { scanProjectFilesWithDiagnostics } from '@/providers/extraction/engine/file-scan'
+import extractProjectMetadata from '@/modules/extraction/engine/extract-project-metadata'
+import { scanProjectFilesWithDiagnostics } from '@/modules/extraction/engine/file-scan'
 
 const tempDirs: string[] = []
 
