@@ -88,7 +88,7 @@ describe('konteks_warm_up', () => {
         )
 
         const result = await withProjectRoot(projectRoot, () =>
-            callKonteksTool('konteks_warm_up', { maxTokens: 500 }),
+            callKonteksTool('konteks_warm_up', {}),
         )
         const text = extractText(result)
 
@@ -127,7 +127,7 @@ describe('konteks_warm_up', () => {
         )
 
         const result = await withProjectRoot(projectRoot, () =>
-            callKonteksTool('konteks_warm_up', { maxTokens: 500 }),
+            callKonteksTool('konteks_warm_up', {}),
         )
         const text = extractText(result)
         const manifest = await readExtractionManifest(context.memoryDir)
@@ -165,7 +165,6 @@ describe('konteks_warm_up', () => {
 
         const result = await withProjectRoot(projectRoot, () =>
             callKonteksTool('konteks_warm_up', {
-                maxTokens: 500,
                 topic: 'focused recall warm up',
             }),
         )

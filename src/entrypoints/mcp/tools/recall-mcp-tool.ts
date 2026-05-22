@@ -10,7 +10,6 @@ import BaseMcpTool from './_base-mcp-tool'
 
 const INPUT_SCHEMA = z.object({
     includeSources: z.boolean().optional(),
-    maxTokens: z.number().int().min(1).max(8000).optional(),
     task: z.string().min(1, 'task is required'),
 })
 

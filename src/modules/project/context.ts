@@ -16,9 +16,6 @@ export function createDefaultConfig(): KonteksConfig {
                 updateTtlHours: 24,
             },
         },
-        recall: {
-            maxTokens: 2000,
-        },
     }
 }
 
@@ -116,9 +113,6 @@ function mergeConfig(
                         ? config.extraction.grammars.updateTtlHours
                         : defaults.extraction.grammars.updateTtlHours,
             },
-        },
-        recall: {
-            maxTokens: config.recall?.maxTokens ?? defaults.recall.maxTokens,
         },
     }
 }

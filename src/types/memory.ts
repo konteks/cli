@@ -90,7 +90,6 @@ export type RecallPackage = {
     quality: 'partial' | 'strong' | 'weak'
     sourceCount: number
     task: string
-    tokenBudget: number
 }
 
 export type WarmUpHighlight = {

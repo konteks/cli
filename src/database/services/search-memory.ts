@@ -40,7 +40,6 @@ export type MemorySearchInput = {
 
 export type MemoryRecallInput = {
     task: string
-    maxTokens?: number
     includeSources?: boolean
 }
 
