@@ -9,6 +9,13 @@ import {
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { eq } from 'drizzle-orm'
+import getDb from '@/database/actions/_db'
+import { targetEmbeddings } from '@/database/schema'
+import {
+    saveKonteksDiary,
+    saveKonteksMemories,
+} from '@/database/services/save-memory'
 import {
     getExtractionFreshness,
     readExtractionManifest,
@@ -16,9 +23,20 @@ import {
 import { extractProject } from '@/modules/extraction/extract-project'
 import createToonStore from '@/modules/persistence/objects/create-toon-store'
 import { loadProjectContext } from '@/modules/project/context'
+import type { EmbeddingProviderContract } from '@/types/embedding-provider'
+import FakeEmbeddingProvider from '../../../../fake/fake-embedding-provider'
 
 const tempDirs: string[] = []
 const originalCwd = process.cwd()
+
+class ThrowingEmbeddingProvider implements EmbeddingProviderContract {
+    public readonly dimensions = 8
+    public readonly model = 'fake/throwing'
+
+    public async embed(): Promise<Float32Array[]> {
+        throw new Error('embedding provider failed')
+    }
+}
 
 async function extractTestProject(
     context: Awaited<ReturnType<typeof loadProjectContext>>,
@@ -217,6 +235,70 @@ describe('extractProject', () => {
         expect(manifest.diagnostics.sectionCount).toBeGreaterThan(0)
     })
 
+    it('repairs missing durable memory and diary embeddings during rebuild', async () => {
+        const projectRoot = await makeTempProject()
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+
+        const saved = await withProjectRoot(projectRoot, async () => {
+            const memory = await saveKonteksMemories(
+                context,
+                {
+                    memories: [
+                        {
+                            content:
+                                'Rebuild should repair missing durable memory vectors.',
+                            importance: 4,
+                            kind: 'fact',
+                        },
+                    ],
+                },
+                { embeddingProvider: new ThrowingEmbeddingProvider() },
+            )
+            const diary = await saveKonteksDiary(
+                context,
+                {
+                    subject: 'rebuild durable embedding repair',
+                    summary:
+                        'Rebuild should repair missing durable diary vectors.',
+                },
+                { embeddingProvider: new ThrowingEmbeddingProvider() },
+            )
+            return { diaryId: diary.diaryId, memoryId: memory.memoryIds?.[0] }
+        })
+
+        if (!saved.memoryId || !saved.diaryId) {
+            throw new Error('expected durable memory and diary ids')
+        }
+        expect(await embeddingRowsFor('memory')).toHaveLength(0)
+        expect(await embeddingRowsFor('diary')).toHaveLength(0)
+
+        await extractTestProject(context, 'rebuild', {
+            embeddingProvider: new FakeEmbeddingProvider(),
+        })
+
+        expect(await embeddingRowsFor('memory')).toMatchObject([
+            {
+                model: 'fake/all-MiniLM-L6-v2',
+                targetId: saved.memoryId,
+                targetType: 'memory',
+            },
+        ])
+        expect(await embeddingRowsFor('diary')).toMatchObject([
+            {
+                model: 'fake/all-MiniLM-L6-v2',
+                targetId: saved.diaryId,
+                targetType: 'diary',
+            },
+        ])
+
+        const second = await extractTestProject(context, 'rebuild', {
+            embeddingProvider: new FakeEmbeddingProvider(),
+        })
+        expect(second.embeddingReusedCount).toBeGreaterThanOrEqual(2)
+    })
+
     it('changed mode removes deleted-file sections and preserves unchanged sections', async () => {
         const projectRoot = await makeTempProject()
         const context = await withProjectRoot(projectRoot, () =>
@@ -282,4 +364,14 @@ async function withProjectRoot<T>(
     } finally {
         process.chdir(previous)
     }
+}
+
+async function embeddingRowsFor(
+    targetType: 'diary' | 'memory' | 'module' | 'section',
+) {
+    const db = await getDb()
+    return await db
+        .select()
+        .from(targetEmbeddings)
+        .where(eq(targetEmbeddings.targetType, targetType))
 }
