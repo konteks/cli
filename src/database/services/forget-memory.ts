@@ -108,8 +108,8 @@ async function applyForget(
 }
 
 function inferKind(id: string): TargetKind {
-    if (id.startsWith('chunk_')) {
-        return 'chunk'
+    if (id.startsWith('section_')) {
+        return 'section'
     }
     if (id.startsWith('diary_')) {
         return 'diary_entry'

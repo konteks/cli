@@ -162,10 +162,10 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
         })
         const summary = await toonStore.write(
             formatProjectSummaryToon({
+                extractedAt: extractedAt,
                 fileCount: files.length,
                 files,
                 metadata,
-                minedAt: extractedAt,
                 mode,
                 projectRoot: context.projectRoot,
             }),
@@ -179,22 +179,22 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
         const manifest: ExtractionManifest = {
             diagnostics: {
                 ...scan.diagnostics,
-                chunkCount: totalSectionCount,
                 detectedParserLanguages,
                 embeddedCount: embeddingRun.embeddedCount,
                 embeddingReusedCount: embeddingRun.reusedCount,
-                filesTruncatedByChunkLimit:
-                    extractedSections.filesTruncatedByChunkLimit,
+                filesTruncatedBySectionLimit:
+                    extractedSections.filesTruncatedBySectionLimit,
                 languageCount,
                 loadedParserCount: extractedSections.loadedParserCount,
                 parserFallbackFiles: extractedSections.parserFallbackFiles,
                 parserUsedFiles: extractedSections.parserUsedFiles,
+                sectionCount: totalSectionCount,
                 vectorCount,
             },
+            extractedAt: extractedAt,
             fileCount: files.length,
             files,
             metadata,
-            minedAt: extractedAt,
             mode,
             summaryHash: summary.hash,
             summaryRef: summary.ref,
@@ -207,16 +207,15 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
         })
         await writeExtractionManifest(context.memoryDir, manifest)
         progress?.({
-            chunkCount: extractedSections.chunkCount,
             embeddedCount: embeddingRun.embeddedCount,
             message: `Extraction complete: ${totalSectionCount} sections, ${vectorCount} indexed, ${embeddingRun.reusedCount} unchanged`,
             phase: 'done',
             reusedCount: embeddingRun.reusedCount,
+            sectionCount: extractedSections.sectionCount,
             status: 'done',
         })
 
         return {
-            chunkCount: totalSectionCount,
             deletedFilePaths: deletedPaths,
             detectedParserLanguages,
             embeddedCount: embeddingRun.embeddedCount,
@@ -228,6 +227,7 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
             mode,
             ok: true,
             projectRoot: context.projectRoot,
+            sectionCount: totalSectionCount,
             summaryRef: summary.ref,
             technologies: metadata.technologies,
             updatedFilePaths: filesToExtract.map(file => file.path),

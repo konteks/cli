@@ -3,6 +3,6 @@ import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source
 
 describe('providers/extraction/engine/source-types', () => {
     it('keeps the persisted extracted-file source type stable', () => {
-        expect(EXTRACTED_FILE_SOURCE_TYPE).toBe('mined_file')
+        expect(EXTRACTED_FILE_SOURCE_TYPE).toBe('extracted_file')
     })
 })

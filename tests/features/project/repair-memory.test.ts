@@ -6,7 +6,6 @@ import { terminal } from '@/support/terminal/service'
 
 let confirmResult = true
 let extractedResponse: ExtractProjectResponse = {
-    chunkCount: 0,
     deletedFilePaths: [],
     detectedParserLanguages: [],
     embeddedCount: 0,
@@ -18,6 +17,7 @@ let extractedResponse: ExtractProjectResponse = {
     mode: 'reindex',
     ok: true,
     projectRoot: process.cwd(),
+    sectionCount: 0,
     summaryRef: 'objects/summary.json',
     technologies: [],
     updatedFilePaths: [],
@@ -46,7 +46,6 @@ describe('RepairCommand', () => {
     const resetState = () => {
         confirmResult = true
         extractedResponse = {
-            chunkCount: 0,
             deletedFilePaths: [],
             detectedParserLanguages: [],
             embeddedCount: 0,
@@ -58,6 +57,7 @@ describe('RepairCommand', () => {
             mode: 'reindex',
             ok: true,
             projectRoot: process.cwd(),
+            sectionCount: 0,
             summaryRef: 'objects/summary.json',
             technologies: [],
             updatedFilePaths: [],
@@ -138,7 +138,6 @@ describe('RepairCommand', () => {
     it('reindexes the current project and prints repair mode output', async () => {
         resetState()
         extractedResponse = {
-            chunkCount: 4,
             deletedFilePaths: [],
             detectedParserLanguages: ['typescript'],
             embeddedCount: 3,
@@ -150,6 +149,7 @@ describe('RepairCommand', () => {
             mode: 'reindex',
             ok: true,
             projectRoot: '/tmp/project',
+            sectionCount: 4,
             summaryRef: 'objects/summary.toon',
             technologies: ['typescript'],
             updatedFilePaths: ['src/index.ts'],

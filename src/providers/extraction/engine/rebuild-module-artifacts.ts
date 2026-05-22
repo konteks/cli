@@ -10,7 +10,7 @@ import type {
 } from './extract-project-metadata'
 
 type ModuleSummaryRow = {
-    chunk_count: number
+    section_count: number
     file_count: number
     module_path: string
     source_role: string | null
@@ -35,12 +35,12 @@ select
     end as module_path,
     coalesce(source_role, 'unknown') as source_role,
     count(distinct path) as file_count,
-    count(*) as chunk_count
-from chunks
+    count(*) as section_count
+from sections
 where deleted_at is null
   and suppressed_at is null
 group by module_path, source_role
-order by chunk_count desc, module_path
+order by section_count desc, module_path
 `)
 
     for (const row of rows) {
@@ -49,7 +49,6 @@ order by chunk_count desc, module_path
         const topics = moduleTopics(row.module_path)
 
         await db.insert(modules).values({
-            chunkCount: row.chunk_count,
             entitiesJson: JSON.stringify([]),
             exportedSymbolsJson: JSON.stringify([]),
             fileCount: row.file_count,
@@ -57,6 +56,7 @@ order by chunk_count desc, module_path
             importsJson: JSON.stringify([]),
             packageName: null,
             path: row.module_path,
+            sectionCount: row.section_count,
             sourceRole: row.source_role,
             summary,
             topicsJson: JSON.stringify(topics),
@@ -89,7 +89,7 @@ order by chunk_count desc, module_path
 }
 
 function summarizeModule(row: ModuleSummaryRow): string {
-    return `${row.file_count} files, ${row.chunk_count} sections`
+    return `${row.file_count} files, ${row.section_count} sections`
 }
 
 function moduleTopics(path: string): string[] {
@@ -129,7 +129,6 @@ async function insertPackageModule(
     ].filter((value): value is string => Boolean(value))
 
     await db.insert(modules).values({
-        chunkCount: 0,
         entitiesJson: JSON.stringify([]),
         exportedSymbolsJson: JSON.stringify([]),
         fileCount: 1,
@@ -137,6 +136,7 @@ async function insertPackageModule(
         importsJson: JSON.stringify(dependencyNames),
         packageName: metadata.name ?? null,
         path: modulePath,
+        sectionCount: 0,
         sourceRole: 'package_config',
         summary,
         topicsJson: JSON.stringify(topics),

@@ -59,7 +59,7 @@ graph LR
 
 ### 1. Emergence: Semantic Extraction
 
-The journey begins with [Extraction](extraction.md). Konteks performs language-aware static analysis of your source artifacts. It doesn't just "read" code; it decomposes it into **Content Blocks** (technically known as *chunks*). Using advanced parsing, the system identifies the boundaries of functions, the intent of components, and the hidden links between files.
+The journey begins with [Extraction](extraction.md). Konteks performs language-aware static analysis of your source artifacts. It doesn't just "read" code; it decomposes it into **Content Blocks** (technically known as *sections*). Using advanced parsing, the system identifies the boundaries of functions, the intent of components, and the hidden links between files.
 
 ### 2. Consolidation: Formal Indexing
 

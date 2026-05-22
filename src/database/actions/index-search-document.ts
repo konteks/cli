@@ -4,7 +4,7 @@ import hasSearchIndex from './has-search-index'
 
 type SearchDocument = {
     id: string
-    type: 'chunk' | 'diary' | 'memory'
+    type: 'section' | 'diary' | 'memory'
     kind?: string
     task?: string
     content: string

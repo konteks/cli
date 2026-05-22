@@ -49,9 +49,9 @@ describe('classifySourceRole', () => {
             'agent_reference',
         )
         expect(classifySourceRole('.agents/config.json')).toBe('agent_config')
-        expect(classifySourceRole('.specs/MINING_IMPROVEMENT_PLAN.md')).toBe(
-            'implementation_plan',
-        )
+        expect(
+            classifySourceRole('.specs/EXTRACTION_IMPROVEMENT_PLAN.md'),
+        ).toBe('implementation_plan')
         expect(classifySourceRole('src/generated/client.ts')).toBe('generated')
         expect(classifySourceRole('Sources/App.swift')).toBe('app_code')
         expect(classifySourceRole('notes.unknown')).toBe('unknown')

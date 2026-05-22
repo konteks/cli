@@ -1,10 +1,10 @@
 import { eq, sql } from 'drizzle-orm'
-import { chunks, memoryFts, observations } from '@/database/schema'
+import { memoryFts, observations, sections } from '@/database/schema'
 import getDb from './_db'
 
 export type FtsRow = {
     id: string
-    type: 'chunk' | 'diary' | 'memory'
+    type: 'section' | 'diary' | 'memory'
     kind: string | null
     task: string | null
     content: string
@@ -28,18 +28,18 @@ export default async function queryFtsRows(
             id: memoryFts.id,
             kind: memoryFts.kind,
             rank: sql<number>`bm25(memory_fts)`,
-            source_id: chunks.sourceId,
+            source_id: sections.sourceId,
             task: memoryFts.task,
-            token_count: chunks.tokenCount,
+            token_count: sections.tokenCount,
             type: memoryFts.type,
         })
         .from(memoryFts)
-        .leftJoin(chunks, eq(chunks.id, memoryFts.id))
+        .leftJoin(sections, eq(sections.id, memoryFts.id))
         .leftJoin(observations, eq(observations.id, memoryFts.id))
         .where(sql`
             memory_fts match ${ftsQuery}
             and not exists (
-                select 1 from chunks dc
+                select 1 from sections dc
                 where dc.id = ${memoryFts.id}
                   and (dc.deleted_at is not null or dc.suppressed_at is not null)
             )

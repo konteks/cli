@@ -17,6 +17,6 @@ export default async function queryWarmUpModules(): Promise<WarmUpModuleRow[]> {
             summary: modules.summary,
         })
         .from(modules)
-        .orderBy(desc(modules.chunkCount), desc(modules.fileCount))
+        .orderBy(desc(modules.sectionCount), desc(modules.fileCount))
         .limit(12)
 }

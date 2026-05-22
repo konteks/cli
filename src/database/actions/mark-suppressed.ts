@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { chunks, diaryEntries, observations } from '@/database/schema'
+import { diaryEntries, observations, sections } from '@/database/schema'
 import type { ForgetTarget } from '@/database/support/forget-target'
 import getDb from './_db'
 
@@ -12,8 +12,8 @@ export default async function markSuppressed(
         forgetReason: reason ?? null,
         suppressedAt: new Date().toISOString(),
     }
-    if (target.kind === 'chunk') {
-        await db.update(chunks).set(values).where(eq(chunks.id, target.id))
+    if (target.kind === 'section') {
+        await db.update(sections).set(values).where(eq(sections.id, target.id))
     } else if (target.kind === 'observation') {
         await db
             .update(observations)

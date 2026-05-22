@@ -32,7 +32,6 @@ describe('extraction/extract', () => {
             projectRoot,
         }
         const response: ExtractProjectResponse = {
-            chunkCount: 7,
             deletedFilePaths: [],
             detectedParserLanguages: ['typescript'],
             embeddedCount: 7,
@@ -44,6 +43,7 @@ describe('extraction/extract', () => {
             mode: 'changed',
             ok: true,
             projectRoot,
+            sectionCount: 7,
             summaryRef: 'objects/summary.toon',
             technologies: ['typescript'],
             updatedFilePaths: ['src/index.ts'],

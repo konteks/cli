@@ -138,7 +138,7 @@ describe('konteks_warm_up', () => {
             'src/later.txt',
         )
         expect(text).not.toContain('mode:')
-        expect(text).not.toContain('mined_at:')
+        expect(text).not.toContain('extracted_at:')
         expect(text).not.toContain('Selected')
         expect(text).not.toContain('Extraction complete')
     })

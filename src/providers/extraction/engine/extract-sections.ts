@@ -20,8 +20,8 @@ import {
 import TreeSitterEngine from './tree-sitter-engine'
 
 type ExtractSectionsResult = {
-    chunkCount: number
-    filesTruncatedByChunkLimit: number
+    sectionCount: number
+    filesTruncatedBySectionLimit: number
     loadedParserCount: number
     parserFallbackFiles: number
     parserUsedFiles: number
@@ -47,7 +47,7 @@ export default async function extractSections(
     if (files.length > 0) {
         progress?.({
             message: 'Loading Tree-sitter grammars',
-            phase: 'chunks',
+            phase: 'sections',
             status: 'start',
         })
         engine = new TreeSitterEngine()
@@ -68,7 +68,7 @@ export default async function extractSections(
         }
         progress?.({
             message: 'Tree-sitter grammars ready',
-            phase: 'chunks',
+            phase: 'sections',
             status: 'progress',
         })
     }
@@ -76,7 +76,7 @@ export default async function extractSections(
     await options.beforeExtract?.()
 
     let sectionCount = 0
-    let filesTruncatedByChunkLimit = 0
+    let filesTruncatedBySectionLimit = 0
     let extractedFileCount = 0
     let parserFallbackFiles = 0
     let parserUsedFiles = 0
@@ -106,7 +106,7 @@ export default async function extractSections(
     if (files.length > 0) {
         progress?.({
             message: `Extracting ${files.length} files`,
-            phase: 'chunks',
+            phase: 'sections',
             status: 'start',
             total: files.length,
         })
@@ -131,7 +131,7 @@ export default async function extractSections(
         }
 
         if (preparedFile.truncated) {
-            filesTruncatedByChunkLimit += 1
+            filesTruncatedBySectionLimit += 1
         }
         if (preparedFile.sections.length === 0) {
             continue
@@ -146,11 +146,11 @@ export default async function extractSections(
             })
         })
         progress?.({
-            chunkCount: sectionCount,
             current: fileIndex + 1,
             message: `Extracted ${file.path} (${preparedFile.sections.length} sections)`,
             path: file.path,
-            phase: 'chunks',
+            phase: 'sections',
+            sectionCount: sectionCount,
             status: 'progress',
             total: files.length,
         })
@@ -158,11 +158,11 @@ export default async function extractSections(
 
     if (files.length > 0) {
         progress?.({
-            chunkCount: sectionCount,
             current: extractedFileCount,
             message: `Extracted ${sectionCount} sections`,
             parserCount: loadedParserCount,
-            phase: 'chunks',
+            phase: 'sections',
+            sectionCount: sectionCount,
             status: 'done',
             total: files.length,
         })
@@ -178,7 +178,7 @@ export default async function extractSections(
 
         await appendMemoryEvent({
             actor: 'cli',
-            eventType: 'project_mined',
+            eventType: 'project_extracted',
             id: `event_${contentHash(`${context.projectRoot}:${extractedAt}`).slice(0, 32)}`,
             subjectType: 'project',
             summary: `Extracted ${files.length} files into ${sectionCount} sections.`,
@@ -191,10 +191,10 @@ export default async function extractSections(
     })
 
     return {
-        chunkCount: sectionCount,
-        filesTruncatedByChunkLimit,
+        filesTruncatedBySectionLimit,
         loadedParserCount,
         parserFallbackFiles,
         parserUsedFiles,
+        sectionCount: sectionCount,
     }
 }

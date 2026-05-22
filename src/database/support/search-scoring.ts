@@ -17,7 +17,7 @@ export function makeSearchResult(input: {
     path?: string
     sourceId?: string
     sourceRole?: string
-    targetType?: 'chunk' | 'diary' | 'memory' | 'module'
+    targetType?: 'section' | 'diary' | 'memory' | 'module'
     task?: string
     terms: string[]
     textForScoring?: string

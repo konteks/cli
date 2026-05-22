@@ -22,7 +22,7 @@ This guide helps you resolve common issues encountered while setting up or using
 
 ### 3. Durable memory is missing after a repair
 **Symptoms**: Your saved observations or diary entries are gone.
-**Cause**: `konteks repair` only rebuilds **derived** data (chunks, entities). **Durable** data (observations, diary) should be preserved.
+**Cause**: `konteks repair` only rebuilds **derived** data (sections, entities). **Durable** data (observations, diary) should be preserved.
 **Solution**: If durable data is truly missing, check if you are in the correct project root or if the `.konteks/memory.sqlite` file was manually deleted.
 
 ### 4. "MCP Tool timeout or connection error"

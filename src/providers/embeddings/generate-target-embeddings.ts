@@ -5,7 +5,7 @@ import getDb from '@/database/actions/_db'
 import { retrievalDocuments, targetEmbeddings } from '@/database/schema'
 import { contentHash } from '@/providers/persistence/objects/content'
 
-type TargetType = 'chunk' | 'diary' | 'memory' | 'module'
+type TargetType = 'section' | 'diary' | 'memory' | 'module'
 
 type RetrievalDocumentRow = {
     target_id: string

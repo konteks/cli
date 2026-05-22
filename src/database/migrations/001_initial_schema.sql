@@ -11,7 +11,7 @@ create table if not exists sources (
     created_at text not null
 );
 
-create table if not exists chunks (
+create table if not exists sections (
     id text primary key,
     source_id text,
     kind text not null,
@@ -39,16 +39,6 @@ create table if not exists chunks (
     suppressed_at text,
     forget_reason text,
     foreign key (source_id) references sources(id)
-);
-
-create table if not exists embeddings (
-    chunk_id text primary key,
-    provider text not null,
-    model text not null,
-    dimensions integer not null,
-    vector_ref text not null,
-    created_at text not null,
-    foreign key (chunk_id) references chunks(id)
 );
 
 create table if not exists entities (
@@ -182,7 +172,7 @@ create table if not exists modules (
     package_name text,
     summary text not null,
     file_count integer not null default 0,
-    chunk_count integer not null default 0,
+    section_count integer not null default 0,
     exported_symbols_json text,
     imports_json text,
     topics_json text,
@@ -199,7 +189,7 @@ create virtual table if not exists retrieval_documents_fts using fts5(
     fts_text
 );
 
-create table if not exists mined_suppressions (
+create table if not exists section_suppressions (
     path text not null,
     anchor text not null,
     content_hash text not null,
@@ -222,27 +212,36 @@ create virtual table if not exists memory_fts using fts5(
     created_at unindexed
 );
 
-create index if not exists chunks_content_hash_idx on chunks(content_hash);
-create index if not exists chunks_source_idx on chunks(source_id);
-create index if not exists chunks_role_idx on chunks(source_role);
-create index if not exists chunks_anchor_idx on chunks(path, anchor);
-create index if not exists chunks_deleted_idx on chunks(deleted_at, suppressed_at);
+create index if not exists sections_content_hash_idx on sections(content_hash);
+
+create index if not exists sections_source_idx on sections(source_id);
+
+create index if not exists sections_role_idx on sections(source_role);
+
+create index if not exists sections_anchor_idx on sections(path, anchor);
+
+create index if not exists sections_deleted_idx on sections(deleted_at, suppressed_at);
 
 create index if not exists aliases_normalized_value_idx on entity_aliases(normalized_value);
 
 create index if not exists relations_subject_idx on relations(subject_id, status);
+
 create index if not exists relations_object_idx on relations(object_id, status);
 
 create index if not exists memory_events_created_at_idx on memory_events(created_at);
+
 create index if not exists memory_events_subject_idx on memory_events(subject_type, subject_id);
 
 create index if not exists observations_content_hash_idx on observations(content_hash);
+
 create index if not exists observations_deleted_idx on observations(deleted_at, suppressed_at);
 
 create index if not exists diary_entries_deleted_idx on diary_entries(deleted_at, suppressed_at);
 
 create index if not exists retrieval_documents_target_idx on retrieval_documents(target_type, target_id);
+
 create index if not exists retrieval_documents_source_idx on retrieval_documents(source_id);
+
 create index if not exists retrieval_documents_role_idx on retrieval_documents(source_role);
 
 create index if not exists target_embeddings_hash_idx on target_embeddings(embedding_hash);
@@ -251,4 +250,4 @@ create index if not exists modules_path_idx on modules(path);
 
 create index if not exists sources_role_idx on sources(source_role);
 
-create index if not exists mined_suppressions_path_idx on mined_suppressions(path);
+create index if not exists section_suppressions_path_idx on section_suppressions(path);

@@ -176,8 +176,8 @@ function compactMessage(event: ExtractionProgressEvent): string {
 
     if (event.phase === 'embeddings') {
         if (
-            /^Embedded chunk:/u.test(message) ||
-            /^Embedding chunk:/u.test(message)
+            /^Embedded section:/u.test(message) ||
+            /^Embedding section:/u.test(message)
         ) {
             return 'Embedding section'
         }
@@ -187,7 +187,7 @@ function compactMessage(event: ExtractionProgressEvent): string {
         ) {
             return 'Embedding module'
         }
-        if (/^Reused embedding for chunk:/u.test(message)) {
+        if (/^Reused embedding for section:/u.test(message)) {
             return 'Reusing section embedding'
         }
         if (/^Reused embedding for module:/u.test(message)) {
@@ -195,7 +195,7 @@ function compactMessage(event: ExtractionProgressEvent): string {
         }
     }
 
-    if (event.phase === 'chunks' && event.path) {
+    if (event.phase === 'sections' && event.path) {
         return 'Extracting files'
     }
 
@@ -203,7 +203,7 @@ function compactMessage(event: ExtractionProgressEvent): string {
 }
 
 function formatInlineDetail(event: ExtractionProgressEvent): string {
-    if (event.phase === 'chunks' && event.path) {
+    if (event.phase === 'sections' && event.path) {
         return ''
     }
 
@@ -241,7 +241,6 @@ function formatPercentAndCount(event: ExtractionProgressEvent): string {
 
 function phaseTitle(phase: ExtractionProgressEvent['phase']): string {
     const labels: Record<ExtractionProgressEvent['phase'], string> = {
-        chunks: 'Extracting files',
         database: 'Database',
         done: 'Complete',
         embeddings: 'Embeddings',
@@ -250,6 +249,7 @@ function phaseTitle(phase: ExtractionProgressEvent['phase']): string {
         modules: 'Modules',
         preparation: 'Preparation',
         scan: 'Scan',
+        sections: 'Extracting files',
         select: 'Selection',
         start: 'Konteks extraction',
         summary: 'Summary',
