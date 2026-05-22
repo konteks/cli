@@ -18,14 +18,14 @@ const saveBatchMemorySchema = z.object({
     tags: z.array(z.string()).optional(),
 })
 
-const INPUT_SCHEMA = {
+const INPUT_SCHEMA = z.object({
     memories: z
         .array(saveBatchMemorySchema)
         .min(1, 'memories must contain at least one item')
         .describe('Structured durable memories to persist.'),
-} satisfies Record<string, z.ZodTypeAny>
+})
 
-type Input = z.output<z.ZodObject<typeof INPUT_SCHEMA>>
+type Input = z.output<typeof INPUT_SCHEMA>
 
 export default class SaveMemoriesMcpTool extends BaseMcpTool<Input> {
     public readonly annotations = {

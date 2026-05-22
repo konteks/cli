@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import z from 'zod'
-import type { McpInputSchema } from '@/entrypoints/mcp/tools/_base-mcp-tool'
+import type z from 'zod'
 import SaveDiaryMcpTool from '@/entrypoints/mcp/tools/save-diary-mcp-tool'
 
 describe('SaveDiaryMcpTool input schema', () => {
@@ -29,11 +28,6 @@ describe('SaveDiaryMcpTool input schema', () => {
     })
 })
 
-function parse(tool: { inputSchema: McpInputSchema }, input: unknown) {
-    const schema = tool.inputSchema
-    if (!(schema instanceof z.ZodType)) {
-        throw new Error('Expected a Zod schema')
-    }
-
-    return schema.parse(input)
+function parse(tool: { inputSchema: z.ZodObject }, input: unknown) {
+    return tool.inputSchema.parse(input)
 }
