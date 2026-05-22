@@ -65,7 +65,7 @@ export async function extractProjectSectionsWithDatabase(
     const embeddingRun = options.embeddingProvider
         ? await generateTargetEmbeddings(
               options.embeddingProvider,
-              ['section', 'module'],
+              ['section', 'module', 'memory', 'diary'],
               options.extractedAt,
               { onProgress: options.onProgress },
           )
