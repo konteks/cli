@@ -189,7 +189,7 @@ describe('InitCommand', () => {
         expect(plainOutput).toContain('Initializing project memory')
 
         expect(plainOutput).toContain(
-            '✓ Extracted 4 documents from 2 files (2 sections, 2 modules)',
+            '✓ Extracted 2 modules and 2 sections from 2 files',
         )
         expect(plainOutput).not.toContain('Loaded 0 language parsers')
         expect(plainOutput).toContain('✓ Preparing dependencies')
@@ -199,11 +199,9 @@ describe('InitCommand', () => {
         expect(plainOutput).toContain('vectors indexed')
         expect(plainOutput).toContain('✓ Generated project summary')
         expect(plainOutput).toContain('Project memory ready')
-        expect(plainOutput).toContain('Files indexed      2')
-        expect(plainOutput).toContain(
-            'Documents extracted 4 (2 sections, 2 modules)',
-        )
-        expect(plainOutput).toContain('Vectors indexed    4')
+        expect(plainOutput).toContain('Files indexed        2')
+        expect(plainOutput).toContain('Vectors indexed      4')
+        expect(plainOutput).not.toContain('Documents extracted')
         expect(plainOutput).not.toContain('Initialized Konteks at')
         expect(plainOutput).not.toContain('Extracted 2 files into 2 sections')
         expect(plainOutput).not.toContain('Extracted 2 semantic sections')
@@ -301,7 +299,7 @@ describe('InitCommand', () => {
         expect(output).not.toContain('Loading tokenizer.json')
         expect(output).not.toContain('Loaded 1 language parsers')
         expect(output).toContain(
-            '✓ Extracted 7 documents from 3 files (3 sections, 4 modules)',
+            '✓ Extracted 4 modules and 3 sections from 3 files',
         )
     })
 
@@ -336,11 +334,9 @@ describe('InitCommand', () => {
 
         const resumedManifest = JSON.parse(await readFile(manifestPath, 'utf8'))
         expect(output).toContain(
-            '✓ Extracted 4 documents from 2 files (2 sections, 2 modules)',
+            '✓ Extracted 2 modules and 2 sections from 2 files',
         )
-        expect(output).toContain(
-            'Documents extracted 4 (2 sections, 2 modules)',
-        )
+        expect(output).not.toContain('Documents extracted')
         expect(output).not.toContain('Extracted 5 documents from 0 files')
         expect(resumedManifest.diagnostics.sectionCount).toBe(
             firstManifest.diagnostics.sectionCount,

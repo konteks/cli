@@ -89,7 +89,6 @@ export default function createInitProgressReporter(): InitProgressReporter {
             terminal.log(text.sectionTitle('Project memory ready'))
             terminal.log('')
             terminal.log(text.statLine('Files indexed', result.fileCount))
-            terminal.log(documentsExtractedLine(result))
             terminal.log(text.statLine('Vectors indexed', result.vectorCount))
         },
     }
@@ -189,16 +188,7 @@ export default function createInitProgressReporter(): InitProgressReporter {
     function preparedDocumentsMessage(documentCount: number): string {
         const moduleCount = Math.max(0, documentCount - sectionCount)
 
-        return `Extracted ${text.count(documentCount)} documents from ${text.count(fileCount)} files (${text.count(sectionCount)} sections, ${text.count(moduleCount)} modules)`
-    }
-
-    function documentsExtractedLine(result: ExtractProjectResponse): string {
-        const moduleCount = Math.max(
-            0,
-            result.vectorCount - result.sectionCount,
-        )
-
-        return `${color.dim('Documents extracted'.padEnd(18))} ${text.count(result.vectorCount)} (${text.count(result.sectionCount)} sections, ${text.count(moduleCount)} modules)`
+        return `Extracted ${text.count(moduleCount)} modules and ${text.count(sectionCount)} sections from ${text.count(fileCount)} files`
     }
 }
 

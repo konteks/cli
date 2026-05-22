@@ -23,7 +23,7 @@ export function createTuiText(color: ColorPalette): TuiText {
             return color.accent(message)
         },
         statLine(label, value) {
-            return `${color.dim(label.padEnd(18))} ${color.info(value.toString())}`
+            return `${color.dim(label.padEnd(20))} ${color.info(value.toString())}`
         },
     }
 }
