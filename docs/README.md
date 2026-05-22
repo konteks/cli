@@ -32,3 +32,4 @@ Konteks is a **memory engine** that builds a project-local context graph through
 ## Development
 
 * [Directory Structure](development/directory-structure.md)
+* [Database ERD](development/database-erd.md)
