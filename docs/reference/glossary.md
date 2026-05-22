@@ -98,6 +98,10 @@ The project-specific ontology used to organize knowledge into logical scopes (e.
 
 Tagged Object Oriented Notation. A compact, agent-readable text format used for stored summaries and payloads.
 
+## Vector
+
+A numeric representation of text that helps Konteks find related memories by meaning, even when the exact words differ.
+
 ## Warm Up
 
 The first lifecycle phase. Warm Up gives a fresh agent session stable project context.
