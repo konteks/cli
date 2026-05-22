@@ -20,7 +20,7 @@ Our vision is a world where project context is durable and portable. Konteks pro
 
 ### 1. Local-First & Privacy-Centric
 
-Konteks stores all memory artifacts (SQLite database and object store) inside your repository, typically in a `.konteks/` directory.
+Konteks stores memory artifacts inside your repository, typically in a `.konteks/` directory with a local SQLite database.
 
 * **Your data stays with your code.**
 * No cloud services, no external accounts, and no telemetry.

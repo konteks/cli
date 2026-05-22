@@ -62,7 +62,6 @@ erDiagram
         text id PK
         text kind
         text text_inline
-        text payload_ref
         text content_hash
         real confidence
         text deleted_at
@@ -75,7 +74,6 @@ erDiagram
         text subject
         text summary
         text tags_json
-        text payload_ref
         text content_hash
         text deleted_at
         text suppressed_at

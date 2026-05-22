@@ -5,7 +5,6 @@ export type MemoryEventInput = {
     actor?: string
     eventType: string
     id: string
-    payloadRef?: string
     sourceId?: string
     subjectId?: string
     subjectType: string
@@ -21,7 +20,6 @@ export default async function appendMemoryEvent(
         createdAt: new Date().toISOString(),
         eventType: event.eventType,
         id: event.id,
-        payloadRef: event.payloadRef ?? null,
         sourceId: event.sourceId ?? null,
         subjectId: event.subjectId ?? null,
         subjectType: event.subjectType,

@@ -16,7 +16,6 @@ export default async function queryExportObservationRows(options: {
             forget_reason: observations.forgetReason,
             id: observations.id,
             kind: observations.kind,
-            payload_ref: observations.payloadRef,
             suppressed_at: observations.suppressedAt,
             text_inline: observations.textInline,
         })

@@ -25,15 +25,14 @@ graph LR
 
 Extraction starts at the project root. Konteks walks the repository and records enough about each included file to know what exists now and what changed since the last extraction.
 
-Before anything becomes memory, it passes through a gate. Files and directories that are likely to be noisy, unsafe, or wasteful are left outside:
+Before anything becomes memory, it passes through a gate. Konteks excludes its own memory directory, Git internals, secret files, noisy generated outputs, and paths excluded by ignore files:
 
-* Version-control, dependency, build, cache, and generated directories.
-* Lockfiles, local databases, debug logs, and environment files.
-* Binary, archive, media, certificate, and key files.
-* Large files and minified files.
 * Files excluded by `.gitignore` or `.konteksignore`.
+* Git and Konteks internal directories.
+* Environment, certificate, and key files.
+* Binary, generated, minified, vendored, and lockfile paths.
 
-What remains is the working set: text-like project files that are safe and useful enough to extract.
+What remains is the working set. Project-specific unusually large files or other repository noise should be excluded by the repository's `.gitignore` or `.konteksignore`.
 
 ## 2. The Ledger: Select What Needs Work
 
@@ -62,9 +61,9 @@ Konteks chooses the sectioning path from the file shape:
 * Code parser fallback uses recognizable symbol declarations when parser metadata is unavailable.
 * Markdown files are sectioned by headings.
 * JSON files are sectioned by top-level object keys when possible.
-* Other text files are sectioned into bounded word groups.
+* Other text files are stored as one file-level section.
 
-Empty files produce no sections. Very large sections are split into smaller ones, and each file has a section limit so one unusually large file cannot crowd out the rest of the project.
+Empty files produce no sections. Konteks does not split sections solely by size; file hygiene belongs in project ignore rules.
 
 ## 5. The Name and Place: Attach Context
 
@@ -76,7 +75,7 @@ Konteks attaches context such as:
 * Its content kind: code, markdown, JSON, or text.
 * How it was parsed: parser-backed or fallback sectioning.
 * Topics inferred from the path, summary, and content.
-* Its content, either stored directly when small enough or referenced separately when larger.
+* Its extracted content, stored directly in SQLite.
 
 Konteks also records the file as a source and links sections into a path-based taxonomy. That gives recall a way to move from one matched section to the surrounding project area.
 
@@ -87,7 +86,7 @@ The raw section body is not always the best search surface. A section often need
 Konteks therefore prepares retrieval text for each searchable target:
 
 * Lexical text favors exact matching and broad keyword coverage.
-* Embedding text is shorter and more focused so semantic matching captures the core meaning.
+* Embedding text carries the same section content plus location metadata for semantic matching.
 
 This gives recall two voices for the same memory: one for exact project terms, and one for meaning.
 

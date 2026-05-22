@@ -14,7 +14,6 @@ export default async function queryExportDiaryRows(options: {
             deleted_at: diaryEntries.deletedAt,
             forget_reason: diaryEntries.forgetReason,
             id: diaryEntries.id,
-            payload_ref: diaryEntries.payloadRef,
             subject: diaryEntries.subject,
             summary: diaryEntries.summary,
             suppressed_at: diaryEntries.suppressedAt,

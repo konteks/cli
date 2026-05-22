@@ -2,8 +2,7 @@ import { withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
 import reindexRetrievalDocumentFts from '@/database/actions/reindex-retrieval-document-fts'
 import { upsertNode } from '@/database/services/taxonomy'
-import { contentHash } from '@/modules/persistence/objects/content'
-import createToonStore from '@/modules/persistence/objects/create-toon-store'
+import contentHash from '@/support/content-hash'
 import { terminal } from '@/support/terminal/service'
 import type { ExtractionProgressReporter } from '@/types/progress'
 import type { Project } from '@/types/project'
@@ -40,7 +39,6 @@ export default async function extractSections(
     } = {},
 ): Promise<ExtractSectionsResult> {
     const progress = options.onProgress
-    const toonStore = createToonStore(context.memoryDir)
     let engine: TreeSitterEngine | undefined
     let loadedParserCount = 0
 
@@ -116,7 +114,6 @@ export default async function extractSections(
             context,
             engine,
             file,
-            toonStore,
         })
 
         if (

@@ -16,9 +16,7 @@ import {
 } from '@/database/support/save-policy'
 import { generateEmbeddingsForTargets } from '@/modules/embeddings/generate-target-embeddings'
 import HuggingFaceEmbeddingProvider from '@/modules/embeddings/hugging-face-embedding-provider'
-import { contentHash } from '@/modules/persistence/objects/content'
-import createToonStore from '@/modules/persistence/objects/create-toon-store'
-import storePayload from '@/modules/persistence/objects/store-payload'
+import contentHash from '@/support/content-hash'
 import type { EmbeddingProviderContract } from '@/types/embedding-provider'
 import type { ObservationKind, SaveResult } from '@/types/memory'
 import type { Project } from '@/types/project'
@@ -59,7 +57,7 @@ type SaveMemoryOptions = SaveOptions & {
 }
 
 async function saveKonteksMemory(
-    context: Project,
+    _context: Project,
     input: SaveMemoryInput,
     options: SaveMemoryOptions = {},
 ): Promise<MemoryWriteResult> {
@@ -78,36 +76,30 @@ async function saveKonteksMemory(
     }
 
     const id = `obs_${randomUUID()}`
-    const stored = await storePayload(input.content, {
-        inlineMaxBytes: context.config.storage.inlinePayloadMaxBytes,
-        toonStore: createToonStore(context.memoryDir),
-    })
     const summary = summarizeText(input.content)
     const createdAt = new Date().toISOString()
 
     await withTransaction(async () => {
         await insertObservation({
             confidence: importanceToConfidence(input.importance),
-            contentHash: stored.contentHash,
+            contentHash: hash,
             createdAt,
             id,
             kind: input.kind,
-            payloadRef: stored.payloadRef ?? null,
-            textInline: stored.contentInline ?? summary,
+            textInline: input.content,
         })
 
         await appendMemoryEvent({
             actor: 'mcp',
             eventType: 'memory_saved',
             id: `event_${randomUUID()}`,
-            payloadRef: stored.payloadRef,
             subjectId: id,
             subjectType: 'observation',
             summary,
         })
 
         await indexSearchDocument({
-            content: stored.contentInline ?? summary,
+            content: input.content,
             createdAt,
             id,
             kind: input.kind,
@@ -115,8 +107,8 @@ async function saveKonteksMemory(
         })
         await upsertRetrievalDocument({
             anchor: input.source ?? id,
-            embeddingText: stored.contentInline ?? input.content,
-            ftsText: stored.contentInline ?? input.content,
+            embeddingText: input.content,
+            ftsText: input.content,
             path: input.source ?? 'memory',
             sourceRole: 'unknown',
             summary,
@@ -191,7 +183,7 @@ export async function saveKonteksMemories(
 }
 
 export async function saveKonteksDiary(
-    context: Project,
+    _context: Project,
     input: SaveDiaryInput,
     options: SaveOptions = {},
 ): Promise<SaveResult> {
@@ -207,18 +199,13 @@ export async function saveKonteksDiary(
     const text = [formattedInput.subject, formattedInput.summary, tags]
         .filter(Boolean)
         .join('\n')
-    const stored = await storePayload(text, {
-        inlineMaxBytes: context.config.storage.inlinePayloadMaxBytes,
-        toonStore: createToonStore(context.memoryDir),
-    })
     const createdAt = new Date().toISOString()
 
     await withTransaction(async () => {
         await insertDiaryEntry({
-            contentHash: stored.contentHash,
+            contentHash: contentHash(text),
             createdAt,
             id,
-            payloadRef: stored.payloadRef ?? null,
             subject: formattedInput.subject ?? null,
             summary: formattedInput.summary,
             tagsJson: JSON.stringify(formattedInput.tags ?? []),
@@ -228,7 +215,6 @@ export async function saveKonteksDiary(
             actor: 'mcp',
             eventType: 'diary_entry_saved',
             id: `event_${randomUUID()}`,
-            payloadRef: stored.payloadRef,
             subjectId: id,
             subjectType: 'diary_entry',
             summary: formattedInput.summary,

@@ -22,9 +22,6 @@ describe('extraction/extract', () => {
                     },
                 },
                 recall: { maxTokens: 4096 },
-                storage: {
-                    inlinePayloadMaxBytes: 1024,
-                },
             },
             configExists: true,
             configPath: join(projectRoot, '.konteks/config.json'),
@@ -44,7 +41,7 @@ describe('extraction/extract', () => {
             ok: true,
             projectRoot,
             sectionCount: 7,
-            summaryRef: 'objects/summary.toon',
+            summaryRef: 'project-summary',
             technologies: ['typescript'],
             updatedFilePaths: ['src/index.ts'],
             vectorCount: 7,
@@ -96,9 +93,6 @@ async function createConfiguredProject(): Promise<string> {
                     },
                 },
                 recall: { maxTokens: 4096 },
-                storage: {
-                    inlinePayloadMaxBytes: 1024,
-                },
             },
             null,
             2,

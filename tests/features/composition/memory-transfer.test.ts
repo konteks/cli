@@ -16,7 +16,6 @@ import {
     restoreMemory,
 } from '@/modules/memory/memory-transfer'
 import { saveDiary, saveMemories } from '@/modules/memory/save-memory'
-import { loadProjectContext } from '@/modules/project/context'
 
 const tempDirs: string[] = []
 let previousSqliteTestDatabase: string | undefined
@@ -67,13 +66,11 @@ describe('memory transfer', () => {
     it('exports durable memories and diaries as portable JSON', async () => {
         const projectRoot = await makeInitializedProject()
         await withProjectRoot(projectRoot, async () => {
-            const context = await loadProjectContext()
-            context.config.storage.inlinePayloadMaxBytes = 8
             await saveMemories({
                 memories: [
                     {
                         content:
-                            'Portable export must resolve large durable memory payloads from object storage.',
+                            'Portable export includes durable memory content stored in SQLite.',
                         importance: 3,
                         kind: 'decision',
                     },
@@ -95,7 +92,7 @@ describe('memory transfer', () => {
         expect(result).toMatchObject({ diaries: 1, memories: 1 })
         expect(payload.format).toBe('konteks.durable-memory.v1')
         expect(payload.memories[0].content).toContain(
-            'Portable export must resolve large durable memory payloads',
+            'Portable export includes durable memory content',
         )
         expect(payload.diaries[0]).toMatchObject({
             subject: 'portable export',

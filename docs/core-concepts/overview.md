@@ -31,7 +31,7 @@ The core of the system is a framework that manages four distinct "surfaces" of m
 
 ### 3. The Persistence Substrate
 
-This knowledge is anchored in a [Storage Substrate](storage.md) that ensures privacy and portability. By using a SQLite relational core and a content-addressed object store (TOON), Konteks ensures that memory is as durable and portable as the repository itself.
+This knowledge is anchored in a [Storage Substrate](storage.md) that ensures privacy and portability. By using a local SQLite relational core, Konteks keeps memory durable and portable with the repository itself.
 
 ## The Analytic Pipeline: The Life of a Context Signal
 

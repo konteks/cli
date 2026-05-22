@@ -56,13 +56,17 @@ describe('scanProjectFiles', () => {
         expect(scan.diagnostics.filesSkipped.konteksignore).toBe(1)
     })
 
-    it('skips large files', async () => {
+    it('does not skip files by size', async () => {
         const projectRoot = await makeProject()
         await writeFile(join(projectRoot, 'README.md'), '# Fixture\n')
         await writeFile(join(projectRoot, 'huge.txt'), 'x'.repeat(20))
 
-        const files = await scanProjectFiles(projectRoot, { maxFileBytes: 10 })
+        const files = await scanProjectFiles(projectRoot)
 
-        expect(files.map(file => file.path)).toEqual(['README.md'])
+        expect(files.map(file => file.path)).toEqual([
+            'README.md',
+            'huge.txt',
+            'package.json',
+        ])
     })
 })

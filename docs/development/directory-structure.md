@@ -17,7 +17,6 @@ src
 │   ├── embeddings/     # Embedding providers and embedding generation pipeline.
 │   ├── extraction/     # Project extraction orchestration and extraction engine internals.
 │   ├── memory/         # Recall, save, transfer, and runtime wiring for memory workflows.
-│   ├── persistence/    # Object payload storage and serialized content helpers.
 │   └── project/        # Project context, source classification, and warm-up ranking.
 ├── support/            # Project-owned generic utilities and test-light infrastructure helpers.
 │   ├── cli/            # CLI user error and JSON output helpers.

@@ -180,37 +180,13 @@ function sectionByWords(
         metadata?: Record<string, unknown>
     } = {},
 ): ExtractedSection[] {
-    const words = content.split(/\s+/u).filter(Boolean)
-    const maxWords = 650
     const anchor = metadata.anchor ?? 'file'
     const anchorType = metadata.anchorType ?? 'file'
-    if (words.length <= maxWords) {
-        return [
-            {
-                anchor,
-                anchorType,
-                content,
-                endLine: metadata.endLine,
-                heading: metadata.heading,
-                jsonPath: metadata.jsonPath,
-                kind,
-                metadata: metadata.metadata,
-                path,
-                startLine: metadata.startLine,
-                summary: summarize(path, kind, content, metadata.symbol),
-                symbol: metadata.symbol,
-            },
-        ]
-    }
-
-    const sections: ExtractedSection[] = []
-    for (let index = 0; index < words.length; index += maxWords) {
-        const body = words.slice(index, index + maxWords).join(' ')
-        const sectionAnchor = `${anchor}-${Math.floor(index / maxWords) + 1}`
-        sections.push({
-            anchor: sectionAnchor,
+    return [
+        {
+            anchor,
             anchorType,
-            content: body,
+            content,
             endLine: metadata.endLine,
             heading: metadata.heading,
             jsonPath: metadata.jsonPath,
@@ -218,12 +194,10 @@ function sectionByWords(
             metadata: metadata.metadata,
             path,
             startLine: metadata.startLine,
-            summary: summarize(path, kind, body, metadata.symbol),
+            summary: summarize(path, kind, content, metadata.symbol),
             symbol: metadata.symbol,
-        })
-    }
-
-    return sections
+        },
+    ]
 }
 
 function extractCodeSymbol(line: string): string | undefined {

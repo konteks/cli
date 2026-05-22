@@ -7,7 +7,6 @@ export type InsertDiaryEntryInput = {
     deletedAt?: string | null
     forgetReason?: string | null
     id: string
-    payloadRef?: string | null
     subject?: string | null
     summary: string
     suppressedAt?: string | null
@@ -24,7 +23,6 @@ export default async function insertDiaryEntry(
         deletedAt: input.deletedAt ?? null,
         forgetReason: input.forgetReason ?? null,
         id: input.id,
-        payloadRef: input.payloadRef ?? null,
         subject: input.subject ?? null,
         summary: input.summary,
         suppressedAt: input.suppressedAt ?? null,

@@ -1,7 +1,7 @@
 import { and, eq, inArray, or } from 'drizzle-orm'
 import getDb from '@/database/actions/_db'
 import { retrievalDocuments, targetEmbeddings } from '@/database/schema'
-import { contentHash } from '@/modules/persistence/objects/content'
+import contentHash from '@/support/content-hash'
 import type { EmbeddingProviderContract } from '@/types/embedding-provider'
 import type { ExtractionProgressReporter } from '@/types/progress'
 
