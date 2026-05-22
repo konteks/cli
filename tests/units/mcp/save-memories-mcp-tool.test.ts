@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import z from 'zod'
-import type { McpInputSchema } from '@/entrypoints/mcp/tools/_base-mcp-tool'
+import type z from 'zod'
 import SaveMemoriesMcpTool from '@/entrypoints/mcp/tools/save-memories-mcp-tool'
 
 describe('SaveMemoriesMcpTool input schema', () => {
@@ -27,8 +26,6 @@ describe('SaveMemoriesMcpTool input schema', () => {
     })
 })
 
-function parse(tool: { inputSchema: McpInputSchema }, input: unknown) {
-    return z
-        .object(tool.inputSchema as Record<string, z.ZodTypeAny>)
-        .parse(input)
+function parse(tool: { inputSchema: z.ZodObject }, input: unknown) {
+    return tool.inputSchema.parse(input)
 }

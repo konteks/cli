@@ -4,8 +4,6 @@ import z from 'zod'
 import { createMcpToolErrorResult } from '@/entrypoints/mcp/error-handling'
 import toCallToolResult from './utils/to-call-tool-result'
 
-export type McpInputSchema = Record<string, z.ZodTypeAny> | z.ZodType
-
 export default abstract class BaseMcpTool<Input = unknown> {
     public abstract readonly annotations: {
         destructiveHint: boolean
@@ -16,7 +14,7 @@ export default abstract class BaseMcpTool<Input = unknown> {
 
     public abstract readonly description: string
 
-    public abstract readonly inputSchema: McpInputSchema
+    public abstract readonly inputSchema: z.ZodObject
 
     public abstract readonly name: string
 
