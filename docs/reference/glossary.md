@@ -88,7 +88,7 @@ One continuous agent conversation inside a project. A session can contain one ta
 
 ## Storage Substrate
 
-The local persistence layer for Konteks memory, based on SQLite (for metadata/graph) and a content-addressed object store (for full content).
+The local persistence layer for Konteks memory, based on SQLite for extracted sections, durable memory, diary entries, retrieval text, and graph metadata.
 
 ## Taxonomy
 
@@ -96,7 +96,7 @@ The project-specific ontology used to organize knowledge into logical scopes (e.
 
 ## TOON
 
-Tagged Object Oriented Notation. A compact, agent-readable text format used for stored summaries and payloads.
+Tagged Object Oriented Notation. A compact, agent-readable text format used for MCP tool output and selected summaries.
 
 ## Vector
 

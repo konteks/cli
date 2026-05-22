@@ -1,14 +1,13 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { buildSectionRetrievalTexts } from '@/database/support/retrieval-texts'
-import { contentHash } from '@/modules/persistence/objects/content'
-import type createToonStore from '@/modules/persistence/objects/create-toon-store'
-import storePayload from '@/modules/persistence/objects/store-payload'
 import {
     classifySourceRole,
     detectLanguage,
     extractTopics,
 } from '@/modules/project/source-classification'
+import contentHash from '@/support/content-hash'
+import { estimateTextTokens } from '@/support/format/tokens'
 import type { Project } from '@/types/project'
 import type { ScannedFile } from './file-scan'
 import { getGrammarForPath, isBundledGrammar } from './grammar-loader'
@@ -20,7 +19,7 @@ import type { CodeMetadata } from './tree-sitter-engine'
 type PreparedSection = {
     anchor: string
     anchorType: string
-    contentInline?: string
+    contentInline: string
     contentHash: string
     endLine?: number
     heading?: string
@@ -29,7 +28,6 @@ type PreparedSection = {
     kind: string
     metadata: Record<string, unknown>
     path: string
-    payloadRef?: string
     retrievalTexts: {
         embeddingText: string
         ftsText: string
@@ -54,13 +52,10 @@ export type PreparedFile = {
     truncated: boolean
 }
 
-const defaultMaxSectionsPerFile = 200
-
 export default async function prepareFileSections(input: {
     context: Project
     engine?: TreeSitterEngine
     file: ScannedFile
-    toonStore: ReturnType<typeof createToonStore>
 }): Promise<PreparedFile> {
     const content = await readFile(
         join(input.context.projectRoot, input.file.path),
@@ -109,16 +104,14 @@ export default async function prepareFileSections(input: {
         input.engine,
         parsedMetadata,
     )
-    const sections = allSections
-        .map(section => ({
-            ...section,
-            metadata: {
-                parserEngine,
-                parserStatus,
-                ...section.metadata,
-            },
-        }))
-        .slice(0, defaultMaxSectionsPerFile)
+    const sections = allSections.map(section => ({
+        ...section,
+        metadata: {
+            parserEngine,
+            parserStatus,
+            ...section.metadata,
+        },
+    }))
 
     const sourceTopics = extractTopics(
         input.file.path,
@@ -127,15 +120,12 @@ export default async function prepareFileSections(input: {
     const preparedSections: PreparedSection[] = []
 
     for (const [index, section] of sections.entries()) {
-        const stored = await storePayload(section.content, {
-            inlineMaxBytes: input.context.config.storage.inlinePayloadMaxBytes,
-            toonStore: input.toonStore,
-        })
+        const sectionHash = contentHash(section.content)
         if (
             await isExtractedSectionSuppressed(
                 input.file.path,
                 section.anchor,
-                stored.contentHash,
+                sectionHash,
             )
         ) {
             continue
@@ -148,21 +138,20 @@ export default async function prepareFileSections(input: {
         preparedSections.push({
             anchor: section.anchor,
             anchorType: section.anchorType,
-            contentHash: stored.contentHash,
-            contentInline: stored.contentInline,
+            contentHash: sectionHash,
+            contentInline: section.content,
             endLine: section.endLine,
             heading: section.heading,
             id: sectionIdFor(
                 input.file.path,
                 index,
                 section.anchor,
-                stored.contentHash,
+                sectionHash,
             ),
             jsonPath: section.jsonPath,
             kind: section.kind,
             metadata: section.metadata ?? {},
             path: section.path,
-            payloadRef: stored.payloadRef,
             retrievalTexts: buildSectionRetrievalTexts({
                 anchor: section.anchor,
                 content: section.content,
@@ -175,7 +164,7 @@ export default async function prepareFileSections(input: {
             startLine: section.startLine,
             summary: section.summary,
             symbol: section.symbol,
-            tokenCount: stored.tokenCount,
+            tokenCount: estimateTextTokens(section.content),
             topics,
         })
     }
@@ -195,7 +184,7 @@ export default async function prepareFileSections(input: {
         },
         sourceRole,
         sourceTopics,
-        truncated: allSections.length > sections.length,
+        truncated: false,
     }
 }
 

@@ -42,7 +42,6 @@ export default async function persistPreparedFileSections(input: {
             language: preparedFile.language,
             metadata_json: JSON.stringify(section.metadata ?? {}),
             path: section.path,
-            payload_ref: section.payloadRef ?? null,
             source_id: preparedFile.sourceId,
             source_role: preparedFile.sourceRole,
             start_line: section.startLine ?? null,

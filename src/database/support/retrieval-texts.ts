@@ -1,7 +1,3 @@
-const maxSectionContentChars = 3000
-const maxEmbeddingTextChars = 2500
-const maxFtsTextChars = 6000
-
 export function buildSectionRetrievalTexts(input: {
     anchor?: string
     content: string
@@ -23,14 +19,9 @@ export function buildSectionRetrievalTexts(input: {
     ]
         .filter(Boolean)
         .join('\n')
-    const contentExcerpt = input.content.slice(0, maxSectionContentChars)
 
     return {
-        embeddingText: [metadata, contentExcerpt]
-            .join('\n\n')
-            .slice(0, maxEmbeddingTextChars),
-        ftsText: [metadata, input.content]
-            .join('\n\n')
-            .slice(0, maxFtsTextChars),
+        embeddingText: [metadata, input.content].join('\n\n'),
+        ftsText: [metadata, input.content].join('\n\n'),
     }
 }

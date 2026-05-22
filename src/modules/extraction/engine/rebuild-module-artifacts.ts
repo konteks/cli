@@ -3,7 +3,7 @@ import getDb from '@/database/actions/_db'
 import deleteRetrievalDocuments from '@/database/actions/delete-retrieval-documents'
 import upsertRetrievalDocument from '@/database/actions/upsert-retrieval-document'
 import { modules, targetEmbeddings } from '@/database/schema'
-import { contentHash } from '@/modules/persistence/objects/content'
+import contentHash from '@/support/content-hash'
 import type {
     PackageManifestMetadata,
     ProjectMetadata,

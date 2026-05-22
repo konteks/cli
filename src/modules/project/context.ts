@@ -19,9 +19,6 @@ export function createDefaultConfig(): KonteksConfig {
         recall: {
             maxTokens: 2000,
         },
-        storage: {
-            inlinePayloadMaxBytes: 2048,
-        },
     }
 }
 
@@ -122,11 +119,6 @@ function mergeConfig(
         },
         recall: {
             maxTokens: config.recall?.maxTokens ?? defaults.recall.maxTokens,
-        },
-        storage: {
-            inlinePayloadMaxBytes:
-                config.storage?.inlinePayloadMaxBytes ??
-                defaults.storage.inlinePayloadMaxBytes,
         },
     }
 }

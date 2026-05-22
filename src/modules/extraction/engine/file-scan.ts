@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto'
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
 import createIgnoreMatcher, {
-    defaultMaxExtractFileBytes,
     type IgnoreMatcher,
     type IgnoreReason,
 } from './create-ignore-matcher'
@@ -23,7 +22,6 @@ export type ScanDiagnostics = {
         hardDirectory: number
         ignoredFile: number
         konteksignore: number
-        large: number
         lockfile: number
         minified: number
         secret: number
@@ -36,9 +34,7 @@ type ScanProjectResult = {
     files: ScannedFile[]
 }
 
-type ScanProjectOptions = {
-    maxFileBytes?: number
-}
+type ScanProjectOptions = Record<string, never>
 
 export async function scanProjectFiles(
     projectRoot: string,
@@ -52,7 +48,7 @@ export async function scanProjectFilesWithDiagnostics(
     options: ScanProjectOptions = {},
 ): Promise<ScanProjectResult> {
     const files: ScannedFile[] = []
-    const maxFileBytes = options.maxFileBytes ?? defaultMaxExtractFileBytes
+    void options
     const ignoreMatcher = await loadIgnoreMatcher(projectRoot)
     const diagnostics = createScanDiagnostics()
 
@@ -60,7 +56,6 @@ export async function scanProjectFilesWithDiagnostics(
         projectRoot,
         projectRoot,
         files,
-        maxFileBytes,
         ignoreMatcher,
         diagnostics,
     )
@@ -80,7 +75,6 @@ async function scanDirectory(
     projectRoot: string,
     directory: string,
     files: ScannedFile[],
-    maxFileBytes: number,
     ignoreMatcher: IgnoreMatcher,
     diagnostics: ScanDiagnostics,
 ): Promise<void> {
@@ -101,7 +95,6 @@ async function scanDirectory(
                 projectRoot,
                 absolutePath,
                 files,
-                maxFileBytes,
                 ignoreMatcher,
                 diagnostics,
             )
@@ -114,10 +107,6 @@ async function scanDirectory(
 
         diagnostics.filesScanned += 1
         const fileStat = await stat(absolutePath)
-        if (fileStat.size > maxFileBytes) {
-            diagnostics.filesSkipped.large += 1
-            continue
-        }
         const bytes = await readFile(absolutePath)
 
         files.push({
@@ -139,7 +128,6 @@ function createScanDiagnostics(): ScanDiagnostics {
             hardDirectory: 0,
             ignoredFile: 0,
             konteksignore: 0,
-            large: 0,
             lockfile: 0,
             minified: 0,
             secret: 0,

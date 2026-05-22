@@ -19,7 +19,7 @@ import {
     readExtractionManifest,
     writeExtractionManifest,
 } from '@/modules/extraction/engine/manifest'
-import createToonStore from '@/modules/persistence/objects/create-toon-store'
+import contentHash from '@/support/content-hash'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/types/embedding-provider'
 import type {
     ExtractProjectRequest,
@@ -154,22 +154,23 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
         }
         const vectorCount =
             embeddingRun.embeddedCount + embeddingRun.reusedCount
-        const toonStore = createToonStore(context.memoryDir)
         progress?.({
             message: 'Writing project summary',
             phase: 'summary',
             status: 'start',
         })
-        const summary = await toonStore.write(
-            formatProjectSummaryToon({
-                extractedAt: extractedAt,
-                fileCount: files.length,
-                files,
-                metadata,
-                mode,
-                projectRoot: context.projectRoot,
-            }),
-        )
+        const summaryContent = formatProjectSummaryToon({
+            extractedAt: extractedAt,
+            fileCount: files.length,
+            files,
+            metadata,
+            mode,
+            projectRoot: context.projectRoot,
+        })
+        const summary = {
+            hash: contentHash(summaryContent),
+            ref: 'project-summary',
+        }
         progress?.({
             message: 'Project summary written',
             phase: 'summary',

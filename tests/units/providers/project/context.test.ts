@@ -66,9 +66,6 @@ describe('project context', () => {
             recall: {
                 maxTokens: 2000,
             },
-            storage: {
-                inlinePayloadMaxBytes: 2048,
-            },
         })
     })
 

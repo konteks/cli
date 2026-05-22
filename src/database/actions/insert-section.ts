@@ -15,7 +15,6 @@ export type InsertSectionInput = {
     language: string | null
     metadata_json: string | null
     path: string | null
-    payload_ref: string | null
     source_id: string | null
     source_role: string | null
     start_line: number | null
@@ -46,7 +45,6 @@ export default async function insertSection(
         language: section.language,
         metadataJson: section.metadata_json,
         path: section.path,
-        payloadRef: section.payload_ref,
         sourceId: section.source_id,
         sourceRole: section.source_role,
         startLine: section.start_line,

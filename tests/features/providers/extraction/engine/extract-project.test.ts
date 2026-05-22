@@ -21,7 +21,6 @@ import {
     readExtractionManifest,
 } from '@/modules/extraction/engine/manifest'
 import { extractProject } from '@/modules/extraction/extract-project'
-import createToonStore from '@/modules/persistence/objects/create-toon-store'
 import { loadProjectContext } from '@/modules/project/context'
 import type { EmbeddingProviderContract } from '@/types/embedding-provider'
 import FakeEmbeddingProvider from '../../../../fake/fake-embedding-provider'
@@ -76,7 +75,7 @@ afterEach(async () => {
 })
 
 describe('extractProject', () => {
-    it('writes a manifest and TOON project summary', async () => {
+    it('writes a manifest with project summary metadata', async () => {
         const projectRoot = await makeTempProject()
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
@@ -84,9 +83,6 @@ describe('extractProject', () => {
 
         const result = await extractTestProject(context, 'rebuild')
         const manifest = await readExtractionManifest(context.memoryDir)
-        const summary = await createToonStore(context.memoryDir).read(
-            result.summaryRef,
-        )
 
         expect(result.ok).toBe(true)
         expect(result.fileCount).toBe(2)
@@ -106,8 +102,7 @@ describe('extractProject', () => {
             'README.md',
             'src/index.txt',
         ])
-        expect(summary).toContain('README.md')
-        expect(summary).not.toContain('.env.local')
+        expect(manifest?.summaryHash).toHaveLength(64)
     })
 
     it('reports fresh status after extraction and stale after a file change', async () => {
@@ -130,7 +125,7 @@ describe('extractProject', () => {
         expect(stale.recommendedCommand).toBe('konteks rebuild')
     })
 
-    it('caps sections per file and reports the diagnostic', async () => {
+    it('does not cap sections per file', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(
             join(projectRoot, 'src', 'many.md'),
@@ -148,8 +143,8 @@ describe('extractProject', () => {
         const result = await extractTestProject(context, 'rebuild')
         const manifest = await readExtractionManifest(context.memoryDir)
 
-        expect(result.sectionCount).toBeGreaterThanOrEqual(200)
-        expect(manifest?.diagnostics?.filesTruncatedBySectionLimit).toBe(1)
+        expect(result.sectionCount).toBeGreaterThan(205)
+        expect(manifest?.diagnostics?.filesTruncatedBySectionLimit).toBe(0)
     })
 
     it('stores the manifest as local JSON', async () => {
