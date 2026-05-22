@@ -1,7 +1,4 @@
-import type {
-    EntityRecord,
-    HistoricalRelation,
-} from '@/database/services/graph'
+import type EntityRecord from './_types/entity-record'
 import queryHistoricalRelationRows, {
     type HistoricalRelationRow,
 } from './query-historical-relation-rows'
@@ -9,7 +6,17 @@ import queryHistoricalRelationRows, {
 export default async function historicalRelations(
     entityId: string,
     options: { limit?: number } = {},
-): Promise<HistoricalRelation[]> {
+): Promise<
+    {
+        relationId: string
+        predicate: string
+        status: 'invalidated' | 'superseded'
+        validFrom?: string
+        validTo?: string
+        subject: EntityRecord
+        object: EntityRecord
+    }[]
+> {
     const rows = await queryHistoricalRelationRows(
         entityId,
         options.limit ?? 10,

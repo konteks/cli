@@ -1,16 +1,13 @@
 import { withTransaction } from '@/database/actions/_db'
 import {
-    historicalRelations,
-    searchEntities,
-    traverseNeighbors,
-} from '@/database/services/graph'
+    historicalRelationsAction,
+    searchEntitiesAction,
+    traverseNeighborsAction,
+} from '@/database/services/_recall-repository-memory-actions'
 import searchMemory, {
     type MemoryRecallInput,
-    type MemorySearchInput,
 } from '@/database/services/search-memory'
 import type {
-    GraphNeighbor,
-    HistoricalRelation,
     MemoryEntity,
     MemorySearchResult,
     RecallGraphItem,
@@ -18,108 +15,86 @@ import type {
     RecallPackage,
 } from '@/models/memory'
 
-type RecallMemorySource = {
-    historicalRelations(
-        entityId: string,
-        limit?: number,
-    ): Promise<HistoricalRelation[]>
-    search(input: MemorySearchInput): Promise<MemorySearchResult[]>
-    searchEntities(query: string, limit?: number): Promise<MemoryEntity[]>
-    traverseNeighbors(
-        entityId: string,
-        options?: { maxDepth?: number; limit?: number },
-    ): Promise<GraphNeighbor[]>
-}
+const ENTITY_LIMIT = 4
+const HISTORICAL_RELATION_LIMIT = 6
+const TRAVERSE_NEIGHBOR_LIMIT = 8
 
 export default async function recallRepositoryMemory(
     input: MemoryRecallInput,
 ): Promise<RecallPackage> {
-    return await withTransaction(() =>
-        recallMemoryFromSource(
-            {
-                historicalRelations: (entityId, limit) =>
-                    historicalRelations(entityId, { limit }),
-                search: searchInput => searchMemory(searchInput),
-                searchEntities: (query, limit) =>
-                    searchEntities(query, { limit }),
-                traverseNeighbors,
-            },
-            input,
-        ),
-    )
-}
+    return await withTransaction(async () => {
+        const memories = await searchMemory({
+            limit: 20,
+            query: input.task,
+        })
+        const rawEntities = await searchEntitiesAction(input.task, {
+            limit: ENTITY_LIMIT,
+        })
+        const entities = dedupeEntities(rawEntities)
 
-async function recallMemoryFromSource(
-    source: RecallMemorySource,
-    input: MemoryRecallInput,
-): Promise<RecallPackage> {
-    const memories = await source.search({
-        limit: 20,
-        query: input.task,
-    })
-    const rawEntities = await source.searchEntities(input.task, 4)
-    const entities = dedupeEntities(rawEntities)
+        const graphItems: RecallGraphItem[] = []
+        const historyItems: RecallHistoryItem[] = []
 
-    const graphItems: RecallGraphItem[] = []
-    const historyItems: RecallHistoryItem[] = []
+        if (needsHistory(input.task)) {
+            const seenRelations = new Set<string>()
+            for (const entity of entities) {
+                const relations = await historicalRelationsAction(entity.id, {
+                    limit: HISTORICAL_RELATION_LIMIT,
+                })
+                for (const relation of relations) {
+                    if (seenRelations.has(relation.relationId)) continue
+                    seenRelations.add(relation.relationId)
 
-    if (needsHistory(input.task)) {
-        const seenRelations = new Set<string>()
+                    historyItems.push({
+                        objectEntityId: relation.object.id,
+                        objectEntityName: relation.object.name,
+                        predicate: relation.predicate,
+                        reason: `Included because task asks for historical or superseded context.`,
+                        relationId: relation.relationId,
+                        status: relation.status,
+                        subjectEntityId: relation.subject.id,
+                        subjectEntityName: relation.subject.name,
+                        validFrom: relation.validFrom,
+                        validTo: relation.validTo,
+                    })
+                }
+            }
+        }
+
+        const seenNeighbors = new Set<string>()
         for (const entity of entities) {
-            const relations = await source.historicalRelations(entity.id, 6)
-            for (const relation of relations) {
-                if (seenRelations.has(relation.relationId)) continue
-                seenRelations.add(relation.relationId)
+            const neighbors = await traverseNeighborsAction(entity.id, {
+                limit: TRAVERSE_NEIGHBOR_LIMIT,
+                maxDepth: 2,
+            })
+            for (const neighbor of neighbors) {
+                if (seenNeighbors.has(neighbor.relationId)) continue
+                seenNeighbors.add(neighbor.relationId)
 
-                historyItems.push({
-                    objectEntityId: relation.object.id,
-                    objectEntityName: relation.object.name,
-                    predicate: relation.predicate,
-                    reason: `Included because task asks for historical or superseded context.`,
-                    relationId: relation.relationId,
-                    status: relation.status,
-                    subjectEntityId: relation.subject.id,
-                    subjectEntityName: relation.subject.name,
-                    validFrom: relation.validFrom,
-                    validTo: relation.validTo,
+                graphItems.push({
+                    depth: neighbor.depth,
+                    direction: neighbor.direction,
+                    entityId: entity.id,
+                    entityName: entity.name,
+                    entityType: entity.type,
+                    predicate: neighbor.predicate,
+                    relatedEntityId: neighbor.entity.id,
+                    relatedEntityName: neighbor.entity.name,
+                    relatedEntityType: neighbor.entity.type,
+                    relationId: neighbor.relationId,
+                    score: Math.max(1, 10 - neighbor.depth * 2),
                 })
             }
         }
-    }
 
-    const seenNeighbors = new Set<string>()
-    for (const entity of entities) {
-        const neighbors = await source.traverseNeighbors(entity.id, {
-            limit: 8,
-            maxDepth: 2,
+        return assembleRecallPackage({
+            graph: graphItems,
+            history: historyItems,
+            includeSources: input.includeSources ?? false,
+            maxTokens: input.maxTokens ?? 2000,
+            memories,
+            task: input.task,
         })
-        for (const neighbor of neighbors) {
-            if (seenNeighbors.has(neighbor.relationId)) continue
-            seenNeighbors.add(neighbor.relationId)
-
-            graphItems.push({
-                depth: neighbor.depth,
-                direction: neighbor.direction,
-                entityId: entity.id,
-                entityName: entity.name,
-                entityType: entity.type,
-                predicate: neighbor.predicate,
-                relatedEntityId: neighbor.entity.id,
-                relatedEntityName: neighbor.entity.name,
-                relatedEntityType: neighbor.entity.type,
-                relationId: neighbor.relationId,
-                score: Math.max(1, 10 - neighbor.depth * 2),
-            })
-        }
-    }
-
-    return assembleRecallPackage({
-        graph: graphItems,
-        history: historyItems,
-        includeSources: input.includeSources ?? false,
-        maxTokens: input.maxTokens ?? 2000,
-        memories,
-        task: input.task,
     })
 }
 

@@ -1,4 +1,4 @@
-import type { EntityRecord } from '@/database/services/graph'
+import type EntityRecord from './_types/entity-record'
 import queryEntitySearchRows, {
     type EntityRow,
 } from './query-entity-search-rows'
