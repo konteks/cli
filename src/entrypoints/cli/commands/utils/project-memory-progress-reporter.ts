@@ -8,13 +8,13 @@ import {
 import type { ExtractProjectResponse } from '@/types/extraction'
 import type { ExtractionProgressEvent } from '@/types/progress'
 
-type InitProgressReporter = {
+type ProjectMemoryProgressReporter = {
     done(): void
     report(event: ExtractionProgressEvent): void
     summary(result: ExtractProjectResponse): void
 }
 
-export default function createInitProgressReporter(): InitProgressReporter {
+export default function createProjectMemoryProgressReporter(): ProjectMemoryProgressReporter {
     let printedDocumentLine = false
     let printedPreparation = false
     let generatedSummary = false

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
-import * as progressReporterModule from '@/modules/extraction/create-extraction-progress-reporter'
+import * as progressReporterModule from '@/entrypoints/cli/commands/utils/project-memory-progress-reporter'
 import * as extractorModule from '@/modules/extraction/create-project-extractor'
 import { terminal } from '@/support/terminal/service'
 import type { ExtractProjectResponse } from '@/types/extraction'
@@ -26,6 +26,7 @@ let extractedResponse: ExtractProjectResponse = {
 }
 const extractorCalls: unknown[] = []
 const progressReports: unknown[] = []
+const summaryReports: unknown[] = []
 let progressDoneCount = 0
 
 mock.module('@inquirer/prompts', () => ({
@@ -69,11 +70,14 @@ describe('RebuildCommand', () => {
         }
         extractorCalls.length = 0
         progressReports.length = 0
+        summaryReports.length = 0
         confirmCalls.length = 0
         progressDoneCount = 0
     }
 
-    const installExtractorSpies = () => {
+    const installExtractorSpies = (
+        options: { mockProgress?: boolean } = {},
+    ) => {
         const extractorSpy = spyOn(
             extractorModule,
             'default',
@@ -91,17 +95,22 @@ describe('RebuildCommand', () => {
                     },
                 }) as ReturnType<typeof extractorModule.default>,
         )
-        const progressSpy = spyOn(
-            progressReporterModule,
-            'default',
-        ).mockImplementation(() => ({
-            done() {
-                progressDoneCount += 1
-            },
-            report(event: unknown) {
-                progressReports.push(event)
-            },
-        }))
+        const progressSpy =
+            options.mockProgress === false
+                ? undefined
+                : spyOn(progressReporterModule, 'default').mockImplementation(
+                      () => ({
+                          done() {
+                              progressDoneCount += 1
+                          },
+                          report(event: unknown) {
+                              progressReports.push(event)
+                          },
+                          summary(result: unknown) {
+                              summaryReports.push(result)
+                          },
+                      }),
+                  )
 
         return { extractorSpy, progressSpy }
     }
@@ -123,6 +132,7 @@ describe('RebuildCommand', () => {
             await (await createCommand()).handle()
             expect(extractorCalls).toEqual([])
             expect(progressReports).toEqual([])
+            expect(summaryReports).toEqual([])
             expect(progressDoneCount).toBe(0)
             expect(confirmCalls).toEqual([
                 {
@@ -132,15 +142,14 @@ describe('RebuildCommand', () => {
                 },
             ])
             expect(logSpy).toHaveBeenCalledWith(
-                JSON.stringify(
-                    { mode: 'rebuild', ok: false, skipped: true },
-                    null,
-                    2,
-                ),
+                'Rebuild canceled. Derived memory was not changed.',
+            )
+            expect(logSpy).not.toHaveBeenCalledWith(
+                expect.stringContaining('"skipped": true'),
             )
         } finally {
             extractorSpy.mockRestore()
-            progressSpy.mockRestore()
+            progressSpy?.mockRestore()
             stdinSpy.mockRestore()
             stderrSpy.mockRestore()
             logSpy.mockRestore()
@@ -167,8 +176,18 @@ describe('RebuildCommand', () => {
             updatedFilePaths: ['src/index.ts'],
             vectorCount: 4,
         }
-        const { extractorSpy, progressSpy } = installExtractorSpies()
-        const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
+        const { extractorSpy, progressSpy } = installExtractorSpies({
+            mockProgress: false,
+        })
+        const output: string[] = []
+        const logSpy = spyOn(terminal, 'log').mockImplementation(message => {
+            output.push(message)
+        })
+        const errorSpy = spyOn(terminal, 'writeError').mockImplementation(
+            message => {
+                output.push(message)
+            },
+        )
         const stdinSpy = spyOn(terminal, 'stdinIsInteractive').mockReturnValue(
             false,
         )
@@ -176,32 +195,34 @@ describe('RebuildCommand', () => {
             terminal,
             'stderrIsInteractive',
         ).mockReturnValue(false)
+        const colorSpy = spyOn(terminal, 'stderrSupportsColor').mockReturnValue(
+            false,
+        )
 
         try {
             await (await createCommand()).handle()
             expect(extractorCalls).toEqual([
                 { mode: 'rebuild', projectRoot: process.cwd() },
             ])
-            expect(progressReports).toEqual([
-                { message: 'complete', phase: 'done', status: 'done' },
-            ])
-            expect(progressDoneCount).toBe(1)
-            expect(logSpy).toHaveBeenCalledWith(
-                JSON.stringify(
-                    {
-                        ...extractedResponse,
-                        mode: 'rebuild',
-                    },
-                    null,
-                    2,
-                ),
+            const renderedOutput = output.join('\n')
+
+            expect(renderedOutput).toContain('Rebuilding project memory')
+            expect(renderedOutput).toContain(
+                '✓ Extracted 0 modules and 4 sections from 2 files',
             )
+            expect(renderedOutput).toContain('✓ Generated project summary')
+            expect(renderedOutput).toContain('Project memory ready')
+            expect(renderedOutput).toContain('Files indexed        2')
+            expect(renderedOutput).toContain('Vectors indexed      4')
+            expect(renderedOutput).not.toContain('"mode": "rebuild"')
         } finally {
             extractorSpy.mockRestore()
-            progressSpy.mockRestore()
+            progressSpy?.mockRestore()
             stdinSpy.mockRestore()
             stderrSpy.mockRestore()
+            colorSpy.mockRestore()
             logSpy.mockRestore()
+            errorSpy.mockRestore()
         }
     })
 })

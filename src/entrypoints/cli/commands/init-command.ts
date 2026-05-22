@@ -13,7 +13,7 @@ import type { ExtractProjectResponse } from '@/types/extraction'
 import type { ExtractionProgressReporter } from '@/types/progress'
 import type { Project } from '@/types/project'
 import BaseCommand from './_base-command'
-import createInitProgressReporter from './init-command/utils/init-progress-reporter'
+import createProjectMemoryProgressReporter from './utils/project-memory-progress-reporter'
 
 export default class InitCommand extends BaseCommand {
     public readonly description =
@@ -26,7 +26,7 @@ export default class InitCommand extends BaseCommand {
         const alreadyInitialized =
             context.configExists &&
             (await readExtractionManifest(context.memoryDir))
-        const progress = createInitProgressReporter()
+        const progress = createProjectMemoryProgressReporter()
 
         let grammars: string[] | undefined
 

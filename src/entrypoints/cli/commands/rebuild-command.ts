@@ -1,9 +1,8 @@
 import { confirm } from '@inquirer/prompts'
-import createExtractionProgressReporter from '@/modules/extraction/create-extraction-progress-reporter'
 import createProjectExtractor from '@/modules/extraction/create-project-extractor'
-import { stringifyPretty } from '@/support/json/io'
 import { terminal } from '@/support/terminal/service'
 import BaseCommand from './_base-command'
+import createProjectMemoryProgressReporter from './utils/project-memory-progress-reporter'
 
 export default class RebuildCommand extends BaseCommand {
     public readonly description =
@@ -13,14 +12,16 @@ export default class RebuildCommand extends BaseCommand {
     public async handle(): Promise<void> {
         const confirmRebuild = confirmRebuildPrompt
         if (!(await confirmRebuild())) {
-            this.print(
-                stringifyPretty({ mode: 'rebuild', ok: false, skipped: true }),
-            )
+            this.print('Rebuild canceled. Derived memory was not changed.')
 
             return
         }
 
-        const progress = createExtractionProgressReporter()
+        this.print('')
+        this.print('Rebuilding project memory')
+        this.print('')
+
+        const progress = createProjectMemoryProgressReporter()
         try {
             const extractor = createProjectExtractor({
                 onProgress: progress.report,
@@ -31,12 +32,7 @@ export default class RebuildCommand extends BaseCommand {
                 projectRoot: process.cwd(),
             })
 
-            this.print(
-                stringifyPretty({
-                    ...result,
-                    mode: 'rebuild',
-                }),
-            )
+            progress.summary(result)
         } finally {
             progress.done()
         }
