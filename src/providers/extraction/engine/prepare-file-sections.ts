@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { buildChunkRetrievalTexts } from '@/database/support/retrieval-texts'
+import { buildSectionRetrievalTexts } from '@/database/support/retrieval-texts'
 import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
 import type createToonStore from '@/providers/persistence/objects/create-toon-store'
@@ -152,7 +152,7 @@ export default async function prepareFileSections(input: {
             contentInline: stored.contentInline,
             endLine: section.endLine,
             heading: section.heading,
-            id: chunkIdFor(
+            id: sectionIdFor(
                 input.file.path,
                 index,
                 section.anchor,
@@ -163,7 +163,7 @@ export default async function prepareFileSections(input: {
             metadata: section.metadata ?? {},
             path: section.path,
             payloadRef: stored.payloadRef,
-            retrievalTexts: buildChunkRetrievalTexts({
+            retrievalTexts: buildSectionRetrievalTexts({
                 anchor: section.anchor,
                 content: section.content,
                 language,
@@ -227,12 +227,11 @@ function sourceIdForPath(path: string): string {
     return `source_${contentHash(path).slice(0, 32)}`
 }
 
-function chunkIdFor(
+function sectionIdFor(
     path: string,
     index: number,
     anchor: string,
     hash: string,
 ): string {
-    // Compatibility: extracted sections are still persisted with legacy `chunk_*` IDs.
-    return `chunk_${contentHash(`${path}:${index}:${anchor}:${hash}`).slice(0, 32)}`
+    return `section_${contentHash(`${path}:${index}:${anchor}:${hash}`).slice(0, 32)}`
 }

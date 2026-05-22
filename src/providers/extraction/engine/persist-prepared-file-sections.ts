@@ -1,17 +1,11 @@
 import indexSearchDocument from '@/database/actions/index-search-document'
-import insertChunk from '@/database/actions/insert-chunk'
+import insertSection from '@/database/actions/insert-section'
 import insertSource from '@/database/actions/insert-source'
 import upsertRetrievalDocument from '@/database/actions/upsert-retrieval-document'
 import { linkTarget, upsertNode } from '@/database/services/taxonomy'
 import type { PreparedFile } from './prepare-file-sections'
 import { EXTRACTED_FILE_SOURCE_TYPE } from './source-types'
 
-/**
- * Compatibility boundary: extraction code calls these units "sections", but
- * persisted storage still uses the legacy "chunk" term. Do not rename the
- * `chunks` table, `chunk_*` IDs, `targetType: 'chunk'`, or manifest fields
- * without an explicit migration and compatibility plan.
- */
 export default async function persistPreparedFileSections(input: {
     extractedAt: string
     preparedFile: PreparedFile
@@ -34,7 +28,7 @@ export default async function persistPreparedFileSections(input: {
     const taxonomyNode = await ensurePathTaxonomy(rootNodeId, preparedFile.path)
 
     for (const section of preparedFile.sections) {
-        await insertChunk({
+        await insertSection({
             anchor: section.anchor,
             anchor_type: section.anchorType,
             content_hash: section.contentHash,
@@ -61,7 +55,7 @@ export default async function persistPreparedFileSections(input: {
         await linkTarget({
             nodeId: taxonomyNode.id,
             targetId: section.id,
-            targetType: 'chunk',
+            targetType: 'section',
         })
         await indexSearchDocument({
             content: section.contentInline ?? section.summary,
@@ -69,7 +63,7 @@ export default async function persistPreparedFileSections(input: {
             id: section.id,
             kind: section.kind,
             task: section.path,
-            type: 'chunk',
+            type: 'section',
         })
         await upsertRetrievalDocument({
             anchor: section.anchor,
@@ -80,7 +74,7 @@ export default async function persistPreparedFileSections(input: {
             sourceRole: preparedFile.sourceRole,
             summary: section.summary,
             targetId: section.id,
-            targetType: 'chunk',
+            targetType: 'section',
             updatedAt: extractedAt,
         })
     }

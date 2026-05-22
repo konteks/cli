@@ -4,7 +4,7 @@ Konteks memory is not one long note. It is a set of connected surfaces that help
 
 The model has two sources of truth:
 
-* **Derived memory** comes from the repository. It is rebuilt from files, metadata, chunks, modules, retrieval text, and embeddings.
+* **Derived memory** comes from the repository. It is rebuilt from files, metadata, sections, modules, retrieval text, and embeddings.
 * **Durable memory** comes from agent sessions. It is saved intentionally as observations, decisions, constraints, preferences, blockers, code insights, and diary entries.
 
 Derived memory is allowed to change when the project changes. Durable memory is preserved until it is explicitly forgotten or suppressed.
@@ -33,9 +33,9 @@ graph LR
 
 ## 1. The Content Surface
 
-The first surface is made from the repository itself. During extraction, Konteks reads included files and divides them into chunks.
+The first surface is made from the repository itself. During extraction, Konteks reads included files and divides them into sections.
 
-A chunk is the smallest derived memory unit Konteks expects to retrieve directly. It carries the content plus the clues that make the content useful later: path, anchor, kind, summary, topics, and parser context when available.
+A section is the smallest derived memory unit Konteks expects to retrieve directly. It carries the content plus the clues that make the content useful later: path, anchor, kind, summary, topics, and parser context when available.
 
 This surface answers:
 
@@ -43,16 +43,16 @@ This surface answers:
 * What is the smallest useful section to inspect?
 * Where should an agent look next?
 
-Content memory is rebuildable. If a file changes, the affected chunks can be replaced. If a file disappears, stale chunks can be removed.
+Content memory is rebuildable. If a file changes, the affected sections can be replaced. If a file disappears, stale sections can be removed.
 
 ## 2. The Map Surface
 
-Chunks are useful, but an agent also needs orientation. Konteks builds a map above individual chunks.
+Sections are useful, but an agent also needs orientation. Konteks builds a map above individual sections.
 
 The current map is shaped mainly by:
 
-* **Sources**: the files that produced chunks.
-* **Path taxonomy**: a directory-shaped grouping of chunks.
+* **Sources**: the files that produced sections.
+* **Path taxonomy**: a directory-shaped grouping of sections.
 * **Modules**: summaries of top-level project areas, including file and section counts.
 * **Project metadata**: package, workspace, dependency, entry point, README, and technology signals when available.
 
@@ -60,13 +60,13 @@ This surface answers:
 
 * What are the major areas of the project?
 * Which files belong together?
-* Which project areas are likely important before reading a specific chunk?
+* Which project areas are likely important before reading a specific section?
 
 Konteks also has a graph layer for named entities and relations. Recall can search those entities, traverse nearby relations, and include historical relations when a task asks about prior decisions or changes. In the current extraction flow, the strongest automatically rebuilt map comes from files, paths, modules, and metadata.
 
 ## 3. The Retrieval Surface
 
-The retrieval surface is the search-facing version of memory. It is built from chunks, modules, saved observations, and diary entries.
+The retrieval surface is the search-facing version of memory. It is built from sections, modules, saved observations, and diary entries.
 
 Konteks does not rely only on raw content. It prepares retrieval text that includes both the content and the context around it. This lets recall match a task against what a section means, where it lives, and why it may matter.
 
@@ -81,7 +81,7 @@ This surface answers:
 * Which memories are semantically close to the task?
 * Which candidates should be ranked higher before recall assembles the final context?
 
-During extraction, chunks and module artifacts receive embeddings. Saved observations and diary entries receive retrieval text when they are saved, so they can also participate in recall and warm-up flows.
+During extraction, sections and module artifacts receive embeddings. Saved observations and diary entries receive retrieval text when they are saved, so they can also participate in recall and warm-up flows.
 
 ## 4. The Observation Surface
 
@@ -132,7 +132,7 @@ This view favors:
 
 * Project summary and technologies.
 * Entry points and key files.
-* Important modules and highlighted chunks.
+* Important modules and highlighted sections.
 * Recent durable decisions, constraints, and conventions.
 
 ## 7. The Recall View
@@ -153,7 +153,7 @@ There are three ways memory can be changed:
 * **Invalidate** suppresses memory that should no longer guide future work.
 * **Hard delete** removes memory when it should not remain.
 
-Forgetting can target saved observations, diary entries, extracted chunks, and graph relations depending on how it is requested. Each successful change is recorded as a memory event.
+Forgetting can target saved observations, diary entries, extracted sections, and graph relations depending on how it is requested. Each successful change is recorded as a memory event.
 
 ---
 

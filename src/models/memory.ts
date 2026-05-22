@@ -7,7 +7,7 @@ export type ObservationKind =
     | 'note'
     | 'preference'
 
-type MemoryType = 'chunk' | 'diary' | 'memory' | 'module'
+type MemoryType = 'section' | 'diary' | 'memory' | 'module'
 
 export type MemoryEntity = {
     id: string
@@ -107,7 +107,7 @@ export type WarmUpHighlight = {
     }
     sourceRole?: string
     tokenCost: number
-    type: 'chunk' | 'diary' | 'memory' | 'module'
+    type: 'section' | 'diary' | 'memory' | 'module'
 }
 
 export type WarmUpGuidance = {

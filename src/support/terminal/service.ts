@@ -2,7 +2,7 @@ import { stringifyPretty } from '@/support/json/io'
 
 type WritableStream = {
     isTTY?: boolean
-    write(chunk: string): unknown
+    write(section: string): unknown
 }
 
 type ReadableStream = {

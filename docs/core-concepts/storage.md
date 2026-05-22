@@ -33,7 +33,7 @@ The project config controls the memory directory location, the threshold for sto
 
 Most memory starts as structured records. These records describe the durable and derived parts of the memory model:
 
-* Sources and chunks from extraction.
+* Sources and sections from extraction.
 * Module summaries.
 * Retrieval text and embedding records.
 * Durable observations.

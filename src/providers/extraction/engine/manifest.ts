@@ -14,11 +14,10 @@ export type { ExtractionMode }
 
 export type ExtractionManifest = {
     version: 1
-    // "Mined" is legacy terminology; current code calls this extraction, but the persisted field stays stable.
-    minedAt: string
+    extractedAt: string
     mode: ExtractionMode
     fileCount: number
-    chunkCount?: number
+    sectionCount?: number
     files: ScannedFile[]
     metadata: ProjectMetadata
     summaryRef: string
@@ -27,14 +26,14 @@ export type ExtractionManifest = {
 }
 
 type ExtractionDiagnostics = ScanDiagnostics & {
-    chunkCount: number
+    sectionCount: number
     detectedParserLanguages: string[]
     embeddedCount: number
     embeddingReusedCount: number
     languageCount: number
     loadedParserCount: number
     vectorCount: number
-    filesTruncatedByChunkLimit: number
+    filesTruncatedBySectionLimit: number
     parserFallbackFiles: number
     parserUsedFiles: number
 }
@@ -47,15 +46,14 @@ type ExtractionFreshness = {
     lastExtractedAt?: string
 }
 
-function legacyExtractionManifestPath(memoryDir: string): string {
-    // Keep the old filename so existing project memory remains readable.
-    return join(memoryDir, 'mine-manifest.json')
+function extractionManifestPath(memoryDir: string): string {
+    return join(memoryDir, 'extraction-manifest.json')
 }
 
 export async function readExtractionManifest(
     memoryDir: string,
 ): Promise<ExtractionManifest | undefined> {
-    const path = legacyExtractionManifestPath(memoryDir)
+    const path = extractionManifestPath(memoryDir)
     if (!(await pathExists(path))) {
         return undefined
     }
@@ -68,7 +66,7 @@ export async function writeExtractionManifest(
     manifest: ExtractionManifest,
 ): Promise<void> {
     await writeFile(
-        legacyExtractionManifestPath(memoryDir),
+        extractionManifestPath(memoryDir),
         `${JSON.stringify(manifest, null, 2)}\n`,
     )
 }
@@ -92,7 +90,7 @@ export async function getExtractionFreshness(
     if (staleReason) {
         return {
             changedFileCount: countChangedFiles(manifest.files, currentFiles),
-            lastExtractedAt: manifest.minedAt,
+            lastExtractedAt: manifest.extractedAt,
             reason: staleReason,
             recommendedCommand: 'konteks repair',
             status: 'stale',
@@ -101,7 +99,7 @@ export async function getExtractionFreshness(
 
     return {
         changedFileCount: 0,
-        lastExtractedAt: manifest.minedAt,
+        lastExtractedAt: manifest.extractedAt,
         reason: `Project extraction is current for ${manifest.fileCount} files.`,
         status: 'fresh',
     }

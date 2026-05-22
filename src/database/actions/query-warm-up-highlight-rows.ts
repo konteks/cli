@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { chunks, retrievalDocuments } from '@/database/schema'
+import { retrievalDocuments, sections } from '@/database/schema'
 import type { WarmUpHighlight } from '@/models/memory'
 import getDb from './_db'
 
@@ -26,23 +26,23 @@ export default async function queryWarmUpHighlightRows(): Promise<
             summary: retrievalDocuments.summary,
             target_id: retrievalDocuments.targetId,
             target_type: retrievalDocuments.targetType,
-            token_count: chunks.tokenCount,
+            token_count: sections.tokenCount,
             updated_at: retrievalDocuments.updatedAt,
         })
         .from(retrievalDocuments)
         .leftJoin(
-            chunks,
+            sections,
             sql`
-                ${chunks.id} = ${retrievalDocuments.targetId}
-                and ${retrievalDocuments.targetType} = 'chunk'
+                ${sections.id} = ${retrievalDocuments.targetId}
+                and ${retrievalDocuments.targetType} = 'section'
             `,
         )
         .where(sql`
-            ${retrievalDocuments.targetType} in ('chunk', 'module', 'memory', 'diary')
+            ${retrievalDocuments.targetType} in ('section', 'module', 'memory', 'diary')
             and not exists (
-                select 1 from chunks dc
+                select 1 from sections dc
                 where dc.id = ${retrievalDocuments.targetId}
-                  and ${retrievalDocuments.targetType} = 'chunk'
+                  and ${retrievalDocuments.targetType} = 'section'
                   and (dc.deleted_at is not null or dc.suppressed_at is not null)
             )
             and not exists (
@@ -59,7 +59,7 @@ export default async function queryWarmUpHighlightRows(): Promise<
             )
         `)
         .orderBy(
-            sql`case ${retrievalDocuments.targetType} when 'module' then 0 when 'chunk' then 1 else 2 end`,
+            sql`case ${retrievalDocuments.targetType} when 'module' then 0 when 'section' then 1 else 2 end`,
             sql`case ${retrievalDocuments.sourceRole}
                 when 'app_code' then 0
                 when 'package_config' then 1

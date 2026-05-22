@@ -54,10 +54,10 @@ export async function extractProjectSectionsWithDatabase(
     )
     if (options.mode === 'resume') {
         options.onProgress?.({
-            chunkCount: totalSectionCount,
             current: options.totalFileCount,
             message: `Resumed extraction from ${options.totalFileCount} files`,
-            phase: 'chunks',
+            phase: 'sections',
+            sectionCount: totalSectionCount,
             status: 'done',
             total: options.totalFileCount,
         })
@@ -65,7 +65,7 @@ export async function extractProjectSectionsWithDatabase(
     const embeddingRun = options.embeddingProvider
         ? await generateTargetEmbeddings(
               options.embeddingProvider,
-              ['chunk', 'module'],
+              ['section', 'module'],
               options.extractedAt,
               { onProgress: options.onProgress },
           )

@@ -14,7 +14,7 @@ export function targetImportance(type: WarmUpHighlight['type']): number {
     if (type === 'module') {
         return 80
     }
-    if (type === 'chunk') {
+    if (type === 'section') {
         return 60
     }
     return 40

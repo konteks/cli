@@ -72,17 +72,17 @@ describe('extractProject', () => {
 
         expect(result.ok).toBe(true)
         expect(result.fileCount).toBe(2)
-        expect(result.chunkCount).toBeGreaterThan(1)
+        expect(result.sectionCount).toBeGreaterThan(1)
         expect(result.technologies).toEqual([])
         expect(manifest?.summaryRef).toBe(result.summaryRef)
         expect(manifest?.diagnostics).toMatchObject({
-            chunkCount: result.chunkCount,
             detectedParserLanguages: [],
             filesIncluded: 2,
             filesSkipped: {
                 secret: 1,
             },
-            filesTruncatedByChunkLimit: 0,
+            filesTruncatedBySectionLimit: 0,
+            sectionCount: result.sectionCount,
         })
         expect(manifest?.files.map(file => file.path)).toEqual([
             'README.md',
@@ -112,7 +112,7 @@ describe('extractProject', () => {
         expect(stale.recommendedCommand).toBe('konteks repair')
     })
 
-    it('caps chunks per file and reports the diagnostic', async () => {
+    it('caps sections per file and reports the diagnostic', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(
             join(projectRoot, 'src', 'many.md'),
@@ -130,8 +130,8 @@ describe('extractProject', () => {
         const result = await extractTestProject(context, 'reindex')
         const manifest = await readExtractionManifest(context.memoryDir)
 
-        expect(result.chunkCount).toBeGreaterThanOrEqual(200)
-        expect(manifest?.diagnostics?.filesTruncatedByChunkLimit).toBe(1)
+        expect(result.sectionCount).toBeGreaterThanOrEqual(200)
+        expect(manifest?.diagnostics?.filesTruncatedBySectionLimit).toBe(1)
     })
 
     it('stores the manifest as local JSON', async () => {
@@ -143,7 +143,7 @@ describe('extractProject', () => {
         await extractTestProject(context, 'changed')
 
         const rawManifest = await readFile(
-            join(projectRoot, '.konteks', 'mine-manifest.json'),
+            join(projectRoot, '.konteks', 'extraction-manifest.json'),
             'utf8',
         )
         expect(JSON.parse(rawManifest).mode).toBe('changed')
@@ -176,16 +176,16 @@ describe('extractProject', () => {
         await extractTestProject(context, 'reindex')
 
         const rawManifest = await readFile(
-            join(projectRoot, '.konteks', 'mine-manifest.json'),
+            join(projectRoot, '.konteks', 'extraction-manifest.json'),
             'utf8',
         )
         const manifest = JSON.parse(rawManifest)
 
         expect(manifest.mode).toBe('reindex')
-        expect(manifest.diagnostics.chunkCount).toBeGreaterThan(0)
+        expect(manifest.diagnostics.sectionCount).toBeGreaterThan(0)
     })
 
-    it('changed mode removes deleted-file chunks and preserves unchanged chunks', async () => {
+    it('changed mode removes deleted-file sections and preserves unchanged sections', async () => {
         const projectRoot = await makeTempProject()
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
@@ -207,7 +207,7 @@ describe('extractProject', () => {
         expect(paths).toContain('src/new.txt')
     })
 
-    it('extracts repeated anchors with identical content without chunk ID collisions', async () => {
+    it('extracts repeated anchors with identical content without section ID collisions', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(
             join(projectRoot, 'README.md'),
@@ -220,8 +220,8 @@ describe('extractProject', () => {
         const result = await extractTestProject(context, 'reindex')
         const manifest = await readExtractionManifest(context.memoryDir)
 
-        expect(manifest?.diagnostics?.chunkCount).toBe(result.chunkCount)
-        expect(result.chunkCount).toBeGreaterThanOrEqual(3)
+        expect(manifest?.diagnostics?.sectionCount).toBe(result.sectionCount)
+        expect(result.sectionCount).toBeGreaterThanOrEqual(3)
     })
 
     it('fails when a required Tree-sitter parser fails', async () => {

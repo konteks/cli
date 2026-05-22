@@ -1,5 +1,5 @@
 type ExtractionProgressPhase =
-    | 'chunks'
+    | 'sections'
     | 'database'
     | 'done'
     | 'embeddings'
@@ -18,7 +18,7 @@ export type ExtractionProgressEvent = {
     /**
      * @deprecated change the name to sectionCount
      */
-    chunkCount?: number
+    sectionCount?: number
     current?: number
     downloadFile?: string
     downloadLoadedBytes?: number

@@ -1,8 +1,8 @@
-const maxChunkContentChars = 3000
+const maxSectionContentChars = 3000
 const maxEmbeddingTextChars = 2500
 const maxFtsTextChars = 6000
 
-export function buildChunkRetrievalTexts(input: {
+export function buildSectionRetrievalTexts(input: {
     anchor?: string
     content: string
     language: string
@@ -23,7 +23,7 @@ export function buildChunkRetrievalTexts(input: {
     ]
         .filter(Boolean)
         .join('\n')
-    const contentExcerpt = input.content.slice(0, maxChunkContentChars)
+    const contentExcerpt = input.content.slice(0, maxSectionContentChars)
 
     return {
         embeddingText: [metadata, contentExcerpt]

@@ -36,9 +36,9 @@ export default function createInitProgressReporter(): InitProgressReporter {
                 return
             }
 
-            if (event.phase === 'chunks' && event.status === 'done') {
+            if (event.phase === 'sections' && event.status === 'done') {
                 finishPreparation()
-                sectionCount = event.chunkCount ?? 0
+                sectionCount = event.sectionCount ?? 0
                 fileCount = event.current ?? event.total ?? 0
                 return
             }
@@ -77,7 +77,7 @@ export default function createInitProgressReporter(): InitProgressReporter {
         summary(result) {
             inline.done()
             if (!printedDocumentLine) {
-                sectionCount = result.chunkCount
+                sectionCount = result.sectionCount
                 fileCount = result.fileCount
                 printCheck(preparedDocumentsMessage(result.vectorCount))
             }
@@ -193,9 +193,12 @@ export default function createInitProgressReporter(): InitProgressReporter {
     }
 
     function documentsExtractedLine(result: ExtractProjectResponse): string {
-        const moduleCount = Math.max(0, result.vectorCount - result.chunkCount)
+        const moduleCount = Math.max(
+            0,
+            result.vectorCount - result.sectionCount,
+        )
 
-        return `${color.dim('Documents extracted'.padEnd(18))} ${text.count(result.vectorCount)} (${text.count(result.chunkCount)} sections, ${text.count(moduleCount)} modules)`
+        return `${color.dim('Documents extracted'.padEnd(18))} ${text.count(result.vectorCount)} (${text.count(result.sectionCount)} sections, ${text.count(moduleCount)} modules)`
     }
 }
 

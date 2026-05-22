@@ -12,7 +12,7 @@ export type ExtractProjectResponse = {
     fileCount: number
     extractedAt: string
     summaryRef: string
-    chunkCount: number
+    sectionCount: number
     detectedParserLanguages: string[]
     embeddedCount: number
     embeddingReusedCount: number

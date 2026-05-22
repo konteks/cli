@@ -1,11 +1,11 @@
 import { and, count, eq, isNull } from 'drizzle-orm'
 import {
-    chunks,
     diaryEntries,
     memoryEvents,
     modules,
     observations,
     retrievalDocuments,
+    sections,
     sources,
     targetEmbeddings,
 } from '@/database/schema'
@@ -17,7 +17,7 @@ export default async function queryProjectMemoryStats(): Promise<ProjectMemorySt
     const db = await getDb()
     const [
         files,
-        sections,
+        sectionCount,
         moduleCount,
         memories,
         diaryCount,
@@ -34,9 +34,12 @@ export default async function queryProjectMemoryStats(): Promise<ProjectMemorySt
         countFrom(
             db
                 .select({ count: count() })
-                .from(chunks)
+                .from(sections)
                 .where(
-                    and(isNull(chunks.deletedAt), isNull(chunks.suppressedAt)),
+                    and(
+                        isNull(sections.deletedAt),
+                        isNull(sections.suppressedAt),
+                    ),
                 ),
         ),
         countFrom(db.select({ count: count() }).from(modules)),
@@ -75,7 +78,7 @@ export default async function queryProjectMemoryStats(): Promise<ProjectMemorySt
         memories,
         modules: moduleCount,
         retrievalDocuments: retrievalDocumentCount,
-        sections,
+        sections: sectionCount,
     }
 }
 

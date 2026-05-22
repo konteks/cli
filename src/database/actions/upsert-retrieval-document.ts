@@ -12,7 +12,7 @@ export type RetrievalDocumentInput = {
     sourceRole?: string
     summary?: string
     targetId: string
-    targetType: 'chunk' | 'diary' | 'memory' | 'module'
+    targetType: 'section' | 'diary' | 'memory' | 'module'
     updatedAt: string
 }
 
@@ -53,8 +53,11 @@ export default async function upsertRetrievalDocument(
             ),
         )
     await db.insert(retrievalDocumentsFts).values({
-        ftsText: input.ftsText,
-        targetId: input.targetId,
-        targetType: input.targetType,
+        anchor: value.anchor,
+        ftsText: value.ftsText,
+        path: value.path,
+        sourceRole: value.sourceRole,
+        targetId: value.targetId,
+        targetType: value.targetType,
     })
 }

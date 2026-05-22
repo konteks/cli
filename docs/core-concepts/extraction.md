@@ -10,11 +10,11 @@ graph LR
     Scan --> Select[Select Files]
     Select --> Metadata[Project Metadata]
     Select --> Section[Section Files]
-    Section --> Chunks[Content Chunks]
-    Chunks --> Retrieval[Retrieval Text]
+    Section --> Sections[Content Sections]
+    Sections --> Retrieval[Retrieval Text]
     Retrieval --> Index[Search Index]
     Retrieval --> Embed[Embeddings]
-    Chunks --> Modules[Module Summaries]
+    Sections --> Modules[Module Summaries]
     Modules --> Index
     Modules --> Embed
     Index --> Memory[(Derived Memory)]
@@ -50,11 +50,11 @@ This is the boundary between derived and durable memory. Derived memory can be r
 
 Before Konteks studies individual files, it builds a small portrait of the project. It looks for package information, entry points, scripts, dependencies, workspace hints, README-derived description, and broad technology signals.
 
-This portrait gives later memory a frame. A chunk from a file is more useful when the system also understands the package, workspace, and technology context around it.
+This portrait gives later memory a frame. A section from a file is more useful when the system also understands the package, workspace, and technology context around it.
 
-## 4. The Sectioning: Split Files into Chunks
+## 4. The Sectioning: Split Files into Sections
 
-A file is often too large and too mixed to be useful as one memory unit. Sectioning turns each included file into chunks, which are the derived memory units Konteks expects to retrieve directly.
+A file is often too large and too mixed to be useful as one memory unit. Sectioning turns each included file into sections, which are the derived memory units Konteks expects to retrieve directly.
 
 Konteks chooses the sectioning path from the file shape:
 
@@ -64,11 +64,11 @@ Konteks chooses the sectioning path from the file shape:
 * JSON files are sectioned by top-level object keys when possible.
 * Other text files are sectioned into bounded word groups.
 
-Empty files produce no chunks. Very large sections are split into smaller ones, and each file has a chunk limit so one unusually large file cannot crowd out the rest of the project.
+Empty files produce no sections. Very large sections are split into smaller ones, and each file has a section limit so one unusually large file cannot crowd out the rest of the project.
 
 ## 5. The Name and Place: Attach Context
 
-A chunk is not just text. It needs a name, a place, and enough surrounding detail to be useful later.
+A section is not just text. It needs a name, a place, and enough surrounding detail to be useful later.
 
 Konteks attaches context such as:
 
@@ -78,11 +78,11 @@ Konteks attaches context such as:
 * Topics inferred from the path, summary, and content.
 * Its content, either stored directly when small enough or referenced separately when larger.
 
-Konteks also records the file as a source and links chunks into a path-based taxonomy. That gives recall a way to move from one matched section to the surrounding project area.
+Konteks also records the file as a source and links sections into a path-based taxonomy. That gives recall a way to move from one matched section to the surrounding project area.
 
 ## 6. The Search Voice: Build Retrieval Text
 
-The raw chunk body is not always the best search surface. A section often needs its path, role, language, anchor, topics, and summary beside it before it can be found reliably.
+The raw section body is not always the best search surface. A section often needs its path, role, language, anchor, topics, and summary beside it before it can be found reliably.
 
 Konteks therefore prepares retrieval text for each searchable target:
 
@@ -93,17 +93,17 @@ This gives recall two voices for the same memory: one for exact project terms, a
 
 ## 7. The Map: Rebuild Module Artifacts
 
-Once chunks are in place, Konteks rebuilds module artifacts from the current chunk set.
+Once sections are in place, Konteks rebuilds module artifacts from the current section set.
 
 A module artifact is a higher-level map of a project area. It summarizes a top-level path by file count, section count, source role, path-derived topics, and package metadata when available.
 
-Modules matter because an agent often needs orientation before details. Recall can surface a project area first, then narrow into individual chunks.
+Modules matter because an agent often needs orientation before details. Recall can surface a project area first, then narrow into individual sections.
 
 ## 8. The Meaning Trace: Generate Embeddings
 
-After retrieval text exists, Konteks can generate embeddings for extracted chunks and module artifacts.
+After retrieval text exists, Konteks can generate embeddings for extracted sections and module artifacts.
 
-An embedding is a compact representation of what a chunk or module is about. It lets recall compare related meanings even when the task and the project use different words.
+An embedding is a compact representation of what a section or module is about. It lets recall compare related meanings even when the task and the project use different words.
 
 Konteks reuses an existing embedding when the retrieval text and embedding model are unchanged. When the text changes, the target is embedded again so semantic recall follows the current repository state.
 

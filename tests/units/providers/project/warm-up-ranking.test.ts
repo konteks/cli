@@ -10,7 +10,7 @@ import {
 describe('providers/project/warm-up-ranking', () => {
     it.each([
         ['module' as const, 80],
-        ['chunk' as const, 60],
+        ['section' as const, 60],
         ['memory' as const, 40],
     ])('scores target type %p as %p', (type, expected) => {
         expect(targetImportance(type)).toBe(expected)

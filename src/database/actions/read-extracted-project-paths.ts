@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { chunks, sources } from '@/database/schema'
+import { sections, sources } from '@/database/schema'
 import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
 import getDb from './_db'
 
@@ -10,7 +10,7 @@ export default async function readExtractedProjectPaths(): Promise<
     const rows = await db
         .selectDistinct({ path: sources.uri })
         .from(sources)
-        .innerJoin(chunks, eq(chunks.sourceId, sources.id))
+        .innerJoin(sections, eq(sections.sourceId, sources.id))
         .where(eq(sources.type, EXTRACTED_FILE_SOURCE_TYPE))
 
     return new Set(rows.flatMap(row => (row.path ? [row.path] : [])))

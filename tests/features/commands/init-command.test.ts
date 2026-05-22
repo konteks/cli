@@ -166,7 +166,11 @@ describe('InitCommand', () => {
         const projectRoot = await makeTempProject()
 
         await init(projectRoot)
-        const manifestPath = join(projectRoot, '.konteks', 'mine-manifest.json')
+        const manifestPath = join(
+            projectRoot,
+            '.konteks',
+            'extraction-manifest.json',
+        )
         const firstManifest = await readFile(manifestPath, 'utf8')
 
         await init(projectRoot)
@@ -228,7 +232,7 @@ describe('InitCommand', () => {
         const output = await withInteractiveTerminal(() => init(projectRoot))
         const manifest = JSON.parse(
             await readFile(
-                join(projectRoot, '.konteks', 'mine-manifest.json'),
+                join(projectRoot, '.konteks', 'extraction-manifest.json'),
                 'utf8',
             ),
         )
@@ -310,7 +314,7 @@ describe('InitCommand', () => {
 
         await expect(
             readFile(
-                join(projectRoot, '.konteks', 'mine-manifest.json'),
+                join(projectRoot, '.konteks', 'extraction-manifest.json'),
                 'utf8',
             ),
         ).resolves.toContain('"version": 1')
@@ -320,7 +324,11 @@ describe('InitCommand', () => {
         const projectRoot = await makeTempProject()
 
         await init(projectRoot)
-        const manifestPath = join(projectRoot, '.konteks', 'mine-manifest.json')
+        const manifestPath = join(
+            projectRoot,
+            '.konteks',
+            'extraction-manifest.json',
+        )
         const firstManifest = JSON.parse(await readFile(manifestPath, 'utf8'))
         await rm(manifestPath)
 
@@ -334,8 +342,8 @@ describe('InitCommand', () => {
             'Documents extracted 4 (2 sections, 2 modules)',
         )
         expect(output).not.toContain('Extracted 5 documents from 0 files')
-        expect(resumedManifest.diagnostics.chunkCount).toBe(
-            firstManifest.diagnostics.chunkCount,
+        expect(resumedManifest.diagnostics.sectionCount).toBe(
+            firstManifest.diagnostics.sectionCount,
         )
         expect(
             resumedManifest.diagnostics.embeddingReusedCount,

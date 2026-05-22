@@ -28,7 +28,7 @@ If the task has no useful searchable terms, recall returns no evidence instead o
 
 ## 2. The First Pass: Search Retrieval Memory
 
-Konteks first searches retrieval memory. This is the search-facing layer built from chunks, modules, saved observations, and diary entries.
+Konteks first searches retrieval memory. This is the search-facing layer built from sections, modules, saved observations, and diary entries.
 
 The first pass favors text-grounded candidates. It looks for exact project vocabulary such as symbols, paths, modules, commands, decisions, and topic words. When compatible embeddings are available, semantic similarity can improve the rank of those text-grounded candidates.
 
@@ -73,7 +73,7 @@ A recall package contains:
 
 * **Brief**: a short summary of the recall strength and evidence.
 * **Primary targets**: files, modules, or records to inspect first.
-* **Memories**: selected chunks, modules, observations, and diary entries.
+* **Memories**: selected sections, modules, observations, and diary entries.
 * **Graph evidence**: active relation context when available.
 * **History evidence**: superseded or invalidated relation context when relevant.
 * **Quality**: `strong`, `partial`, or `weak`.

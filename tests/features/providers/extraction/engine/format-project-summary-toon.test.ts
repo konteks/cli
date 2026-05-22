@@ -4,6 +4,7 @@ import formatProjectSummaryToon from '@/providers/extraction/engine/format-proje
 describe('providers/extraction/engine/toon-summary', () => {
     it('formats project metadata and caps listed files', () => {
         const output = formatProjectSummaryToon({
+            extractedAt: '2026-01-01T00:00:00.000Z',
             fileCount: 2,
             files: [
                 {
@@ -45,7 +46,6 @@ describe('providers/extraction/engine/toon-summary', () => {
                 workspaceGlobs: [],
                 workspaceManager: undefined,
             },
-            minedAt: '2026-01-01T00:00:00.000Z',
             mode: 'full',
             projectRoot: '/repo',
         })

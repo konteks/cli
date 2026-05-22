@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm'
 import {
-    chunks,
     diaryEntries,
     observations,
+    sections,
     taxonomyLinks,
 } from '@/database/schema'
 import type { ForgetTarget } from '@/database/support/forget-target'
@@ -12,14 +12,14 @@ export default async function hardDeleteForgetTarget(
     target: ForgetTarget,
 ): Promise<boolean> {
     const db = await getDb()
-    if (target.kind === 'chunk') {
+    if (target.kind === 'section') {
         await db
             .delete(taxonomyLinks)
             .where(eq(taxonomyLinks.targetId, target.id))
     }
 
-    if (target.kind === 'chunk') {
-        await db.delete(chunks).where(eq(chunks.id, target.id))
+    if (target.kind === 'section') {
+        await db.delete(sections).where(eq(sections.id, target.id))
     } else if (target.kind === 'observation') {
         await db.delete(observations).where(eq(observations.id, target.id))
     } else if (target.kind === 'diary_entry') {

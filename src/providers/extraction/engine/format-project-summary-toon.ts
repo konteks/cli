@@ -3,7 +3,7 @@ import type { ScannedFile } from './file-scan'
 
 type ProjectSummaryInput = {
     projectRoot: string
-    minedAt: string
+    extractedAt: string
     fileCount: number
     mode: string
     metadata: ProjectMetadata
@@ -24,7 +24,7 @@ export default function formatProjectSummaryToon(
     return [
         'project:',
         `  root: ${input.projectRoot}`,
-        `  mined_at: ${input.minedAt}`,
+        `  extracted_at: ${input.extractedAt}`,
         `  mode: ${input.mode}`,
         `  file_count: ${input.fileCount}`,
         `  name: ${input.metadata.name ?? ''}`,
