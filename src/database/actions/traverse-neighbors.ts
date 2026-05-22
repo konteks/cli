@@ -1,11 +1,19 @@
-import type { EntityRecord, GraphNeighbor } from '@/database/services/graph'
+import type EntityRecord from './_types/entity-record'
 import type { EntityRow } from './query-entity-search-rows'
 import queryNeighborRows from './query-neighbor-rows'
 
 export default async function traverseNeighbors(
     entityId: string,
     options: { maxDepth?: number; limit?: number } = {},
-): Promise<GraphNeighbor[]> {
+): Promise<
+    {
+        depth: number
+        relationId: string
+        predicate: string
+        direction: 'incoming' | 'outgoing'
+        entity: EntityRecord
+    }[]
+> {
     const rows = await queryNeighborRows(
         entityId,
         clampDepth(options.maxDepth ?? 1),

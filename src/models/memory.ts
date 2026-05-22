@@ -54,24 +54,6 @@ export type SaveResult = {
     skippedMemories?: number
 }
 
-export type GraphNeighbor = {
-    depth: number
-    relationId: string
-    predicate: string
-    direction: 'incoming' | 'outgoing'
-    entity: MemoryEntity
-}
-
-export type HistoricalRelation = {
-    relationId: string
-    predicate: string
-    status: 'invalidated' | 'superseded'
-    validFrom?: string
-    validTo?: string
-    subject: MemoryEntity
-    object: MemoryEntity
-}
-
 export type RecallGraphItem = {
     entityId: string
     entityName: string
