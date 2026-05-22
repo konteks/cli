@@ -14,9 +14,12 @@ import {
     validateSessionQuality,
     withProjectUpdateSummary,
 } from '@/database/support/save-policy'
+import { generateEmbeddingsForTargets } from '@/modules/embeddings/generate-target-embeddings'
+import HuggingFaceEmbeddingProvider from '@/modules/embeddings/hugging-face-embedding-provider'
 import { contentHash } from '@/modules/persistence/objects/content'
 import createToonStore from '@/modules/persistence/objects/create-toon-store'
 import storePayload from '@/modules/persistence/objects/store-payload'
+import type { EmbeddingProviderContract } from '@/types/embedding-provider'
 import type { ObservationKind, SaveResult } from '@/types/memory'
 import type { Project } from '@/types/project'
 
@@ -39,17 +42,27 @@ export type SaveMemoriesInput = {
 }
 
 export type SaveOptions = {
+    embeddingProvider?: EmbeddingProviderContract
     projectUpdate?: {
         deletedFilePaths: string[]
         updatedFilePaths: string[]
     }
 }
 
+type MemoryWriteResult = SaveResult & {
+    createdAt?: string
+    newTargetId?: string
+}
+
+type SaveMemoryOptions = SaveOptions & {
+    embedAfterSave?: boolean
+}
+
 async function saveKonteksMemory(
     context: Project,
     input: SaveMemoryInput,
-    _options: SaveOptions = {},
-): Promise<SaveResult> {
+    options: SaveMemoryOptions = {},
+): Promise<MemoryWriteResult> {
     validateMemoryQuality(input.content)
     const hash = contentHash(input.content)
     const duplicate = await withTransaction(() =>
@@ -113,10 +126,18 @@ async function saveKonteksMemory(
         })
     })
 
+    if (options.embedAfterSave !== false) {
+        await embedSavedTargets(options.embeddingProvider, createdAt, [
+            { targetId: id, targetType: 'memory' },
+        ])
+    }
+
     return {
         accepted: true,
+        createdAt,
         id,
         memoryIds: [id],
+        newTargetId: id,
     }
 }
 
@@ -127,13 +148,23 @@ export async function saveKonteksMemories(
 ): Promise<SaveResult> {
     const batchId = `memory_batch_${randomUUID()}`
     const memoryIds: string[] = []
+    const newTargets: Array<{ targetId: string; targetType: 'memory' }> = []
     let skippedMemories = 0
 
     await withTransaction(async () => {
         for (const memory of input.memories) {
             try {
-                const saved = await saveKonteksMemory(context, memory)
+                const saved = await saveKonteksMemory(context, memory, {
+                    ..._options,
+                    embedAfterSave: false,
+                })
                 memoryIds.push(saved.id)
+                if (saved.newTargetId) {
+                    newTargets.push({
+                        targetId: saved.newTargetId,
+                        targetType: 'memory',
+                    })
+                }
             } catch (error) {
                 if (!isSkippableMemoryError(error)) {
                     throw error
@@ -142,6 +173,14 @@ export async function saveKonteksMemories(
             }
         }
     })
+
+    if (newTargets.length > 0) {
+        await embedSavedTargets(
+            _options.embeddingProvider,
+            new Date().toISOString(),
+            newTargets,
+        )
+    }
 
     return {
         accepted: true,
@@ -215,9 +254,33 @@ export async function saveKonteksDiary(
         })
     })
 
+    await embedSavedTargets(options.embeddingProvider, createdAt, [
+        { targetId: id, targetType: 'diary' },
+    ])
+
     return {
         accepted: true,
         diaryId: id,
         id,
+    }
+}
+
+async function embedSavedTargets(
+    provider: EmbeddingProviderContract | undefined,
+    createdAt: string,
+    targets: Array<{ targetId: string; targetType: 'diary' | 'memory' }>,
+): Promise<void> {
+    if (targets.length === 0) {
+        return
+    }
+
+    try {
+        await generateEmbeddingsForTargets(
+            provider ?? new HuggingFaceEmbeddingProvider(),
+            targets,
+            createdAt,
+        )
+    } catch {
+        // Durable save succeeded; embedding is a best-effort retrieval index update.
     }
 }
