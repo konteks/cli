@@ -210,7 +210,7 @@ describe('cli/e2e', () => {
             'mcp',
             'call',
             'konteks_warm_up',
-            '{"maxTokens":200}',
+            '{}',
         ])
         expect(warmUp.exitCode).toBe(0)
         expect(warmUp.output).not.toContain('warm_up:')

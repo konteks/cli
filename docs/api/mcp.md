@@ -31,7 +31,7 @@ Tools are lower-level callable operations used by agents and debugging workflows
 | Tool | Capability | Parameters | Use When |
 | :--- | :--- | :--- | :--- |
 | `konteks_warm_up` | Warm Up | | Start a fresh agent session with stable project context. |
-| `konteks_recall` | Recall | `task`, `includeSources`, `maxTokens` | Retrieve a compact brief, primary targets, and relevant memory evidence (includes a `quality` signal: `strong`, `partial`, or `weak`). |
+| `konteks_recall` | Recall | `task`, `includeSources` | Retrieve a compact brief, primary targets, and relevant memory evidence (includes a `quality` signal: `strong`, `partial`, or `weak`). |
 | `konteks_save_memories` | Save Memories | `memories` | Persist structured durable memories for future sessions. |
 | `konteks_save_diary` | Save Diary | `summary`, `subject`, `tags` | Persist one compact session diary entry for continuity. |
 | `konteks_search` | Search | `query`, `limit` | Inspect memory directly with a query. |

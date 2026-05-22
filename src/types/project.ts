@@ -11,9 +11,6 @@ export type KonteksConfig = {
             updateTtlHours: number
         }
     }
-    recall: {
-        maxTokens: number
-    }
 }
 
 export type Project = ProjectContext & {

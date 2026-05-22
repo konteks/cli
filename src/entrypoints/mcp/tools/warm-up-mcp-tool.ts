@@ -16,7 +16,6 @@ import type {
 import BaseMcpTool from './_base-mcp-tool'
 
 const INPUT_ZOD_SCHEMA = z.object({
-    maxTokens: z.number().int().min(1).max(8000).optional(),
     topic: z.string().optional(),
 })
 
@@ -42,12 +41,11 @@ export default class WarmUpMcpTool extends BaseMcpTool<Input> {
         await updateChangedProjectMemorySilently(context)
 
         const rawWarmUp = await readProjectWarmUpContext(context)
-        const warmUp = limitWarmUpContext(rawWarmUp, input.maxTokens ?? 2000)
+        const warmUp = limitWarmUpContext(rawWarmUp, 2000)
 
         let recall: RecallPackage | undefined
         if (input.topic) {
             recall = await recallRepositoryMemory({
-                maxTokens: input.maxTokens ?? 2000,
                 task: input.topic ?? '',
             })
         }
@@ -137,9 +135,9 @@ function normalizeExcerpt(excerpt: string): string {
 
 function limitWarmUpContext(
     context: WarmUpContext,
-    maxTokens: number,
+    contextBudgetTokens: number,
 ): WarmUpContext {
-    const budget = Math.max(80, maxTokens)
+    const budget = Math.max(80, contextBudgetTokens)
     const baseCost = estimateCharacterTokens([
         context.summary,
         context.description ?? '',

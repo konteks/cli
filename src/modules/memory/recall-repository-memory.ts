@@ -17,6 +17,7 @@ import type {
 
 const ENTITY_LIMIT = 4
 const HISTORICAL_RELATION_LIMIT = 6
+const RECALL_OUTPUT_BUDGET_TOKENS = 2000
 const TRAVERSE_NEIGHBOR_LIMIT = 8
 
 export default async function recallRepositoryMemory(
@@ -91,8 +92,8 @@ export default async function recallRepositoryMemory(
             graph: graphItems,
             history: historyItems,
             includeSources: input.includeSources ?? false,
-            maxTokens: input.maxTokens ?? 2000,
             memories,
+            outputBudgetTokens: RECALL_OUTPUT_BUDGET_TOKENS,
             task: input.task,
         })
     })
@@ -102,14 +103,15 @@ function assembleRecallPackage(input: {
     graph: RecallGraphItem[]
     history: RecallHistoryItem[]
     includeSources: boolean
-    maxTokens: number
     memories: MemorySearchResult[]
+    outputBudgetTokens: number
     task: string
 }): RecallPackage {
     const dedupedMemories = dedupeRecallMemories(input.memories)
-    const memories = applyTokenBudget(dedupedMemories, input.maxTokens).map(
-        memory => (input.includeSources ? memory : compactMemory(memory)),
-    )
+    const memories = applyTokenBudget(
+        dedupedMemories,
+        input.outputBudgetTokens,
+    ).map(memory => (input.includeSources ? memory : compactMemory(memory)))
     const primaryTargets = primaryRecallTargets(memories)
     const quality = recallQuality(memories)
     return {
@@ -129,7 +131,6 @@ function assembleRecallPackage(input: {
         quality,
         sourceCount: dedupedMemories.length,
         task: input.task,
-        tokenBudget: input.maxTokens,
     }
 }
 
@@ -150,7 +151,7 @@ function dedupeEntities(entities: MemoryEntity[]): MemoryEntity[] {
 
 function applyTokenBudget(
     memories: MemorySearchResult[],
-    maxTokens: number,
+    outputBudgetTokens: number,
 ): MemorySearchResult[] {
     const selected: MemorySearchResult[] = []
     let usedTokens = 0
@@ -158,7 +159,10 @@ function applyTokenBudget(
     for (const memory of memories) {
         const tokenCost =
             (memory.metadata?.tokenCost as number) ?? memory.excerpt.length / 4
-        if (selected.length > 0 && usedTokens + tokenCost > maxTokens) {
+        if (
+            selected.length > 0 &&
+            usedTokens + tokenCost > outputBudgetTokens
+        ) {
             continue
         }
 

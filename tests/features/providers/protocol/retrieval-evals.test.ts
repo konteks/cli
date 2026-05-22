@@ -193,9 +193,7 @@ describe('retrieval quality evals', () => {
         )
 
         const result = await withProjectRoot(projectRoot, () =>
-            callKonteksTool('konteks_warm_up', {
-                maxTokens: 600,
-            }),
+            callKonteksTool('konteks_warm_up', {}),
         )
         const text = extractText(result)
 

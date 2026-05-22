@@ -63,9 +63,6 @@ describe('project context', () => {
                     updateTtlHours: 24,
                 },
             },
-            recall: {
-                maxTokens: 2000,
-            },
         })
     })
 

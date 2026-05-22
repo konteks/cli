@@ -3,7 +3,7 @@ import { estimateTextTokens } from '@/support/format/tokens'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/types/embedding-provider'
 import type { MemorySearchResult } from '@/types/memory'
 
-const maxExcerptTokens = 120
+const excerptBudgetTokens = 120
 
 export function makeSearchResult(input: {
     anchor?: string
@@ -46,7 +46,7 @@ export function makeSearchResult(input: {
         createdAt: input.createdAt,
         embeddingDimensions: input.embeddingDimensions,
         embeddingModel: input.embeddingModel,
-        excerpt: trimToTokenBudget(input.content, maxExcerptTokens),
+        excerpt: trimToTokenBudget(input.content, excerptBudgetTokens),
         id: input.id,
         kind: input.kind,
         path: input.path,
@@ -62,7 +62,7 @@ export function makeSearchResult(input: {
         sourceRole: input.sourceRole,
         targetType: input.targetType,
         task: input.task,
-        tokenCost: Math.min(tokenCost, maxExcerptTokens),
+        tokenCost: Math.min(tokenCost, excerptBudgetTokens),
         type: input.type,
         vectorScore: input.vectorScore,
     }
@@ -155,9 +155,9 @@ function recencyBoost(createdAt: string): number {
     return Math.max(0, 20 - Math.floor(ageDays))
 }
 
-function trimToTokenBudget(text: string, maxTokens: number): string {
+function trimToTokenBudget(text: string, excerptBudgetTokens: number): string {
     const words = text.trim().split(/\s+/u).filter(Boolean)
-    const maxWords = Math.max(1, Math.floor(maxTokens / 1.33))
+    const maxWords = Math.max(1, Math.floor(excerptBudgetTokens / 1.33))
 
     if (words.length <= maxWords) {
         return text

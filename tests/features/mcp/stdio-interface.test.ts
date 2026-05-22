@@ -68,7 +68,6 @@ describe('mcp/stdio interface', () => {
             )
             expect(warmUpTool?.inputSchema).toMatchObject({
                 properties: {
-                    maxTokens: { type: 'number' },
                     topic: { type: 'string' },
                 },
                 type: 'object',
@@ -80,7 +79,6 @@ describe('mcp/stdio interface', () => {
             expect(recallTool?.inputSchema).toMatchObject({
                 properties: {
                     includeSources: { type: 'boolean' },
-                    maxTokens: { type: 'number' },
                     task: { type: 'string' },
                 },
                 required: ['task'],
@@ -214,7 +212,7 @@ describe('mcp/stdio interface', () => {
                     name: 'konteks_recall',
                 }),
                 request(3, 'tools/call', {
-                    arguments: { maxTokens: 500 },
+                    arguments: {},
                     name: 'konteks_warm_up',
                 }),
             ])
