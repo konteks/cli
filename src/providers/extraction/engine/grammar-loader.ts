@@ -4,9 +4,9 @@ import { createRequire } from 'node:module'
 import * as os from 'node:os'
 import { join } from 'node:path'
 import registryJson from '@/assets/grammars/registry.json' with { type: 'json' }
-import type { ExtractionProgressReporter } from '@/contracts/services/progress'
-import type { Project } from '@/models/project'
 import { pathExists } from '@/providers/project/context'
+import type { ExtractionProgressReporter } from '@/types/progress'
+import type { Project } from '@/types/project'
 
 type TreeSitterBootstrapEngine = {
     init(): Promise<void>

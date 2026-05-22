@@ -2,9 +2,9 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { env, pipeline } from '@huggingface/transformers'
-import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
-import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import { formatBytes } from '@/support/format/number'
+import type { EmbeddingProviderContract } from '@/types/embedding-provider'
+import type { ExtractionProgressReporter } from '@/types/progress'
 
 export default class HuggingFaceEmbeddingProvider
     implements EmbeddingProviderContract

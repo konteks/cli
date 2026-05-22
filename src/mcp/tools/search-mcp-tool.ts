@@ -1,6 +1,6 @@
 import z from 'zod'
 import searchMemory from '@/database/services/search-memory'
-import type { MemorySearchResult } from '@/models/memory'
+import type { MemorySearchResult } from '@/types/memory'
 import BaseMcpTool from './_base-mcp-tool'
 
 const INPUT_SCHEMA = z.object({

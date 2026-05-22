@@ -1,5 +1,3 @@
-import type { ExtractionProgressEvent } from '@/contracts/services/progress'
-import type { ExtractProjectResponse } from '@/models/extraction'
 import createColorPalette from '@/support/terminal/create-color-palette'
 import { terminal } from '@/support/terminal/service'
 import {
@@ -7,6 +5,8 @@ import {
     createTuiText,
     spinnerFrame,
 } from '@/support/tui/components'
+import type { ExtractProjectResponse } from '@/types/extraction'
+import type { ExtractionProgressEvent } from '@/types/progress'
 
 type InitProgressReporter = {
     done(): void

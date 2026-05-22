@@ -14,11 +14,11 @@ import {
     validateSessionQuality,
     withProjectUpdateSummary,
 } from '@/database/support/save-policy'
-import type { ObservationKind, SaveResult } from '@/models/memory'
-import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
 import storePayload from '@/providers/persistence/objects/store-payload'
+import type { ObservationKind, SaveResult } from '@/types/memory'
+import type { Project } from '@/types/project'
 
 type SaveMemoryInput = {
     content: string

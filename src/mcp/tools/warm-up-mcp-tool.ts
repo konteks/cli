@@ -5,14 +5,14 @@ import {
     loadMcpProjectContext,
     updateChangedProjectMemorySilently,
 } from '@/memory/runtime'
+import { estimateCharacterTokens } from '@/support/format/tokens'
 import type {
     MemorySearchResult,
     RecallPackage,
     WarmUpContext,
     WarmUpGuidance,
     WarmUpHighlight,
-} from '@/models/memory'
-import { estimateCharacterTokens } from '@/support/format/tokens'
+} from '@/types/memory'
 import BaseMcpTool from './_base-mcp-tool'
 
 const INPUT_ZOD_SCHEMA = z.object({

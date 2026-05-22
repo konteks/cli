@@ -1,7 +1,7 @@
-import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
 import type { RetrievalDocumentRow } from '@/database/actions/query-retrieval-documents'
-import type { MemorySearchResult } from '@/models/memory'
 import { estimateTextTokens } from '@/support/format/tokens'
+import type { EmbeddingProviderContract as EmbeddingProvider } from '@/types/embedding-provider'
+import type { MemorySearchResult } from '@/types/memory'
 
 const maxExcerptTokens = 120
 

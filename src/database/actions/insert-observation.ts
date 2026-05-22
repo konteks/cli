@@ -1,5 +1,5 @@
 import { observations } from '@/database/schema'
-import type { ObservationKind } from '@/models/memory'
+import type { ObservationKind } from '@/types/memory'
 import getDb from './_db'
 
 export type InsertObservationInput = {

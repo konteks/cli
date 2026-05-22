@@ -1,8 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { ExtractionMode } from '@/models/extraction'
-import type { Project } from '@/models/project'
 import { pathExists } from '@/providers/project/context'
+import type { ExtractionMode } from '@/types/extraction'
+import type { Project } from '@/types/project'
 import type { ProjectMetadata } from './extract-project-metadata'
 import {
     type ScanDiagnostics,

@@ -4,13 +4,13 @@ import indexSearchDocument from '@/database/actions/index-search-document'
 import insertDiaryEntry from '@/database/actions/insert-diary-entry'
 import insertObservation from '@/database/actions/insert-observation'
 import upsertRetrievalDocument from '@/database/actions/upsert-retrieval-document'
+import createToonStore from '@/providers/persistence/objects/create-toon-store'
+import storePayload from '@/providers/persistence/objects/store-payload'
 import type {
     DurableMemoryExportDiary,
     DurableMemoryExportMemory,
-} from '@/models/memory-transfer'
-import type { Project } from '@/models/project'
-import createToonStore from '@/providers/persistence/objects/create-toon-store'
-import storePayload from '@/providers/persistence/objects/store-payload'
+} from '@/types/memory-transfer'
+import type { Project } from '@/types/project'
 
 export async function insertImportedObservation(
     context: Project,

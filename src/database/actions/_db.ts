@@ -8,8 +8,8 @@ import ensureSearchIndex from '@/database/actions/ensure-search-index'
 import * as schema from '@/database/schema'
 import { isSqliteTestRuntime } from '@/database/support/test-runtime'
 import runMigrations from '@/database/utils/migrations'
-import type { Project } from '@/models/project'
 import { loadProjectContext } from '@/providers/project/context'
+import type { Project } from '@/types/project'
 
 type ProjectDatabase = ReturnType<typeof drizzle<typeof schema>>
 type DatabaseEntry = {

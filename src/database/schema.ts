@@ -8,7 +8,7 @@ import {
     sqliteTable,
     text,
 } from 'drizzle-orm/sqlite-core'
-import type { ObservationKind } from '@/models/memory'
+import type { ObservationKind } from '@/types/memory'
 
 export const sources = sqliteTable(
     'sources',

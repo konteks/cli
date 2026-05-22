@@ -6,8 +6,8 @@ import hasObservationHash from '@/database/actions/has-observation-hash'
 import type {
     DurableMemoryExport,
     DurableMemoryImportResult,
-} from '@/models/memory-transfer'
-import type { Project } from '@/models/project'
+} from '@/types/memory-transfer'
+import type { Project } from '@/types/project'
 import {
     insertImportedDiary,
     insertImportedObservation,

@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { buildSectionRetrievalTexts } from '@/database/support/retrieval-texts'
-import type { Project } from '@/models/project'
 import { contentHash } from '@/providers/persistence/objects/content'
 import type createToonStore from '@/providers/persistence/objects/create-toon-store'
 import storePayload from '@/providers/persistence/objects/store-payload'
@@ -10,6 +9,7 @@ import {
     detectLanguage,
     extractTopics,
 } from '@/providers/project/source-classification'
+import type { Project } from '@/types/project'
 import type { ScannedFile } from './file-scan'
 import { getGrammarForPath, isBundledGrammar } from './grammar-loader'
 import { isExtractedSectionSuppressed } from './section-cleanup'

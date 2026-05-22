@@ -6,7 +6,7 @@ import {
     saveKonteksDiary,
     saveKonteksMemories,
 } from '@/database/services/save-memory'
-import type { SaveResult } from '@/models/memory'
+import type { SaveResult } from '@/types/memory'
 import {
     loadMcpProjectContext,
     updateChangedProjectMemorySilently,

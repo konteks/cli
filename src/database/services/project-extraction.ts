@@ -1,14 +1,14 @@
-import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
-import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import { withTransaction } from '@/database/actions/_db'
 import countExtractedSections from '@/database/actions/count-extracted-sections'
 import readExtractedProjectPathsAction from '@/database/actions/read-extracted-project-paths'
-import type { Project } from '@/models/project'
 import generateTargetEmbeddings from '@/providers/embeddings/generate-target-embeddings'
 import type { ProjectMetadata } from '@/providers/extraction/engine/extract-project-metadata'
 import extractSections from '@/providers/extraction/engine/extract-sections'
 import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import type { ExtractionMode } from '@/providers/extraction/engine/manifest'
+import type { EmbeddingProviderContract as EmbeddingProvider } from '@/types/embedding-provider'
+import type { ExtractionProgressReporter } from '@/types/progress'
+import type { Project } from '@/types/project'
 
 type ExtractProjectSectionsOptions = {
     beforeExtract?: () => Promise<void>

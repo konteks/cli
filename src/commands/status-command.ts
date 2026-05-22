@@ -4,7 +4,6 @@ import {
     type ProjectMemoryStats,
     readProjectMemoryStats,
 } from '@/database/services/project-status'
-import type { Project } from '@/models/project'
 import { getExtractionFreshness } from '@/providers/extraction/engine/manifest'
 import { loadProjectContext, pathExists } from '@/providers/project/context'
 import { formatInteger } from '@/support/format/number'
@@ -12,6 +11,7 @@ import createColorPalette, {
     type ColorPalette,
 } from '@/support/terminal/create-color-palette'
 import { terminal } from '@/support/terminal/service'
+import type { Project } from '@/types/project'
 
 export default class StatusCommand extends BaseCommand {
     public readonly description =

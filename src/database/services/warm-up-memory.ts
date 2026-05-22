@@ -1,6 +1,6 @@
 import readWarmUpContext from '@/database/services/read-warm-up-context'
-import type { WarmUpContext } from '@/models/memory'
-import type { Project } from '@/models/project'
+import type { WarmUpContext } from '@/types/memory'
+import type { Project } from '@/types/project'
 
 export async function readProjectWarmUpContext(
     context: Project,
