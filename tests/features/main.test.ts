@@ -18,7 +18,7 @@ describe('CLI initialization middleware', () => {
     for (const args of [
         ['status'],
         ['config'],
-        ['repair'],
+        ['rebuild'],
         ['backup', 'backup.tar.gz'],
         ['memory', 'export', 'memory.json'],
         ['memory', 'import', 'memory.json'],

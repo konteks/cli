@@ -255,7 +255,7 @@ function selectFilesForMode(
     mode: ExtractionMode,
     alreadyExtractedPaths?: Set<string>,
 ): { deletedPaths: string[]; filesToExtract: ScannedFile[] } {
-    if (mode === 'reindex') {
+    if (mode === 'rebuild') {
         return { deletedPaths: [], filesToExtract: currentFiles }
     }
 

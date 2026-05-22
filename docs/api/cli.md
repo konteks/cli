@@ -9,7 +9,7 @@ For terms, see the [Glossary](../reference/glossary.md).
 | Command | Capability | Use When |
 | :--- | :--- | :--- |
 | `konteks init` | Initialize | Prepare a project for local memory storage. |
-| `konteks repair` | Repair | Rebuild project memory artifacts from scratch. |
+| `konteks rebuild` | Rebuild | Rebuild derived project memory artifacts from scratch while preserving durable memories and diary entries. |
 | `konteks status` | Status | Check memory health and freshness. |
 | `konteks memory export <file>` | Export | Write portable durable memories and diary entries to JSON. |
 | `konteks memory import <file>` | Import | Merge portable durable memories and diary entries from JSON. |

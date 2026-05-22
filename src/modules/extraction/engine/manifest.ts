@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathExists } from '@/modules/project/context'
-import type { ExtractionMode } from '@/types/extraction'
+import type { ExtractionMode, LegacyExtractionMode } from '@/types/extraction'
 import type { Project } from '@/types/project'
 import type { ProjectMetadata } from './extract-project-metadata'
 import {
@@ -15,7 +15,7 @@ export type { ExtractionMode }
 export type ExtractionManifest = {
     version: 1
     extractedAt: string
-    mode: ExtractionMode
+    mode: ExtractionMode | LegacyExtractionMode
     fileCount: number
     sectionCount?: number
     files: ScannedFile[]
@@ -79,7 +79,7 @@ export async function getExtractionFreshness(
         return {
             changedFileCount: 0,
             reason: 'No extraction manifest exists yet.',
-            recommendedCommand: 'konteks repair',
+            recommendedCommand: 'konteks rebuild',
             status: 'missing',
         }
     }
@@ -92,7 +92,7 @@ export async function getExtractionFreshness(
             changedFileCount: countChangedFiles(manifest.files, currentFiles),
             lastExtractedAt: manifest.extractedAt,
             reason: staleReason,
-            recommendedCommand: 'konteks repair',
+            recommendedCommand: 'konteks rebuild',
             status: 'stale',
         }
     }

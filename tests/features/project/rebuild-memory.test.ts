@@ -5,6 +5,7 @@ import { terminal } from '@/support/terminal/service'
 import type { ExtractProjectResponse } from '@/types/extraction'
 
 let confirmResult = true
+const confirmCalls: unknown[] = []
 let extractedResponse: ExtractProjectResponse = {
     deletedFilePaths: [],
     detectedParserLanguages: [],
@@ -14,7 +15,7 @@ let extractedResponse: ExtractProjectResponse = {
     fileCount: 0,
     languageCount: 0,
     loadedParserCount: 0,
-    mode: 'reindex',
+    mode: 'rebuild',
     ok: true,
     projectRoot: process.cwd(),
     sectionCount: 0,
@@ -28,19 +29,22 @@ const progressReports: unknown[] = []
 let progressDoneCount = 0
 
 mock.module('@inquirer/prompts', () => ({
-    confirm: async () => confirmResult,
+    confirm: async (options: unknown) => {
+        confirmCalls.push(options)
+        return confirmResult
+    },
 }))
 
 afterEach(() => {
     mock.restore()
 })
 
-describe('RepairCommand', () => {
+describe('RebuildCommand', () => {
     const createCommand = async () => {
-        const { default: RepairCommand } = await import(
-            '@/entrypoints/cli/commands/repair-command'
+        const { default: RebuildCommand } = await import(
+            '@/entrypoints/cli/commands/rebuild-command'
         )
-        return new RepairCommand()
+        return new RebuildCommand()
     }
 
     const resetState = () => {
@@ -54,7 +58,7 @@ describe('RepairCommand', () => {
             fileCount: 0,
             languageCount: 0,
             loadedParserCount: 0,
-            mode: 'reindex',
+            mode: 'rebuild',
             ok: true,
             projectRoot: process.cwd(),
             sectionCount: 0,
@@ -65,6 +69,7 @@ describe('RepairCommand', () => {
         }
         extractorCalls.length = 0
         progressReports.length = 0
+        confirmCalls.length = 0
         progressDoneCount = 0
     }
 
@@ -101,7 +106,7 @@ describe('RepairCommand', () => {
         return { extractorSpy, progressSpy }
     }
 
-    it('skips repair when confirmation returns false', async () => {
+    it('skips rebuild when confirmation returns false', async () => {
         resetState()
         confirmResult = false
         const { extractorSpy, progressSpy } = installExtractorSpies()
@@ -119,9 +124,16 @@ describe('RepairCommand', () => {
             expect(extractorCalls).toEqual([])
             expect(progressReports).toEqual([])
             expect(progressDoneCount).toBe(0)
+            expect(confirmCalls).toEqual([
+                {
+                    default: true,
+                    message:
+                        'Rebuild derived memory for this project? Durable memories and diary entries are preserved.',
+                },
+            ])
             expect(logSpy).toHaveBeenCalledWith(
                 JSON.stringify(
-                    { mode: 'repair', ok: false, skipped: true },
+                    { mode: 'rebuild', ok: false, skipped: true },
                     null,
                     2,
                 ),
@@ -135,7 +147,7 @@ describe('RepairCommand', () => {
         }
     })
 
-    it('reindexes the current project and prints repair mode output', async () => {
+    it('rebuilds the current project and prints rebuild mode output', async () => {
         resetState()
         extractedResponse = {
             deletedFilePaths: [],
@@ -146,7 +158,7 @@ describe('RepairCommand', () => {
             fileCount: 2,
             languageCount: 1,
             loadedParserCount: 1,
-            mode: 'reindex',
+            mode: 'rebuild',
             ok: true,
             projectRoot: '/tmp/project',
             sectionCount: 4,
@@ -168,7 +180,7 @@ describe('RepairCommand', () => {
         try {
             await (await createCommand()).handle()
             expect(extractorCalls).toEqual([
-                { mode: 'reindex', projectRoot: process.cwd() },
+                { mode: 'rebuild', projectRoot: process.cwd() },
             ])
             expect(progressReports).toEqual([
                 { message: 'complete', phase: 'done', status: 'done' },
@@ -178,7 +190,7 @@ describe('RepairCommand', () => {
                 JSON.stringify(
                     {
                         ...extractedResponse,
-                        mode: 'repair',
+                        mode: 'rebuild',
                     },
                     null,
                     2,

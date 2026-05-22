@@ -5,7 +5,7 @@ import InstallSkillsCommand from './install-skills-command'
 import McpCommand from './mcp-command'
 import ExportCommand from './memory/export-command'
 import ImportCommand from './memory/import-command'
-import RepairCommand from './repair-command'
+import RebuildCommand from './rebuild-command'
 import RestoreCommand from './restore-command'
 import StatusCommand from './status-command'
 
@@ -13,7 +13,7 @@ export const COMMANDS = [
     new InitCommand(),
     new ConfigCommand(),
     new StatusCommand(),
-    new RepairCommand(),
+    new RebuildCommand(),
     new BackupCommand(),
     new RestoreCommand(),
     new InstallSkillsCommand(),

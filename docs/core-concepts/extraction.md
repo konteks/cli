@@ -42,7 +42,7 @@ Konteks does not always need to re-read the whole project. It keeps a record of 
 * A full extraction extracts the current included files.
 * A changed extraction extracts files whose content changed and removes memory for files that disappeared.
 * A resume extraction skips paths that are already present in memory.
-* A reindex extraction rebuilds derived artifacts from the current included files.
+* A rebuild extraction rebuilds derived artifacts from the current included files.
 
 This is the boundary between derived and durable memory. Derived memory can be rebuilt from the repository; durable memories saved from agent sessions are not treated as throwaway extraction output.
 

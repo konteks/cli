@@ -20,7 +20,7 @@ Relevant project knowledge given to an agent so it can work without rediscoverin
 
 ## Derived Memory
 
-Knowledge automatically extracted from source code, documentation, and project structure. It is reproducible and can be rebuilt via a `repair` operation.
+Knowledge automatically extracted from source code, documentation, and project structure. It is reproducible and can be rebuilt via a `rebuild` operation.
 
 ## Diary
 
@@ -28,7 +28,7 @@ A chronological activity record saved by an agent. Diary entries help future ses
 
 ## Durable Memory
 
-Intentional knowledge created by users or agents during sessions (e.g., observations, decisions, preferences). It is authoritative and preserved across system repairs.
+Intentional knowledge created by users or agents during sessions (e.g., observations, decisions, preferences). It is authoritative and preserved across derived-memory rebuilds.
 
 ## Graph Expansion
 
@@ -70,7 +70,7 @@ Task-specific retrieval. Recall synthesizes a compact [Recall Package](#recall-p
 
 A token-efficient bundle of context containing a brief, primary targets, relevant memories, and a [Quality Label](#quality-label).
 
-## Repair
+## Rebuild
 
 The CLI command that rebuilds all [Derived Memory](#derived-memory) artifacts from scratch for recovery or maintenance.
 
