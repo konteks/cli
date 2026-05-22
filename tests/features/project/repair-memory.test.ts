@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import * as extractorModule from '@/extraction/create-project-extractor'
-import type { ExtractProjectResponse } from '@/models/extraction'
 import * as progressReporterModule from '@/providers/extraction/create-extraction-progress-reporter'
 import { terminal } from '@/support/terminal/service'
+import type { ExtractProjectResponse } from '@/types/extraction'
 
 let confirmResult = true
 let extractedResponse: ExtractProjectResponse = {

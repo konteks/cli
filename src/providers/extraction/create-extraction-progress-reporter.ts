@@ -1,4 +1,3 @@
-import type { ExtractionProgressEvent } from '@/contracts/services/progress'
 import { formatBytes } from '@/support/format/number'
 import createColorPalette, {
     type ColorPalette,
@@ -10,6 +9,7 @@ import {
     spinnerFrame,
 } from '@/support/tui/components'
 import type { TuiText } from '@/support/tui/components/text'
+import type { ExtractionProgressEvent } from '@/types/progress'
 
 export default function createExtractionProgressReporter(): {
     done(): void

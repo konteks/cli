@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { retrievalDocuments, sections } from '@/database/schema'
-import type { WarmUpHighlight } from '@/models/memory'
+import type { WarmUpHighlight } from '@/types/memory'
 import getDb from './_db'
 
 export type WarmUpHighlightRow = {

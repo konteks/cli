@@ -1,13 +1,13 @@
-import type { ExtractionEngineContract } from '@/contracts/services/extraction-engine'
-import type { ExtractionProgressReporter } from '@/contracts/services/progress'
-import type {
-    ExtractProjectRequest,
-    ExtractProjectResponse,
-} from '@/models/extraction'
-import type { Project } from '@/models/project'
 import HuggingFaceEmbeddingProvider from '@/providers/embeddings/hugging-face-embedding-provider'
 import { KonteksExtractionEngine } from '@/providers/extraction/extract-project'
 import { loadProjectContext } from '@/providers/project/context'
+import type {
+    ExtractProjectRequest,
+    ExtractProjectResponse,
+} from '@/types/extraction'
+import type { ExtractionEngineContract } from '@/types/extraction-engine'
+import type { ExtractionProgressReporter } from '@/types/progress'
+import type { Project } from '@/types/project'
 
 export type ProjectExtractor = {
     execute(request: ExtractProjectRequest): Promise<ExtractProjectResponse>

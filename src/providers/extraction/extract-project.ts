@@ -1,16 +1,8 @@
 import { mkdir } from 'node:fs/promises'
-import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
-import type { ExtractionEngineContract } from '@/contracts/services/extraction-engine'
-import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import {
     extractProjectSectionsWithDatabase,
     readExtractedProjectPaths,
 } from '@/database/services/project-extraction'
-import type {
-    ExtractProjectRequest,
-    ExtractProjectResponse,
-} from '@/models/extraction'
-import type { Project } from '@/models/project'
 import extractProjectMetadata from '@/providers/extraction/engine/extract-project-metadata'
 import type { ScannedFile } from '@/providers/extraction/engine/file-scan'
 import { scanProjectFilesWithDiagnostics } from '@/providers/extraction/engine/file-scan'
@@ -28,6 +20,14 @@ import {
     writeExtractionManifest,
 } from '@/providers/extraction/engine/manifest'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
+import type { EmbeddingProviderContract as EmbeddingProvider } from '@/types/embedding-provider'
+import type {
+    ExtractProjectRequest,
+    ExtractProjectResponse,
+} from '@/types/extraction'
+import type { ExtractionEngineContract } from '@/types/extraction-engine'
+import type { ExtractionProgressReporter } from '@/types/progress'
+import type { Project } from '@/types/project'
 
 export async function extractProject(
     project: Project,

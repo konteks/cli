@@ -13,7 +13,7 @@ import type {
     RecallGraphItem,
     RecallHistoryItem,
     RecallPackage,
-} from '@/models/memory'
+} from '@/types/memory'
 
 const ENTITY_LIMIT = 4
 const HISTORICAL_RELATION_LIMIT = 6

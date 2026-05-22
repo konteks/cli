@@ -1,9 +1,9 @@
 import { and, eq, inArray } from 'drizzle-orm'
-import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
-import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import getDb from '@/database/actions/_db'
 import { retrievalDocuments, targetEmbeddings } from '@/database/schema'
 import { contentHash } from '@/providers/persistence/objects/content'
+import type { EmbeddingProviderContract } from '@/types/embedding-provider'
+import type { ExtractionProgressReporter } from '@/types/progress'
 
 type TargetType = 'section' | 'diary' | 'memory' | 'module'
 

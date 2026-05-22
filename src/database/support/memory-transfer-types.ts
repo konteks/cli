@@ -1,4 +1,4 @@
-import type { DurableMemoryExportMemory } from '@/models/memory-transfer'
+import type { DurableMemoryExportMemory } from '@/types/memory-transfer'
 
 export type ObservationExportRow = {
     confidence: number

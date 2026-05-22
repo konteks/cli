@@ -1,4 +1,3 @@
-import type { EmbeddingProviderContract as EmbeddingProvider } from '@/contracts/services/embedding-provider'
 import { withTransaction } from '@/database/actions/_db'
 import hasSearchIndex from '@/database/actions/has-search-index'
 import queryDiaries, { type DiaryRow } from '@/database/actions/query-diaries'
@@ -9,9 +8,10 @@ import queryObservations, {
 import queryRetrievalDocuments, {
     type RetrievalDocumentRow,
 } from '@/database/actions/query-retrieval-documents'
-import type { MemorySearchResult } from '@/models/memory'
 import { classifySourceRole } from '@/providers/project/source-classification'
 import { estimateTextTokens } from '@/support/format/tokens'
+import type { EmbeddingProviderContract as EmbeddingProvider } from '@/types/embedding-provider'
+import type { MemorySearchResult } from '@/types/memory'
 import {
     allowResult,
     applyGroupAwarePruning,

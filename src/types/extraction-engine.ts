@@ -1,8 +1,8 @@
 import type {
     ExtractProjectRequest,
     ExtractProjectResponse,
-} from '@/models/extraction'
-import type { Project } from '@/models/project'
+} from '@/types/extraction'
+import type { Project } from '@/types/project'
 
 export interface ExtractionEngineContract {
     extract(

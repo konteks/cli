@@ -13,6 +13,9 @@ import {
     exportProjectDurableMemory,
     importProjectDurableMemory,
 } from '@/database/services/memory-transfer'
+import { loadProjectContext, pathExists } from '@/providers/project/context'
+import CliUserError from '@/support/cli/cli-user-error'
+import { createTarGz, extractTarGz } from '@/support/targz'
 import type {
     DurableMemoryExport,
     DurableMemoryExportOptions,
@@ -21,10 +24,7 @@ import type {
     DurableMemoryImportResult,
     MemoryRestoreOptions,
     MemoryRestoreResult,
-} from '@/models/memory-transfer'
-import { loadProjectContext, pathExists } from '@/providers/project/context'
-import CliUserError from '@/support/cli/cli-user-error'
-import { createTarGz, extractTarGz } from '@/support/targz'
+} from '@/types/memory-transfer'
 
 export async function exportMemory(
     options: DurableMemoryExportOptions,

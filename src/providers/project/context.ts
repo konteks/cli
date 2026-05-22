@@ -4,7 +4,7 @@ import type {
     KonteksConfig,
     LoadedProjectContext,
     ProjectContext,
-} from '@/models/project'
+} from '@/types/project'
 
 export type { LoadedProjectContext }
 

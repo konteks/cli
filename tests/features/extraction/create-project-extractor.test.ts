@@ -2,13 +2,13 @@ import { describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { ExtractionEngineContract } from '@/contracts/services/extraction-engine'
 import createProjectExtractor from '@/extraction/create-project-extractor'
 import type {
     ExtractProjectRequest,
     ExtractProjectResponse,
-} from '@/models/extraction'
-import type { Project } from '@/models/project'
+} from '@/types/extraction'
+import type { ExtractionEngineContract } from '@/types/extraction-engine'
+import type { Project } from '@/types/project'
 
 describe('extraction/extract', () => {
     it('loads the requested project and returns extraction engine output', async () => {

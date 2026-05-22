@@ -2,11 +2,8 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import BaseCommand from '@/commands/_base-command'
 import createInitProgressReporter from '@/commands/init-command/utils/init-progress-reporter'
-import type { ExtractionProgressReporter } from '@/contracts/services/progress'
 import { ensureProjectMemory } from '@/database/services/project-memory'
 import createProjectExtractor from '@/extraction/create-project-extractor'
-import type { ExtractProjectResponse } from '@/models/extraction'
-import type { Project } from '@/models/project'
 import { reviewDetectedGrammars } from '@/providers/cli/grammar-selection'
 import { scanProjectFiles } from '@/providers/extraction/engine/file-scan'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
@@ -14,6 +11,9 @@ import {
     createDefaultConfig,
     loadProjectContext,
 } from '@/providers/project/context'
+import type { ExtractProjectResponse } from '@/types/extraction'
+import type { ExtractionProgressReporter } from '@/types/progress'
+import type { Project } from '@/types/project'
 
 export default class InitCommand extends BaseCommand {
     public readonly description =

@@ -6,13 +6,13 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { promisify } from 'node:util'
 import { saveDiary, saveMemories } from '@/memory/save-memory'
-import type { DurableMemoryExport } from '@/models/memory-transfer'
 import { extractProject } from '@/providers/extraction/extract-project'
 import {
     loadProjectContext,
     writeProjectConfig,
 } from '@/providers/project/context'
 import getVersion from '@/support/get-version'
+import type { DurableMemoryExport } from '@/types/memory-transfer'
 import FakeEmbeddingProvider from '../fake/fake-embedding-provider'
 
 const execFileAsync = promisify(execFile)

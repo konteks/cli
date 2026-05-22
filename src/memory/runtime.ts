@@ -1,8 +1,8 @@
 import type { SaveOptions } from '@/database/services/save-memory'
-import type { LoadedProjectContext } from '@/models/project'
 import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
 import { extractProject } from '@/providers/extraction/extract-project'
 import { loadProjectContext } from '@/providers/project/context'
+import type { LoadedProjectContext } from '@/types/project'
 
 type SaveProjectUpdate = NonNullable<SaveOptions['projectUpdate']>
 export type McpProjectContext = LoadedProjectContext

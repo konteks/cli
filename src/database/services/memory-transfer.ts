@@ -3,8 +3,8 @@ import type {
     DurableMemoryExportOptions,
     DurableMemoryImportOptions,
     DurableMemoryImportResult,
-} from '@/models/memory-transfer'
-import type { Project } from '@/models/project'
+} from '@/types/memory-transfer'
+import type { Project } from '@/types/project'
 import exportDurableMemory from './export-durable-memory'
 import importDurableMemory from './import-durable-memory'
 

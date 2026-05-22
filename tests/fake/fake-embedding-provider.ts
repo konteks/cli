@@ -1,4 +1,4 @@
-import type { EmbeddingProviderContract } from '@/contracts/services/embedding-provider'
+import type { EmbeddingProviderContract } from '@/types/embedding-provider'
 
 export default class FakeEmbeddingProvider
     implements EmbeddingProviderContract

@@ -5,9 +5,9 @@ import {
     exportDiaryRow,
     exportObservationRow,
 } from '@/database/support/memory-transfer'
-import type { DurableMemoryExport } from '@/models/memory-transfer'
-import type { Project } from '@/models/project'
 import createToonStore from '@/providers/persistence/objects/create-toon-store'
+import type { DurableMemoryExport } from '@/types/memory-transfer'
+import type { Project } from '@/types/project'
 
 export default async function exportDurableMemory(
     context: Project,

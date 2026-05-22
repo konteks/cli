@@ -5,7 +5,7 @@ import type {
     RecallGraphItem,
     RecallHistoryItem,
     RecallPackage,
-} from '@/models/memory'
+} from '@/types/memory'
 import BaseMcpTool from './_base-mcp-tool'
 
 const INPUT_SCHEMA = z.object({
