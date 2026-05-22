@@ -39,30 +39,6 @@ bun run test
 
 `bun run lint` runs formatting, unused-code checks, and TypeScript type checks. If formatting changes are needed, let the script write them and include those changes.
 
-## Code Guidelines
-
-- Keep changes small and focused.
-- Put behavior and integration coverage under `tests/features`.
-- Put focused important unit coverage under `tests/units`.
-- Do not add `*.test.ts` files under `src`.
-- Follow the current module boundaries:
-  - `src/main.ts` owns the Commander entrypoint and command registration loop.
-  - `src/commands` holds CLI command classes, nested subcommands, `BaseCommand`, and command registry lists.
-  - `src/composition` wires implementations together.
-  - `src/contracts` defines shared interfaces.
-  - `src/memory`, `src/project`, `src/extraction`, and `src/mcp` hold feature workflows.
-  - `src/providers` contains concrete infrastructure.
-  - `src/support` contains low-level helpers.
-- Command files should default-export their main command class, and filenames should reflect that class.
-- Place subcommands under a folder named after the parent command, such as `src/commands/mcp`.
-- Import the Commander `Command` type from `@/commands/_base-command` inside command classes.
-- MCP tools should live as one default-export class per file under `src/mcp/tools`.
-- Each MCP tool class should own its name, description, annotations, input schema, execution, and output formatting.
-- Keep `src/mcp/tools/index.ts` as the simple ordered MCP tool registry.
-- Do not add provider barrel files. Import provider modules directly.
-- Providers should not import commands or composition modules.
-- Commands should call feature workflows or composition modules instead of concrete providers.
-
 ## Docs
 
 Update docs when you change user-facing CLI behavior, MCP behavior, setup steps, storage behavior, or terminology.
