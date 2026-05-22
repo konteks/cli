@@ -1,4 +1,5 @@
-export type ExtractionMode = 'reindex' | 'changed' | 'resume' | 'full'
+export type ExtractionMode = 'rebuild' | 'changed' | 'resume' | 'full'
+export type LegacyExtractionMode = 'reindex'
 
 export type ExtractProjectRequest = {
     projectRoot: string

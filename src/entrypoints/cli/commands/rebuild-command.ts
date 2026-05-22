@@ -5,16 +5,16 @@ import { stringifyPretty } from '@/support/json/io'
 import { terminal } from '@/support/terminal/service'
 import BaseCommand from './_base-command'
 
-export default class RepairCommand extends BaseCommand {
+export default class RebuildCommand extends BaseCommand {
     public readonly description =
-        'Repair Konteks memory by rebuilding artifacts from scratch.'
-    public readonly name = 'repair'
+        'Rebuild derived Konteks memory artifacts from scratch.'
+    public readonly name = 'rebuild'
 
     public async handle(): Promise<void> {
-        const confirmRepair = confirmRepairPrompt
-        if (!(await confirmRepair())) {
+        const confirmRebuild = confirmRebuildPrompt
+        if (!(await confirmRebuild())) {
             this.print(
-                stringifyPretty({ mode: 'repair', ok: false, skipped: true }),
+                stringifyPretty({ mode: 'rebuild', ok: false, skipped: true }),
             )
 
             return
@@ -27,14 +27,14 @@ export default class RepairCommand extends BaseCommand {
             })
 
             const result = await extractor.execute({
-                mode: 'reindex',
+                mode: 'rebuild',
                 projectRoot: process.cwd(),
             })
 
             this.print(
                 stringifyPretty({
                     ...result,
-                    mode: 'repair',
+                    mode: 'rebuild',
                 }),
             )
         } finally {
@@ -43,7 +43,7 @@ export default class RepairCommand extends BaseCommand {
     }
 }
 
-async function confirmRepairPrompt(): Promise<boolean> {
+async function confirmRebuildPrompt(): Promise<boolean> {
     if (!terminal.stdinIsInteractive() || !terminal.stderrIsInteractive()) {
         return true
     }
@@ -51,6 +51,6 @@ async function confirmRepairPrompt(): Promise<boolean> {
     return await confirm({
         default: true,
         message:
-            'Repair Konteks memory by rebuilding artifacts for this project?',
+            'Rebuild derived memory for this project? Durable memories and diary entries are preserved.',
     })
 }

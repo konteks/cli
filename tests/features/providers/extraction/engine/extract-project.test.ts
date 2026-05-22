@@ -64,7 +64,7 @@ describe('extractProject', () => {
             loadProjectContext(),
         )
 
-        const result = await extractTestProject(context, 'reindex')
+        const result = await extractTestProject(context, 'rebuild')
         const manifest = await readExtractionManifest(context.memoryDir)
         const summary = await createToonStore(context.memoryDir).read(
             result.summaryRef,
@@ -97,7 +97,7 @@ describe('extractProject', () => {
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
-        await extractTestProject(context, 'reindex')
+        await extractTestProject(context, 'rebuild')
 
         const fresh = await getExtractionFreshness(context)
         expect(fresh.status).toBe('fresh')
@@ -109,7 +109,7 @@ describe('extractProject', () => {
 
         const stale = await getExtractionFreshness(context)
         expect(stale.status).toBe('stale')
-        expect(stale.recommendedCommand).toBe('konteks repair')
+        expect(stale.recommendedCommand).toBe('konteks rebuild')
     })
 
     it('caps sections per file and reports the diagnostic', async () => {
@@ -127,7 +127,7 @@ describe('extractProject', () => {
             loadProjectContext(),
         )
 
-        const result = await extractTestProject(context, 'reindex')
+        const result = await extractTestProject(context, 'rebuild')
         const manifest = await readExtractionManifest(context.memoryDir)
 
         expect(result.sectionCount).toBeGreaterThanOrEqual(200)
@@ -149,6 +149,38 @@ describe('extractProject', () => {
         expect(JSON.parse(rawManifest).mode).toBe('changed')
     })
 
+    it('reads legacy reindex manifests for compatibility', async () => {
+        const projectRoot = await makeTempProject()
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        await extractTestProject(context, 'rebuild')
+        const manifestPath = join(
+            projectRoot,
+            '.konteks',
+            'extraction-manifest.json',
+        )
+        const rawManifest = await readFile(manifestPath, 'utf8')
+        await writeFile(
+            manifestPath,
+            rawManifest.replace('"mode": "rebuild"', '"mode": "reindex"'),
+        )
+
+        expect((await readExtractionManifest(context.memoryDir))?.mode).toBe(
+            'reindex',
+        )
+        await expect(getExtractionFreshness(context)).resolves.toMatchObject({
+            status: 'fresh',
+        })
+
+        await writeFile(join(projectRoot, 'src', 'new.txt'), 'changed\n')
+        await expect(
+            extractTestProject(context, 'changed'),
+        ).resolves.toMatchObject({
+            ok: true,
+        })
+    })
+
     it('extracts package.json with bundled config grammars', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(
@@ -159,21 +191,21 @@ describe('extractProject', () => {
             loadProjectContext(),
         )
 
-        const result = await extractTestProject(context, 'reindex')
+        const result = await extractTestProject(context, 'rebuild')
         const manifest = await readExtractionManifest(context.memoryDir)
 
         expect(result.ok).toBe(true)
         expect(manifest?.files.map(file => file.path)).toContain('package.json')
     })
 
-    it('stores reindex mode in manifest', async () => {
+    it('stores rebuild mode in manifest', async () => {
         const projectRoot = await makeTempProject()
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
 
-        await extractTestProject(context, 'reindex')
-        await extractTestProject(context, 'reindex')
+        await extractTestProject(context, 'rebuild')
+        await extractTestProject(context, 'rebuild')
 
         const rawManifest = await readFile(
             join(projectRoot, '.konteks', 'extraction-manifest.json'),
@@ -181,7 +213,7 @@ describe('extractProject', () => {
         )
         const manifest = JSON.parse(rawManifest)
 
-        expect(manifest.mode).toBe('reindex')
+        expect(manifest.mode).toBe('rebuild')
         expect(manifest.diagnostics.sectionCount).toBeGreaterThan(0)
     })
 
@@ -191,7 +223,7 @@ describe('extractProject', () => {
             loadProjectContext(),
         )
 
-        await extractTestProject(context, 'reindex')
+        await extractTestProject(context, 'rebuild')
 
         await unlink(join(projectRoot, 'README.md'))
         await writeFile(
@@ -217,7 +249,7 @@ describe('extractProject', () => {
             loadProjectContext(),
         )
 
-        const result = await extractTestProject(context, 'reindex')
+        const result = await extractTestProject(context, 'rebuild')
         const manifest = await readExtractionManifest(context.memoryDir)
 
         expect(manifest?.diagnostics?.sectionCount).toBe(result.sectionCount)
@@ -230,7 +262,7 @@ describe('extractProject', () => {
             loadProjectContext(),
         )
 
-        await expect(extractProject(context, 'reindex')).resolves.toMatchObject(
+        await expect(extractProject(context, 'rebuild')).resolves.toMatchObject(
             {
                 ok: true,
             },

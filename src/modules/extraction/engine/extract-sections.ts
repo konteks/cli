@@ -35,7 +35,7 @@ export default async function extractSections(
         beforeExtract?: () => Promise<void>
         deletedPaths?: string[]
         metadata?: ProjectMetadata
-        mode?: 'changed' | 'full' | 'reindex' | 'resume'
+        mode?: 'changed' | 'full' | 'rebuild' | 'resume'
         onProgress?: ExtractionProgressReporter
     } = {},
 ): Promise<ExtractSectionsResult> {

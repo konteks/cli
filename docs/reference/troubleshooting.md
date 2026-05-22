@@ -18,11 +18,11 @@ This guide helps you resolve common issues encountered while setting up or using
 1.  **Refine your Task**: Be more specific in your recall request (e.g., mention a specific file or module).
 2.  **Update the Index**: Run `konteks init` again to scan for recent changes.
 3.  **Check Ignore Rules**: Ensure the files you expect are not being excluded by `.gitignore` or `.ignore`.
-4.  **Full Rebuild**: If you've made significant architectural changes, run `konteks repair` to rebuild the [Derived Memory](memory-model.md#durable-vs-derived-data).
+4.  **Full Rebuild**: If you've made significant architectural changes, run `konteks rebuild` to rebuild the [Derived Memory](memory-model.md#durable-vs-derived-data).
 
-### 3. Durable memory is missing after a repair
+### 3. Durable memory is missing after a rebuild
 **Symptoms**: Your saved observations or diary entries are gone.
-**Cause**: `konteks repair` only rebuilds **derived** data (sections, entities). **Durable** data (observations, diary) should be preserved.
+**Cause**: `konteks rebuild` only rebuilds **derived** data (sections, entities). **Durable** data (observations, diary) should be preserved.
 **Solution**: If durable data is truly missing, check if you are in the correct project root or if the `.konteks/memory.sqlite` file was manually deleted.
 
 ### 4. "MCP Tool timeout or connection error"
@@ -39,4 +39,4 @@ This guide helps you resolve common issues encountered while setting up or using
 **Solution**:
 1. Immediately add the sensitive file to your `.gitignore` or `.ignore`.
 2. Run `konteks forget --query "the sensitive content"` to remove it from memory.
-3. Use `konteks repair` to ensure the stale index is cleared.
+3. Use `konteks rebuild` to ensure the stale index is cleared.
