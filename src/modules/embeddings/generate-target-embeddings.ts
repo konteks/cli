@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, or } from 'drizzle-orm'
 import getDb from '@/database/actions/_db'
 import { retrievalDocuments, targetEmbeddings } from '@/database/schema'
 import { contentHash } from '@/modules/persistence/objects/content'
@@ -24,6 +24,11 @@ type EmbeddingRunResult = {
     reusedCount: number
 }
 
+export type EmbeddingTarget = {
+    targetId: string
+    targetType: TargetType
+}
+
 export default async function generateTargetEmbeddings(
     provider: EmbeddingProviderContract,
     targetTypes: TargetType[],
@@ -46,6 +51,49 @@ export default async function generateTargetEmbeddings(
         .from(retrievalDocuments)
         .where(inArray(retrievalDocuments.targetType, targetTypes))
 
+    return await embedRetrievalDocumentRows(provider, rows, createdAt, options)
+}
+
+export async function generateEmbeddingsForTargets(
+    provider: EmbeddingProviderContract,
+    targets: EmbeddingTarget[],
+    createdAt: string,
+    options: {
+        onProgress?: ExtractionProgressReporter
+    } = {},
+): Promise<EmbeddingRunResult> {
+    const db = await getDb()
+    if (targets.length === 0) {
+        return { embeddedCount: 0, reusedCount: 0 }
+    }
+
+    const clauses = targets.map(target =>
+        and(
+            eq(retrievalDocuments.targetId, target.targetId),
+            eq(retrievalDocuments.targetType, target.targetType),
+        ),
+    )
+    const rows = await db
+        .select({
+            embedding_text: retrievalDocuments.embeddingText,
+            target_id: retrievalDocuments.targetId,
+            target_type: retrievalDocuments.targetType,
+        })
+        .from(retrievalDocuments)
+        .where(or(...clauses))
+
+    return await embedRetrievalDocumentRows(provider, rows, createdAt, options)
+}
+
+async function embedRetrievalDocumentRows(
+    provider: EmbeddingProviderContract,
+    rows: RetrievalDocumentRow[],
+    createdAt: string,
+    options: {
+        onProgress?: ExtractionProgressReporter
+    } = {},
+): Promise<EmbeddingRunResult> {
+    const db = await getDb()
     let embeddedCount = 0
     let reusedCount = 0
     const workItems: EmbeddingWorkItem[] = []

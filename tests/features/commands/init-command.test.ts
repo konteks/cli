@@ -48,7 +48,7 @@ class MockHuggingFaceEmbeddingProvider extends FakeEmbeddingProvider {
     }
 }
 
-mock.module('@/providers/embeddings/hugging-face-embedding-provider', () => ({
+mock.module('@/modules/embeddings/hugging-face-embedding-provider', () => ({
     default: MockHuggingFaceEmbeddingProvider,
 }))
 
