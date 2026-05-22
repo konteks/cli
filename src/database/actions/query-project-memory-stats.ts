@@ -10,7 +10,7 @@ import {
     targetEmbeddings,
 } from '@/database/schema'
 import type { ProjectMemoryStats } from '@/database/services/project-status'
-import { EXTRACTED_FILE_SOURCE_TYPE } from '@/providers/extraction/engine/source-types'
+import { EXTRACTED_FILE_SOURCE_TYPE } from '@/modules/extraction/engine/source-types'
 import getDb from './_db'
 
 export default async function queryProjectMemoryStats(): Promise<ProjectMemoryStats> {

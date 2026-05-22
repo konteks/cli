@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import {
     scanProjectFiles,
     scanProjectFilesWithDiagnostics,
-} from '@/providers/extraction/engine/file-scan'
+} from '@/modules/extraction/engine/file-scan'
 
 const tempDirs: string[] = []
 

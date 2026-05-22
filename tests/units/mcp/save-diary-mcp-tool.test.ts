@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import z from 'zod'
-import type { McpInputSchema } from '@/mcp/tools/_base-mcp-tool'
-import SaveDiaryMcpTool from '@/mcp/tools/save-diary-mcp-tool'
+import type { McpInputSchema } from '@/entrypoints/mcp/tools/_base-mcp-tool'
+import SaveDiaryMcpTool from '@/entrypoints/mcp/tools/save-diary-mcp-tool'
 
 describe('SaveDiaryMcpTool input schema', () => {
     it('accepts a diary summary', () => {

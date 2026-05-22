@@ -3,7 +3,7 @@ import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import * as os from 'node:os'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import InstallSkillsCommand from '@/commands/install-skills-command'
+import InstallSkillsCommand from '@/entrypoints/cli/commands/install-skills-command'
 
 const tempDirs: string[] = []
 

@@ -2,11 +2,11 @@ import { afterEach, describe, expect, it, spyOn } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import StatusCommand from '@/commands/status-command'
+import StatusCommand from '@/entrypoints/cli/commands/status-command'
 import {
     createDefaultConfig,
     resolveProjectContext,
-} from '@/providers/project/context'
+} from '@/modules/project/context'
 import { terminal } from '@/support/terminal/service'
 
 const tempDirs: string[] = []

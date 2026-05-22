@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'bun:test'
 import { Command } from 'commander'
-import type { BaseCommandContext } from '@/commands/_base-command'
-import { commands, memoryCommands } from '@/commands/index'
+import type { BaseCommandContext } from '@/entrypoints/cli/commands/_base-command'
+import { COMMANDS, MEMORY_COMMANDS } from '@/entrypoints/cli/commands/index'
 
 describe('CLI command registry', () => {
     it('registers top-level and memory command groups in public CLI order', () => {
-        expect(commands.map(command => command.name)).toEqual([
+        expect(COMMANDS.map(command => command.name)).toEqual([
             'init',
             'config',
             'status',
@@ -15,7 +15,7 @@ describe('CLI command registry', () => {
             'install-skills',
             'mcp',
         ])
-        expect(memoryCommands.map(command => command.name)).toEqual([
+        expect(MEMORY_COMMANDS.map(command => command.name)).toEqual([
             'export',
             'import',
         ])
@@ -27,11 +27,11 @@ describe('CLI command registry', () => {
             runInitializationGuard: async () => {},
         }
 
-        for (const command of commands) {
+        for (const command of COMMANDS) {
             command.register(program, context)
         }
         const memory = program.command('memory')
-        for (const command of memoryCommands) {
+        for (const command of MEMORY_COMMANDS) {
             command.register(memory, context)
         }
 

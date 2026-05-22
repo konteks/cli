@@ -4,8 +4,8 @@ import indexSearchDocument from '@/database/actions/index-search-document'
 import insertDiaryEntry from '@/database/actions/insert-diary-entry'
 import insertObservation from '@/database/actions/insert-observation'
 import upsertRetrievalDocument from '@/database/actions/upsert-retrieval-document'
-import createToonStore from '@/providers/persistence/objects/create-toon-store'
-import storePayload from '@/providers/persistence/objects/store-payload'
+import createToonStore from '@/modules/persistence/objects/create-toon-store'
+import storePayload from '@/modules/persistence/objects/store-payload'
 import type {
     DurableMemoryExportDiary,
     DurableMemoryExportMemory,

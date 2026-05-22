@@ -5,7 +5,7 @@ import {
     exportDiaryRow,
     exportObservationRow,
 } from '@/database/support/memory-transfer'
-import createToonStore from '@/providers/persistence/objects/create-toon-store'
+import createToonStore from '@/modules/persistence/objects/create-toon-store'
 import type { DurableMemoryExport } from '@/types/memory-transfer'
 import type { Project } from '@/types/project'
 

@@ -10,14 +10,14 @@ import {
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import BackupCommand from '@/commands/backup-command'
+import BackupCommand from '@/entrypoints/cli/commands/backup-command'
 import {
     exportMemory,
     importMemory,
     restoreMemory,
-} from '@/composition/memory-transfer'
-import { saveDiary, saveMemories } from '@/memory/save-memory'
-import { loadProjectContext } from '@/providers/project/context'
+} from '@/modules/memory/memory-transfer'
+import { saveDiary, saveMemories } from '@/modules/memory/save-memory'
+import { loadProjectContext } from '@/modules/project/context'
 
 const tempDirs: string[] = []
 let previousSqliteTestDatabase: string | undefined

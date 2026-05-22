@@ -5,9 +5,9 @@ import { join } from 'node:path'
 import {
     contentAddressPath,
     contentHash,
-} from '@/providers/persistence/objects/content'
-import createToonStore from '@/providers/persistence/objects/create-toon-store'
-import storePayload from '@/providers/persistence/objects/store-payload'
+} from '@/modules/persistence/objects/content'
+import createToonStore from '@/modules/persistence/objects/create-toon-store'
+import storePayload from '@/modules/persistence/objects/store-payload'
 
 const tempDirs: string[] = []
 

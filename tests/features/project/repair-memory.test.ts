@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
-import * as extractorModule from '@/extraction/create-project-extractor'
-import * as progressReporterModule from '@/providers/extraction/create-extraction-progress-reporter'
+import * as progressReporterModule from '@/modules/extraction/create-extraction-progress-reporter'
+import * as extractorModule from '@/modules/extraction/create-project-extractor'
 import { terminal } from '@/support/terminal/service'
 import type { ExtractProjectResponse } from '@/types/extraction'
 
@@ -38,7 +38,7 @@ afterEach(() => {
 describe('RepairCommand', () => {
     const createCommand = async () => {
         const { default: RepairCommand } = await import(
-            '@/commands/repair-command'
+            '@/entrypoints/cli/commands/repair-command'
         )
         return new RepairCommand()
     }

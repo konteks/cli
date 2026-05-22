@@ -14,9 +14,9 @@ import {
     validateSessionQuality,
     withProjectUpdateSummary,
 } from '@/database/support/save-policy'
-import { contentHash } from '@/providers/persistence/objects/content'
-import createToonStore from '@/providers/persistence/objects/create-toon-store'
-import storePayload from '@/providers/persistence/objects/store-payload'
+import { contentHash } from '@/modules/persistence/objects/content'
+import createToonStore from '@/modules/persistence/objects/create-toon-store'
+import storePayload from '@/modules/persistence/objects/store-payload'
 import type { ObservationKind, SaveResult } from '@/types/memory'
 import type { Project } from '@/types/project'
 

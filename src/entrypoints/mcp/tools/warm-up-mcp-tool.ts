@@ -1,0 +1,171 @@
+import z from 'zod'
+import { readProjectWarmUpContext } from '@/database/services/warm-up-memory'
+import recallRepositoryMemory from '@/modules/memory/recall-repository-memory'
+import {
+    loadMcpProjectContext,
+    updateChangedProjectMemorySilently,
+} from '@/modules/memory/runtime'
+import { estimateCharacterTokens } from '@/support/format/tokens'
+import type {
+    MemorySearchResult,
+    RecallPackage,
+    WarmUpContext,
+    WarmUpGuidance,
+    WarmUpHighlight,
+} from '@/types/memory'
+import BaseMcpTool from './_base-mcp-tool'
+
+const INPUT_ZOD_SCHEMA = z.object({
+    maxTokens: z.number().int().min(1).max(8000).optional(),
+    topic: z.string().optional(),
+})
+
+type Input = z.output<typeof INPUT_ZOD_SCHEMA>
+
+export default class WarmUpMcpTool extends BaseMcpTool<Input> {
+    public readonly annotations = {
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+        readOnlyHint: false,
+    }
+
+    public readonly description =
+        'Load the stable project-wide briefing for the current repo.'
+
+    public readonly inputSchema = INPUT_ZOD_SCHEMA
+
+    public readonly name = 'konteks_warm_up'
+
+    public async handle(input: Input): Promise<object> {
+        const context = await loadMcpProjectContext()
+        await updateChangedProjectMemorySilently(context)
+
+        const rawWarmUp = await readProjectWarmUpContext(context)
+        const warmUp = limitWarmUpContext(rawWarmUp, input.maxTokens ?? 2000)
+
+        let recall: RecallPackage | undefined
+        if (input.topic) {
+            recall = await recallRepositoryMemory({
+                maxTokens: input.maxTokens ?? 2000,
+                task: input.topic ?? '',
+            })
+        }
+
+        return toWarmUpOutput({ recall, warmUp })
+    }
+}
+
+function toWarmUpOutput(input: {
+    warmUp: WarmUpContext
+    recall?: RecallPackage
+}): object {
+    const { warmUp, recall } = input
+    return {
+        description: warmUp.description,
+        entryPoints: warmUp.entryPoints,
+        guidance: warmUp.guidance.map(toGuidanceOutput),
+        highlights: warmUp.highlights.map(toWarmUpHighlightOutput),
+        recall: recall ? toFocusedRecallOutput(recall) : undefined,
+        summary: warmUp.summary,
+        technologies: warmUp.technologies,
+    }
+}
+
+function toWarmUpHighlightOutput(item: WarmUpHighlight): object {
+    return {
+        excerpt: normalizeExcerpt(item.excerpt),
+        role: item.sourceRole,
+        score: item.score,
+        target: targetFor(item),
+        type: item.type,
+    }
+}
+
+function toGuidanceOutput(item: WarmUpGuidance): object {
+    return {
+        kind: item.kind,
+        text: item.text,
+    }
+}
+
+function toFocusedRecallOutput(recall: RecallPackage): object {
+    return {
+        brief: recall.brief,
+        evidenceCounts: {
+            memories: recall.memories.length,
+            sources: recall.sourceCount,
+        },
+        memories: recall.memories.slice(0, 6).map(memory =>
+            toMemoryOutput(memory, {
+                includeSources: false,
+            }),
+        ),
+        primaryTargets: recall.primaryTargets,
+        quality: recall.quality,
+        task: recall.task,
+    }
+}
+
+function toMemoryOutput(
+    item: MemorySearchResult,
+    options: { includeSources: boolean },
+): object {
+    return {
+        excerpt: normalizeExcerpt(item.excerpt),
+        id: options.includeSources ? item.id : undefined,
+        role: item.sourceRole ?? item.kind,
+        score: item.score,
+        target: targetFor(item),
+        tokenCost: options.includeSources ? item.tokenCost : undefined,
+        type: item.type,
+    }
+}
+
+function targetFor(item: {
+    anchor?: string
+    id: string
+    path?: string
+}): string {
+    const target = item.path ?? item.id
+    return item.anchor ? `${target}#${item.anchor}` : target
+}
+
+function normalizeExcerpt(excerpt: string): string {
+    return excerpt.replaceAll(/\s+/gu, ' ').trim()
+}
+
+function limitWarmUpContext(
+    context: WarmUpContext,
+    maxTokens: number,
+): WarmUpContext {
+    const budget = Math.max(80, maxTokens)
+    const baseCost = estimateCharacterTokens([
+        context.summary,
+        context.description ?? '',
+        ...context.technologies,
+        ...context.entryPoints,
+    ])
+    let remaining = Math.max(0, budget - baseCost)
+
+    const take = (items: string[], fallbackLimit: number): string[] => {
+        const kept: string[] = []
+        for (const item of items.slice(0, fallbackLimit)) {
+            const cost = estimateCharacterTokens([item])
+            if (kept.length > 0 && cost > remaining) {
+                break
+            }
+            kept.push(item)
+            remaining -= cost
+        }
+        return kept
+    }
+
+    return {
+        ...context,
+        architecture: take(context.architecture, 12),
+        guidance: context.guidance.slice(0, 8),
+        highlights: context.highlights.slice(0, 12),
+        keyFiles: take(context.keyFiles, 12),
+    }
+}

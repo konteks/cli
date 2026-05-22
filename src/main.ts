@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
-import { commands, memoryCommands } from '@/commands'
-import type { BaseCommandContext } from '@/commands/_base-command'
 import { projectMemoryDatabasePath } from '@/database/services/project-memory'
-import { readExtractionManifest } from '@/providers/extraction/engine/manifest'
-import { loadProjectContext, pathExists } from '@/providers/project/context'
+import { COMMANDS, MEMORY_COMMANDS } from '@/entrypoints/cli/commands'
+import type { BaseCommandContext } from '@/entrypoints/cli/commands/_base-command'
+import { readExtractionManifest } from '@/modules/extraction/engine/manifest'
+import { loadProjectContext, pathExists } from '@/modules/project/context'
 import CliUserError from '@/support/cli/cli-user-error'
 import getVersion from '@/support/get-version'
 import createColorPalette from '@/support/terminal/create-color-palette'
@@ -28,7 +28,7 @@ export function createCliProgram(): Command {
 }
 
 function registerCommands(program: Command, context: BaseCommandContext): void {
-    commands.forEach(command => {
+    COMMANDS.forEach(command => {
         command.register(program, context)
     })
 
@@ -36,7 +36,7 @@ function registerCommands(program: Command, context: BaseCommandContext): void {
         .command('memory')
         .description('Import or export portable durable memory.')
 
-    memoryCommands.forEach(command => {
+    MEMORY_COMMANDS.forEach(command => {
         command.register(memory, context)
     })
 }

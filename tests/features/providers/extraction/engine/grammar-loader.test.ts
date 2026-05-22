@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import * as os from 'node:os'
@@ -8,8 +7,8 @@ import {
     getGrammarForPath,
     initTreeSitterWithSelectedGrammars,
     listGrammarDefinitions,
-} from '@/providers/extraction/engine/grammar-loader'
-import { loadProjectContext } from '@/providers/project/context'
+} from '@/modules/extraction/engine/grammar-loader'
+import { loadProjectContext } from '@/modules/project/context'
 
 const tempDirs: string[] = []
 

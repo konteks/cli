@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import { mkdir, mkdtemp, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import CallCommand from '@/commands/mcp/call-command'
-import mcpTools from '@/mcp/tools'
-import { loadProjectContext } from '@/providers/project/context'
+import CallCommand from '@/entrypoints/cli/commands/mcp/call-command'
+import mcpTools from '@/entrypoints/mcp/tools'
+import { loadProjectContext } from '@/modules/project/context'
 import { terminal } from '@/support/terminal/service'
 
 describe('commands/mcp/call', () => {

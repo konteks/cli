@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
-import sectionFile from '@/providers/extraction/engine/section-file'
-import TreeSitterEngine from '@/providers/extraction/engine/tree-sitter-engine'
+import sectionFile from '@/modules/extraction/engine/section-file'
+import TreeSitterEngine from '@/modules/extraction/engine/tree-sitter-engine'
 
 describe('TreeSitterEngine', () => {
     it('fails when a matching grammar is not loaded', async () => {

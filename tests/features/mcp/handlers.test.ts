@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
-import mcpTools from '@/mcp/tools'
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
+import mcpTools from '@/entrypoints/mcp/tools'
 
 describe('mcp/handlers', () => {
     it('rejects unknown tools before dispatch', async () => {

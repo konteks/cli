@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'bun:test'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types'
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import z from 'zod'
-import mcpTools from '@/mcp/tools'
-import BaseMcpTool from '@/mcp/tools/_base-mcp-tool'
+import mcpTools from '@/entrypoints/mcp/tools'
+import BaseMcpTool from '@/entrypoints/mcp/tools/_base-mcp-tool'
 
 describe('MCP tools', () => {
     it('registers tools in API order with protocol annotations', () => {

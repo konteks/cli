@@ -1,0 +1,33 @@
+import z from 'zod'
+import { saveDiary } from '@/modules/memory/save-memory'
+import BaseMcpTool from './_base-mcp-tool'
+import saveTextSchema from './schemas/save-input-schema'
+
+const INPUT_SCHEMA = z.object({
+    subject: z.string().optional(),
+    summary: saveTextSchema,
+    tags: z.array(z.string()).optional(),
+})
+
+type Input = z.output<typeof INPUT_SCHEMA>
+
+export default class SaveDiaryMcpTool extends BaseMcpTool<Input> {
+    public readonly annotations = {
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+        readOnlyHint: false,
+    }
+
+    public readonly description = 'Persist one compact session diary entry.'
+
+    public readonly inputSchema = INPUT_SCHEMA
+
+    public readonly name = 'konteks_save_diary'
+
+    public async handle(input: Input): Promise<string> {
+        await saveDiary(input)
+
+        return 'session diary saved'
+    }
+}

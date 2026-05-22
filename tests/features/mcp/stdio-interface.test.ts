@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, expect, it } from 'bun:test'
 import { execFile } from 'node:child_process'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
@@ -6,11 +5,11 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { LATEST_PROTOCOL_VERSION } from '@modelcontextprotocol/sdk/types.js'
-import { extractProject } from '@/providers/extraction/extract-project'
+import { extractProject } from '@/modules/extraction/extract-project'
 import {
     loadProjectContext,
     writeProjectConfig,
-} from '@/providers/project/context'
+} from '@/modules/project/context'
 import getVersion from '@/support/get-version'
 import FakeEmbeddingProvider from '../../fake/fake-embedding-provider'
 
