@@ -69,15 +69,13 @@ function formatStatus(status: ProjectStatus): string {
         row('Last indexed', formatLastIndexed(status)),
         '',
         row('Source files', formatInteger(status.memoryStats.files)),
+        row('Vectors', formatInteger(status.memoryStats.embeddings)),
         '',
-        color.accent('Project memory'),
-        nestedRow(
-            'Documents',
-            `${formatInteger(status.memoryStats.retrievalDocuments)} (${formatCount(status.memoryStats.sections, 'section')}, ${formatCount(status.memoryStats.modules, 'module')})`,
-        ),
-        nestedRow('Vectors', formatInteger(status.memoryStats.embeddings)),
+        color.accent('Derived memory'),
+        nestedRow('Modules', formatInteger(status.memoryStats.modules)),
+        nestedRow('Sections', formatInteger(status.memoryStats.sections)),
         '',
-        color.accent('Session memory'),
+        color.accent('Durable memory'),
         nestedRow('Memories', formatInteger(status.memoryStats.memories)),
         nestedRow(
             'Diary entries',
@@ -94,7 +92,7 @@ function row(label: string, value: string): string {
 }
 
 function nestedRow(label: string, value: string): string {
-    return `  ${label.padEnd(15)} ${value}`
+    return `  ${label.padEnd(13)} ${value}`
 }
 
 function formatStatusDetail(
@@ -119,10 +117,6 @@ function formatLastIndexed(status: ProjectStatus): string {
     return status.freshness.lastExtractedAt
         ? formatDate(status.freshness.lastExtractedAt)
         : 'Not indexed yet'
-}
-
-function formatCount(value: number, singular: string): string {
-    return `${formatInteger(value)} ${singular}${value === 1 ? '' : 's'}`
 }
 
 function formatDate(value: string): string {

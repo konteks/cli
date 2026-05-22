@@ -87,9 +87,11 @@ describe('project context', () => {
             expect(output).toContain('Project memory status')
             expect(output).toContain('Status        Not initialized')
             expect(output).toContain('Last indexed  Not indexed yet')
-            expect(output).toContain(
-                'Documents       0 (0 sections, 0 modules)',
-            )
+            expect(output).toContain('Vectors       0')
+            expect(output).toContain('Derived memory')
+            expect(output).toContain('Modules       0')
+            expect(output).toContain('Sections      0')
+            expect(output).toContain('Durable memory')
         } finally {
             colorSpy.mockRestore()
             logSpy.mockRestore()
@@ -113,9 +115,11 @@ describe('project context', () => {
             expect(output).toContain('Project memory status')
             expect(output).toContain('Status        Not initialized')
             expect(output).toContain('Last indexed  Not indexed yet')
-            expect(output).toContain(
-                'Documents       0 (0 sections, 0 modules)',
-            )
+            expect(output).toContain('Vectors       0')
+            expect(output).toContain('Derived memory')
+            expect(output).toContain('Modules       0')
+            expect(output).toContain('Sections      0')
+            expect(output).toContain('Durable memory')
         } finally {
             colorSpy.mockRestore()
             logSpy.mockRestore()
