@@ -31,7 +31,7 @@ Konteks stores all memory artifacts (SQLite database and object store) inside yo
 We believe that setup should not be a barrier. Konteks is designed to be used through the JavaScript package ecosystem without global installation.
 
 * Use it via `npx` or `bunx`.
-* No host SQLite installation or native compilation required.
+* No separate database service or external account required.
 * Works anywhere Node.js or Bun is available.
 
 ### 3. Agent-Native & MCP-First

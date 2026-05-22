@@ -38,7 +38,7 @@ Continue with the [Quickstart](docs/getting-started/quickstart.md) for MCP setup
 
 ## 📂 Local Storage
 
-Konteks writes local memory under `.konteks/`. It uses SQLite (WASM) for the graph/indexes and a content-addressed object store for payloads. No host SQLite client or native modules are required.
+Konteks writes local memory under `.konteks/`. It uses SQLite for the graph/indexes and a content-addressed object store for payloads.
 
 ## ⚖️ License
 
