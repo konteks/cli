@@ -3,7 +3,9 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import * as os from 'node:os'
 import { join } from 'node:path'
-import registryJson from '@/assets/grammars/registry.json' with { type: 'json' }
+import GRAMMAR_REGISTRY, {
+    type GrammarDefinition,
+} from '@/assets/grammar-registry'
 import { pathExists } from '@/modules/project/context'
 import type { ExtractionProgressReporter } from '@/types/progress'
 import type { Project } from '@/types/project'
@@ -11,14 +13,6 @@ import type { Project } from '@/types/project'
 type TreeSitterBootstrapEngine = {
     init(): Promise<void>
     loadLanguage(lang: string, wasmPath: string): Promise<void>
-}
-
-export type GrammarDefinition = {
-    aliases: string[]
-    displayName: string
-    downloadUrl: string
-    extensions: string[]
-    id: string
 }
 
 type GrammarCacheEntry = {
@@ -43,7 +37,7 @@ type BundledGrammarDefinition = {
 type GrammarMatch = GrammarDefinition | BundledGrammarDefinition
 
 const require = createRequire(import.meta.url)
-const registry = loadGrammarRegistry(registryJson)
+const registry = loadGrammarRegistry(GRAMMAR_REGISTRY)
 
 const bundledGrammars: BundledGrammarDefinition[] = [
     {
@@ -74,7 +68,7 @@ export function listGrammarDefinitions(): GrammarDefinition[] {
     return [...registry]
 }
 
-function getGrammarDefinition(id: string): GrammarDefinition | undefined {
+function getGrammarDefinition(id: string) {
     return registry.find(grammar => grammar.id === id)
 }
 
