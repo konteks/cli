@@ -37,6 +37,9 @@ mock.module('@inquirer/prompts', () => ({
         confirmCalls.push(options)
         return confirmResult
     },
+    input: async () => '',
+    number: async () => undefined,
+    select: async () => undefined,
 }))
 
 afterEach(() => {

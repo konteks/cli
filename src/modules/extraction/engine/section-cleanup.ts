@@ -155,6 +155,6 @@ where (suppressed_at is not null or deleted_at is not null)
                 sql`, `,
             )})`
           : sql``
-  };
+};
 `)
 }

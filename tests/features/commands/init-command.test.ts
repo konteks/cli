@@ -58,6 +58,8 @@ mock.module('@inquirer/prompts', () => ({
         return checkboxResult
     },
     confirm: async () => true,
+    input: async () => '',
+    number: async () => undefined,
     select: async (options: unknown) => {
         selectCalls.push(options)
         return selectResult
