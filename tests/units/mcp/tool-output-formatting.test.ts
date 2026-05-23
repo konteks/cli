@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import toCallToolResult from '@/entrypoints/mcp/tools/utils/to-call-tool-result'
+import toCallToolResult from '@/entrypoints/mcp/tools/_support/to-call-tool-result'
 
 describe('MCP tool output formatting', () => {
     it('converts strings to MCP tool text without TOON encoding', () => {

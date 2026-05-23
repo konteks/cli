@@ -2,7 +2,7 @@ import { confirm } from '@inquirer/prompts'
 import createProjectExtractor from '@/modules/extraction/create-project-extractor'
 import { terminal } from '@/support/terminal/service'
 import BaseCommand from './_base-command'
-import createProjectMemoryProgressReporter from './utils/project-memory-progress-reporter'
+import createProjectMemoryProgressReporter from './_support/project-memory-progress-reporter'
 
 export default class RebuildCommand extends BaseCommand {
     public readonly description =

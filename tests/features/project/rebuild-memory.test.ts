@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
-import * as progressReporterModule from '@/entrypoints/cli/commands/utils/project-memory-progress-reporter'
+import * as progressReporterModule from '@/entrypoints/cli/commands/_support/project-memory-progress-reporter'
 import * as extractorModule from '@/modules/extraction/create-project-extractor'
 import { terminal } from '@/support/terminal/service'
 import type { ExtractProjectResponse } from '@/types/extraction'
