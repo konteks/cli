@@ -226,7 +226,7 @@ describe('mcp/stdio interface', () => {
                 extractToolText(
                     resultById<ToolCallResult>(successResponses, 3),
                 ),
-            ).toContain('summary:')
+            ).toContain('highlights')
 
             const invalidRecall = resultById<ToolCallResult>(
                 await runMcpExchange(fixture.projectRoot, [

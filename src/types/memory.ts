@@ -122,7 +122,6 @@ export type WarmUpContext = {
     guidance: WarmUpGuidance[]
     highlights: WarmUpHighlight[]
     keyFiles: string[]
-    summary: string
     taxonomy: string[]
     technologies: string[]
 }

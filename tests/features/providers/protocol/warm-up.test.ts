@@ -93,7 +93,7 @@ describe('konteks_warm_up', () => {
         const text = extractText(result)
 
         expect(text).not.toContain('warm_up:')
-        expect(text).toContain('summary:')
+        expect(text).not.toContain('summary:')
         expect(text).toContain('guidance')
         expect(text).toContain('highlights')
         expect(text).toContain('Use Bun test for project verification.')
