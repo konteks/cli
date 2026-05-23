@@ -11,6 +11,7 @@ describe('SaveMemoriesMcpTool input schema', () => {
                         content: 'Use class based MCP tools.',
                         importance: 3,
                         kind: 'decision',
+                        supersedes: ['obs_previous_decision'],
                     },
                 ],
             }),
@@ -20,6 +21,7 @@ describe('SaveMemoriesMcpTool input schema', () => {
                     content: 'Use class based MCP tools.',
                     importance: 3,
                     kind: 'decision',
+                    supersedes: ['obs_previous_decision'],
                 },
             ],
         })

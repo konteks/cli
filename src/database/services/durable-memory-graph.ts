@@ -2,10 +2,13 @@ import {
     aliasesForPath,
     deleteEntityGraph,
     entityIdFor,
+    findDecisionMemoryEntitiesByAliasValues,
     findEntityMatchesByAliasValues,
     type GraphEntityType,
     type GraphRelationPredicate,
+    markRelationsSuperseded,
     normalizeEntityAlias,
+    queryActiveDurableRelationsForEntity,
     upsertEntity,
     upsertEntityAliases,
     upsertRelation,
@@ -41,6 +44,7 @@ export async function projectMemoryToGraph(input: {
     kind: ObservationKind
     source?: string
     summary?: string
+    supersedes?: string[]
     tags?: string[]
 }): Promise<void> {
     const entity = await upsertEntity({
@@ -74,6 +78,14 @@ export async function projectMemoryToGraph(input: {
         durableType: 'memory',
         predicate: input.kind === 'constraint' ? 'applies_to' : 'concerns',
     })
+
+    if (input.kind === 'decision') {
+        await applyDecisionSupersession({
+            decisionEntityId: entity.id,
+            decisionId: input.id,
+            supersedes: input.supersedes ?? [],
+        })
+    }
 }
 
 export async function projectDiaryToGraph(input: {
@@ -182,6 +194,45 @@ async function attachDurableEntity(input: {
             },
             subjectId: input.durableEntityId,
         })
+    }
+}
+
+async function applyDecisionSupersession(input: {
+    decisionEntityId: string
+    decisionId: string
+    supersedes: string[]
+}): Promise<void> {
+    const supersededDecisions = await findDecisionMemoryEntitiesByAliasValues(
+        input.supersedes,
+    )
+    const validTo = new Date().toISOString()
+
+    for (const supersededDecision of supersededDecisions) {
+        if (supersededDecision.id === input.decisionEntityId) {
+            continue
+        }
+
+        const supersedesRelation = await upsertRelation({
+            confidence: 1,
+            evidenceKey: `${input.decisionId}:${supersededDecision.id}`,
+            objectId: supersededDecision.id,
+            predicate: 'supersedes',
+            properties: {
+                durableId: input.decisionId,
+                durableType: 'memory',
+                origin: 'durable_memory',
+                supersededDecisionId: supersededDecision.canonicalName,
+            },
+            subjectId: input.decisionEntityId,
+        })
+        const oldRelations = await queryActiveDurableRelationsForEntity(
+            supersededDecision.id,
+        )
+        await markRelationsSuperseded(
+            oldRelations.map(relation => relation.id),
+            supersedesRelation.id,
+            validTo,
+        )
     }
 }
 

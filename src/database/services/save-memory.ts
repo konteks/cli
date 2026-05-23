@@ -30,6 +30,7 @@ type SaveMemoryInput = {
     kind: ObservationKind
     importance: 1 | 2 | 3 | 4 | 5
     source?: string
+    supersedes?: string[]
     tags?: string[]
 }
 
@@ -126,6 +127,7 @@ async function saveKonteksMemory(
             kind: input.kind,
             source: input.source,
             summary,
+            supersedes: input.supersedes,
             tags: input.tags,
         })
     })
