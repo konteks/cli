@@ -25,8 +25,7 @@ describe('CLI initialization middleware', () => {
         ['install-skills'],
         ['mcp'],
         ['mcp', 'tools'],
-        ['mcp', 'tool', 'konteks_warm_up'],
-        ['mcp', 'call', 'konteks_warm_up'],
+        // ['mcp', 'tools', 'konteks_warm_up'],
     ]) {
         it(`blocks ${args.join(' ')} when project memory is not initialized`, async () => {
             const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-cli-'))

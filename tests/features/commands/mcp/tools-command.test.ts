@@ -84,7 +84,7 @@ describe('commands/mcp/tools', () => {
 
         expect(inputCalls).toEqual([
             expect.objectContaining({
-                message: 'task (string):',
+                message: 'task (string, required):',
             }),
         ])
         expect(handleSpy).toHaveBeenCalledWith({
@@ -105,6 +105,11 @@ describe('commands/mcp/tools', () => {
 
         await createCommand().then(command => command.handle())
 
+        expect(inputCalls[0]).toEqual(
+            expect.objectContaining({
+                message: 'topic (string, optional - leave blank to omit):',
+            }),
+        )
         expect(handleSpy).toHaveBeenCalledWith({})
     })
 
@@ -123,7 +128,12 @@ describe('commands/mcp/tools', () => {
 
         expect(selectCalls[1]).toEqual(
             expect.objectContaining({
-                message: 'includeSources (boolean):',
+                choices: expect.arrayContaining([
+                    expect.objectContaining({
+                        name: 'Skip (leave unset)',
+                    }),
+                ]),
+                message: 'includeSources (boolean, optional):',
             }),
         )
         expect(handleSpy).toHaveBeenCalledWith({
@@ -144,6 +154,16 @@ describe('commands/mcp/tools', () => {
 
         await createCommand().then(command => command.handle())
 
+        expect(selectCalls[1]).toEqual(
+            expect.objectContaining({
+                choices: expect.arrayContaining([
+                    expect.objectContaining({
+                        name: 'Skip (leave unset)',
+                    }),
+                ]),
+                message: 'mode (enum, optional):',
+            }),
+        )
         expect(handleSpy).toHaveBeenCalledWith({
             id: 'memory#1',
             mode: 'soft_delete',
@@ -170,7 +190,7 @@ describe('commands/mcp/tools', () => {
 
         expect(inputCalls[2]).toEqual(
             expect.objectContaining({
-                message: 'tags (JSON):',
+                message: 'tags (JSON, optional - leave blank to omit):',
             }),
         )
         expect(handleSpy).toHaveBeenCalledWith({
@@ -200,6 +220,44 @@ describe('commands/mcp/tools', () => {
         expect(handleSpy).toHaveBeenCalledTimes(1)
         expect(handleSpy).toHaveBeenCalledWith({
             task: 'Valid task',
+        })
+    })
+
+    it('uses a direct tool argument without opening the tool selector', async () => {
+        confirmResults.push(true)
+        inputResults.push('')
+        const tool = getTool('konteks_warm_up')
+        const handleSpy = spyOn(tool, 'handle').mockImplementation(
+            async () => ({
+                ok: true,
+            }),
+        )
+
+        await createCommand().then(command =>
+            command.handle({
+                args: ['konteks_warm_up'],
+                options: { json: false },
+            }),
+        )
+
+        expect(selectCalls).toEqual([])
+        expect(handleSpy).toHaveBeenCalledWith({})
+    })
+
+    it('describes the tools command and JSON output clearly', async () => {
+        const command = await createCommand()
+
+        expect(command.description).toBe(
+            'Inspect and run MCP tools exposed by Konteks.',
+        )
+        expect(command.args).toContainEqual({
+            description:
+                'Optional MCP tool name. Omit it to choose interactively.',
+            name: '[tool]',
+        })
+        expect(command.options).toContainEqual({
+            description: 'Print the tool result as JSON instead of TOON.',
+            flags: '--json',
         })
     })
 })

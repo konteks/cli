@@ -58,7 +58,7 @@ describe('commands/mcp', () => {
 
     it('registers tools and prompts before connecting the MCP server', async () => {
         const { default: McpCommand } = await import(
-            '@/entrypoints/cli/commands/mcp-command'
+            '@/entrypoints/cli/commands/mcp'
         )
         const { default: mcpTools } = await import('@/entrypoints/mcp/tools')
 

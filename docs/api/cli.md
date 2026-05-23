@@ -46,14 +46,12 @@ These commands inspect MCP behavior from the terminal without registering an age
 
 | Command | Shows |
 | :--- | :--- |
-| `konteks mcp tools` | MCP tool names, descriptions, and schemas. |
-| `konteks mcp call <tool>` | Execute one tool in dry-run mode and print the tool text output without persisting writes. |
-| `konteks mcp call <tool> '<json>'` | Execute one tool with input in dry-run mode and print the tool text output without persisting writes. |
-| `konteks mcp call --json <tool> '<json>'` | Print the raw MCP result envelope as JSON. |
-| `konteks mcp call --apply <tool> '<json>'` | Actually execute a mutating MCP tool call and print the tool text output. |
+| `konteks mcp tools` | Choose an MCP tool interactively, review its schema, enter input values, and run it. |
+| `konteks mcp tools <tool>` | Review and run one MCP tool by name. |
+| `konteks mcp tools --json <tool>` | Print the tool result as JSON instead of TOON. |
 
 > [!IMPORTANT]
-> `konteks mcp call` is a debug command. Mutating tools such as `konteks_warm_up`, `konteks_save`, and `konteks_forget` run against a temporary copy of Konteks memory by default, so the command can show the real tool output without persisting memory changes. Use `--apply` when you need to keep the writes, and `--json` when you need the raw MCP envelope.
+> `konteks mcp tools` runs the selected MCP tool after confirmation. Optional text, number, and JSON fields can be left blank to omit them. Complex fields such as arrays and objects are entered as JSON text.
 
 ## Compatibility Skills
 
