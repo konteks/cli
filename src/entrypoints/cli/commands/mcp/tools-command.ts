@@ -1,5 +1,4 @@
 import * as prompts from '@inquirer/prompts'
-import { encode } from '@toon-format/toon'
 import z from 'zod'
 import MCP_TOOLS from '@/entrypoints/mcp/tools'
 import consoleOutput from '@/support/console-output'
@@ -49,7 +48,11 @@ export default class ToolsCommand extends BaseCommand<
             }
 
             printTool(selectedTool)
-            const isConfirmed = await callToolConfirmation()
+            this.consoleOutput.print('')
+
+            const isConfirmed = directToolName
+                ? true
+                : await callToolConfirmation()
 
             if (!isConfirmed) {
                 loop = !directToolName
@@ -59,7 +62,11 @@ export default class ToolsCommand extends BaseCommand<
             const toolInput = await promptForToolInput(selectedTool)
             const result = await selectedTool.handle(toolInput)
 
-            this.print(input?.options?.json ? result : encode(result))
+            if (input?.options?.json) {
+                this.consoleOutput.print(result)
+            } else {
+                this.consoleOutput.toon(result)
+            }
 
             loop = directToolName
                 ? false

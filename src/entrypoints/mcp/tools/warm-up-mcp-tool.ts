@@ -1,5 +1,5 @@
 import z from 'zod'
-import { readProjectWarmUpContext } from '@/database/services/warm-up-memory'
+import readWarmUpContext from '@/database/services/read-warm-up-context'
 import recallRepositoryMemory from '@/modules/memory/recall-repository-memory'
 import {
     loadMcpProjectContext,
@@ -40,7 +40,7 @@ export default class WarmUpMcpTool extends BaseMcpTool<Input> {
         const context = await loadMcpProjectContext()
         await updateChangedProjectMemorySilently(context)
 
-        const rawWarmUp = await readProjectWarmUpContext(context)
+        const rawWarmUp = await readWarmUpContext(context)
         const warmUp = limitWarmUpContext(rawWarmUp, 2000)
 
         let recall: RecallPackage | undefined
