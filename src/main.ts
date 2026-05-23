@@ -6,6 +6,7 @@ import type { BaseCommandContext } from '@/entrypoints/cli/commands/_base-comman
 import { readExtractionManifest } from '@/modules/extraction/engine/manifest'
 import { loadProjectContext, pathExists } from '@/modules/project/context'
 import CliUserError from '@/support/cli/cli-user-error'
+import { configureCliHelp } from '@/support/configure-cli-help'
 import consoleOutput, {
     type ConsoleColorPalette,
 } from '@/support/console-output'
@@ -20,6 +21,8 @@ export function createCliProgram(): Command {
             `Konteks ${VERSION} - Project-local context memory for AI coding agents.`,
         )
         .version(VERSION)
+
+    configureCliHelp(program)
 
     registerCommands(program, {
         runInitializationGuard: ensureCliProjectInitialized,
