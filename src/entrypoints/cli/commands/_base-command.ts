@@ -38,10 +38,15 @@ export default abstract class BaseCommand<
     public readonly printsHeader: boolean = true
     public readonly usesInitializationGuard: boolean = true
 
+    protected readonly consoleOutput = consoleOutput
+
     public abstract handle(
         input?: BaseCommandInput<Args, Options>,
     ): Promise<void> | void
 
+    /**
+     * @deprecated use `this.consoleOutput.print` instead
+     */
     protected print(value: ConsoleOutputMessage): void {
         consoleOutput.print(value)
     }
