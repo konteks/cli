@@ -2,8 +2,8 @@ import { withTransaction } from '@/database/actions/_db'
 import appendMemoryEvent from '@/database/actions/append-memory-event'
 import reindexRetrievalDocumentFts from '@/database/actions/reindex-retrieval-document-fts'
 import { upsertNode } from '@/database/services/taxonomy'
+import consoleOutput from '@/support/console-output'
 import contentHash from '@/support/content-hash'
-import { terminal } from '@/support/terminal/service'
 import type { ExtractionProgressReporter } from '@/types/progress'
 import type { Project } from '@/types/project'
 import type { ProjectMetadata } from './extract-project-metadata'
@@ -62,7 +62,7 @@ export default async function extractSections(
         }
         loadedParserCount = loaded.loaded.length
         for (const warning of loaded.warnings) {
-            terminal.error(warning)
+            consoleOutput.error(warning)
         }
         progress?.({
             message: 'Tree-sitter grammars ready',

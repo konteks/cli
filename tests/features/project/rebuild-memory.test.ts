@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import * as progressReporterModule from '@/entrypoints/cli/commands/_support/project-memory-progress-reporter'
 import * as extractorModule from '@/modules/extraction/create-project-extractor'
-import { terminal } from '@/support/terminal/service'
+import consoleOutput, {
+    type ConsoleColorPalette,
+    type ConsoleOutputMessage,
+} from '@/support/console-output'
 import type { ExtractProjectResponse } from '@/types/extraction'
 
 let confirmResult = true
@@ -119,12 +122,15 @@ describe('RebuildCommand', () => {
         resetState()
         confirmResult = false
         const { extractorSpy, progressSpy } = installExtractorSpies()
-        const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
-        const stdinSpy = spyOn(terminal, 'stdinIsInteractive').mockReturnValue(
-            true,
+        const logSpy = spyOn(consoleOutput, 'print').mockImplementation(
+            () => consoleOutput,
         )
+        const stdinSpy = spyOn(
+            consoleOutput,
+            'stdinIsInteractive',
+        ).mockReturnValue(true)
         const stderrSpy = spyOn(
-            terminal,
+            consoleOutput,
             'stderrIsInteractive',
         ).mockReturnValue(true)
 
@@ -180,31 +186,33 @@ describe('RebuildCommand', () => {
             mockProgress: false,
         })
         const output: string[] = []
-        const logSpy = spyOn(terminal, 'log').mockImplementation(message => {
-            output.push(message)
-        })
-        const errorSpy = spyOn(terminal, 'writeError').mockImplementation(
+        const logSpy = spyOn(consoleOutput, 'print').mockImplementation(
             message => {
-                output.push(message)
+                output.push(renderStdoutMessage(message))
+                return consoleOutput
             },
         )
-        const stdinSpy = spyOn(terminal, 'stdinIsInteractive').mockReturnValue(
-            false,
+        const errorSpy = spyOn(consoleOutput, 'writeError').mockImplementation(
+            message => {
+                output.push(renderStderrMessage(message))
+                return consoleOutput
+            },
         )
+        const stdinSpy = spyOn(
+            consoleOutput,
+            'stdinIsInteractive',
+        ).mockReturnValue(false)
         const stderrSpy = spyOn(
-            terminal,
+            consoleOutput,
             'stderrIsInteractive',
         ).mockReturnValue(false)
-        const colorSpy = spyOn(terminal, 'stderrSupportsColor').mockReturnValue(
-            false,
-        )
 
         try {
             await (await createCommand()).handle()
             expect(extractorCalls).toEqual([
                 { mode: 'rebuild', projectRoot: process.cwd() },
             ])
-            const renderedOutput = output.join('\n')
+            const renderedOutput = stripAnsi(output.join('\n'))
 
             expect(renderedOutput).toContain('Rebuilding project memory')
             expect(renderedOutput).toContain(
@@ -220,9 +228,36 @@ describe('RebuildCommand', () => {
             progressSpy?.mockRestore()
             stdinSpy.mockRestore()
             stderrSpy.mockRestore()
-            colorSpy.mockRestore()
             logSpy.mockRestore()
             errorSpy.mockRestore()
+        }
+
+        function renderStdoutMessage(message: ConsoleOutputMessage): string {
+            return isOutputFormatter(message)
+                ? consoleOutput.withStdoutColor(message)
+                : String(message)
+        }
+
+        function renderStderrMessage(
+            message: string | ((color: ConsoleColorPalette) => string),
+        ): string {
+            return typeof message === 'function'
+                ? consoleOutput.withStderrColor(message)
+                : message
+        }
+
+        function isOutputFormatter(
+            message: ConsoleOutputMessage,
+        ): message is (color: ConsoleColorPalette) => string {
+            return typeof message === 'function'
+        }
+
+        function stripAnsi(value: string): string {
+            const ansiPattern = new RegExp(
+                `${String.fromCharCode(27)}\\[[0-9;]*m`,
+                'gu',
+            )
+            return value.replaceAll(ansiPattern, '')
         }
     })
 })

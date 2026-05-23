@@ -1,8 +1,7 @@
+import consoleOutput, {
+    type ConsoleColorPalette,
+} from '@/support/console-output'
 import { formatBytes } from '@/support/format/number'
-import createColorPalette, {
-    type ColorPalette,
-} from '@/support/terminal/create-color-palette'
-import { terminal } from '@/support/terminal/service'
 import {
     createInlineProgress,
     createTuiText,
@@ -20,10 +19,11 @@ export default function createExtractionProgressReporter(): {
     let spinnerIndex = 0
     let lastCompactMessage = ''
     const downloadBuckets = new Map<string, number>()
-    const isTty = terminal.stderrIsInteractive()
-    const color = createColorPalette(terminal.stderrSupportsColor())
-    const inline = createInlineProgress(value => terminal.writeError(value))
-    const text = createTuiText(color)
+    const isTty = consoleOutput.stderrIsInteractive()
+    const inline = createInlineProgress(value =>
+        consoleOutput.writeError(value),
+    )
+    const text = consoleOutput.withStderrColor(createTuiText)
 
     return {
         done() {
@@ -52,7 +52,7 @@ export default function createExtractionProgressReporter(): {
                     (downloadBucket !== undefined &&
                         downloadBucket > previousDownloadBucket)
                 ) {
-                    terminal.error(message)
+                    consoleOutput.error(message)
                     lastStep = step
                     if (downloadBucket !== undefined) {
                         downloadBuckets.set(downloadKey, downloadBucket)
@@ -66,13 +66,17 @@ export default function createExtractionProgressReporter(): {
                 inline.done()
                 activeStep = step
                 lastCompactMessage = ''
-                terminal.writeError(`${formatStepHeader(event, color)}\n`)
+                consoleOutput.writeError(
+                    color => `${formatStepHeader(event, color)}\n`,
+                )
             }
 
             if (event.status === 'progress') {
                 spinnerIndex += 1
                 const compact = compactMessage(event)
-                const output = formatInlineProgress(event, spinnerIndex, color)
+                const output = consoleOutput.withStderrColor(color =>
+                    formatInlineProgress(event, spinnerIndex, color),
+                )
                 if (
                     event.phase === 'preparation' &&
                     compact === lastCompactMessage &&
@@ -87,13 +91,13 @@ export default function createExtractionProgressReporter(): {
 
             if (event.status === 'done' && event.phase !== 'done') {
                 inline.done()
-                terminal.writeError(`${formatDoneLine(event, text)}\n`)
+                consoleOutput.writeError(`${formatDoneLine(event, text)}\n`)
                 return
             }
 
             if (event.phase === 'done') {
                 inline.done()
-                terminal.writeError(`${formatFinalLine(event, text)}\n`)
+                consoleOutput.writeError(`${formatFinalLine(event, text)}\n`)
             }
         },
     }
@@ -108,7 +112,7 @@ function formatPlainEvent(event: ExtractionProgressEvent): string {
 
 function formatStepHeader(
     event: ExtractionProgressEvent,
-    color: ColorPalette,
+    color: ConsoleColorPalette,
 ): string {
     return `${color.dim('┌')} ${color.accent(stepTitle(event))}`
 }
@@ -116,7 +120,7 @@ function formatStepHeader(
 function formatInlineProgress(
     event: ExtractionProgressEvent,
     spinnerIndex: number,
-    color: ColorPalette,
+    color: ConsoleColorPalette,
 ): string {
     const spinner = color.accent(spinnerFrame(spinnerIndex))
     const progress = color.info(formatPercentAndCount(event).padEnd(20))

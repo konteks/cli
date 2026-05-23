@@ -2,9 +2,9 @@ import { cp, mkdir, mkdtemp, rename, rm } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import MCP_TOOLS from '@/entrypoints/mcp/tools'
 import { loadProjectContext, pathExists } from '@/modules/project/context'
+import consoleOutput from '@/support/console-output'
 import { parseJsonInput, stringifyPretty } from '@/support/json/io'
 import { isRecord } from '@/support/object/value'
-import { terminal } from '@/support/terminal/service'
 import type { BaseCommandInput } from '../_base-command'
 import BaseCommand from '../_base-command'
 
@@ -128,22 +128,22 @@ function printMcpCallResult(
     options: { json?: boolean } = {},
 ): void {
     if (options.json) {
-        terminal.log(stringifyPretty(result))
+        consoleOutput.print(stringifyPretty(result))
         return
     }
 
     if (typeof result === 'string') {
-        terminal.log(result)
+        consoleOutput.print(result)
         return
     }
 
     const text = extractMcpText(result)
     if (text) {
-        terminal.log(text)
+        consoleOutput.print(text)
         return
     }
 
-    terminal.log(stringifyPretty(result))
+    consoleOutput.print(stringifyPretty(result))
 }
 
 function extractMcpText(result: unknown): string | undefined {

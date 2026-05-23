@@ -7,7 +7,10 @@ import {
     createDefaultConfig,
     resolveProjectContext,
 } from '@/modules/project/context'
-import { terminal } from '@/support/terminal/service'
+import consoleOutput, {
+    type ConsoleColorPalette,
+    type ConsoleOutputMessage,
+} from '@/support/console-output'
 
 const tempDirs: string[] = []
 
@@ -68,26 +71,28 @@ describe('project context', () => {
 
     it('reports missing memory when the project is not initialized', async () => {
         const projectRoot = await makeTempProject()
-        const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
-        const colorSpy = spyOn(terminal, 'stdoutSupportsColor').mockReturnValue(
-            false,
+        const output: string[] = []
+        const logSpy = spyOn(consoleOutput, 'print').mockImplementation(
+            message => {
+                output.push(renderStdoutMessage(message))
+                return consoleOutput
+            },
         )
 
         try {
             await withWorkingDirectory(projectRoot, () =>
                 new StatusCommand().handle(),
             )
-            const output = logSpy.mock.calls[0]?.[0] ?? ''
-            expect(output).toContain('Project memory status')
-            expect(output).toContain('Status        Not initialized')
-            expect(output).toContain('Last indexed  Not indexed yet')
-            expect(output).toContain('Vectors       0')
-            expect(output).toContain('Derived memory')
-            expect(output).toContain('Modules       0')
-            expect(output).toContain('Sections      0')
-            expect(output).toContain('Durable memory')
+            const renderedOutput = stripAnsi(output.join('\n'))
+            expect(renderedOutput).toContain('Project memory status')
+            expect(renderedOutput).toContain('Status        Not initialized')
+            expect(renderedOutput).toContain('Last indexed  Not indexed yet')
+            expect(renderedOutput).toContain('Vectors       0')
+            expect(renderedOutput).toContain('Derived memory')
+            expect(renderedOutput).toContain('Modules       0')
+            expect(renderedOutput).toContain('Sections      0')
+            expect(renderedOutput).toContain('Durable memory')
         } finally {
-            colorSpy.mockRestore()
             logSpy.mockRestore()
         }
     })
@@ -96,27 +101,49 @@ describe('project context', () => {
         const projectRoot = await makeTempProject()
         await mkdir(join(projectRoot, '.konteks'), { recursive: true })
         await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
-        const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
-        const colorSpy = spyOn(terminal, 'stdoutSupportsColor').mockReturnValue(
-            false,
+        const output: string[] = []
+        const logSpy = spyOn(consoleOutput, 'print').mockImplementation(
+            message => {
+                output.push(renderStdoutMessage(message))
+                return consoleOutput
+            },
         )
 
         try {
             await withWorkingDirectory(projectRoot, () =>
                 new StatusCommand().handle(),
             )
-            const output = logSpy.mock.calls[0]?.[0] ?? ''
-            expect(output).toContain('Project memory status')
-            expect(output).toContain('Status        Not initialized')
-            expect(output).toContain('Last indexed  Not indexed yet')
-            expect(output).toContain('Vectors       0')
-            expect(output).toContain('Derived memory')
-            expect(output).toContain('Modules       0')
-            expect(output).toContain('Sections      0')
-            expect(output).toContain('Durable memory')
+            const renderedOutput = stripAnsi(output.join('\n'))
+            expect(renderedOutput).toContain('Project memory status')
+            expect(renderedOutput).toContain('Status        Not initialized')
+            expect(renderedOutput).toContain('Last indexed  Not indexed yet')
+            expect(renderedOutput).toContain('Vectors       0')
+            expect(renderedOutput).toContain('Derived memory')
+            expect(renderedOutput).toContain('Modules       0')
+            expect(renderedOutput).toContain('Sections      0')
+            expect(renderedOutput).toContain('Durable memory')
         } finally {
-            colorSpy.mockRestore()
             logSpy.mockRestore()
         }
     })
 })
+
+function renderStdoutMessage(message: ConsoleOutputMessage): string {
+    return isOutputFormatter(message)
+        ? consoleOutput.withStdoutColor(message)
+        : String(message)
+}
+
+function isOutputFormatter(
+    message: ConsoleOutputMessage,
+): message is (color: ConsoleColorPalette) => string {
+    return typeof message === 'function'
+}
+
+function stripAnsi(value: string): string {
+    const ansiPattern = new RegExp(
+        `${String.fromCharCode(27)}\\[[0-9;]*m`,
+        'gu',
+    )
+    return value.replaceAll(ansiPattern, '')
+}

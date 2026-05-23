@@ -5,11 +5,10 @@ import {
 } from '@/database/services/project-status'
 import { getExtractionFreshness } from '@/modules/extraction/engine/manifest'
 import { loadProjectContext, pathExists } from '@/modules/project/context'
+import consoleOutput, {
+    type ConsoleColorPalette,
+} from '@/support/console-output'
 import { formatInteger } from '@/support/format/number'
-import createColorPalette, {
-    type ColorPalette,
-} from '@/support/terminal/create-color-palette'
-import { terminal } from '@/support/terminal/service'
 import type { Project } from '@/types/project'
 import BaseCommand from './_base-command'
 
@@ -24,7 +23,9 @@ export default class StatusCommand extends BaseCommand {
 
         const status = await statusReader.read(context)
 
-        this.print(formatStatus(status))
+        this.print(
+            consoleOutput.withStdoutColor(color => formatStatus(status, color)),
+        )
     }
 }
 
@@ -50,12 +51,14 @@ interface ProjectStatusReaderContract {
 }
 
 type StatusColorPalette = Pick<
-    ColorPalette,
+    ConsoleColorPalette,
     'accent' | 'danger' | 'dim' | 'success' | 'warning'
 >
 
-function formatStatus(status: ProjectStatus): string {
-    const color = createColorPalette(terminal.stdoutSupportsColor())
+function formatStatus(
+    status: ProjectStatus,
+    color: ConsoleColorPalette,
+): string {
     const statusDetail = formatStatusDetail(status, color)
 
     const lines = [

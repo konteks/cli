@@ -6,9 +6,10 @@ import type { BaseCommandContext } from '@/entrypoints/cli/commands/_base-comman
 import { readExtractionManifest } from '@/modules/extraction/engine/manifest'
 import { loadProjectContext, pathExists } from '@/modules/project/context'
 import CliUserError from '@/support/cli/cli-user-error'
+import consoleOutput, {
+    type ConsoleColorPalette,
+} from '@/support/console-output'
 import getVersion from '@/support/get-version'
-import createColorPalette from '@/support/terminal/create-color-palette'
-import { terminal } from '@/support/terminal/service'
 
 export function createCliProgram(): Command {
     const VERSION = getVersion()
@@ -76,18 +77,19 @@ function createUninitializedCliError(): CliUserError {
 }
 
 function printCliError(error: unknown): void {
-    const color = createColorPalette(terminal.stderrSupportsColor())
-    const output =
-        error instanceof CliUserError
-            ? formatUserError(error, color)
-            : formatUnexpectedError(error, color)
+    consoleOutput.writeError(color => {
+        const output =
+            error instanceof CliUserError
+                ? formatUserError(error, color)
+                : formatUnexpectedError(error, color)
 
-    terminal.writeError(`${output}\n`)
+        return `${output}\n`
+    })
 }
 
 function formatUserError(
     error: CliUserError,
-    color: ReturnType<typeof createColorPalette>,
+    color: ConsoleColorPalette,
 ): string {
     const lines = [
         `${color.danger('╭─')} ${color.danger(error.title)}`,
@@ -117,7 +119,7 @@ function formatUserError(
 
 function formatUnexpectedError(
     error: unknown,
-    color: ReturnType<typeof createColorPalette>,
+    color: ConsoleColorPalette,
 ): string {
     const message = error instanceof Error ? error.message : String(error)
     const lines = [
