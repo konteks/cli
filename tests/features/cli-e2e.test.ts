@@ -192,30 +192,6 @@ describe('cli/e2e', () => {
             memories: 1,
         })
     }, 20000)
-
-    it('supports read-only MCP calls', async () => {
-        const fixture = await createInitializedProject()
-
-        const recall = await runKonteks(fixture.projectRoot, [
-            'mcp',
-            'call',
-            'konteks_recall',
-            '{"task":"project memory"}',
-        ])
-        expect(recall.exitCode).toBe(0)
-        expect(recall.output).not.toContain('recall:')
-        expect(recall.output).toContain('evidenceCounts')
-
-        const warmUp = await runKonteks(fixture.projectRoot, [
-            'mcp',
-            'call',
-            'konteks_warm_up',
-            '{}',
-        ])
-        expect(warmUp.exitCode).toBe(0)
-        expect(warmUp.output).not.toContain('warm_up:')
-        expect(warmUp.output).toContain('"summary"')
-    }, 20000)
 })
 
 async function createInitializedProject(

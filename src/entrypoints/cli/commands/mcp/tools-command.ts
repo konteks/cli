@@ -1,43 +1,72 @@
 import * as prompts from '@inquirer/prompts'
+import { encode } from '@toon-format/toon'
 import z from 'zod'
 import MCP_TOOLS from '@/entrypoints/mcp/tools'
 import consoleOutput from '@/support/console-output'
-import BaseCommand from '../_base-command'
+import BaseCommand, { type BaseCommandInput } from '../_base-command'
 
 const OMIT_OPTION = '__konteks_omit__' as const
 
 type McpTool = (typeof MCP_TOOLS)[number]
 
-export default class ToolsCommand extends BaseCommand {
-    public readonly description = 'List MCP tools exposed by Konteks.'
+export default class ToolsCommand extends BaseCommand<
+    [string | undefined],
+    { json: boolean }
+> {
+    public override readonly args = [
+        {
+            description:
+                'Optional MCP tool name. Omit it to choose interactively.',
+            name: '[tool]',
+        },
+    ]
+    public readonly description =
+        'Inspect and run MCP tools exposed by Konteks.'
     public readonly name = 'tools'
 
-    public async handle(): Promise<void> {
+    public override readonly options = [
+        {
+            description: 'Print the tool result as JSON instead of TOON.',
+            flags: '--json',
+        },
+    ]
+
+    public async handle(
+        input?: BaseCommandInput<[string | undefined], { json: boolean }>,
+    ): Promise<void> {
         let loop = true
 
         while (loop) {
-            const selectedToolName = await selectTool()
+            const directToolName = input?.args?.[0]
+            const selectedToolName = directToolName ?? (await selectTool())
 
             const selectedTool = MCP_TOOLS.find(
                 tool => tool.name === selectedToolName,
             )
 
             if (!selectedTool) {
-                throw new Error(`Unknown tool: ${selectedToolName}`)
+                throw new Error(`Unknown MCP tool: ${selectedToolName}`)
             }
 
             printTool(selectedTool)
             const isConfirmed = await callToolConfirmation()
 
-            if (isConfirmed) {
-                const input = await promptForToolInput(selectedTool)
-                await selectedTool.handle(input)
-
-                loop = await prompts.confirm({
-                    default: true,
-                    message: 'Call another tool?',
-                })
+            if (!isConfirmed) {
+                loop = !directToolName
+                continue
             }
+
+            const toolInput = await promptForToolInput(selectedTool)
+            const result = await selectedTool.handle(toolInput)
+
+            this.print(input?.options?.json ? result : encode(result))
+
+            loop = directToolName
+                ? false
+                : await prompts.confirm({
+                      default: true,
+                      message: 'Run another MCP tool?',
+                  })
         }
     }
 }
@@ -48,7 +77,7 @@ function selectTool() {
             name: `${tool.name} - ${tool.description}`,
             value: tool.name,
         })),
-        message: 'Select a tool:',
+        message: 'Select an MCP tool:',
     })
 }
 
@@ -64,7 +93,7 @@ function printTool(tool: (typeof MCP_TOOLS)[number]) {
 function callToolConfirmation() {
     return prompts.confirm({
         default: true,
-        message: 'Call this tool?',
+        message: 'Run this tool?',
     })
 }
 
@@ -129,17 +158,19 @@ async function promptForBooleanField(
     if (!optional) {
         return prompts.confirm({
             default: false,
-            message: promptMessage(key, 'boolean'),
+            message: promptMessage(key, 'boolean', optional),
         })
     }
 
     const value = await prompts.select<boolean | typeof OMIT_OPTION>({
         choices: [
-            { name: 'Omit', value: OMIT_OPTION },
+            { name: 'Skip (leave unset)', value: OMIT_OPTION },
             { name: 'true', value: true },
             { name: 'false', value: false },
         ],
-        message: promptMessage(key, 'boolean'),
+        message: promptMessage(key, 'boolean', optional, {
+            blankOmits: false,
+        }),
     })
 
     return value === OMIT_OPTION ? undefined : value
@@ -156,9 +187,14 @@ async function promptForEnumField(
     }))
     const value = await prompts.select<string | typeof OMIT_OPTION>({
         choices: optional
-            ? [{ name: 'Omit', value: OMIT_OPTION }, ...enumChoices]
+            ? [
+                  { name: 'Skip (leave unset)', value: OMIT_OPTION },
+                  ...enumChoices,
+              ]
             : enumChoices,
-        message: promptMessage(key, 'enum'),
+        message: promptMessage(key, 'enum', optional, {
+            blankOmits: false,
+        }),
     })
 
     return value === OMIT_OPTION ? undefined : value
@@ -170,7 +206,7 @@ async function promptForNumberField(
     optional: boolean,
 ): Promise<number | undefined> {
     return prompts.number({
-        message: promptMessage(key, 'number'),
+        message: promptMessage(key, 'number', optional),
         required: !optional,
         validate: value => {
             if (value === undefined && optional) {
@@ -190,7 +226,7 @@ async function promptForStringField(
     optional: boolean,
 ): Promise<string | undefined> {
     const value = await prompts.input({
-        message: promptMessage(key, 'string'),
+        message: promptMessage(key, 'string', optional),
         validate: value => {
             if (value === '' && optional) {
                 return true
@@ -211,7 +247,7 @@ async function promptForJsonField(
     optional: boolean,
 ): Promise<unknown> {
     const value = await prompts.input({
-        message: promptMessage(key, 'JSON'),
+        message: promptMessage(key, 'JSON', optional),
         validate: value => {
             if (value === '' && optional) {
                 return true
@@ -277,12 +313,23 @@ function parsePromptJson(
     }
 }
 
-function promptMessage(key: string, type: string): string {
-    return `${key} (${type}):`
+function promptMessage(
+    key: string,
+    type: string,
+    optional: boolean,
+    options: { blankOmits?: boolean } = {},
+): string {
+    const requirement = optional
+        ? options.blankOmits === false
+            ? 'optional'
+            : 'optional - leave blank to omit'
+        : 'required'
+
+    return `${key} (${type}, ${requirement}):`
 }
 
 function formatSchemaErrors(error: z.ZodError): string {
-    return `${error.issues.map(formatIssue).join('\n')}\n`
+    return `Input did not match this tool schema. Update the fields and try again:\n${error.issues.map(formatIssue).join('\n')}\n`
 }
 
 function formatSchemaIssue(error: z.ZodError): string {

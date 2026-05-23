@@ -39,7 +39,7 @@ export default abstract class BaseCommand<
     public readonly usesInitializationGuard: boolean = true
 
     public abstract handle(
-        input: BaseCommandInput<Args, Options>,
+        input?: BaseCommandInput<Args, Options>,
     ): Promise<void> | void
 
     protected print(value: ConsoleOutputMessage): void {
