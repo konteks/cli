@@ -3,7 +3,7 @@
 ```text
 src
 ├── main.ts             # Runtime entrypoint that starts the CLI or MCP server.
-├── assets/             # Packaged grammar assets, prompt templates, and other static runtime assets.
+├── assets/             # Packaged grammar registry, ignore-rule assets, prompt templates, and other static runtime assets.
 ├── database/           # SQLite schema, low-level actions, service adapters, migrations, and database policy helpers.
 │   ├── actions/        # Focused database reads/writes and transaction/bootstrap helpers.
 │   ├── services/       # Persistence-backed implementations for memory, project, status, transfer, and taxonomy workflows.
