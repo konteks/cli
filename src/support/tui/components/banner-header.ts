@@ -44,7 +44,7 @@ export function formatBannerHeader(theme: BannerHeaderTheme): string {
 }
 
 export function colorRgb(rgb: RgbColor, value: string): string {
-    if (value.length === 0) {
+    if (value.length === 0 || !supportsColor()) {
         return value
     }
 
@@ -62,7 +62,7 @@ function colorBanner(top: RgbColor, bottom: RgbColor): string {
 }
 
 function colorBackground(rgb: RgbColor, value: string): string {
-    if (value.length === 0) {
+    if (value.length === 0 || !supportsColor()) {
         return value
     }
 
@@ -70,7 +70,7 @@ function colorBackground(rgb: RgbColor, value: string): string {
 }
 
 function dim(value: string): string {
-    if (value.length === 0) {
+    if (value.length === 0 || !supportsColor()) {
         return value
     }
 
@@ -111,4 +111,16 @@ function centerText(value: string, width: number): string {
     const rightPadding = totalPadding - leftPadding
 
     return `${' '.repeat(leftPadding)}${value}${' '.repeat(rightPadding)}`
+}
+
+function supportsColor(): boolean {
+    if (process.env.NO_COLOR) {
+        return false
+    }
+
+    if (process.env.FORCE_COLOR && process.env.FORCE_COLOR !== '0') {
+        return true
+    }
+
+    return Boolean(process.stdout.isTTY)
 }

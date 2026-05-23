@@ -8,6 +8,11 @@ import {
     createDefaultConfig,
     loadProjectContext,
 } from '@/modules/project/context'
+import {
+    colorRgb,
+    createBannerHeaderTheme,
+    formatBannerHeader,
+} from '@/support/tui/components'
 import type { ExtractProjectResponse } from '@/types/extraction'
 import type { ExtractionProgressReporter } from '@/types/progress'
 import type { Project } from '@/types/project'
@@ -19,9 +24,11 @@ export default class InitCommand extends BaseCommand {
     public readonly description =
         'Initialize memory, section the project, and build indexes.'
     public readonly name = 'init'
+    public override readonly printsHeader = false
     public override readonly usesInitializationGuard = false
 
     public async handle(): Promise<void> {
+        const theme = createBannerHeaderTheme()
         const context = await loadProjectContext()
         const alreadyInitialized =
             context.configExists &&
@@ -31,8 +38,9 @@ export default class InitCommand extends BaseCommand {
         let grammars: string[] | undefined
 
         if (!alreadyInitialized) {
+            this.print(formatBannerHeader(theme))
             this.print('')
-            this.print('Initializing project memory')
+            this.print(colorRgb(theme.primary, 'Initializing project memory'))
             this.print('')
 
             await ensureKonteksGitignore(context.projectRoot)
@@ -49,8 +57,13 @@ export default class InitCommand extends BaseCommand {
         }).finally(progress.done)
 
         if (result.alreadyInitialized) {
+            this.print(formatBannerHeader(theme))
+            this.print('')
             this.print(
-                `Project memory is already ready at ${result.memoryDir}.`,
+                colorRgb(
+                    theme.primary,
+                    `Project memory is already ready at ${result.memoryDir}.`,
+                ),
             )
             return
         }

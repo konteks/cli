@@ -40,7 +40,8 @@ describe('cli/e2e', () => {
         const result = await runKonteks(fixture.projectRoot, ['init'])
 
         expect(result.exitCode).toBe(0)
-        expect(result.output).toContain(`Konteks v${getVersion()}`)
+        expect(result.output).toContain(`Konteks  v${getVersion()}`)
+        expect(result.output).toContain('██████')
         expect(result.output).toContain('Project memory is already ready at')
         expect(result.output).toContain('.konteks')
     }, 20000)
@@ -50,17 +51,18 @@ describe('cli/e2e', () => {
 
         const initial = await runKonteks(fixture.projectRoot, ['status'])
         expect(initial.exitCode).toBe(0)
-        expect(initial.output).toContain('Project memory status')
+        expect(initial.output).toContain('██████')
+        expect(initial.output).toContain(`Konteks  v${getVersion()}`)
         expect(initial.output).toContain(fixture.projectRoot)
         expect(initial.output).toContain(join(fixture.projectRoot, '.konteks'))
-        expect(initial.output).toContain('Status        Up to date')
+        expect(initial.output).toContain('Status        up-to-date')
         expect(initial.output).toContain('Last indexed')
         expect(initial.output).toContain('Source files')
         expect(initial.output).toContain('Vectors')
-        expect(initial.output).toContain('Derived memory')
+        expect(initial.output).toContain('DERIVED MEMORY')
         expect(initial.output).toContain('Modules')
         expect(initial.output).toContain('Sections')
-        expect(initial.output).toContain('Durable memory')
+        expect(initial.output).toContain('DURABLE MEMORY')
         expect(initial.output).toContain('Memories')
         expect(initial.output).toContain('Diary entries')
 
@@ -71,7 +73,7 @@ describe('cli/e2e', () => {
 
         const changed = await runKonteks(fixture.projectRoot, ['status'])
         expect(changed.exitCode).toBe(0)
-        expect(changed.output).toContain('Status        Needs indexing')
+        expect(changed.output).toContain('Status        STALE')
     }, 20000)
 
     it('backs up memory, refuses restore without force, and restores with force', async () => {
