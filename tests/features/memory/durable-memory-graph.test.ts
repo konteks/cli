@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import historicalRelations from '@/database/actions/historical-relations'
 import traverseNeighbors from '@/database/actions/traverse-neighbors'
 import forgetMemory from '@/database/services/forget-memory'
 import { entityIdFor } from '@/database/services/graph'
@@ -184,6 +185,193 @@ describe('durable memory graph projection', () => {
         await expect(
             traverseNeighbors(entityIdFor('memory', memoryId)),
         ).resolves.toEqual([])
+    })
+
+    it('supersedes prior decision graph claims and recalls them as history', async () => {
+        const projectRoot = await makeExtractedProject()
+        process.chdir(projectRoot)
+        const context = await loadProjectContext()
+        const original = await saveKonteksMemories(
+            context,
+            {
+                memories: [
+                    {
+                        content:
+                            'Original durable policy decision keeps the legacy graph attachment for src/durable-policy.txt.',
+                        importance: 4,
+                        kind: 'decision',
+                        source: 'src/durable-policy.txt',
+                    },
+                ],
+            },
+            { embeddingProvider: new FakeEmbeddingProvider() },
+        )
+        const originalId = original.memoryIds?.[0]
+        if (!originalId) {
+            throw new Error('expected original decision id')
+        }
+
+        const replacementInput = {
+            memories: [
+                {
+                    content:
+                        'Replacement durable policy decision supersedes the legacy graph attachment for src/durable-policy.txt.',
+                    importance: 5 as const,
+                    kind: 'decision' as const,
+                    source: 'src/durable-policy.txt',
+                    supersedes: [originalId],
+                },
+            ],
+        }
+        const replacement = await saveKonteksMemories(
+            context,
+            replacementInput,
+            { embeddingProvider: new FakeEmbeddingProvider() },
+        )
+        const duplicateReplacement = await saveKonteksMemories(
+            context,
+            replacementInput,
+            { embeddingProvider: new FakeEmbeddingProvider() },
+        )
+        const replacementId = replacement.memoryIds?.[0]
+        if (!replacementId) {
+            throw new Error('expected replacement decision id')
+        }
+
+        expect(duplicateReplacement.memoryIds).toEqual(replacement.memoryIds)
+        await expect(
+            traverseNeighbors(entityIdFor('memory', replacementId), {
+                limit: 10,
+            }),
+        ).resolves.toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    entity: expect.objectContaining({
+                        name: expect.stringContaining(originalId),
+                        type: 'memory',
+                    }),
+                    predicate: 'supersedes',
+                }),
+                expect.objectContaining({
+                    entity: expect.objectContaining({
+                        name: 'durable-policy.txt',
+                        type: 'file',
+                    }),
+                    predicate: 'concerns',
+                }),
+            ]),
+        )
+
+        const originalActiveClaims = await traverseNeighbors(
+            entityIdFor('memory', originalId),
+            { limit: 10 },
+        ).then(neighbors =>
+            neighbors.filter(neighbor => neighbor.predicate === 'concerns'),
+        )
+        expect(originalActiveClaims).toEqual([])
+
+        const history = await historicalRelations(
+            entityIdFor('memory', originalId),
+            { limit: 10 },
+        )
+        expect(history).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    object: expect.objectContaining({
+                        name: 'durable-policy.txt',
+                        type: 'file',
+                    }),
+                    predicate: 'concerns',
+                    status: 'superseded',
+                    subject: expect.objectContaining({
+                        name: expect.stringContaining(originalId),
+                    }),
+                    validTo: expect.any(String),
+                }),
+            ]),
+        )
+
+        const recall = await recallRepositoryMemory({
+            includeSources: true,
+            task: 'previous decision history for durable policy replacement',
+        })
+        expect(recall.history).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    objectEntityName: 'durable-policy.txt',
+                    predicate: 'concerns',
+                    status: 'superseded',
+                    subjectEntityName: expect.stringContaining(originalId),
+                    validTo: expect.any(String),
+                }),
+            ]),
+        )
+    })
+
+    it('invalidates relation forget targets and recalls invalidated history', async () => {
+        const projectRoot = await makeExtractedProject()
+        process.chdir(projectRoot)
+        const context = await loadProjectContext()
+        const saved = await saveKonteksMemories(
+            context,
+            {
+                memories: [
+                    {
+                        content:
+                            'Invalidated durable policy relation should move from active graph evidence to history.',
+                        importance: 3,
+                        kind: 'note',
+                        source: 'src/durable-policy.txt',
+                    },
+                ],
+            },
+            { embeddingProvider: new FakeEmbeddingProvider() },
+        )
+        const memoryId = saved.memoryIds?.[0]
+        if (!memoryId) {
+            throw new Error('expected memory id')
+        }
+        const [claim] = await traverseNeighbors(entityIdFor('memory', memoryId))
+        if (!claim) {
+            throw new Error('expected active relation')
+        }
+
+        await forgetMemory({
+            id: claim.relationId,
+            mode: 'invalidate',
+            reason: 'relation invalidation test',
+        })
+
+        await expect(
+            traverseNeighbors(entityIdFor('memory', memoryId)),
+        ).resolves.toEqual([])
+        await expect(
+            historicalRelations(entityIdFor('memory', memoryId), {
+                limit: 10,
+            }),
+        ).resolves.toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    predicate: 'concerns',
+                    status: 'invalidated',
+                    validTo: expect.any(String),
+                }),
+            ]),
+        )
+
+        const recall = await recallRepositoryMemory({
+            includeSources: true,
+            task: 'invalidated relation history for durable policy',
+        })
+        expect(recall.history).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    predicate: 'concerns',
+                    status: 'invalidated',
+                    validTo: expect.any(String),
+                }),
+            ]),
+        )
     })
 })
 

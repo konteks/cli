@@ -7,12 +7,13 @@ export default async function invalidateRelation(
     validTo?: string,
 ): Promise<void> {
     const db = await getDb()
+    const now = new Date().toISOString()
     await db
         .update(relations)
         .set({
             status: 'invalidated',
-            updatedAt: new Date().toISOString(),
-            ...(validTo !== undefined ? { validTo } : {}),
+            updatedAt: now,
+            validTo: validTo ?? now,
         })
         .where(eq(relations.id, id))
 }

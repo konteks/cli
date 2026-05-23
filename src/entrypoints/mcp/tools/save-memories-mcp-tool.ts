@@ -15,6 +15,7 @@ const saveBatchMemorySchema = z.object({
     ]),
     kind: memoryKindSchema,
     source: z.string().optional(),
+    supersedes: z.array(z.string()).optional(),
     tags: z.array(z.string()).optional(),
 })
 

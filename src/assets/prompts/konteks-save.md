@@ -26,11 +26,14 @@ Accepted durable memory batch shape:
     {
       "content": "Use compact structured save payloads instead of raw chat transcripts.",
       "importance": 3,
-      "kind": "decision"
+      "kind": "decision",
+      "supersedes": ["obs_previous_decision_id"]
     }
   ]
 }
 ```
+
+Use `supersedes` only for replacement decisions. Put prior decision ids or exact memory aliases in the array so Konteks can preserve the old decision as historical context and mark its old graph claims as superseded.
 
 For durable memories, prefer stable rules, decisions, constraints, conventions, blockers, and code insights. Use `importance` from 1 to 5, where 3 is the default for useful project context and 4-5 is reserved for high-impact constraints, decisions, blockers, or code insights. Each durable memory should be short but operational: preserve the reusable rule, decision, or code insight a future agent can act on, not the session chronology. Do not turn completed implementation steps, file-by-file changelogs, test pass lists, or generic progress narration into durable memories; put only the useful session context in the diary.
 

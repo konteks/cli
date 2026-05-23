@@ -38,3 +38,5 @@ Tools are lower-level callable operations used by agents and debugging workflows
 | `konteks_forget` | Forget | `id`, `query`, `mode`, `reason` | Remove or suppress wrong, stale, or sensitive memory using `soft_delete`, `invalidate`, or `hard_delete`. |
 
 MCP tools validate project health silently before doing work. If memory is not initialized or a derived-memory rebuild is required, the tool fails with a short actionable error instead of returning status context.
+
+`konteks_save_memories` accepts optional `supersedes` ids on `decision` memories. Use it when a new decision replaces older saved decisions so recall can preserve the old graph evidence as historical context.

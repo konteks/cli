@@ -77,6 +77,19 @@ export type GraphRelation = {
     properties?: Record<string, unknown>
 }
 
+type GraphRelationRow = {
+    id: string
+    subject_id: string
+    predicate: GraphRelationPredicate
+    object_id: string
+    confidence: number
+    status: 'active' | 'invalidated' | 'superseded'
+    valid_from: string | null
+    valid_to: string | null
+    supersedes_relation_id: string | null
+    properties_json: string | null
+}
+
 export async function upsertEntity(
     input: GraphEntityInput,
 ): Promise<MemoryEntity> {
@@ -302,6 +315,63 @@ export async function findEntityMatchesByAliasValues(
         summary: row.summary ?? undefined,
         type: row.type,
     }))
+}
+
+export async function findDecisionMemoryEntitiesByAliasValues(
+    values: string[],
+): Promise<MemoryEntity[]> {
+    const matches = await findEntitiesByAliasValues(values, {
+        types: ['memory'],
+    })
+
+    return matches.filter(entity => entity.properties?.kind === 'decision')
+}
+
+export async function queryActiveDurableRelationsForEntity(
+    entityId: string,
+): Promise<GraphRelation[]> {
+    const db = await getDb()
+    const rows = await db.all<GraphRelationRow>(sql`
+select
+    id,
+    subject_id,
+    predicate,
+    object_id,
+    confidence,
+    status,
+    valid_from,
+    valid_to,
+    supersedes_relation_id,
+    properties_json
+from relations
+where subject_id = ${entityId}
+  and status = 'active'
+  and properties_json like '%"origin":"durable_memory"%'
+`)
+
+    return rows.map(relationFromRow)
+}
+
+export async function markRelationsSuperseded(
+    relationIds: string[],
+    supersedesRelationId: string,
+    validTo = new Date().toISOString(),
+): Promise<void> {
+    const uniqueRelationIds = [...new Set(relationIds)].filter(Boolean)
+    if (uniqueRelationIds.length === 0) {
+        return
+    }
+
+    const db = await getDb()
+    await db
+        .update(relations)
+        .set({
+            status: 'superseded',
+            supersedesRelationId,
+            updatedAt: new Date().toISOString(),
+            validTo,
+        })
+        .where(inArray(relations.id, uniqueRelationIds))
 }
 
 export async function deleteEntityGraph(entityId: string): Promise<void> {
@@ -537,5 +607,20 @@ function parseProperties(
         return parsed as Record<string, unknown>
     } catch {
         return undefined
+    }
+}
+
+function relationFromRow(row: GraphRelationRow): GraphRelation {
+    return {
+        confidence: row.confidence,
+        id: row.id,
+        objectId: row.object_id,
+        predicate: row.predicate,
+        properties: parseProperties(row.properties_json),
+        status: row.status,
+        subjectId: row.subject_id,
+        supersedesRelationId: row.supersedes_relation_id ?? undefined,
+        validFrom: row.valid_from ?? undefined,
+        validTo: row.valid_to ?? undefined,
     }
 }
