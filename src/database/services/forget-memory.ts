@@ -7,6 +7,7 @@ import markSuppressed from '@/database/actions/mark-suppressed'
 import queryDiaries from '@/database/actions/query-diaries'
 import queryObservations from '@/database/actions/query-observations'
 import removeFromSearchIndex from '@/database/actions/remove-from-search-index'
+import { deleteDurableTargetGraph } from '@/database/services/durable-memory-graph'
 import type { ForgetTarget, TargetKind } from '@/database/support/forget-target'
 
 export type ForgetInput = {
@@ -36,6 +37,9 @@ export default async function forgetMemory(
         }
 
         await removeFromSearchIndex(target.id)
+        if (target.kind === 'observation' || target.kind === 'diary_entry') {
+            await deleteDurableTargetGraph(target.id)
+        }
 
         await appendMemoryEvent({
             actor: 'mcp',

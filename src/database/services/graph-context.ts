@@ -232,6 +232,8 @@ function aliasValuesForResults(results: MemorySearchResult[]): string[] {
 
 function aliasValuesForResult(result: MemorySearchResult): string[] {
     return [
+        result.id,
+        `${result.type}#${result.id}`,
         result.path,
         result.anchor,
         result.path && result.anchor ? `${result.path}#${result.anchor}` : '',
