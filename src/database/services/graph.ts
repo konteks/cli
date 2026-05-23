@@ -1,4 +1,5 @@
-import { and, eq } from 'drizzle-orm'
+import { basename, extname } from 'node:path/posix'
+import { and, eq, like, sql } from 'drizzle-orm'
 import getDb from '@/database/actions/_db'
 import { entities, entityAliases, relations } from '@/database/schema'
 import contentHash from '@/support/content-hash'
@@ -236,6 +237,118 @@ export async function findEntityAlias(
     return rows[0]
 }
 
+export async function deleteAllExtractedGraph(): Promise<void> {
+    const db = await getDb()
+    await db.run(sql`
+delete from relations
+where exists (
+    select 1 from entities e
+    where (e.id = relations.subject_id or e.id = relations.object_id)
+      and e.properties_json like '%"origin":"extraction"%'
+);
+`)
+    await db.run(sql`
+delete from entity_aliases
+where entity_id in (
+    select id from entities
+    where properties_json like '%"origin":"extraction"%'
+);
+`)
+    await db
+        .delete(entities)
+        .where(like(entities.propertiesJson, '%"origin":"extraction"%'))
+}
+
+export async function deleteExtractedGraphForPaths(
+    paths: string[],
+): Promise<void> {
+    const db = await getDb()
+    const uniquePaths = [...new Set(paths)].filter(Boolean)
+    if (uniquePaths.length === 0) {
+        return
+    }
+    const pathConditions = sql.join(
+        uniquePaths.map(
+            path =>
+                sql`e.properties_json like ${`%"path":"${escapeJsonLike(path)}"%`}`,
+        ),
+        sql` or `,
+    )
+
+    await db.run(sql`
+delete from relations
+where exists (
+    select 1 from entities e
+    where (e.id = relations.subject_id or e.id = relations.object_id)
+      and e.properties_json like '%"origin":"extraction"%'
+      and (${pathConditions})
+);
+`)
+    await db.run(sql`
+delete from entity_aliases
+where entity_id in (
+    select e.id from entities e
+    where e.properties_json like '%"origin":"extraction"%'
+      and (${pathConditions})
+);
+`)
+    await db.run(sql`
+delete from entities
+where properties_json like '%"origin":"extraction"%'
+  and (${sql.join(
+      uniquePaths.map(
+          path =>
+              sql`properties_json like ${`%"path":"${escapeJsonLike(path)}"%`}`,
+      ),
+      sql` or `,
+  )});
+`)
+}
+
+export async function deleteExtractedModuleGraph(): Promise<void> {
+    const db = await getDb()
+    await db.run(sql`
+delete from relations
+where exists (
+    select 1 from entities e
+    where (e.id = relations.subject_id or e.id = relations.object_id)
+      and e.type = 'module'
+      and e.properties_json like '%"origin":"extraction"%'
+);
+`)
+    await db.run(sql`
+delete from entity_aliases
+where entity_id in (
+    select id from entities
+    where type = 'module'
+      and properties_json like '%"origin":"extraction"%'
+);
+`)
+    await db.run(sql`
+delete from entities
+where type = 'module'
+  and properties_json like '%"origin":"extraction"%';
+`)
+}
+
+export function aliasesForPath(path: string): string[] {
+    const normalizedPath = path.replace(/\\/gu, '/')
+    const name = basename(normalizedPath)
+    const extension = extname(name)
+    const withoutExtension = extension ? name.slice(0, -extension.length) : name
+
+    return [
+        normalizedPath,
+        name,
+        withoutExtension,
+        ...variantAliases(withoutExtension),
+    ]
+}
+
+export function aliasesForSymbol(name: string, path: string): string[] {
+    return [name, `${path}#${name}`, ...variantAliases(name)]
+}
+
 export function entityIdFor(
     type: GraphEntityType,
     canonicalName: string,
@@ -288,4 +401,21 @@ function dedupeAliases(aliases: string[]): string[] {
     }
 
     return unique
+}
+
+function variantAliases(value: string): string[] {
+    const normalized = normalizeEntityAlias(value)
+    if (!normalized) {
+        return []
+    }
+
+    return [
+        normalized,
+        normalized.replaceAll(' ', '-'),
+        normalized.replaceAll(' ', '_'),
+    ]
+}
+
+function escapeJsonLike(value: string): string {
+    return JSON.stringify(value).slice(1, -1)
 }

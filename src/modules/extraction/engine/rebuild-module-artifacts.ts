@@ -3,6 +3,14 @@ import getDb from '@/database/actions/_db'
 import deleteRetrievalDocuments from '@/database/actions/delete-retrieval-documents'
 import upsertRetrievalDocument from '@/database/actions/upsert-retrieval-document'
 import { modules, targetEmbeddings } from '@/database/schema'
+import {
+    aliasesForPath,
+    deleteExtractedModuleGraph,
+    entityIdFor,
+    upsertEntity,
+    upsertEntityAliases,
+    upsertRelation,
+} from '@/database/services/graph'
 import contentHash from '@/support/content-hash'
 import type {
     PackageManifestMetadata,
@@ -16,6 +24,10 @@ type ModuleSummaryRow = {
     source_role: string | null
 }
 
+type ModuleFileRow = {
+    path: string
+}
+
 export default async function rebuildModuleArtifacts(
     extractedAt: string,
     metadata?: ProjectMetadata,
@@ -26,6 +38,7 @@ export default async function rebuildModuleArtifacts(
         .delete(targetEmbeddings)
         .where(eq(targetEmbeddings.targetType, 'module'))
     await db.delete(modules)
+    await deleteExtractedModuleGraph()
 
     const rows = await db.all<ModuleSummaryRow>(sql`
 select
@@ -47,9 +60,15 @@ order by section_count desc, module_path
         const moduleId = `module_${contentHash(`${row.module_path}:${row.source_role ?? 'unknown'}`).slice(0, 32)}`
         const summary = summarizeModule(row)
         const topics = moduleTopics(row.module_path)
+        const moduleEntity = await upsertModuleEntity({
+            moduleId,
+            path: row.module_path,
+            sourceRole: row.source_role ?? 'unknown',
+            summary,
+        })
 
         await db.insert(modules).values({
-            entitiesJson: JSON.stringify([]),
+            entitiesJson: JSON.stringify([moduleEntity.id]),
             exportedSymbolsJson: JSON.stringify([]),
             fileCount: row.file_count,
             id: moduleId,
@@ -81,6 +100,7 @@ order by section_count desc, module_path
             targetType: 'module',
             updatedAt: extractedAt,
         })
+        await upsertModuleContainsFileRelations(row, moduleEntity.id)
     }
 
     if (metadata && (metadata.packageManifests ?? []).length > 0) {
@@ -120,6 +140,12 @@ async function insertPackageModule(
     const managers = manifestManagers(packageManifests)
     const moduleId = `module_${contentHash(`package:${modulePath}:${metadata.name ?? ''}`).slice(0, 32)}`
     const summary = `${managers.join(', ')}, ${dependencyNames.length} deps`
+    const moduleEntity = await upsertModuleEntity({
+        moduleId,
+        path: modulePath,
+        sourceRole: 'package_config',
+        summary,
+    })
     const topics = [
         'package',
         metadata.name,
@@ -129,7 +155,7 @@ async function insertPackageModule(
     ].filter((value): value is string => Boolean(value))
 
     await db.insert(modules).values({
-        entitiesJson: JSON.stringify([]),
+        entitiesJson: JSON.stringify([moduleEntity.id]),
         exportedSymbolsJson: JSON.stringify([]),
         fileCount: 1,
         id: moduleId,
@@ -178,6 +204,69 @@ async function insertPackageModule(
         targetType: 'module',
         updatedAt: extractedAt,
     })
+}
+
+async function upsertModuleEntity(input: {
+    moduleId: string
+    path: string
+    sourceRole: string
+    summary: string
+}) {
+    const entity = await upsertEntity({
+        canonicalName: `${input.path}:${input.sourceRole}`,
+        name: input.path,
+        properties: {
+            moduleId: input.moduleId,
+            modulePath: input.path,
+            origin: 'extraction',
+            sourceRole: input.sourceRole,
+        },
+        summary: input.summary,
+        type: 'module',
+    })
+    await upsertEntityAliases(entity.id, [
+        input.path,
+        `${input.path}:${input.sourceRole}`,
+        ...aliasesForPath(input.path),
+    ])
+    return entity
+}
+
+async function upsertModuleContainsFileRelations(
+    row: ModuleSummaryRow,
+    moduleEntityId: string,
+): Promise<void> {
+    const db = await getDb()
+    const pathFilter =
+        row.module_path === '.'
+            ? sql`instr(path, '/') = 0`
+            : sql`path like ${`${row.module_path}/%`}`
+    const fileRows = await db.all<ModuleFileRow>(sql`
+select distinct path
+from sections
+where deleted_at is null
+  and suppressed_at is null
+  and path is not null
+  and coalesce(source_role, 'unknown') = ${row.source_role ?? 'unknown'}
+  and ${pathFilter}
+order by path
+`)
+
+    for (const file of fileRows) {
+        const fileEntityId = entityIdFor('file', file.path)
+        await upsertRelation({
+            evidenceKey: `${moduleEntityId}:${fileEntityId}:contains`,
+            objectId: fileEntityId,
+            predicate: 'contains',
+            properties: {
+                filePath: file.path,
+                modulePath: row.module_path,
+                origin: 'extraction',
+                sourceRole: row.source_role ?? 'unknown',
+            },
+            subjectId: moduleEntityId,
+        })
+    }
 }
 
 function manifestManagers(manifests: PackageManifestMetadata[]): string[] {

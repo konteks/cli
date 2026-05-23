@@ -3,6 +3,10 @@ import getDb from '@/database/actions/_db'
 import clearModules from '@/database/actions/clear-modules'
 import deleteRetrievalDocuments from '@/database/actions/delete-retrieval-documents'
 import { sectionSuppressions, sections, sources } from '@/database/schema'
+import {
+    deleteAllExtractedGraph,
+    deleteExtractedGraphForPaths,
+} from '@/database/services/graph'
 
 export async function isExtractedSectionSuppressed(
     path: string,
@@ -28,6 +32,7 @@ export async function isExtractedSectionSuppressed(
 export async function clearExtractedSections(): Promise<void> {
     const db = await getDb()
     await recordExtractedSuppressions()
+    await deleteAllExtractedGraph()
     await db.run(sql`
 delete from memory_fts_indexed
 where id in (select id from sections where source_id in (select id from sources where type = 'extracted_file'));
@@ -79,6 +84,7 @@ export async function clearExtractedSectionsForPaths(
     }
 
     await recordExtractedSuppressions(uniquePaths)
+    await deleteExtractedGraphForPaths(uniquePaths)
     const sectionIds = await db
         .select({ id: sections.id })
         .from(sections)

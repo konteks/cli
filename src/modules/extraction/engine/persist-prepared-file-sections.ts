@@ -1,7 +1,15 @@
+import { basename } from 'node:path/posix'
 import indexSearchDocument from '@/database/actions/index-search-document'
 import insertSection from '@/database/actions/insert-section'
 import insertSource from '@/database/actions/insert-source'
 import upsertRetrievalDocument from '@/database/actions/upsert-retrieval-document'
+import {
+    aliasesForPath,
+    aliasesForSymbol,
+    upsertEntity,
+    upsertEntityAliases,
+    upsertRelation,
+} from '@/database/services/graph'
 import { linkTarget, upsertNode } from '@/database/services/taxonomy'
 import type { PreparedFile } from './prepare-file-sections'
 import { EXTRACTED_FILE_SOURCE_TYPE } from './source-types'
@@ -12,9 +20,22 @@ export default async function persistPreparedFileSections(input: {
     rootNodeId: string
 }): Promise<number> {
     const { extractedAt, preparedFile, rootNodeId } = input
+    const fileEntity = await upsertEntity({
+        canonicalName: preparedFile.path,
+        name: basename(preparedFile.path),
+        properties: {
+            origin: 'extraction',
+            path: preparedFile.path,
+            sourceId: preparedFile.sourceId,
+            sourceRole: preparedFile.sourceRole,
+        },
+        summary: `${preparedFile.sourceRole} file ${preparedFile.path}`,
+        type: 'file',
+    })
+    await upsertEntityAliases(fileEntity.id, aliasesForPath(preparedFile.path))
 
     await insertSource({
-        entities_json: JSON.stringify([]),
+        entities_json: JSON.stringify([fileEntity.id]),
         excerpt_ref: null,
         id: preparedFile.sourceId,
         language: preparedFile.language,
@@ -28,13 +49,25 @@ export default async function persistPreparedFileSections(input: {
     const taxonomyNode = await ensurePathTaxonomy(rootNodeId, preparedFile.path)
 
     for (const section of preparedFile.sections) {
+        const sectionEntityIds = [fileEntity.id]
+        const symbolEntity = section.symbol
+            ? await upsertSectionSymbolEntity({
+                  fileEntityId: fileEntity.id,
+                  preparedFile,
+                  section,
+              })
+            : undefined
+        if (symbolEntity) {
+            sectionEntityIds.push(symbolEntity.id)
+        }
+
         await insertSection({
             anchor: section.anchor,
             anchor_type: section.anchorType,
             content_hash: section.contentHash,
             content_inline: section.contentInline ?? null,
             end_line: section.endLine ?? null,
-            entities_json: JSON.stringify([]),
+            entities_json: JSON.stringify(sectionEntityIds),
             heading: section.heading ?? null,
             id: section.id,
             json_path: section.jsonPath ?? null,
@@ -79,6 +112,51 @@ export default async function persistPreparedFileSections(input: {
     }
 
     return preparedFile.sections.length
+}
+
+async function upsertSectionSymbolEntity(input: {
+    fileEntityId: string
+    preparedFile: PreparedFile
+    section: PreparedFile['sections'][number]
+}) {
+    const { fileEntityId, preparedFile, section } = input
+    if (!section.symbol || section.anchorType !== 'symbol') {
+        return undefined
+    }
+
+    const symbolEntity = await upsertEntity({
+        canonicalName: `${section.path}#${section.symbol}`,
+        name: section.symbol,
+        properties: {
+            endLine: section.endLine,
+            exported: section.metadata.exported === true,
+            origin: 'extraction',
+            path: section.path,
+            sectionId: section.id,
+            sourceId: preparedFile.sourceId,
+            startLine: section.startLine,
+            symbol: section.symbol,
+        },
+        summary: section.summary,
+        type: 'symbol',
+    })
+    await upsertEntityAliases(
+        symbolEntity.id,
+        aliasesForSymbol(section.symbol, section.path),
+    )
+    await upsertRelation({
+        evidenceKey: `${section.id}:defines`,
+        objectId: symbolEntity.id,
+        predicate: 'defines',
+        properties: {
+            origin: 'extraction',
+            path: section.path,
+            sectionId: section.id,
+        },
+        subjectId: fileEntityId,
+    })
+
+    return symbolEntity
 }
 
 async function ensurePathTaxonomy(rootNodeId: string, path: string) {
