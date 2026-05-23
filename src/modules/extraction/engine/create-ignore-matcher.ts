@@ -1,99 +1,4 @@
-const ignoredDirectoryNames = new Set([
-    '.build',
-    '.bundle',
-    '.cache',
-    '.cmake',
-    '.dart_tool',
-    '.git',
-    '.gradle',
-    '.idea',
-    '.konteks',
-    '.mypy_cache',
-    '.next',
-    '.nuxt',
-    '.pytest_cache',
-    '.ruff_cache',
-    '.svelte-kit',
-    '.turbo',
-    '.venv',
-    '.zig-cache',
-    '__pycache__',
-    'build',
-    'cmakefiles',
-    'coverage',
-    'deriveddata',
-    'dist',
-    'htmlcov',
-    'node_modules',
-    'obj',
-    'out',
-    'site-packages',
-    'target',
-    'venv',
-    'vendor',
-    'zig-out',
-])
-
-const ignoredFileNames = new Set([
-    '.DS_Store',
-    '.env',
-    'bun.lock',
-    'cargo.lock',
-    'composer.lock',
-    'gemfile.lock',
-    'go.sum',
-    'gradle.lockfile',
-    'memory.sqlite',
-    'package-lock.json',
-    'package.resolved',
-    'pipfile.lock',
-    'poetry.lock',
-    'pnpm-lock.yaml',
-    'pubspec.lock',
-    'npm-debug.log',
-    'pnpm-debug.log',
-    'yarn-debug.log',
-    'yarn.lock',
-])
-
-const ignoredExtensions = new Set([
-    '.7z',
-    '.avif',
-    '.bin',
-    '.bmp',
-    '.class',
-    '.db',
-    '.dll',
-    '.dylib',
-    '.dSYM',
-    '.exe',
-    '.gif',
-    '.gz',
-    '.ico',
-    '.jar',
-    '.jpeg',
-    '.jpg',
-    '.key',
-    '.lib',
-    '.mov',
-    '.mp3',
-    '.mp4',
-    '.o',
-    '.obj',
-    '.pdf',
-    '.pem',
-    '.png',
-    '.pyc',
-    '.pyo',
-    '.rlib',
-    '.sqlite',
-    '.so',
-    '.tar',
-    '.war',
-    '.wasm',
-    '.webp',
-    '.zip',
-])
+import { ignoreRules } from '@/assets/ignore-rules'
 
 export type IgnoreMatcher = {
     explain(relativePath: string): IgnoreReason | undefined
@@ -123,7 +28,9 @@ function getHardIgnoreReason(relativePath: string): IgnoreReason | undefined {
     const parts = normalized.split('/').filter(Boolean)
     const fileName = (parts.at(-1) ?? '').toLowerCase()
 
-    if (parts.some(part => ignoredDirectoryNames.has(part.toLowerCase()))) {
+    if (
+        parts.some(part => ignoreRules.directoryNames.has(part.toLowerCase()))
+    ) {
         return 'hard_directory'
     }
 
@@ -144,7 +51,11 @@ function getHardIgnoreReason(relativePath: string): IgnoreReason | undefined {
         return 'secret'
     }
 
-    if (ignoredFileNames.has(fileName)) {
+    if (ignoreRules.secretFileNames.has(fileName)) {
+        return 'secret'
+    }
+
+    if (ignoreRules.fileNames.has(fileName)) {
         return 'ignored_file'
     }
 
@@ -152,7 +63,7 @@ function getHardIgnoreReason(relativePath: string): IgnoreReason | undefined {
         return 'secret'
     }
 
-    if (ignoredExtensions.has(extensionOf(fileName))) {
+    if (ignoreRules.binaryExtensions.has(extensionOf(fileName))) {
         return 'binary'
     }
 
@@ -284,35 +195,25 @@ function generatedOrMinifiedReason(path: string): IgnoreReason | undefined {
     const fileName = lowerPath.split('/').at(-1) ?? lowerPath
 
     if (
-        lowerPath.includes('/__generated__/') ||
-        lowerPath.includes('/build/generated/') ||
-        lowerPath.includes('/gen/') ||
-        lowerPath.includes('/generated/') ||
-        lowerPath.includes('/target/generated-sources/') ||
-        lowerPath.includes('/vendor/')
+        ignoreRules.generatedPathFragments.some(fragment =>
+            lowerPath.includes(fragment),
+        )
     ) {
         return 'generated'
     }
 
     if (
-        fileName.endsWith('.g.dart') ||
-        fileName.endsWith('.freezed.dart') ||
-        fileName.endsWith('.pb.go') ||
-        fileName.endsWith('.pb.swift') ||
-        fileName.endsWith('.pb.cc') ||
-        fileName.endsWith('.pb.h') ||
-        fileName.endsWith('.grpc.pb.go') ||
-        fileName.endsWith('.grpc.pb.cc') ||
-        fileName.endsWith('.map')
+        ignoreRules.generatedFileSuffixes.some(suffix =>
+            fileName.endsWith(suffix),
+        )
     ) {
         return 'generated'
     }
 
     if (
-        fileName.endsWith('.min.js') ||
-        fileName.endsWith('.min.css') ||
-        fileName.endsWith('.min.mjs') ||
-        fileName.endsWith('.min.cjs')
+        ignoreRules.minifiedFileSuffixes.some(suffix =>
+            fileName.endsWith(suffix),
+        )
     ) {
         return 'minified'
     }
@@ -321,26 +222,12 @@ function generatedOrMinifiedReason(path: string): IgnoreReason | undefined {
 }
 
 function isLockfile(fileName: string): boolean {
-    return (
-        fileName === 'bun.lock' ||
-        fileName === 'cargo.lock' ||
-        fileName === 'composer.lock' ||
-        fileName === 'gemfile.lock' ||
-        fileName === 'go.sum' ||
-        fileName === 'gradle.lockfile' ||
-        fileName === 'package-lock.json' ||
-        fileName === 'package.resolved' ||
-        fileName === 'pipfile.lock' ||
-        fileName === 'pnpm-lock.yaml' ||
-        fileName === 'poetry.lock' ||
-        fileName === 'pubspec.lock' ||
-        fileName === 'yarn.lock'
-    )
+    return ignoreRules.lockFileNames.has(fileName)
 }
 
 function isSecretExtension(fileName: string): boolean {
     const extension = extensionOf(fileName)
-    return extension === '.key' || extension === '.pem'
+    return ignoreRules.secretExtensions.has(extension)
 }
 
 function extensionOf(fileName: string): string {

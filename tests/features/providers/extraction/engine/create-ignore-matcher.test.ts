@@ -6,17 +6,27 @@ describe('extraction ignore rules', () => {
         const matcher = createIgnoreMatcher({})
 
         expect(matcher.ignores('.konteks/config.json')).toBe(true)
+        expect(matcher.explain('.konteks/config.json')).toBe('hard_directory')
         expect(
             matcher.ignores(
                 '.konteks-mcp-dry-run-abc/original-memory/config.json',
             ),
         ).toBe(true)
         expect(matcher.ignores('.env.local')).toBe(true)
+        expect(matcher.explain('.env.local')).toBe('secret')
         expect(matcher.ignores('certs/prod.pem')).toBe(true)
+        expect(matcher.explain('certs/prod.pem')).toBe('secret')
         expect(matcher.ignores('assets/logo.png')).toBe(true)
+        expect(matcher.explain('assets/logo.png')).toBe('binary')
         expect(matcher.ignores('bun.lock')).toBe(true)
+        expect(matcher.explain('bun.lock')).toBe('lockfile')
         expect(matcher.ignores('src/generated/client.ts')).toBe(true)
+        expect(matcher.explain('src/generated/client.ts')).toBe('generated')
         expect(matcher.ignores('public/app.min.js')).toBe(true)
+        expect(matcher.explain('public/app.min.js')).toBe('minified')
+        expect(matcher.explain('.npmrc')).toBe('secret')
+        expect(matcher.explain('certs/client.p12')).toBe('secret')
+        expect(matcher.explain('documents/report.docx')).toBe('binary')
     })
 
     it('skips generated, dependency, build, cache, and lock artifacts across ecosystems', () => {
@@ -50,6 +60,22 @@ describe('extraction ignore rules', () => {
             'Gemfile.lock',
             'vendor/composer/autoload.php',
             'composer.lock',
+            '.parcel-cache/index',
+            '.pnpm-store/v3/files/index.json',
+            'storybook-static/index.html',
+            'npm-shrinkwrap.json',
+            '.tox/py312/log.txt',
+            '.ipynb_checkpoints/notebook-checkpoint.ipynb',
+            'uv.lock',
+            'src/protos/user.grpc.pb.go',
+            'build/generated/source/proto/main/User.java',
+            '.mvn/wrapper/maven-wrapper.jar',
+            'TestResults/results.trx',
+            'packages.lock.json',
+            '.swiftpm/configuration/registries.json',
+            'cmake-build-release/CMakeFiles/app.dir/main.o',
+            'archive/source.tar.gz',
+            'fonts/inter.woff2',
         ]
 
         expect(ignoredPaths.filter(path => !matcher.ignores(path))).toEqual([])
@@ -99,6 +125,10 @@ describe('extraction ignore rules', () => {
             'pyproject.toml',
             'build.gradle',
             'App.csproj',
+            'bin/deploy.sh',
+            'packages/workspace/package.json',
+            'src/debug/logger.ts',
+            'src/release/notes.md',
         ]
 
         expect(includedPaths.filter(path => matcher.ignores(path))).toEqual([])
