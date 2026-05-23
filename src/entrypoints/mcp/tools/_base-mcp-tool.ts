@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import z from 'zod'
 import { createMcpToolErrorResult } from '@/entrypoints/mcp/error-handling'
-import toCallToolResult from './utils/to-call-tool-result'
+import toCallToolResult from './_support/to-call-tool-result'
 
 export default abstract class BaseMcpTool<Input = unknown> {
     public abstract readonly annotations: {

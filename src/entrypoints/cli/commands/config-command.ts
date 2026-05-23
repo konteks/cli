@@ -1,5 +1,4 @@
 import { select } from '@inquirer/prompts'
-import { promptForGrammars } from '@/modules/cli/grammar-selection'
 import createExtractionProgressReporter from '@/modules/extraction/create-extraction-progress-reporter'
 import { updateSelectedGrammarCache } from '@/modules/extraction/engine/grammar-loader'
 import {
@@ -7,6 +6,7 @@ import {
     writeProjectConfig,
 } from '@/modules/project/context'
 import BaseCommand from './_base-command'
+import { promptForGrammars } from './_support/grammar-selection'
 
 export default class ConfigCommand extends BaseCommand {
     public readonly description = 'Configure project-local Konteks settings.'
