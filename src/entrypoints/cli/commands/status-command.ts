@@ -5,10 +5,13 @@ import {
 } from '@/database/services/project-status'
 import { getExtractionFreshness } from '@/modules/extraction/engine/manifest'
 import { loadProjectContext, pathExists } from '@/modules/project/context'
-import consoleOutput, {
-    type ConsoleColorPalette,
-} from '@/support/console-output'
 import { formatInteger } from '@/support/format/number'
+import {
+    type BannerHeaderTheme,
+    colorRgb,
+    createBannerHeaderTheme,
+    formatBannerHeader,
+} from '@/support/tui/components'
 import type { Project } from '@/types/project'
 import BaseCommand from './_base-command'
 
@@ -16,16 +19,17 @@ export default class StatusCommand extends BaseCommand {
     public readonly description =
         'Print Konteks project memory status for humans.'
     public readonly name = 'status'
+    public override readonly printsHeader = false
 
     public async handle(): Promise<void> {
+        const theme = createBannerHeaderTheme()
         const context = await loadProjectContext()
         const statusReader = new ProjectStatusReader()
 
         const status = await statusReader.read(context)
 
-        this.print(
-            consoleOutput.withStdoutColor(color => formatStatus(status, color)),
-        )
+        this.print(formatBannerHeader(theme))
+        this.print(formatStatus(status, theme))
     }
 }
 
@@ -50,39 +54,38 @@ interface ProjectStatusReaderContract {
     read(project: Project): Promise<ProjectStatus>
 }
 
-type StatusColorPalette = Pick<
-    ConsoleColorPalette,
-    'accent' | 'danger' | 'dim' | 'success' | 'warning'
->
-
-function formatStatus(
-    status: ProjectStatus,
-    color: ConsoleColorPalette,
-): string {
-    const statusDetail = formatStatusDetail(status, color)
+function formatStatus(status: ProjectStatus, theme: BannerHeaderTheme): string {
+    const statusDetail = formatStatusDetail(status)
 
     const lines = [
         '',
-        color.accent('Project memory status'),
+        row('Project', status.projectRoot, theme),
+        row('Memory', status.memoryDir, theme),
         '',
-        row('Project', status.projectRoot),
-        row('Memory', status.memoryDir),
+        row('Status', statusDetail, theme),
+        row('Last indexed', formatLastIndexed(status), theme),
         '',
-        row('Status', statusDetail),
-        row('Last indexed', formatLastIndexed(status)),
+        row('Source files', formatInteger(status.memoryStats.files), theme),
+        row('Vectors', formatInteger(status.memoryStats.embeddings), theme),
         '',
-        row('Source files', formatInteger(status.memoryStats.files)),
-        row('Vectors', formatInteger(status.memoryStats.embeddings)),
+        semanticColor('warning', '  DERIVED MEMORY'),
+        nestedRow('Modules', formatInteger(status.memoryStats.modules), theme),
+        nestedRow(
+            'Sections',
+            formatInteger(status.memoryStats.sections),
+            theme,
+        ),
         '',
-        color.accent('Derived memory'),
-        nestedRow('Modules', formatInteger(status.memoryStats.modules)),
-        nestedRow('Sections', formatInteger(status.memoryStats.sections)),
-        '',
-        color.accent('Durable memory'),
-        nestedRow('Memories', formatInteger(status.memoryStats.memories)),
+        semanticColor('warning', '  DURABLE MEMORY'),
+        nestedRow(
+            'Memories',
+            formatInteger(status.memoryStats.memories),
+            theme,
+        ),
         nestedRow(
             'Diary entries',
             formatInteger(status.memoryStats.diaryEntries),
+            theme,
         ),
         '',
     ].filter(line => line !== undefined)
@@ -90,30 +93,41 @@ function formatStatus(
     return lines.join('\n')
 }
 
-function row(label: string, value: string): string {
-    return `${label.padEnd(13)} ${value}`
+function row(label: string, value: string, theme: BannerHeaderTheme): string {
+    return `  ${colorRgb(theme.primary, label.padEnd(13))} ${value}`
 }
 
-function nestedRow(label: string, value: string): string {
-    return `  ${label.padEnd(13)} ${value}`
-}
-
-function formatStatusDetail(
-    status: ProjectStatus,
-    color: StatusColorPalette,
+function nestedRow(
+    label: string,
+    value: string,
+    theme: BannerHeaderTheme,
 ): string {
+    return `  ${colorRgb(theme.primary, label.padEnd(13))} ${value}`
+}
+
+function formatStatusDetail(status: ProjectStatus): string {
     if (status.freshness.status === 'missing') {
-        return color.danger('Not initialized')
+        return semanticColor('danger', 'NOT INITIALIZED')
     }
 
     if (
         status.freshness.status === 'stale' ||
         status.freshness.changedFileCount > 0
     ) {
-        return color.warning('Needs indexing')
+        return semanticColor('warning', 'STALE')
     }
 
-    return color.success('Up to date')
+    return 'up-to-date'
+}
+
+function semanticColor(name: 'danger' | 'warning', value: string): string {
+    if (process.env.NO_COLOR) {
+        return value
+    }
+
+    const code = name === 'danger' ? 31 : 33
+
+    return `\u001b[${code}m${value}\u001b[0m`
 }
 
 function formatLastIndexed(status: ProjectStatus): string {

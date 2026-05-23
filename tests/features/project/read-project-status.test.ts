@@ -23,12 +23,13 @@ describe('project/status', () => {
             await withWorkingDirectory(projectRoot, () =>
                 new StatusCommand().handle(),
             )
-            expect(logSpy).toHaveBeenCalledTimes(1)
+            expect(logSpy).toHaveBeenCalledTimes(2)
             const renderedOutput = stripAnsi(output.join('\n'))
+            expect(renderedOutput).toContain('██████')
+            expect(renderedOutput).toContain('Konteks  v')
             expect(renderedOutput).toContain(projectRoot)
             expect(renderedOutput).toContain(join(projectRoot, '.konteks'))
-            expect(renderedOutput).toContain('Project memory status')
-            expect(renderedOutput).toContain('Status        Not initialized')
+            expect(renderedOutput).toContain('Status        NOT INITIALIZED')
             expect(renderedOutput).toContain('Last indexed  Not indexed yet')
         } finally {
             logSpy.mockRestore()

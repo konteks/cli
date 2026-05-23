@@ -191,6 +191,8 @@ describe('InitCommand', () => {
 
         const plainOutput = stripAnsi(output)
 
+        expect(plainOutput).toContain('██████')
+        expect(plainOutput).toContain('Konteks  v')
         expect(plainOutput).toContain('Initializing project memory')
 
         expect(plainOutput).toContain(
@@ -222,6 +224,7 @@ describe('InitCommand', () => {
         try {
             const output = await init(projectRoot)
 
+            expect(output).toContain('\u001b[38;2;')
             expect(output).toContain('\u001b[32m✓\u001b[0m')
             expect(output).toContain('\u001b[36mProject memory ready\u001b[0m')
         } finally {

@@ -84,14 +84,15 @@ describe('project context', () => {
                 new StatusCommand().handle(),
             )
             const renderedOutput = stripAnsi(output.join('\n'))
-            expect(renderedOutput).toContain('Project memory status')
-            expect(renderedOutput).toContain('Status        Not initialized')
+            expect(renderedOutput).toContain('██████')
+            expect(renderedOutput).toContain('Konteks  v')
+            expect(renderedOutput).toContain('Status        NOT INITIALIZED')
             expect(renderedOutput).toContain('Last indexed  Not indexed yet')
             expect(renderedOutput).toContain('Vectors       0')
-            expect(renderedOutput).toContain('Derived memory')
+            expect(renderedOutput).toContain('DERIVED MEMORY')
             expect(renderedOutput).toContain('Modules       0')
             expect(renderedOutput).toContain('Sections      0')
-            expect(renderedOutput).toContain('Durable memory')
+            expect(renderedOutput).toContain('DURABLE MEMORY')
         } finally {
             logSpy.mockRestore()
         }
@@ -114,14 +115,15 @@ describe('project context', () => {
                 new StatusCommand().handle(),
             )
             const renderedOutput = stripAnsi(output.join('\n'))
-            expect(renderedOutput).toContain('Project memory status')
-            expect(renderedOutput).toContain('Status        Not initialized')
+            expect(renderedOutput).toContain('██████')
+            expect(renderedOutput).toContain('Konteks  v')
+            expect(renderedOutput).toContain('Status        NOT INITIALIZED')
             expect(renderedOutput).toContain('Last indexed  Not indexed yet')
             expect(renderedOutput).toContain('Vectors       0')
-            expect(renderedOutput).toContain('Derived memory')
+            expect(renderedOutput).toContain('DERIVED MEMORY')
             expect(renderedOutput).toContain('Modules       0')
             expect(renderedOutput).toContain('Sections      0')
-            expect(renderedOutput).toContain('Durable memory')
+            expect(renderedOutput).toContain('DURABLE MEMORY')
         } finally {
             logSpy.mockRestore()
         }
