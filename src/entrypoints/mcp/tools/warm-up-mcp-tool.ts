@@ -65,7 +65,6 @@ function toWarmUpOutput(input: {
         guidance: warmUp.guidance.map(toGuidanceOutput),
         highlights: warmUp.highlights.map(toWarmUpHighlightOutput),
         recall: recall ? toFocusedRecallOutput(recall) : undefined,
-        summary: warmUp.summary,
         technologies: warmUp.technologies,
     }
 }
@@ -139,7 +138,6 @@ function limitWarmUpContext(
 ): WarmUpContext {
     const budget = Math.max(80, contextBudgetTokens)
     const baseCost = estimateCharacterTokens([
-        context.summary,
         context.description ?? '',
         ...context.technologies,
         ...context.entryPoints,

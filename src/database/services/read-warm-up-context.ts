@@ -29,7 +29,6 @@ export default async function readWarmUpContext(
             ],
             highlights: [],
             keyFiles: [],
-            summary: 'Konteks memory is not initialized yet.',
             taxonomy: [],
             technologies: [],
         }
@@ -46,7 +45,6 @@ export default async function readWarmUpContext(
         guidance: guidanceFromObservations(observations),
         highlights,
         keyFiles: keyFilesFromHighlights(highlights, manifest.files),
-        summary: stableProjectSummary(manifest),
         taxonomy: [],
         technologies: manifest.metadata.technologies,
     }
@@ -124,25 +122,4 @@ async function warmUpHighlights(): Promise<WarmUpHighlight[]> {
         })
         .sort((left, right) => right.score - left.score)
         .slice(0, 12)
-}
-
-function stableProjectSummary(
-    manifest: NonNullable<Awaited<ReturnType<typeof readExtractionManifest>>>,
-): string {
-    const name = manifest.metadata.name ?? 'This project'
-    const description = manifest.metadata.description
-    const technologies = manifest.metadata.technologies.slice(0, 6).join(', ')
-    const packageManager = manifest.metadata.packageManager
-
-    if (description) {
-        return `${name}: ${description}`
-    }
-
-    const details = [
-        `${name} has ${manifest.fileCount} indexed files`,
-        technologies ? `uses ${technologies}` : '',
-        packageManager ? `uses ${packageManager}` : '',
-    ].filter(Boolean)
-
-    return `${details.join(', ')}.`
 }
