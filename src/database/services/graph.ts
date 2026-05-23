@@ -1,5 +1,5 @@
 import { basename, extname } from 'node:path/posix'
-import { and, eq, like, sql } from 'drizzle-orm'
+import { and, eq, inArray, like, sql } from 'drizzle-orm'
 import getDb from '@/database/actions/_db'
 import { entities, entityAliases, relations } from '@/database/schema'
 import contentHash from '@/support/content-hash'
@@ -44,6 +44,11 @@ export type GraphEntityAlias = {
     entityId: string
     value: string
     normalizedValue: string
+}
+
+export type GraphEntityAliasMatch = MemoryEntity & {
+    aliasValue: string
+    normalizedAlias: string
 }
 
 export type GraphRelationInput = {
@@ -235,6 +240,78 @@ export async function findEntityAlias(
         .limit(1)
 
     return rows[0]
+}
+
+export async function findEntitiesByAliasValues(
+    values: string[],
+    options: { types?: GraphEntityType[] } = {},
+): Promise<MemoryEntity[]> {
+    const matches = await findEntityMatchesByAliasValues(values, options)
+    const seen = new Set<string>()
+
+    return matches.filter(match => {
+        if (seen.has(match.id)) {
+            return false
+        }
+        seen.add(match.id)
+        return true
+    })
+}
+
+export async function findEntityMatchesByAliasValues(
+    values: string[],
+    options: { types?: GraphEntityType[] } = {},
+): Promise<GraphEntityAliasMatch[]> {
+    const normalizedValues = [
+        ...new Set(values.map(normalizeEntityAlias).filter(Boolean)),
+    ]
+    if (normalizedValues.length === 0) {
+        return []
+    }
+
+    const db = await getDb()
+    const rows = await db
+        .select({
+            aliasValue: entityAliases.value,
+            canonicalName: entities.canonicalName,
+            id: entities.id,
+            name: entities.name,
+            normalizedAlias: entityAliases.normalizedValue,
+            propertiesJson: entities.propertiesJson,
+            summary: entities.summary,
+            type: entities.type,
+        })
+        .from(entityAliases)
+        .innerJoin(entities, eq(entities.id, entityAliases.entityId))
+        .where(
+            and(
+                inArray(entityAliases.normalizedValue, normalizedValues),
+                options.types?.length
+                    ? inArray(entities.type, options.types)
+                    : undefined,
+            ),
+        )
+
+    return rows.map(row => ({
+        aliasValue: row.aliasValue,
+        canonicalName: row.canonicalName,
+        id: row.id,
+        name: row.name,
+        normalizedAlias: row.normalizedAlias,
+        properties: parseProperties(row.propertiesJson),
+        summary: row.summary ?? undefined,
+        type: row.type,
+    }))
+}
+
+export async function deleteEntityGraph(entityId: string): Promise<void> {
+    const db = await getDb()
+    await db.run(sql`
+delete from relations
+where subject_id = ${entityId} or object_id = ${entityId};
+`)
+    await db.delete(entityAliases).where(eq(entityAliases.entityId, entityId))
+    await db.delete(entities).where(eq(entities.id, entityId))
 }
 
 export async function deleteAllExtractedGraph(): Promise<void> {
@@ -444,4 +521,21 @@ function variantAliases(value: string): string[] {
 
 function escapeJsonLike(value: string): string {
     return JSON.stringify(value).slice(1, -1)
+}
+
+function parseProperties(
+    raw: string | null,
+): Record<string, unknown> | undefined {
+    if (!raw) {
+        return undefined
+    }
+    try {
+        const parsed = JSON.parse(raw) as unknown
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            return undefined
+        }
+        return parsed as Record<string, unknown>
+    } catch {
+        return undefined
+    }
 }

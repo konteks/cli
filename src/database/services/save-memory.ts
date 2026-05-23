@@ -7,6 +7,10 @@ import insertDiaryEntry from '@/database/actions/insert-diary-entry'
 import insertObservation from '@/database/actions/insert-observation'
 import upsertRetrievalDocument from '@/database/actions/upsert-retrieval-document'
 import {
+    projectDiaryToGraph,
+    projectMemoryToGraph,
+} from '@/database/services/durable-memory-graph'
+import {
     importanceToConfidence,
     isSkippableMemoryError,
     summarizeText,
@@ -115,6 +119,14 @@ async function saveKonteksMemory(
             targetId: id,
             targetType: 'memory',
             updatedAt: createdAt,
+        })
+        await projectMemoryToGraph({
+            content: input.content,
+            id,
+            kind: input.kind,
+            source: input.source,
+            summary,
+            tags: input.tags,
         })
     })
 
@@ -237,6 +249,12 @@ export async function saveKonteksDiary(
             targetId: id,
             targetType: 'diary',
             updatedAt: createdAt,
+        })
+        await projectDiaryToGraph({
+            id,
+            subject: formattedInput.subject,
+            summary: formattedInput.summary,
+            tags: formattedInput.tags,
         })
     })
 
