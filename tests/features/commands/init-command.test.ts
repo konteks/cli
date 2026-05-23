@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { terminal } from '@/support/terminal/service'
+import consoleOutput from '@/support/console-output'
 import FakeEmbeddingProvider from '../../fake/fake-embedding-provider'
 
 const checkboxCalls: unknown[] = []
@@ -104,16 +104,19 @@ describe('InitCommand', () => {
     const init = async (project: string) =>
         await withWorkingDirectory(project, async () => {
             const output: string[] = []
-            const logSpy = spyOn(terminal, 'log').mockImplementation(
+            const logSpy = spyOn(consoleOutput, 'print').mockImplementation(
                 message => {
-                    output.push(message)
+                    output.push(String(message))
+                    return consoleOutput
                 },
             )
-            const errorSpy = spyOn(terminal, 'writeError').mockImplementation(
-                message => {
-                    output.push(message)
-                },
-            )
+            const errorSpy = spyOn(
+                consoleOutput,
+                'writeError',
+            ).mockImplementation(message => {
+                output.push(String(message))
+                return consoleOutput
+            })
 
             try {
                 const command = await createCommand()
@@ -209,9 +212,10 @@ describe('InitCommand', () => {
 
     it('colors init progress when color is supported', async () => {
         const projectRoot = await makeTempProject()
-        const colorSpy = spyOn(terminal, 'stderrSupportsColor').mockReturnValue(
-            true,
-        )
+        const previousForceColor = process.env.FORCE_COLOR
+        const previousNoColor = process.env.NO_COLOR
+        delete process.env.NO_COLOR
+        process.env.FORCE_COLOR = '1'
 
         try {
             const output = await init(projectRoot)
@@ -219,7 +223,16 @@ describe('InitCommand', () => {
             expect(output).toContain('\u001b[32m✓\u001b[0m')
             expect(output).toContain('\u001b[36mProject memory ready\u001b[0m')
         } finally {
-            colorSpy.mockRestore()
+            if (previousForceColor === undefined) {
+                delete process.env.FORCE_COLOR
+            } else {
+                process.env.FORCE_COLOR = previousForceColor
+            }
+            if (previousNoColor === undefined) {
+                delete process.env.NO_COLOR
+            } else {
+                process.env.NO_COLOR = previousNoColor
+            }
         }
     })
 
@@ -359,10 +372,13 @@ async function createCommand() {
 }
 
 async function withInteractiveTerminal<T>(operation: () => Promise<T>) {
-    const stdinSpy = spyOn(terminal, 'stdinIsInteractive').mockReturnValue(true)
-    const stderrSpy = spyOn(terminal, 'stderrIsInteractive').mockReturnValue(
+    const stdinSpy = spyOn(consoleOutput, 'stdinIsInteractive').mockReturnValue(
         true,
     )
+    const stderrSpy = spyOn(
+        consoleOutput,
+        'stderrIsInteractive',
+    ).mockReturnValue(true)
 
     try {
         return await operation()

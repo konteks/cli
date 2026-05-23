@@ -3,14 +3,20 @@ import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import StatusCommand from '@/entrypoints/cli/commands/status-command'
-import { terminal } from '@/support/terminal/service'
+import consoleOutput, {
+    type ConsoleColorPalette,
+    type ConsoleOutputMessage,
+} from '@/support/console-output'
 
 describe('project/status', () => {
     it('prints status with the current project paths', async () => {
         const projectRoot = await createConfiguredProject()
-        const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
-        const colorSpy = spyOn(terminal, 'stdoutSupportsColor').mockReturnValue(
-            false,
+        const output: string[] = []
+        const logSpy = spyOn(consoleOutput, 'print').mockImplementation(
+            message => {
+                output.push(renderStdoutMessage(message))
+                return consoleOutput
+            },
         )
 
         try {
@@ -18,14 +24,13 @@ describe('project/status', () => {
                 new StatusCommand().handle(),
             )
             expect(logSpy).toHaveBeenCalledTimes(1)
-            const output = logSpy.mock.calls[0]?.[0] ?? ''
-            expect(output).toContain(projectRoot)
-            expect(output).toContain(join(projectRoot, '.konteks'))
-            expect(output).toContain('Project memory status')
-            expect(output).toContain('Status        Not initialized')
-            expect(output).toContain('Last indexed  Not indexed yet')
+            const renderedOutput = stripAnsi(output.join('\n'))
+            expect(renderedOutput).toContain(projectRoot)
+            expect(renderedOutput).toContain(join(projectRoot, '.konteks'))
+            expect(renderedOutput).toContain('Project memory status')
+            expect(renderedOutput).toContain('Status        Not initialized')
+            expect(renderedOutput).toContain('Last indexed  Not indexed yet')
         } finally {
-            colorSpy.mockRestore()
             logSpy.mockRestore()
         }
     })
@@ -43,6 +48,26 @@ async function withWorkingDirectory<T>(
     } finally {
         process.chdir(previous)
     }
+}
+
+function renderStdoutMessage(message: ConsoleOutputMessage): string {
+    return isOutputFormatter(message)
+        ? consoleOutput.withStdoutColor(message)
+        : String(message)
+}
+
+function isOutputFormatter(
+    message: ConsoleOutputMessage,
+): message is (color: ConsoleColorPalette) => string {
+    return typeof message === 'function'
+}
+
+function stripAnsi(value: string): string {
+    const ansiPattern = new RegExp(
+        `${String.fromCharCode(27)}\\[[0-9;]*m`,
+        'gu',
+    )
+    return value.replaceAll(ansiPattern, '')
 }
 
 async function createConfiguredProject(): Promise<string> {

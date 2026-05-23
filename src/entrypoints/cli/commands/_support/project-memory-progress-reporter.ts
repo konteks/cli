@@ -1,5 +1,4 @@
-import createColorPalette from '@/support/terminal/create-color-palette'
-import { terminal } from '@/support/terminal/service'
+import consoleOutput from '@/support/console-output'
 import {
     createInlineProgress,
     createTuiText,
@@ -22,9 +21,10 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
     let sectionCount = 0
     let spinnerIndex = 0
     let modelPercent: number | undefined
-    const color = createColorPalette(terminal.stderrSupportsColor())
-    const inline = createInlineProgress(value => terminal.writeError(value))
-    const text = createTuiText(color)
+    const inline = createInlineProgress(value =>
+        consoleOutput.writeError(value),
+    )
+    const text = consoleOutput.withStderrColor(createTuiText)
 
     return {
         done() {
@@ -85,11 +85,15 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
                 printCheck('Generated project summary')
             }
 
-            terminal.log('')
-            terminal.log(text.sectionTitle('Project memory ready'))
-            terminal.log('')
-            terminal.log(text.statLine('Files indexed', result.fileCount))
-            terminal.log(text.statLine('Vectors indexed', result.vectorCount))
+            consoleOutput.print('')
+            consoleOutput.print(text.sectionTitle('Project memory ready'))
+            consoleOutput.print('')
+            consoleOutput.print(
+                text.statLine('Files indexed', result.fileCount),
+            )
+            consoleOutput.print(
+                text.statLine('Vectors indexed', result.vectorCount),
+            )
         },
     }
 
@@ -141,7 +145,11 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
             return `Preparing dependencies: ${spinnerFrame(spinnerIndex)}`
         }
 
-        return `Preparing dependencies: ${color.accent(modelPercent.toFixed(1))}%`
+        const percent = modelPercent
+        return consoleOutput.withStderrColor(
+            color =>
+                `Preparing dependencies: ${color.accent(percent.toFixed(1))}%`,
+        )
     }
 
     function printInlineProgress(message: string): void {
@@ -154,7 +162,7 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
     }
 
     function printCheck(message: string): void {
-        terminal.log(text.checkLine(message))
+        consoleOutput.print(text.checkLine(message))
     }
 
     function finishPreparation(): void {
@@ -164,7 +172,9 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
 
         printedPreparation = true
         completeInlineProgress(
-            `Preparing dependencies: ${color.accent('100')}%`,
+            consoleOutput.withStderrColor(
+                color => `Preparing dependencies: ${color.accent('100')}%`,
+            ),
         )
     }
 
@@ -172,8 +182,8 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
         finishPreparation()
         printedDocumentLine = true
         printCheck(preparedDocumentsMessage(documentCount))
-        terminal.log('')
-        terminal.log(text.sectionTitle('Building project memory...'))
+        consoleOutput.print('')
+        consoleOutput.print(text.sectionTitle('Building project memory...'))
     }
 
     function completeInlineProgress(message: string): void {

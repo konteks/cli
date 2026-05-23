@@ -1,6 +1,6 @@
 import { confirm } from '@inquirer/prompts'
 import createProjectExtractor from '@/modules/extraction/create-project-extractor'
-import { terminal } from '@/support/terminal/service'
+import consoleOutput from '@/support/console-output'
 import BaseCommand from './_base-command'
 import createProjectMemoryProgressReporter from './_support/project-memory-progress-reporter'
 
@@ -40,7 +40,10 @@ export default class RebuildCommand extends BaseCommand {
 }
 
 async function confirmRebuildPrompt(): Promise<boolean> {
-    if (!terminal.stdinIsInteractive() || !terminal.stderrIsInteractive()) {
+    if (
+        !consoleOutput.stdinIsInteractive() ||
+        !consoleOutput.stderrIsInteractive()
+    ) {
         return true
     }
 

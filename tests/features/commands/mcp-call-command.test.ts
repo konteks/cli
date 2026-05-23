@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import CallCommand from '@/entrypoints/cli/commands/mcp/call-command'
 import mcpTools from '@/entrypoints/mcp/tools'
 import { loadProjectContext } from '@/modules/project/context'
-import { terminal } from '@/support/terminal/service'
+import consoleOutput from '@/support/console-output'
 
 describe('commands/mcp/call', () => {
     afterEach(() => {
@@ -22,7 +22,9 @@ describe('commands/mcp/call', () => {
 
         let memoryDirDuringCall: string | undefined
         const saveTool = getTool('konteks_save_diary')
-        const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
+        const logSpy = spyOn(consoleOutput, 'print').mockImplementation(
+            () => consoleOutput,
+        )
 
         spyOn(saveTool, 'handle').mockImplementation(async () => {
             memoryDirDuringCall = memoryDir
@@ -94,7 +96,9 @@ describe('commands/mcp/call', () => {
     it('calls read-only tools directly without dry run', async () => {
         let calledInput: unknown
         const recallTool = getTool('konteks_recall')
-        const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
+        const logSpy = spyOn(consoleOutput, 'print').mockImplementation(
+            () => consoleOutput,
+        )
 
         spyOn(recallTool, 'handle').mockImplementation(async input => {
             calledInput = input
@@ -115,7 +119,9 @@ describe('commands/mcp/call', () => {
     it('calls mutating tools directly when apply is enabled', async () => {
         let called = false
         const saveTool = getTool('konteks_save_diary')
-        const logSpy = spyOn(terminal, 'log').mockImplementation(() => {})
+        const logSpy = spyOn(consoleOutput, 'print').mockImplementation(
+            () => consoleOutput,
+        )
 
         spyOn(saveTool, 'handle').mockImplementation(async () => {
             called = true

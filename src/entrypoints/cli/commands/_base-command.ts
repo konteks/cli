@@ -1,7 +1,8 @@
 import type { Command as CommanderCommand } from 'commander'
+import consoleOutput, {
+    type ConsoleOutputMessage,
+} from '@/support/console-output'
 import getVersion from '@/support/get-version'
-import createColorPalette from '@/support/terminal/create-color-palette'
-import { terminal } from '@/support/terminal/service'
 
 export type Command = CommanderCommand
 
@@ -41,8 +42,8 @@ export default abstract class BaseCommand<
         input: BaseCommandInput<Args, Options>,
     ): Promise<void> | void
 
-    protected print(value: string): void {
-        terminal.log(value)
+    protected print(value: ConsoleOutputMessage): void {
+        consoleOutput.print(value)
     }
 
     public register(parent: Command, context: BaseCommandContext) {
@@ -67,9 +68,9 @@ export default abstract class BaseCommand<
 
             if (this.printsHeader) {
                 const version = getVersion()
-                const color = createColorPalette(terminal.stdoutSupportsColor())
                 this.print(
-                    `${color.accent('Konteks')} ${color.dim(`v${version}`)}`,
+                    color =>
+                        `${color.accent('Konteks')} ${color.dim(`v${version}`)}`,
                 )
             }
 

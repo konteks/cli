@@ -1,6 +1,6 @@
+import consoleOutput from '@/support/console-output'
 import { stringifyPretty } from '@/support/json/io'
-import { terminal } from '@/support/terminal/service'
 
 export default function printJson(value: unknown): void {
-    terminal.log(stringifyPretty(value))
+    consoleOutput.print(stringifyPretty(value))
 }

@@ -5,11 +5,8 @@ import {
     isBundledGrammar,
     listGrammarDefinitions,
 } from '@/modules/extraction/engine/grammar-loader'
+import consoleOutput from '@/support/console-output'
 import pluralizeWord from '@/support/pluralize-word'
-import createColorPalette from '@/support/terminal/create-color-palette'
-import { terminal } from '@/support/terminal/service'
-
-const color = createColorPalette(terminal.stdoutSupportsColor())
 
 export type DetectedGrammarSelection = {
     detectedBundledParserIds: string[]
@@ -66,11 +63,11 @@ export async function reviewDetectedGrammars(
         default: 'CONTINUE',
         loop: false,
         message: getDetectedGrammarSummaryMessage(detected),
-        theme: {
+        theme: consoleOutput.withStdoutColor(color => ({
             prefix: {
                 done: color.success('✓'),
             },
-        },
+        })),
     })
 
     if (useDetected === 'CONTINUE') {
@@ -90,7 +87,10 @@ export async function reviewDetectedGrammars(
 }
 
 function canPromptForGrammars(): boolean {
-    return terminal.stdinIsInteractive() && terminal.stderrIsInteractive()
+    return (
+        consoleOutput.stdinIsInteractive() &&
+        consoleOutput.stderrIsInteractive()
+    )
 }
 
 function detectParserGrammars(files: ScannedFile[]): DetectedGrammarSelection {
@@ -130,7 +130,7 @@ async function promptForRegistryGrammars(
         loop: true,
         message:
             'Select the programming languages or file types used in this project',
-        theme: {
+        theme: consoleOutput.withStdoutColor(color => ({
             icon: {
                 checked: color.success('■'),
                 unchecked: color.info('◻'),
@@ -138,7 +138,7 @@ async function promptForRegistryGrammars(
             prefix: {
                 done: color.success('✓'),
             },
-        },
+        })),
     })
 }
 
@@ -157,7 +157,10 @@ function registryGrammarChoices(selected: string[]): GrammarChoice[] {
 function getDetectedGrammarSummaryMessage(
     detected: DetectedGrammarSelection,
 ): string {
-    return `${color.info(detected.detectedParserIds.length.toString())} ${pluralizeWord('language', detected.detectedParserIds.length)} detected from ${color.info(detected.totalFileCount.toString())} ${pluralizeWord('file', detected.totalFileCount)}: ${color.accent(formatIds(detected.detectedParserIds))}`
+    return consoleOutput.withStdoutColor(
+        color =>
+            `${color.info(detected.detectedParserIds.length.toString())} ${pluralizeWord('language', detected.detectedParserIds.length)} detected from ${color.info(detected.totalFileCount.toString())} ${pluralizeWord('file', detected.totalFileCount)}: ${color.accent(formatIds(detected.detectedParserIds))}`,
+    )
 }
 
 function formatIds(ids: string[]): string {

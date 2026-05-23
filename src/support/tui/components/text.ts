@@ -1,4 +1,4 @@
-import type { ColorPalette } from '@/support/terminal/create-color-palette'
+import type { ConsoleColorPalette } from '@/support/console-output'
 
 export type TuiText = {
     checkLine(message: string): string
@@ -8,7 +8,7 @@ export type TuiText = {
     statLine(label: string, value: number): string
 }
 
-export function createTuiText(color: ColorPalette): TuiText {
+export function createTuiText(color: ConsoleColorPalette): TuiText {
     return {
         checkLine(message) {
             return `${color.success('✓')} ${message}`
