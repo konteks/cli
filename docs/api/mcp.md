@@ -31,7 +31,7 @@ Tools are lower-level callable operations used by agents and debugging workflows
 | Tool | Capability | Parameters | Use When |
 | :--- | :--- | :--- | :--- |
 | `konteks_warm_up` | Warm Up | | Start a fresh agent session with stable project context. |
-| `konteks_recall` | Recall | `task`, `includeSources` | Retrieve a compact brief, primary targets, and relevant memory evidence (includes a `quality` signal: `strong`, `partial`, or `weak`). |
+| `konteks_recall` | Recall | `task`, `includeSources` | Retrieve a compact brief, primary targets, memories, graph evidence, history evidence, and a `quality` signal. |
 | `konteks_save_memories` | Save Memories | `memories` | Persist structured durable memories for future sessions. |
 | `konteks_save_diary` | Save Diary | `summary`, `subject`, `tags` | Persist one compact session diary entry for continuity. |
 | `konteks_search` | Search | `query`, `limit` | Inspect memory directly with a query. |
@@ -39,4 +39,21 @@ Tools are lower-level callable operations used by agents and debugging workflows
 
 MCP tools validate project health silently before doing work. If memory is not initialized or a derived-memory rebuild is required, the tool fails with a short actionable error instead of returning status context.
 
-`konteks_save_memories` accepts optional `supersedes` ids on `decision` memories. Use it when a new decision replaces older saved decisions so recall can preserve the old graph evidence as historical context.
+Example durable memory payload:
+
+```json
+{
+  "memories": [
+    {
+      "content": "Use the SQLite retrieval document table as the canonical search surface.",
+      "importance": 4,
+      "kind": "decision",
+      "source": "src/database/schema.ts",
+      "supersedes": ["obs_previous_decision_id"],
+      "tags": ["retrieval", "sqlite"]
+    }
+  ]
+}
+```
+
+`supersedes` is optional and intended for `decision` memories. Use it when a new decision replaces older saved decisions so recall can preserve the old graph evidence as historical context.

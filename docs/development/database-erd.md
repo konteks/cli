@@ -12,6 +12,9 @@ erDiagram
         text uri
         text source_role
         text language
+        text entities_json
+        text metadata_json
+        text topics_json
         text created_at
     }
 
@@ -21,8 +24,13 @@ erDiagram
         text kind
         text path
         text anchor
+        text anchor_type
         text summary
+        text content_inline
         text content_hash
+        text entities_json
+        text metadata_json
+        text topics_json
         integer token_count
         text deleted_at
         text suppressed_at
@@ -56,6 +64,8 @@ erDiagram
         text status
         text valid_from
         text valid_to
+        text supersedes_relation_id
+        text properties_json
     }
 
     observations {
@@ -116,6 +126,8 @@ erDiagram
         text path
         text anchor
         text summary
+        text fts_text
+        text embedding_text
         text fts_hash
         text embedding_hash
         text updated_at
@@ -139,6 +151,10 @@ erDiagram
         text source_role
         text package_name
         text summary
+        text exported_symbols_json
+        text imports_json
+        text entities_json
+        text topics_json
         integer file_count
         integer section_count
         text updated_at
@@ -206,6 +222,10 @@ example, extracted section cleanup deletes `retrieval_documents` and
 `target_embeddings` rows for `target_type = 'section'` before deleting the
 matching `sections` rows.
 
+`sources.entities_json`, `sections.entities_json`, and `modules.entities_json`
+store graph entity ids associated with those retrieval targets. Recall uses
+those ids to map text hits back into graph expansion.
+
 ## Search Tables
 
 `memory_fts` and `retrieval_documents_fts` are SQLite FTS5 virtual tables owned
@@ -223,3 +243,7 @@ but their table options live in `src/database/utils/migrations`.
 * Organization: `taxonomy_nodes`, `taxonomy_links`.
 * Retrieval: `retrieval_documents`, `retrieval_documents_fts`,
   `target_embeddings`, `memory_fts`, `memory_fts_indexed`.
+
+Graph relation `status` distinguishes active relations from `invalidated` and
+`superseded` historical relations. `supersedes_relation_id` links an older
+relation to the newer decision relation that replaced it.

@@ -15,17 +15,18 @@ The most important security feature of Konteks is where your data lives: **on yo
 Konteks includes active measures to prevent sensitive information from entering its memory.
 
 ### Automated Detection
-The `konteks_save` and `konteks_remember` tools perform a "Secret Check" before persisting any durable memory. If the content appears to contain patterns matching API keys, secrets, or common authentication tokens, the operation is blocked to prevent accidental leakage into the semantic graph.
+The save tools validate content before persisting durable memory. If memory text appears to contain API keys, secrets, or common authentication tokens, the operation is blocked to prevent accidental leakage into project memory.
 
 ### Respecting Ignore Rules
-Konteks rigorously respects your project's ignore rules. Files and directories listed in `.gitignore` or `.ignore` are skipped during the extraction process, ensuring that environment files (like `.env`) or temporary artifacts are never indexed.
+Konteks rigorously respects your project's ignore rules. Files and directories listed in `.gitignore` or `.konteksignore` are skipped during the extraction process, ensuring that environment files (like `.env`) or temporary artifacts are never indexed.
 
 ## 3. Auditability: Transparency in Memory
 
-Konteks maintains an append-only [Memory Events](memory-model.md#3-temporal-memory) log that records every meaningful mutation of your project's memory.
+Konteks maintains an append-only [Memory Events](../core-concepts/memory-model.md#5-the-timeline-surface) log that records every meaningful mutation of your project's memory.
 
 *   **Transparency**: You can inspect the history of what was added, modified, or forgotten.
 *   **Accountability**: Every event is tagged with an actor (e.g., `cli` or `mcp`), providing a clear audit trail of how your project's knowledge has evolved.
+*   **Relation history**: Superseded or invalidated graph relations remain available to historical recall when a task asks about prior decisions or changes.
 
 ## 4. Data Control
 
@@ -34,13 +35,13 @@ You have full control over the knowledge Konteks stores.
 ### Forget & Delete
 You can selectively remove memory using the `konteks_forget` tool. This supports multiple modes:
 - **Soft Delete**: Marks memory as deleted (hidden from recall).
-- **Invalidate**: Marks memory as superseded or no longer true.
+- **Invalidate**: Suppresses memory or marks a graph relation no longer active while preserving historical evidence.
 - **Hard Delete**: Permanently removes the record from the local database.
 
 ### Portability & Deletion
 Because all data is stored in the `.konteks` folder, you can "wipe" Konteks' memory for a project simply by deleting that folder.
 
-## 4. Responsible AI Usage
+## 5. Responsible AI Usage
 
 While Konteks keeps your data local, it is important to remember that:
 - **Recall Packages** contain snippets of your project's knowledge.

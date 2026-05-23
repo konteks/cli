@@ -5,7 +5,7 @@ import { entities, entityAliases, relations } from '@/database/schema'
 import contentHash from '@/support/content-hash'
 import type { MemoryEntity } from '@/types/memory'
 
-export const GRAPH_ENTITY_TYPES = [
+const GRAPH_ENTITY_TYPES = [
     'module',
     'file',
     'symbol',
@@ -17,7 +17,7 @@ export const GRAPH_ENTITY_TYPES = [
     'diary',
 ] as const
 
-export const GRAPH_RELATION_PREDICATES = [
+const GRAPH_RELATION_PREDICATES = [
     'contains',
     'defines',
     'imports',
@@ -230,32 +230,7 @@ export async function upsertRelation(
     }
 }
 
-export async function findEntityAlias(
-    entityId: string,
-    value: string,
-): Promise<GraphEntityAlias | undefined> {
-    const db = await getDb()
-    const normalizedValue = normalizeEntityAlias(value)
-    const rows = await db
-        .select({
-            entityId: entityAliases.entityId,
-            id: entityAliases.id,
-            normalizedValue: entityAliases.normalizedValue,
-            value: entityAliases.value,
-        })
-        .from(entityAliases)
-        .where(
-            and(
-                eq(entityAliases.entityId, entityId),
-                eq(entityAliases.normalizedValue, normalizedValue),
-            ),
-        )
-        .limit(1)
-
-    return rows[0]
-}
-
-export async function findEntitiesByAliasValues(
+async function findEntitiesByAliasValues(
     values: string[],
     options: { types?: GraphEntityType[] } = {},
 ): Promise<MemoryEntity[]> {
@@ -529,14 +504,11 @@ export function entityIdFor(
     return `ent_${contentHash(`${type}:${normalizeEntityAlias(canonicalName)}`).slice(0, 32)}`
 }
 
-export function entityAliasIdFor(
-    entityId: string,
-    normalizedValue: string,
-): string {
+function entityAliasIdFor(entityId: string, normalizedValue: string): string {
     return `alias_${contentHash(`${entityId}:${normalizedValue}`).slice(0, 32)}`
 }
 
-export function relationIdFor(input: GraphRelationInput): string {
+function relationIdFor(input: GraphRelationInput): string {
     return `rel_${contentHash(
         [
             input.subjectId,

@@ -63,7 +63,7 @@ Recall also asks whether the task matches known entities. If it does, Konteks ca
 
 This is the map layer of recall. It helps the agent see surrounding context: related components, connected concepts, and nearby decisions. When graph data is sparse, recall still works from retrieval memory alone.
 
-If the task asks about prior work, replacements, migrations, or why something changed, recall can also include historical relation evidence.
+Graph expansion is retrieval-led: direct text hits remain the primary signal, and graph context can boost or explain related candidates when connected evidence exists. If the task asks about prior work, replacements, migrations, or why something changed, recall can also include historical relation evidence from superseded or invalidated graph relations.
 
 ## 6. The Assembly: Build the Recall Package
 

@@ -78,4 +78,4 @@ When the session is complete or worth preserving:
 /konteks-save
 ```
 
-The prompt tells your agent to call `konteks_save` with compact structured payloads: durable memories first, then one session diary. You do not need to manually summarize or split the work yourself.
+The prompt tells your agent to call `konteks_save_memories` for compact durable memories, then `konteks_save_diary` for one session diary. You do not need to manually summarize or split the work yourself.
