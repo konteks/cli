@@ -1,24 +1,18 @@
 import { withTransaction } from '@/database/actions/_db'
-import {
-    historicalRelationsAction,
-    searchEntitiesAction,
-    traverseNeighborsAction,
-} from '@/database/services/_recall-repository-memory-actions'
+import { historicalRelationsAction } from '@/database/services/_recall-repository-memory-actions'
+import { buildRetrievalGraphContext } from '@/database/services/graph-context'
 import searchMemory, {
     type MemoryRecallInput,
 } from '@/database/services/search-memory'
 import type {
-    MemoryEntity,
     MemorySearchResult,
     RecallGraphItem,
     RecallHistoryItem,
     RecallPackage,
 } from '@/types/memory'
 
-const ENTITY_LIMIT = 4
 const HISTORICAL_RELATION_LIMIT = 6
 const RECALL_OUTPUT_BUDGET_TOKENS = 2000
-const TRAVERSE_NEIGHBOR_LIMIT = 8
 
 export default async function recallRepositoryMemory(
     input: MemoryRecallInput,
@@ -28,12 +22,12 @@ export default async function recallRepositoryMemory(
             limit: 20,
             query: input.task,
         })
-        const rawEntities = await searchEntitiesAction(input.task, {
-            limit: ENTITY_LIMIT,
-        })
-        const entities = dedupeEntities(rawEntities)
+        const graphContext = await buildRetrievalGraphContext(
+            input.task,
+            memories,
+        )
+        const entities = graphContext.entities
 
-        const graphItems: RecallGraphItem[] = []
         const historyItems: RecallHistoryItem[] = []
 
         if (needsHistory(input.task)) {
@@ -62,34 +56,8 @@ export default async function recallRepositoryMemory(
             }
         }
 
-        const seenNeighbors = new Set<string>()
-        for (const entity of entities) {
-            const neighbors = await traverseNeighborsAction(entity.id, {
-                limit: TRAVERSE_NEIGHBOR_LIMIT,
-                maxDepth: 2,
-            })
-            for (const neighbor of neighbors) {
-                if (seenNeighbors.has(neighbor.relationId)) continue
-                seenNeighbors.add(neighbor.relationId)
-
-                graphItems.push({
-                    depth: neighbor.depth,
-                    direction: neighbor.direction,
-                    entityId: entity.id,
-                    entityName: entity.name,
-                    entityType: entity.type,
-                    predicate: neighbor.predicate,
-                    relatedEntityId: neighbor.entity.id,
-                    relatedEntityName: neighbor.entity.name,
-                    relatedEntityType: neighbor.entity.type,
-                    relationId: neighbor.relationId,
-                    score: Math.max(1, 10 - neighbor.depth * 2),
-                })
-            }
-        }
-
         return assembleRecallPackage({
-            graph: graphItems,
+            graph: graphContext.graph,
             history: historyItems,
             includeSources: input.includeSources ?? false,
             memories,
@@ -138,15 +106,6 @@ function needsHistory(task: string): boolean {
     return /\b(history|historical|previous|prior|old|before|changed|why|superseded|invalidated|replaced|migration|attempt|rollback|decision)\b/iu.test(
         task,
     )
-}
-
-function dedupeEntities(entities: MemoryEntity[]): MemoryEntity[] {
-    const seen = new Set<string>()
-    return entities.filter(e => {
-        if (seen.has(e.id)) return false
-        seen.add(e.id)
-        return true
-    })
 }
 
 function applyTokenBudget(

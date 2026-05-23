@@ -8,6 +8,10 @@ import queryObservations, {
 import queryRetrievalDocuments, {
     type RetrievalDocumentRow,
 } from '@/database/actions/query-retrieval-documents'
+import {
+    buildRetrievalGraphContext,
+    resultKey,
+} from '@/database/services/graph-context'
 import { classifySourceRole } from '@/modules/project/source-classification'
 import { estimateTextTokens } from '@/support/format/tokens'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/types/embedding-provider'
@@ -117,7 +121,7 @@ async function searchRetrievalDocuments(
         limit * 4,
     )
 
-    return applyGroupAwarePruning(
+    const results = applyGroupAwarePruning(
         rows.map(row =>
             retrievalDocumentToResult(row, terms, {
                 provider: options.embeddingProvider,
@@ -129,6 +133,14 @@ async function searchRetrievalDocuments(
     )
         .filter(result => allowResult(result, mode, intent))
         .map(result => applyRolePolicy(result, mode, intent))
+
+    const graphContext = await buildRetrievalGraphContext(
+        terms.join(' '),
+        results,
+    )
+
+    return results
+        .map(result => applyGraphBoost(result, graphContext.boosts))
         .sort(compareSearchResults)
         .slice(0, limit)
 }
@@ -256,6 +268,25 @@ function retrievalDocumentToResult(
         type,
         vectorScore,
     })
+}
+
+function applyGraphBoost(
+    result: MemorySearchResult,
+    boosts: Map<string, number>,
+): MemorySearchResult {
+    const boost = boosts.get(resultKey(result)) ?? 0
+    if (boost === 0) {
+        return result
+    }
+
+    return {
+        ...result,
+        metadata: {
+            ...result.metadata,
+            graphBoost: boost,
+        },
+        score: result.score + boost,
+    }
 }
 
 function resolveSourceRole(

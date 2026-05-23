@@ -4,9 +4,11 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
+import searchMemory from '@/database/services/search-memory'
 import mcpTools from '@/entrypoints/mcp/tools'
 import { readExtractionManifest } from '@/modules/extraction/engine/manifest'
 import { extractProject } from '@/modules/extraction/extract-project'
+import recallRepositoryMemory from '@/modules/memory/recall-repository-memory'
 import { loadProjectContext } from '@/modules/project/context'
 import FakeEmbeddingProvider from '../../../fake/fake-embedding-provider'
 
@@ -41,6 +43,22 @@ afterEach(async () => {
 })
 
 describe('retrieval quality evals', () => {
+    it('falls back cleanly when no graph or retrieval data exists', async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-eval-empty-'))
+        tempDirs.push(projectRoot)
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
+
+        const recall = await withProjectRoot(projectRoot, () =>
+            recallRepositoryMemory({
+                task: 'unindexed graph empty fallback',
+            }),
+        )
+
+        expect(recall.quality).toBe('weak')
+        expect(recall.memories).toEqual([])
+        expect(recall.graph).toEqual([])
+    })
+
     it('supports packaging and MCP retrieval dogfood flow', async () => {
         const projectRoot = await mkdtemp(
             join(tmpdir(), 'konteks-eval-packaging-'),
@@ -269,6 +287,105 @@ describe('retrieval quality evals', () => {
         expect(text).toContain('src/mcp')
         expect(text).not.toContain('docs/getting-started')
         expect(text).not.toContain('- -')
+    })
+
+    it('keeps direct text matches ahead of graph-boosted weaker matches', async () => {
+        const projectRoot = await mkdtemp(
+            join(tmpdir(), 'konteks-eval-graph-dominance-'),
+        )
+        tempDirs.push(projectRoot)
+        await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await writeFile(
+            join(projectRoot, 'src', 'direct.txt'),
+            'directmatch sharedgraph directmatch sharedgraph directmatch\n',
+        )
+        await writeFile(join(projectRoot, 'src', 'weak.txt'), 'sharedgraph\n')
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', extractionOptions()),
+        )
+
+        const results = await withProjectRoot(projectRoot, () =>
+            searchMemory({
+                limit: 5,
+                query: 'directmatch sharedgraph',
+            }),
+        )
+
+        expect(results[0]?.path).toBe('src/direct.txt')
+        expect(results.map(result => result.path)).toContain('src/weak.txt')
+    })
+
+    it('boosts search candidates with connected graph evidence', async () => {
+        const projectRoot = await mkdtemp(
+            join(tmpdir(), 'konteks-eval-graph-boost-'),
+        )
+        tempDirs.push(projectRoot)
+        await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await writeFile(
+            join(projectRoot, 'src', 'boosted.txt'),
+            'sharedboost\n',
+        )
+        await writeFile(join(projectRoot, 'README.md'), '# sharedboost\n')
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', extractionOptions()),
+        )
+
+        const results = await withProjectRoot(projectRoot, () =>
+            searchMemory({
+                limit: 10,
+                query: 'sharedboost',
+            }),
+        )
+        const boosted = results.find(
+            result => result.path === 'src/boosted.txt',
+        )
+
+        expect(boosted?.metadata).toMatchObject({
+            graphBoost: expect.any(Number),
+        })
+    })
+
+    it('includes only connected graph evidence in recall output', async () => {
+        const projectRoot = await mkdtemp(
+            join(tmpdir(), 'konteks-eval-graph-relevance-'),
+        )
+        tempDirs.push(projectRoot)
+        await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, 'docs'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await writeFile(
+            join(projectRoot, 'src', 'connected.txt'),
+            'connected graph evidence target\n',
+        )
+        await writeFile(
+            join(projectRoot, 'docs', 'unrelated.md'),
+            '# isolated notes\n',
+        )
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', extractionOptions()),
+        )
+
+        const recall = await withProjectRoot(projectRoot, () =>
+            recallRepositoryMemory({
+                task: 'connected graph evidence',
+            }),
+        )
+
+        expect(recall.graph.length).toBeGreaterThan(0)
+        expect(
+            recall.graph.some(item => item.entityName === 'unrelated.md'),
+        ).toBe(false)
     })
 
     it('uses SQLite WASM local storage context for retrieval', async () => {
