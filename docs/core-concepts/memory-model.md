@@ -54,7 +54,8 @@ The current map is shaped mainly by:
 * **Sources**: the files that produced sections.
 * **Path taxonomy**: a directory-shaped grouping of sections.
 * **Modules**: summaries of top-level project areas, including file and section counts.
-* **Project metadata**: package, workspace, dependency, entry point, README, and technology signals when available.
+* **Project metadata**: package, dependency, command/script, config, README, and technology signals when available.
+* **Graph entities**: files, modules, exported symbols, packages, commands, configs, docs, saved memories, and diary entries.
 
 This surface answers:
 
@@ -62,7 +63,7 @@ This surface answers:
 * Which files belong together?
 * Which project areas are likely important before reading a specific section?
 
-Konteks also has a graph layer for named entities and relations. Recall can search those entities, traverse nearby relations, and include historical relations when a task asks about prior decisions or changes. In the current extraction flow, the strongest automatically rebuilt map comes from files, paths, modules, and metadata.
+Konteks also has a graph layer for named entities and relations. Extraction creates rebuildable graph rows for project artifacts and metadata. Saved memories and diary entries can attach durable graph rows to matching entities when they include exact paths, aliases, tags, or source metadata. Recall can search those entities, traverse nearby active relations, and include historical relations when a task asks about prior decisions or changes.
 
 ## 3. The Retrieval Surface
 
@@ -104,6 +105,8 @@ This surface answers:
 * What implementation knowledge is not obvious from reading one file?
 
 Observations are deduplicated by content. Low-quality or sensitive content is rejected before it becomes memory.
+
+Decision observations can explicitly supersede earlier decisions. The newer decision stays active, the older decision remains searchable, and the older decision's graph claims become historical relation evidence instead of active guidance.
 
 ## 5. The Timeline Surface
 
@@ -150,7 +153,7 @@ Memory can be wrong, stale, sensitive, or no longer useful. Konteks treats forge
 There are three ways memory can be changed:
 
 * **Soft delete** hides memory from normal recall while keeping a trace.
-* **Invalidate** suppresses memory that should no longer guide future work.
+* **Invalidate** suppresses memory that should no longer guide future work, or marks a graph relation inactive while preserving historical evidence.
 * **Hard delete** removes memory when it should not remain.
 
 Forgetting can target saved observations, diary entries, extracted sections, and graph relations depending on how it is requested. Each successful change is recorded as a memory event.

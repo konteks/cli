@@ -17,8 +17,11 @@ graph LR
     Sections --> Modules[Module Summaries]
     Modules --> Index
     Modules --> Embed
+    Metadata --> Graph[Graph Entities]
+    Sections --> Graph
     Index --> Memory[(Derived Memory)]
     Embed --> Memory
+    Graph --> Memory
 ```
 
 ## 1. The Gate: Scan and Filter
@@ -79,6 +82,8 @@ Konteks attaches context such as:
 
 Konteks also records the file as a source and links sections into a path-based taxonomy. That gives recall a way to move from one matched section to the surrounding project area.
 
+It also writes graph entities and aliases for files and exported symbols when the evidence is available. These graph rows let recall connect a matched section to nearby project structure without relying only on text search.
+
 ## 6. The Search Voice: Build Retrieval Text
 
 The raw section body is not always the best search surface. A section often needs its path, role, language, anchor, topics, and summary beside it before it can be found reliably.
@@ -97,6 +102,8 @@ Once sections are in place, Konteks rebuilds module artifacts from the current s
 A module artifact is a higher-level map of a project area. It summarizes a top-level path by file count, section count, source role, path-derived topics, and package metadata when available.
 
 Modules matter because an agent often needs orientation before details. Recall can surface a project area first, then narrow into individual sections.
+
+Module rebuild also refreshes graph entities for modules, packages, commands/scripts, config files, and important docs. Rebuild and changed extraction remove stale derived graph rows while preserving durable memories and diary entries.
 
 ## 8. The Meaning Trace: Generate Embeddings
 

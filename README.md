@@ -38,7 +38,7 @@ Continue with the [Quickstart](docs/getting-started/quickstart.md) for MCP setup
 
 ## 📂 Local Storage
 
-Konteks writes local memory under `.konteks/`. It uses SQLite for the graph/indexes and a content-addressed object store for payloads.
+Konteks writes local memory under `.konteks/`. It uses SQLite for extracted content, durable memories, diary entries, retrieval indexes, embeddings, and graph metadata; extraction manifests and project config live beside the database.
 
 ## ⚖️ License
 

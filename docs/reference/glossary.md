@@ -34,6 +34,10 @@ Intentional knowledge created by users or agents during sessions (e.g., observat
 
 The process of navigating the [Semantic Graph](#semantic-graph) during recall to uncover hidden dependencies and related context.
 
+## History Evidence
+
+Superseded or invalidated graph relations included in recall when a task asks about prior decisions, replacements, or why something changed.
+
 ## Knowledge Curation
 
 The process of turning raw project artifacts and agent findings into durable, retrievable memory.
@@ -68,7 +72,7 @@ Task-specific retrieval. Recall synthesizes a compact [Recall Package](#recall-p
 
 ## Recall Package
 
-A token-efficient bundle of context containing a brief, primary targets, relevant memories, and a [Quality Label](#quality-label).
+A token-efficient bundle of context containing a brief, primary targets, relevant memories, graph evidence, history evidence, and a [Quality Label](#quality-label).
 
 ## Rebuild
 
@@ -82,9 +86,17 @@ The final lifecycle phase. Save persists structured [Durable Memories](#durable-
 
 The multi-dimensional representation of a project where entities (nodes) are connected by typed relationships (edges).
 
+## Supersession
+
+A decision-memory link where a newer decision replaces an older decision. The older decision remains searchable, while its replaced graph claims become historical evidence.
+
 ## Session
 
 One continuous agent conversation inside a project. A session can contain one task or several related tasks.
+
+## Session Boundary
+
+The point where a new agent conversation should start because the next work no longer shares the same goal, files, constraints, or decision chain.
 
 ## Storage Substrate
 

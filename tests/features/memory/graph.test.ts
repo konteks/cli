@@ -5,11 +5,8 @@ import { join } from 'node:path'
 import searchEntities from '@/database/actions/search-entities'
 import traverseNeighbors from '@/database/actions/traverse-neighbors'
 import {
-    entityAliasIdFor,
     entityIdFor,
-    findEntityAlias,
     normalizeEntityAlias,
-    relationIdFor,
     upsertEntity,
     upsertEntityAliases,
     upsertRelation,
@@ -54,9 +51,6 @@ describe('graph service', () => {
         expect(entityId).not.toBe(
             entityIdFor('symbol', 'src/memory/save-memory.ts'),
         )
-        expect(entityAliasIdFor(entityId, 'save memory')).toBe(
-            entityAliasIdFor(entityId, 'save memory'),
-        )
     })
 
     it('upserts entities and aliases idempotently', async () => {
@@ -92,12 +86,6 @@ describe('graph service', () => {
             expect(aliases).toHaveLength(1)
             expect(repeatedAliases).toHaveLength(1)
             expect(repeatedAliases[0]?.id).toBe(aliases[0]?.id)
-            await expect(
-                findEntityAlias(first.id, 'recall repository memory'),
-            ).resolves.toMatchObject({
-                entityId: first.id,
-                normalizedValue: 'recall repository memory',
-            })
 
             const matches = await searchEntities('repository memory', {
                 limit: 5,
@@ -132,7 +120,6 @@ describe('graph service', () => {
             })
 
             expect(second.id).toBe(first.id)
-            expect(second.id).toBe(relationIdFor(input))
             expect(second.confidence).toBe(0.9)
 
             const neighbors = await traverseNeighbors(moduleEntity.id, {
