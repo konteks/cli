@@ -154,6 +154,7 @@ describe('extraction graph', () => {
         await mkdir(join(projectRoot, 'src'), { recursive: true })
         await writeFile(join(projectRoot, 'src', 'old.txt'), 'Old file.\n')
         await writeFile(join(projectRoot, 'src', 'keep.txt'), 'Keep file.\n')
+        await writeFile(join(projectRoot, 'biome.json'), '{"extends":[]}\n')
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
@@ -183,8 +184,19 @@ describe('extraction graph', () => {
                 type: 'file',
             }),
         ])
+        await expect(
+            withProjectRoot(projectRoot, () =>
+                searchEntities('biome.json', { limit: 10 }),
+            ).then(matches => matches.filter(match => match.type === 'config')),
+        ).resolves.toEqual([
+            expect.objectContaining({
+                name: 'biome.json',
+                type: 'config',
+            }),
+        ])
 
         await unlink(join(projectRoot, 'src', 'old.txt'))
+        await unlink(join(projectRoot, 'biome.json'))
         await writeFile(join(projectRoot, 'src', 'new.txt'), 'New file.\n')
         await withProjectRoot(projectRoot, () =>
             extractProject(context, 'changed', {
@@ -209,12 +221,169 @@ describe('extraction graph', () => {
         ])
         await expect(
             withProjectRoot(projectRoot, () =>
+                searchEntities('biome.json', { limit: 10 }),
+            ).then(matches => matches.filter(match => match.type === 'config')),
+        ).resolves.toEqual([])
+        await expect(
+            withProjectRoot(projectRoot, () =>
                 searchEntities('durable-cycle-two', { limit: 5 }),
             ),
         ).resolves.toEqual([
             expect.objectContaining({
                 id: durable.id,
                 type: 'memory',
+            }),
+        ])
+    })
+
+    it('creates package, command, config, and doc metadata graph rows', async () => {
+        const projectRoot = await makeProject()
+        await writeFile(
+            join(projectRoot, 'package.json'),
+            JSON.stringify(
+                {
+                    dependencies: { 'left-pad': '^1.3.0' },
+                    name: 'metadata-fixture',
+                    packageManager: 'bun@1.3.12',
+                    scripts: { graphcycle: 'bun test' },
+                },
+                null,
+                2,
+            ),
+        )
+        await writeFile(join(projectRoot, 'biome.json'), '{"extends":[]}\n')
+        await writeFile(join(projectRoot, 'README.md'), '# Metadata Docs\n')
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'rebuild', {
+                embeddingProvider: new FakeEmbeddingProvider(),
+            }),
+        )
+
+        const [projectPackage] = await withProjectRoot(projectRoot, () =>
+            searchEntities('metadata-fixture', { limit: 5 }),
+        )
+        const [dependencyPackage] = await withProjectRoot(projectRoot, () =>
+            searchEntities('left-pad', { limit: 5 }),
+        )
+        const [command] = await withProjectRoot(projectRoot, () =>
+            searchEntities('bun graphcycle', { limit: 5 }),
+        )
+        const config = await withProjectRoot(projectRoot, () =>
+            searchEntities('biome.json', { limit: 10 }),
+        ).then(matches => matches.find(match => match.type === 'config'))
+        const doc = await withProjectRoot(projectRoot, () =>
+            searchEntities('README.md', { limit: 10 }),
+        ).then(matches => matches.find(match => match.type === 'doc'))
+
+        expect(projectPackage).toMatchObject({
+            name: 'metadata-fixture',
+            type: 'package',
+        })
+        expect(dependencyPackage).toMatchObject({
+            name: 'left-pad',
+            type: 'package',
+        })
+        expect(command).toMatchObject({
+            name: 'graphcycle',
+            type: 'command',
+        })
+        expect(config).toMatchObject({
+            name: 'biome.json',
+            type: 'config',
+        })
+        expect(doc).toMatchObject({
+            name: 'README.md',
+            type: 'doc',
+        })
+
+        await expect(
+            withProjectRoot(projectRoot, () => traverseNeighbors(command.id)),
+        ).resolves.toEqual([
+            expect.objectContaining({
+                direction: 'outgoing',
+                entity: expect.objectContaining({
+                    id: projectPackage.id,
+                    type: 'package',
+                }),
+                predicate: 'uses_package',
+            }),
+        ])
+        await expect(
+            withProjectRoot(projectRoot, () =>
+                traverseNeighbors(projectPackage.id, { limit: 10 }),
+            ),
+        ).resolves.toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    direction: 'outgoing',
+                    entity: expect.objectContaining({
+                        id: dependencyPackage.id,
+                    }),
+                    predicate: 'uses_package',
+                }),
+            ]),
+        )
+
+        const recall = await withProjectRoot(projectRoot, () =>
+            recallRepositoryMemory({
+                task: 'graphcycle metadata fixture left pad',
+            }),
+        )
+        expect(recall.graph).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    entityName: 'graphcycle',
+                    predicate: 'uses_package',
+                    relatedEntityName: 'metadata-fixture',
+                }),
+            ]),
+        )
+    })
+
+    it('creates package entities from non-Node manifest metadata', async () => {
+        const projectRoot = await makeProject()
+        await writeFile(
+            join(projectRoot, 'composer.json'),
+            JSON.stringify({
+                name: 'acme/api',
+                require: {
+                    'laravel/framework': '^12.0',
+                    php: '^8.3',
+                },
+            }),
+        )
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'rebuild', {
+                embeddingProvider: new FakeEmbeddingProvider(),
+            }),
+        )
+
+        await expect(
+            withProjectRoot(projectRoot, () =>
+                searchEntities('acme api', { limit: 5 }),
+            ),
+        ).resolves.toEqual([
+            expect.objectContaining({
+                name: 'acme/api',
+                type: 'package',
+            }),
+        ])
+        await expect(
+            withProjectRoot(projectRoot, () =>
+                searchEntities('laravel/framework', { limit: 5 }),
+            ),
+        ).resolves.toEqual([
+            expect.objectContaining({
+                name: 'laravel/framework',
+                type: 'package',
             }),
         ])
     })

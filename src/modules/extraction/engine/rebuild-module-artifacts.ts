@@ -4,6 +4,8 @@ import deleteRetrievalDocuments from '@/database/actions/delete-retrieval-docume
 import upsertRetrievalDocument from '@/database/actions/upsert-retrieval-document'
 import { modules, targetEmbeddings } from '@/database/schema'
 import {
+    aliasesForCommand,
+    aliasesForPackage,
     aliasesForPath,
     deleteExtractedModuleGraph,
     entityIdFor,
@@ -26,6 +28,11 @@ type ModuleSummaryRow = {
 
 type ModuleFileRow = {
     path: string
+}
+
+type MetadataFileRow = {
+    path: string
+    source_role: string
 }
 
 export default async function rebuildModuleArtifacts(
@@ -105,6 +112,9 @@ order by section_count desc, module_path
 
     if (metadata && (metadata.packageManifests ?? []).length > 0) {
         await insertPackageModule(metadata, extractedAt)
+    }
+    if (metadata) {
+        await upsertMetadataGraph(metadata)
     }
 }
 
@@ -206,6 +216,191 @@ async function insertPackageModule(
     })
 }
 
+async function upsertMetadataGraph(metadata: ProjectMetadata): Promise<void> {
+    const packageModulePath =
+        metadata.packagePath ?? metadata.packageManifests[0]?.path
+    const packageModuleEntity = packageModulePath
+        ? entityIdForModulePath(packageModulePath, 'package_config')
+        : undefined
+    const projectPackage = await upsertProjectPackage(metadata)
+    const dependencyPackages = await upsertDependencyPackages(metadata)
+
+    for (const dependency of dependencyPackages) {
+        if (projectPackage) {
+            await upsertRelation({
+                evidenceKey: `${projectPackage.id}:${dependency.id}:uses_package`,
+                objectId: dependency.id,
+                predicate: 'uses_package',
+                properties: {
+                    origin: 'extraction',
+                    packageName: dependency.name,
+                },
+                subjectId: projectPackage.id,
+            })
+        }
+        if (packageModuleEntity) {
+            await upsertRelation({
+                evidenceKey: `${packageModuleEntity}:${dependency.id}:contains`,
+                objectId: dependency.id,
+                predicate: 'contains',
+                properties: {
+                    origin: 'extraction',
+                    packageName: dependency.name,
+                },
+                subjectId: packageModuleEntity,
+            })
+        }
+    }
+
+    if (projectPackage && packageModuleEntity) {
+        await upsertRelation({
+            evidenceKey: `${packageModuleEntity}:${projectPackage.id}:contains`,
+            objectId: projectPackage.id,
+            predicate: 'contains',
+            properties: {
+                origin: 'extraction',
+                packageName: projectPackage.name,
+            },
+            subjectId: packageModuleEntity,
+        })
+    }
+    if (projectPackage) {
+        await upsertCommandEntities(metadata, projectPackage.id)
+    }
+
+    await upsertConfigAndDocEntities()
+}
+
+async function upsertProjectPackage(metadata: ProjectMetadata) {
+    const manifest = metadata.packageManifests.find(item => item.name)
+    const name = metadata.name ?? manifest?.name
+    if (!name) {
+        return undefined
+    }
+
+    const entity = await upsertEntity({
+        canonicalName: `package:${name}`,
+        name,
+        properties: {
+            manager: manifest?.manager ?? metadata.packageManager,
+            origin: 'extraction',
+            packageName: name,
+            path: manifest?.path ?? metadata.packagePath,
+        },
+        summary: metadata.description ?? `Project package ${name}`,
+        type: 'package',
+    })
+    await upsertEntityAliases(
+        entity.id,
+        aliasesForPackage(name, manifest?.manager ?? metadata.packageManager),
+    )
+    return entity
+}
+
+async function upsertDependencyPackages(
+    metadata: ProjectMetadata,
+): Promise<Array<{ id: string; name: string }>> {
+    const names = [
+        ...metadata.dependencies,
+        ...metadata.devDependencies,
+        ...metadata.peerDependencies,
+        ...metadata.optionalDependencies,
+    ]
+    const uniqueNames = [...new Set(names)].sort((left, right) =>
+        left.localeCompare(right),
+    )
+    const packages: Array<{ id: string; name: string }> = []
+
+    for (const name of uniqueNames) {
+        const entity = await upsertEntity({
+            canonicalName: `package:${name}`,
+            name,
+            properties: {
+                origin: 'extraction',
+                packageName: name,
+            },
+            summary: `Dependency package ${name}`,
+            type: 'package',
+        })
+        await upsertEntityAliases(entity.id, aliasesForPackage(name))
+        packages.push({ id: entity.id, name })
+    }
+
+    return packages
+}
+
+async function upsertCommandEntities(
+    metadata: ProjectMetadata,
+    projectPackageId: string,
+): Promise<void> {
+    for (const scriptName of metadata.scripts) {
+        const entity = await upsertEntity({
+            canonicalName: `command:${scriptName}`,
+            name: scriptName,
+            properties: {
+                origin: 'extraction',
+                scriptName,
+            },
+            summary: `Package script ${scriptName}`,
+            type: 'command',
+        })
+        await upsertEntityAliases(
+            entity.id,
+            aliasesForCommand(scriptName, metadata.packageManager),
+        )
+        await upsertRelation({
+            evidenceKey: `${entity.id}:${projectPackageId}:uses_package`,
+            objectId: projectPackageId,
+            predicate: 'uses_package',
+            properties: {
+                origin: 'extraction',
+                scriptName,
+            },
+            subjectId: entity.id,
+        })
+    }
+}
+
+async function upsertConfigAndDocEntities(): Promise<void> {
+    const db = await getDb()
+    const rows = await db.all<MetadataFileRow>(sql`
+select distinct path, coalesce(source_role, 'unknown') as source_role
+from sections
+where deleted_at is null
+  and suppressed_at is null
+  and path is not null
+  and source_role in ('package_config', 'tooling_config', 'agent_config', 'product_doc')
+order by path
+`)
+
+    for (const row of rows) {
+        const type = row.source_role === 'product_doc' ? 'doc' : 'config'
+        const entity = await upsertEntity({
+            canonicalName: `${type}:${row.path}`,
+            name: row.path.split('/').at(-1) ?? row.path,
+            properties: {
+                origin: 'extraction',
+                path: row.path,
+                sourceRole: row.source_role,
+            },
+            summary: `${row.source_role} file ${row.path}`,
+            type,
+        })
+        await upsertEntityAliases(entity.id, aliasesForPath(row.path))
+        await upsertRelation({
+            evidenceKey: `${entityIdForModulePath(row.path, row.source_role)}:${entity.id}:contains`,
+            objectId: entity.id,
+            predicate: 'contains',
+            properties: {
+                origin: 'extraction',
+                path: row.path,
+                sourceRole: row.source_role,
+            },
+            subjectId: entityIdForModulePath(row.path, row.source_role),
+        })
+    }
+}
+
 async function upsertModuleEntity(input: {
     moduleId: string
     path: string
@@ -273,4 +468,9 @@ function manifestManagers(manifests: PackageManifestMetadata[]): string[] {
     return [...new Set(manifests.map(manifest => manifest.manager))].sort(
         (left, right) => left.localeCompare(right),
     )
+}
+
+function entityIdForModulePath(path: string, sourceRole: string): string {
+    const modulePath = path.includes('/') ? (path.split('/').at(0) ?? '.') : '.'
+    return entityIdFor('module', `${modulePath}:${sourceRole}`)
 }

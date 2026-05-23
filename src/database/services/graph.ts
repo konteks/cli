@@ -312,7 +312,7 @@ delete from relations
 where exists (
     select 1 from entities e
     where (e.id = relations.subject_id or e.id = relations.object_id)
-      and e.type = 'module'
+      and e.type in ('module', 'package', 'command', 'config', 'doc')
       and e.properties_json like '%"origin":"extraction"%'
 );
 `)
@@ -320,13 +320,13 @@ where exists (
 delete from entity_aliases
 where entity_id in (
     select id from entities
-    where type = 'module'
+    where type in ('module', 'package', 'command', 'config', 'doc')
       and properties_json like '%"origin":"extraction"%'
 );
 `)
     await db.run(sql`
 delete from entities
-where type = 'module'
+where type in ('module', 'package', 'command', 'config', 'doc')
   and properties_json like '%"origin":"extraction"%';
 `)
 }
@@ -347,6 +347,32 @@ export function aliasesForPath(path: string): string[] {
 
 export function aliasesForSymbol(name: string, path: string): string[] {
     return [name, `${path}#${name}`, ...variantAliases(name)]
+}
+
+export function aliasesForPackage(name: string, manager?: string): string[] {
+    const unscoped = name.startsWith('@') ? name.split('/').at(-1) : undefined
+    return [
+        name,
+        unscoped,
+        manager ? `${manager}:${name}` : undefined,
+        manager ? `${manager} ${name}` : undefined,
+        ...variantAliases(name),
+    ].filter((value): value is string => Boolean(value))
+}
+
+export function aliasesForCommand(
+    name: string,
+    packageManager?: string,
+): string[] {
+    const manager = packageManager?.split('@')[0]
+    return [
+        name,
+        `script ${name}`,
+        `npm run ${name}`,
+        manager ? `${manager} ${name}` : undefined,
+        manager ? `${manager} run ${name}` : undefined,
+        ...variantAliases(name),
+    ].filter((value): value is string => Boolean(value))
 }
 
 export function entityIdFor(
