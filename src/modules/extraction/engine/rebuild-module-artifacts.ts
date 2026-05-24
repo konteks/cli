@@ -1,6 +1,11 @@
-import { eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import getDb from '@/database/actions/_db'
 import deleteRetrievalDocuments from '@/database/actions/delete-retrieval-documents'
+import queryMetadataFileRows from '@/database/actions/query-metadata-file-rows'
+import queryModuleFileRows from '@/database/actions/query-module-file-rows'
+import queryModuleSummaryRows, {
+    type ModuleSummaryRow,
+} from '@/database/actions/query-module-summary-rows'
 import upsertRetrievalDocument from '@/database/actions/upsert-retrieval-document'
 import { modules, targetEmbeddings } from '@/database/schema'
 import {
@@ -19,22 +24,6 @@ import type {
     ProjectMetadata,
 } from './extract-project-metadata'
 
-type ModuleSummaryRow = {
-    section_count: number
-    file_count: number
-    module_path: string
-    source_role: string | null
-}
-
-type ModuleFileRow = {
-    path: string
-}
-
-type MetadataFileRow = {
-    path: string
-    source_role: string
-}
-
 export default async function rebuildModuleArtifacts(
     extractedAt: string,
     metadata?: ProjectMetadata,
@@ -47,21 +36,7 @@ export default async function rebuildModuleArtifacts(
     await db.delete(modules)
     await deleteExtractedModuleGraph()
 
-    const rows = await db.all<ModuleSummaryRow>(sql`
-select
-    case
-        when instr(path, '/') > 0 then substr(path, 1, instr(path, '/') - 1)
-        else '.'
-    end as module_path,
-    coalesce(source_role, 'unknown') as source_role,
-    count(distinct path) as file_count,
-    count(*) as section_count
-from sections
-where deleted_at is null
-  and suppressed_at is null
-group by module_path, source_role
-order by section_count desc, module_path
-`)
+    const rows = await queryModuleSummaryRows()
 
     for (const row of rows) {
         const moduleId = `module_${contentHash(`${row.module_path}:${row.source_role ?? 'unknown'}`).slice(0, 32)}`
@@ -362,16 +337,7 @@ async function upsertCommandEntities(
 }
 
 async function upsertConfigAndDocEntities(): Promise<void> {
-    const db = await getDb()
-    const rows = await db.all<MetadataFileRow>(sql`
-select distinct path, coalesce(source_role, 'unknown') as source_role
-from sections
-where deleted_at is null
-  and suppressed_at is null
-  and path is not null
-  and source_role in ('package_config', 'tooling_config', 'agent_config', 'product_doc')
-order by path
-`)
+    const rows = await queryMetadataFileRows()
 
     for (const row of rows) {
         const type = row.source_role === 'product_doc' ? 'doc' : 'config'
@@ -431,27 +397,27 @@ async function upsertModuleContainsFileRelations(
     row: ModuleSummaryRow,
     moduleEntityId: string,
 ): Promise<void> {
-    const db = await getDb()
-    const pathFilter =
-        row.module_path === '.'
-            ? sql`instr(path, '/') = 0`
-            : sql`path like ${`${row.module_path}/%`}`
-    const fileRows = await db.all<ModuleFileRow>(sql`
-select distinct path
-from sections
-where deleted_at is null
-  and suppressed_at is null
-  and path is not null
-  and coalesce(source_role, 'unknown') = ${row.source_role ?? 'unknown'}
-  and ${pathFilter}
-order by path
-`)
+    const fileRows = await queryModuleFileRows({
+        modulePath: row.module_path,
+        sourceRole: row.source_role,
+    })
 
     for (const file of fileRows) {
-        const fileEntityId = entityIdFor('file', file.path)
+        const fileEntity = await upsertEntity({
+            canonicalName: file.path,
+            name: file.path.split('/').at(-1) ?? file.path,
+            properties: {
+                origin: 'extraction',
+                path: file.path,
+                sourceRole: file.source_role,
+            },
+            summary: `${file.source_role} file ${file.path}`,
+            type: 'file',
+        })
+        await upsertEntityAliases(fileEntity.id, aliasesForPath(file.path))
         await upsertRelation({
-            evidenceKey: `${moduleEntityId}:${fileEntityId}:contains`,
-            objectId: fileEntityId,
+            evidenceKey: `${moduleEntityId}:${fileEntity.id}:contains`,
+            objectId: fileEntity.id,
             predicate: 'contains',
             properties: {
                 filePath: file.path,
