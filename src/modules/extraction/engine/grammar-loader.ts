@@ -297,7 +297,7 @@ async function downloadBytes(url: string): Promise<Uint8Array> {
     const response = await fetch(url)
     if (!response.ok) {
         throw new Error(
-            `Failed to download grammar from ${url}: HTTP ${response.status}. The registry downloadUrl may be stale or missing. Please report this at https://github.com/dominosaurs/konteks/issues.`,
+            `Failed to download grammar from ${url}: HTTP ${response.status}. The registry downloadUrl may be stale or missing. Please report this at https://github.com/konteks/cli/issues.`,
         )
     }
     return new Uint8Array(await response.arrayBuffer())

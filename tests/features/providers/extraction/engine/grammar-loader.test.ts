@@ -307,7 +307,7 @@ describe('grammar loader registry', () => {
             await expect(
                 initTreeSitterWithSelectedGrammars(engine, project),
             ).rejects.toThrow(
-                'Please report this at https://github.com/dominosaurs/konteks/issues',
+                'Please report this at https://github.com/konteks/cli/issues',
             )
         } finally {
             globalThis.fetch = originalFetch
