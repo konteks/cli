@@ -124,7 +124,6 @@ async function writeInitialMemoryFiles(
     grammars: string[],
 ): Promise<void> {
     await mkdir(context.memoryDir, { recursive: true })
-    await mkdir(join(context.memoryDir, 'objects'), { recursive: true })
 
     const defaultConfig = createDefaultConfig()
     await writeFile(
