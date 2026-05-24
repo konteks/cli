@@ -4,6 +4,9 @@ The Konteks CLI manages local project memory. It is designed to run through `npx
 
 For terms, see the [Glossary](../reference/glossary.md).
 
+> [!INFO]
+> The examples below use `konteks`, the CLI display name. When running through a package runner, use the published package name, for example `npx -y konteks-cli <command>`.
+
 ## Commands
 
 | Command | Capability | Use When |

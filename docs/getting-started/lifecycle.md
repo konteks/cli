@@ -20,7 +20,7 @@ graph TD
 
 When you open a fresh AI agent session in a project, start by giving it the project-level picture.
 
-Use the `/konteks-warm-up` prompt to start this phase. This ensures the agent is familiar with the project without you manually explaining architecture, constraints, and durable decisions. If the next task is already needed some memory prior to warm up, append an optional free-form focus so the agent can load focused memory after the project briefing.
+Use the `/konteks-warm-up` prompt to start this phase. This ensures the agent is familiar with the project without you manually explaining architecture, constraints, and durable decisions. If the next task already needs specific memory, append an optional topic (e.g., `/konteks-warm-up security, authentication, and authorization`) so the agent can load focused memory after the project briefing.
 
 > [!NOTE]
 > Resuming a Session: If you close your agent before finishing a task and later resume the same session, you can skip Warm Up because the agent already has the project briefing in context.
