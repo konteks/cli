@@ -1,7 +1,11 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import z from 'zod'
-import { createMcpToolErrorResult } from '@/entrypoints/mcp/error-handling'
+import {
+    createMcpToolErrorResult,
+    isUnexpectedMcpError,
+} from '@/entrypoints/mcp/error-handling'
+import { appendProjectErrorLog } from '@/support/error-log'
 import toCallToolResult from './_support/to-call-tool-result'
 
 export default abstract class BaseMcpTool<Input = unknown> {
@@ -36,8 +40,17 @@ export default abstract class BaseMcpTool<Input = unknown> {
 
                     return toCallToolResult(result)
                 } catch (error) {
+                    const logged = isUnexpectedMcpError(error)
+                        ? await appendProjectErrorLog({
+                              error,
+                              metadata: { toolName: this.name },
+                              surface: 'mcp_tool',
+                          }).then(result => result.written)
+                        : false
+
                     return createMcpToolErrorResult({
                         error,
+                        logged,
                         toolName: this.name,
                     })
                 }

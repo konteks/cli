@@ -28,6 +28,8 @@ Konteks maintains an append-only [Memory Events](../core-concepts/memory-model.m
 *   **Accountability**: Every event is tagged with an actor (e.g., `cli` or `mcp`), providing a clear audit trail of how your project's knowledge has evolved.
 *   **Relation history**: Superseded or invalidated graph relations remain available to historical recall when a task asks about prior decisions or changes.
 
+Konteks also writes unexpected internal CLI and MCP failures to `.konteks/errors.log` when possible. This diagnostic log is local and redacted best-effort, but it can contain stack traces and local paths, so treat it as project diagnostic data.
+
 ## 4. Data Control
 
 You have full control over the knowledge Konteks stores.
