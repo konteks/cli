@@ -153,6 +153,11 @@ describe('RebuildCommand', () => {
             expect(logSpy).toHaveBeenCalledWith(
                 'Rebuild canceled. Derived memory was not changed.',
             )
+            expect(logSpy).toHaveBeenCalledWith(
+                expect.stringContaining(
+                    'Project-local context memory for AI coding agents.',
+                ),
+            )
             expect(logSpy).not.toHaveBeenCalledWith(
                 expect.stringContaining('"skipped": true'),
             )
@@ -218,6 +223,10 @@ describe('RebuildCommand', () => {
             const renderedOutput = stripAnsi(output.join('\n'))
 
             expect(renderedOutput).toContain('Rebuilding project memory')
+            expect(renderedOutput).toContain(
+                'Project-local context memory for AI coding agents.',
+            )
+            expect(renderedOutput).toContain('Konteks')
             expect(renderedOutput).toContain(
                 '✓ Extracted 0 modules and 4 sections from 2 files',
             )
