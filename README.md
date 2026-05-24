@@ -36,6 +36,20 @@ npx -y konteks-cli init
 
 Continue with the [Quickstart](docs/getting-started/quickstart.md) for MCP setup and the Warm Up -> Build -> Save flow.
 
+### 🤖 AI-Assisted Installation
+
+If you are using an AI coding agent such as Claude Code, Codex, or OpenCode, let the agent handle the setup from your project root.
+
+Paste this prompt into your agent. It points the agent to the Konteks installation playbook, asks it to follow project defaults, and keeps MCP setup, verification, and lifecycle guidance in one flow:
+
+```text
+I want to add Konteks to this project.
+
+Read and follow https://raw.githubusercontent.com/dominosaurs/konteks/refs/heads/main/docs/for-agents/installation.md. Treat that Markdown as the source of truth for installing Konteks, configuring MCP, verifying setup, and explaining the Warm Up -> Build -> Save workflow.
+```
+
+The agent should read the instructions, make safe defaults, ask only when a local-machine or agent-configuration decision is required, and leave you with a verified Konteks setup.
+
 ## 📂 Local Storage
 
 Konteks writes local memory under `.konteks/`. It uses SQLite for extracted content, durable memories, diary entries, retrieval indexes, embeddings, and graph metadata; extraction manifests and project config live beside the database.

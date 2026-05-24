@@ -2,6 +2,9 @@
 
 Set up Konteks once, then use the same [session](../reference/glossary.md#session) flow whenever you open your coding agent.
 
+> [!TIP]
+> **Using an AI coding agent?** See [AI-Assisted Installation](../../README.md#-ai-assisted-installation) for a copy-ready prompt that asks the agent to install Konteks, configure MCP, and verify setup for you.
+
 ## Prerequisite: Project Setup
 
 ### 1. Initialize Memory
