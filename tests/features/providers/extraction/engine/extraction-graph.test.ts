@@ -5,7 +5,11 @@ import { join } from 'node:path'
 import { withTransaction } from '@/database/actions/_db'
 import searchEntities from '@/database/actions/search-entities'
 import traverseNeighbors from '@/database/actions/traverse-neighbors'
-import { upsertEntity, upsertEntityAliases } from '@/database/services/graph'
+import {
+    deleteAllExtractedGraph,
+    upsertEntity,
+    upsertEntityAliases,
+} from '@/database/services/graph'
 import { upsertNode } from '@/database/services/taxonomy'
 import persistPreparedFileSections from '@/modules/extraction/engine/persist-prepared-file-sections'
 import { extractProject } from '@/modules/extraction/extract-project'
@@ -234,6 +238,59 @@ describe('extraction graph', () => {
                 type: 'memory',
             }),
         ])
+    })
+
+    it('recreates missing file entities for unchanged legacy sections during changed extraction', async () => {
+        const projectRoot = await makeProject()
+        await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await writeFile(join(projectRoot, 'src', 'legacy.txt'), 'Legacy.\n')
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'rebuild', {
+                embeddingProvider: new FakeEmbeddingProvider(),
+            }),
+        )
+        await withProjectRoot(projectRoot, () => deleteAllExtractedGraph())
+        await writeFile(join(projectRoot, 'src', 'new.txt'), 'New.\n')
+
+        await expect(
+            withProjectRoot(projectRoot, () =>
+                extractProject(context, 'changed', {
+                    embeddingProvider: new FakeEmbeddingProvider(),
+                }),
+            ),
+        ).resolves.toMatchObject({
+            ok: true,
+        })
+
+        const [moduleEntity] = await withProjectRoot(projectRoot, () =>
+            searchEntities('src', { limit: 5 }),
+        )
+        const neighbors = await withProjectRoot(projectRoot, () =>
+            traverseNeighbors(moduleEntity.id, { limit: 10 }),
+        )
+
+        expect(neighbors).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    entity: expect.objectContaining({
+                        name: 'legacy.txt',
+                        type: 'file',
+                    }),
+                    predicate: 'contains',
+                }),
+                expect.objectContaining({
+                    entity: expect.objectContaining({
+                        name: 'new.txt',
+                        type: 'file',
+                    }),
+                    predicate: 'contains',
+                }),
+            ]),
+        )
     })
 
     it('creates package, command, config, and doc metadata graph rows', async () => {
