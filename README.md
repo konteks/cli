@@ -10,8 +10,8 @@ Memory artifacts are stored directly inside your repository, exposing compact, t
 
 ## 🚀 Key Features
 
-* **Zero-Install**: Run anywhere via `npx` or `bunx` without native dependencies.
-* **Language-Aware**: Understands code structure across [various file types](src/assets/grammars.ts).
+* **Zero-Install**: Run anywhere via `npx` or `bunx` without global installation.
+* **Language-Aware**: Understands code structure across [various file types](src/assets/grammar-registry.ts).
 * **Local-First**: Your project memory stays in your repo—no cloud, no accounts.
 * **Token-Efficient**: High-fidelity context synthesis designed for LLM economy.
 

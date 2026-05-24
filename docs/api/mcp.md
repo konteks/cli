@@ -16,7 +16,7 @@ For terms, see the [Glossary](../reference/glossary.md).
 Prompts are user-invoked workflow templates. They guide the agent through the [Session Lifecycle](../getting-started/lifecycle.md), where a [session](../reference/glossary.md#session) is one continuous agent conversation in a project.
 
 > [!NOTE]
-> **Compatibility**: For agents that do not support MCP prompts in their UI, run `konteks install-skills` to install these workflows as native skills. See [Compatibility](cli.md#Compatibility-Skills).
+> **Compatibility**: For agents that do not support MCP prompts in their UI, run `konteks install-skills` to install these workflows as native skills. See [Compatibility](cli.md#compatibility-skills).
 
 | Prompt | Lifecycle Phase | Use When |
 | :--- | :--- | :--- |
