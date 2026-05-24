@@ -75,7 +75,6 @@ export default async function extractSections(
 
     let sectionCount = 0
     let filesTruncatedBySectionLimit = 0
-    let extractedFileCount = 0
     let parserFallbackFiles = 0
     let parserUsedFiles = 0
 
@@ -130,18 +129,17 @@ export default async function extractSections(
         if (preparedFile.truncated) {
             filesTruncatedBySectionLimit += 1
         }
-        if (preparedFile.sections.length === 0) {
-            continue
+
+        if (preparedFile.sections.length > 0) {
+            await withTransaction(async () => {
+                sectionCount += await persistPreparedFileSections({
+                    extractedAt,
+                    preparedFile,
+                    rootNodeId,
+                })
+            })
         }
 
-        extractedFileCount += 1
-        await withTransaction(async () => {
-            sectionCount += await persistPreparedFileSections({
-                extractedAt,
-                preparedFile,
-                rootNodeId,
-            })
-        })
         progress?.({
             current: fileIndex + 1,
             message: `Extracted ${file.path} (${preparedFile.sections.length} sections)`,
@@ -155,7 +153,7 @@ export default async function extractSections(
 
     if (files.length > 0) {
         progress?.({
-            current: extractedFileCount,
+            current: files.length,
             message: `Extracted ${sectionCount} sections`,
             parserCount: loadedParserCount,
             phase: 'sections',

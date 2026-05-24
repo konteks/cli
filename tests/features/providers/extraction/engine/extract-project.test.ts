@@ -125,6 +125,42 @@ describe('extractProject', () => {
         expect(stale.recommendedCommand).toBe('konteks rebuild')
     })
 
+    it('reports section progress for every selected file', async () => {
+        const projectRoot = await makeTempProject()
+        await writeFile(join(projectRoot, 'src', 'empty.txt'), '')
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        const sectionProgress: Array<{
+            current?: number
+            path?: string
+            total?: number
+        }> = []
+
+        const result = await extractTestProject(context, 'rebuild', {
+            onProgress(event) {
+                if (
+                    event.phase === 'sections' &&
+                    event.status === 'progress' &&
+                    event.path
+                ) {
+                    sectionProgress.push({
+                        current: event.current,
+                        path: event.path,
+                        total: event.total,
+                    })
+                }
+            },
+        })
+
+        expect(result.fileCount).toBe(3)
+        expect(sectionProgress.map(event => event.current)).toEqual([1, 2, 3])
+        expect(sectionProgress.map(event => event.total)).toEqual([3, 3, 3])
+        expect(sectionProgress.map(event => event.path)).toContain(
+            'src/empty.txt',
+        )
+    })
+
     it('does not cap sections per file', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(

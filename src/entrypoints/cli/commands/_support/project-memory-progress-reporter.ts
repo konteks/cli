@@ -36,6 +36,31 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
                 return
             }
 
+            if (
+                event.phase === 'sections' &&
+                event.status === 'start' &&
+                event.total !== undefined
+            ) {
+                finishPreparation()
+                printExtractionProgress({
+                    ...event,
+                    current: event.current ?? 0,
+                })
+                return
+            }
+
+            if (
+                event.phase === 'sections' &&
+                event.status === 'progress' &&
+                event.total !== undefined
+            ) {
+                finishPreparation()
+                sectionCount = event.sectionCount ?? sectionCount
+                fileCount = event.current ?? fileCount
+                printExtractionProgress(event)
+                return
+            }
+
             if (event.phase === 'sections' && event.status === 'done') {
                 finishPreparation()
                 sectionCount = event.sectionCount ?? 0
@@ -95,6 +120,14 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
                 text.statLine('Vectors indexed', result.vectorCount),
             )
         },
+    }
+
+    function printExtractionProgress(event: ExtractionProgressEvent): void {
+        const current = event.current ?? 0
+        const total = event.total ?? current
+        const message = `Extracting files: ${text.count(current)}/${text.count(total)}`
+
+        writeProgress(message)
     }
 
     function printVectorProgress(event: ExtractionProgressEvent): void {
