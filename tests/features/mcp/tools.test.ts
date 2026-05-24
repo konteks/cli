@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'bun:test'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import z from 'zod'
@@ -102,6 +105,7 @@ describe('MCP tools', () => {
     })
 
     it('sanitizes unexpected execution failures', async () => {
+        const projectRoot = await makeProjectRoot()
         class FixtureTool extends BaseMcpTool {
             public readonly annotations = {
                 destructiveHint: false,
@@ -121,17 +125,31 @@ describe('MCP tools', () => {
         }
 
         const tool = new FixtureTool()
-        const callRegisteredTool = registeredHandlerFor(tool)
+        await withWorkingDirectory(projectRoot, async () => {
+            const callRegisteredTool = registeredHandlerFor(tool)
 
-        await expect(callRegisteredTool({})).resolves.toEqual({
-            content: [
-                {
-                    text: 'Konteks MCP tool failed due to an internal error.',
-                    type: 'text',
-                },
-            ],
-            isError: true,
+            await expect(callRegisteredTool({})).resolves.toEqual({
+                content: [
+                    {
+                        text: [
+                            'Konteks MCP tool failed due to an internal error.',
+                            'Details were written to .konteks/errors.log when available.',
+                        ].join('\n'),
+                        type: 'text',
+                    },
+                ],
+                isError: true,
+            })
+            const log = await readFile(
+                join(projectRoot, '.konteks', 'errors.log'),
+                'utf8',
+            )
+            expect(log).toContain('mcp_tool  fixture_tool')
+            expect(log).toContain('toolName: fixture_tool')
+            expect(log).toContain('database exploded')
         })
+
+        await rm(projectRoot, { force: true, recursive: true })
     })
 })
 
@@ -152,4 +170,24 @@ function registeredHandlerFor(
     }
 
     return handler
+}
+
+async function makeProjectRoot(): Promise<string> {
+    const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-tool-log-'))
+    await mkdir(join(projectRoot, '.git'), { recursive: true })
+    await writeFile(join(projectRoot, 'package.json'), '{"name":"fixture"}\n')
+    return projectRoot
+}
+
+async function withWorkingDirectory<T>(
+    cwd: string,
+    operation: () => Promise<T>,
+): Promise<T> {
+    const previous = process.cwd()
+    process.chdir(cwd)
+    try {
+        return await operation()
+    } finally {
+        process.chdir(previous)
+    }
 }

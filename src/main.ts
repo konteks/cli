@@ -10,6 +10,7 @@ import { configureCliHelp } from '@/support/configure-cli-help'
 import consoleOutput, {
     type ConsoleColorPalette,
 } from '@/support/console-output'
+import { appendProjectErrorLog } from '@/support/error-log'
 import getVersion from '@/support/get-version'
 
 export function createCliProgram(): Command {
@@ -47,8 +48,16 @@ function registerCommands(program: Command, context: BaseCommandContext): void {
 
 createCliProgram()
     .parseAsync(process.argv)
-    .catch(error => {
-        printCliError(error)
+    .catch(async error => {
+        const logged =
+            error instanceof CliUserError
+                ? false
+                : await appendProjectErrorLog({
+                      error,
+                      metadata: { argv: process.argv.slice(2) },
+                      surface: 'cli',
+                  }).then(result => result.written)
+        printCliError(error, logged)
         process.exitCode = 1
     })
 
@@ -79,12 +88,12 @@ function createUninitializedCliError(): CliUserError {
     })
 }
 
-function printCliError(error: unknown): void {
+function printCliError(error: unknown, logged = false): void {
     consoleOutput.writeError(color => {
         const output =
             error instanceof CliUserError
                 ? formatUserError(error, color)
-                : formatUnexpectedError(error, color)
+                : formatUnexpectedError(error, color, logged)
 
         return `${output}\n`
     })
@@ -123,6 +132,7 @@ function formatUserError(
 function formatUnexpectedError(
     error: unknown,
     color: ConsoleColorPalette,
+    logged: boolean,
 ): string {
     const message = error instanceof Error ? error.message : String(error)
     const lines = [
@@ -143,6 +153,13 @@ function formatUnexpectedError(
         lines.push(
             `${color.danger('│')}`,
             `${color.danger('│')}  ${color.dim('Set KONTEKS_DEBUG=1 to show the stack trace.')}`,
+        )
+    }
+
+    if (logged) {
+        lines.push(
+            `${color.danger('│')}`,
+            `${color.danger('│')}  ${color.dim('Details were written to .konteks/errors.log.')}`,
         )
     }
 

@@ -63,13 +63,17 @@ describe('mcp/error-handling', () => {
     it('sanitizes unexpected tool failures', () => {
         const result = createMcpToolErrorResult({
             error: new Error('sensitive details'),
+            logged: true,
             toolName: 'konteks_recall',
         })
 
         expect(result).toEqual({
             content: [
                 {
-                    text: 'Konteks MCP tool failed due to an internal error.',
+                    text: [
+                        'Konteks MCP tool failed due to an internal error.',
+                        'Details were written to .konteks/errors.log when available.',
+                    ].join('\n'),
                     type: 'text',
                 },
             ],
@@ -96,13 +100,17 @@ describe('mcp/error-handling', () => {
     it('sanitizes unexpected prompt failures', () => {
         const error = createMcpPromptError({
             error: new Error('template path leaked'),
+            logged: true,
             promptName: 'konteks-warm-up',
         })
 
         expect(error).toBeInstanceOf(McpError)
         expect(error.code).toBe(ErrorCode.InternalError)
         expect(error.message).toBe(
-            'MCP error -32603: Konteks MCP prompt failed due to an internal error.',
+            [
+                'MCP error -32603: Konteks MCP prompt failed due to an internal error.',
+                'Details were written to .konteks/errors.log when available.',
+            ].join('\n'),
         )
     })
 })

@@ -10,9 +10,12 @@ const MCP_TOOL_FAILURE_MESSAGE =
     'Konteks MCP tool failed due to an internal error.'
 const MCP_PROMPT_FAILURE_MESSAGE =
     'Konteks MCP prompt failed due to an internal error.'
+const INTERNAL_ERROR_LOG_HINT =
+    'Details were written to .konteks/errors.log when available.'
 
 export function createMcpToolErrorResult(input: {
     error: unknown
+    logged?: boolean
     toolName: string
 }): CallToolResult {
     return {
@@ -28,6 +31,7 @@ export function createMcpToolErrorResult(input: {
 
 export function createMcpPromptError(input: {
     error: unknown
+    logged?: boolean
     promptName: string
 }): McpError {
     if (input.error instanceof McpError) {
@@ -41,11 +45,23 @@ export function createMcpPromptError(input: {
         )
     }
 
-    return new McpError(ErrorCode.InternalError, MCP_PROMPT_FAILURE_MESSAGE)
+    return new McpError(
+        ErrorCode.InternalError,
+        internalErrorMessage(MCP_PROMPT_FAILURE_MESSAGE, input.logged),
+    )
+}
+
+export function isUnexpectedMcpError(error: unknown): boolean {
+    return !(
+        error instanceof z.ZodError ||
+        error instanceof CliUserError ||
+        error instanceof McpError
+    )
 }
 
 function formatMcpToolErrorMessage(input: {
     error: unknown
+    logged?: boolean
     toolName: string
 }): string {
     const { error, toolName } = input
@@ -62,7 +78,11 @@ function formatMcpToolErrorMessage(input: {
         return error.message
     }
 
-    return MCP_TOOL_FAILURE_MESSAGE
+    return internalErrorMessage(MCP_TOOL_FAILURE_MESSAGE, input.logged)
+}
+
+function internalErrorMessage(message: string, logged?: boolean): string {
+    return logged ? `${message}\n${INTERNAL_ERROR_LOG_HINT}` : message
 }
 
 function formatCliUserError(error: CliUserError): string {

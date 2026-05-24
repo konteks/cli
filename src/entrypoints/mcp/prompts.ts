@@ -4,7 +4,8 @@ import z from 'zod'
 import recallMd from '@/assets/prompts/konteks-recall.md?raw'
 import saveMd from '@/assets/prompts/konteks-save.md?raw'
 import warmUpMd from '@/assets/prompts/konteks-warm-up.md?raw'
-import { createMcpPromptError } from './error-handling'
+import { appendProjectErrorLog } from '@/support/error-log'
+import { createMcpPromptError, isUnexpectedMcpError } from './error-handling'
 
 type PromptTemplate = {
     body: string
@@ -51,6 +52,13 @@ export function registerKonteksPrompts(server: McpServer): void {
                 try {
                     return renderPromptMessage(template, args)
                 } catch (error) {
+                    if (isUnexpectedMcpError(error)) {
+                        void appendProjectErrorLog({
+                            error,
+                            metadata: { promptName: template.prompt.name },
+                            surface: 'mcp_prompt',
+                        })
+                    }
                     throw createMcpPromptError({
                         error,
                         promptName: template.prompt.name,

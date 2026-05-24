@@ -31,7 +31,8 @@ This guide helps you resolve common issues encountered while setting up or using
 **Solution**:
 1. Run `konteks status` to check project memory freshness.
 2. Ensure you are using a supported runtime (Bun 1.3+ or Node 22+).
-3. Check the logs of your AI agent/host for specific error messages.
+3. Check `.konteks/errors.log` for recent internal Konteks errors.
+4. Check the logs of your AI agent/host for connection-level errors.
 
 ### 5. "Secrets or sensitive data in recall"
 **Symptoms**: Recall returns content containing API keys, passwords, or other sensitive information.
@@ -40,3 +41,8 @@ This guide helps you resolve common issues encountered while setting up or using
 1. Immediately add the sensitive file to your `.gitignore` or `.konteksignore`.
 2. Run `konteks forget --query "the sensitive content"` to remove it from memory.
 3. Use `konteks rebuild` to ensure the stale index is cleared.
+
+### 6. "Konteks MCP tool failed due to an internal error"
+**Symptoms**: An MCP tool returns a sanitized internal-error message without stack details.
+**Cause**: Konteks hides unexpected internal details from MCP clients by default.
+**Solution**: Inspect `.konteks/errors.log` in the project root. Each line is a JSON error entry with timestamp, surface, tool or prompt metadata, message, and stack trace when available. The log is local and redacted best-effort, but treat it as diagnostic data.
