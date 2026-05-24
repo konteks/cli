@@ -21,8 +21,8 @@ Do not create a new application. Konteks is added to the project the user alread
 2. Check whether Konteks is already initialized by looking for `.konteks/config.json`.
 3. If it is already initialized, skip initialization and continue to MCP setup and workflow verification.
 4. Verify that either Node.js 22 or newer, or Bun 1.3 or newer, is available.
-5. Run `konteks-cli@latest init` through the available package runner.
-6. Configure the user's MCP-compatible agent to run `konteks-cli@latest mcp`.
+5. Run `konteks-cli init` through the available package runner.
+6. Configure the user's MCP-compatible agent to run `konteks-cli mcp`.
 7. Install compatibility skills only when the agent supports MCP tools but does not show MCP prompts.
 8. Run a quick verification command.
 9. Explain the exact next prompt the user should run at the start of future sessions.
@@ -40,8 +40,8 @@ bun --version
 
 Use whichever runtime is available:
 
-* Prefer `npx -y konteks-cli@latest` when Node.js 22 or newer is available.
-* Use `bunx konteks-cli@latest` when Bun 1.3 or newer is available.
+* Prefer `npx -y konteks-cli` when Node.js 22 or newer is available.
+* Use `bunx konteks-cli` when Bun 1.3 or newer is available.
 * If both are available, prefer the package manager the user requested. If they did not express a preference, use `npx`.
 
 If neither supported runtime is available, stop and ask the user to install Node.js 22+ or Bun 1.3+ before continuing. Do not install system runtimes unless the user explicitly asks you to do that.
@@ -51,15 +51,15 @@ If neither supported runtime is available, stop and ask the user to install Node
 Run one initialization command from the project root:
 
 ```bash
-npx -y konteks-cli@latest init
+npx -y konteks-cli init
 ```
 
 Equivalent package-runner options:
 
 ```bash
-bunx konteks-cli@latest init
-pnpm dlx konteks-cli@latest init
-yarn dlx konteks-cli@latest init
+bunx konteks-cli init
+pnpm dlx konteks-cli init
+yarn dlx konteks-cli init
 ```
 
 Initialization should:
@@ -82,7 +82,7 @@ Use this MCP server definition:
   "mcpServers": {
     "konteks": {
       "command": "npx",
-      "args": ["-y", "konteks-cli@latest", "mcp"]
+      "args": ["-y", "konteks-cli", "mcp"]
     }
   }
 }
@@ -95,7 +95,7 @@ If the user chose Bun, use:
   "mcpServers": {
     "konteks": {
       "command": "bunx",
-      "args": ["konteks-cli@latest", "mcp"]
+      "args": ["konteks-cli", "mcp"]
     }
   }
 }
@@ -116,15 +116,15 @@ Konteks exposes its lifecycle workflows as MCP prompts:
 If the current agent does not show MCP prompts in its prompt or command UI, install the same lifecycle workflows as native skills:
 
 ```bash
-npx -y konteks-cli@latest install-skills --global
+npx -y konteks-cli install-skills --global
 ```
 
 Use the same package runner chosen earlier:
 
 ```bash
-bunx konteks-cli@latest install-skills --global
-pnpm dlx konteks-cli@latest install-skills --global
-yarn dlx konteks-cli@latest install-skills --global
+bunx konteks-cli install-skills --global
+pnpm dlx konteks-cli install-skills --global
+yarn dlx konteks-cli install-skills --global
 ```
 
 Use `--global` by default for agent compatibility skills, because these prompts are useful across projects. If the user wants project-local skills only, omit `--global`.
@@ -134,16 +134,16 @@ Use `--global` by default for agent compatibility skills, because these prompts 
 Run:
 
 ```bash
-npx -y konteks-cli@latest status
+npx -y konteks-cli status
 ```
 
 Or with the selected runner:
 
 ```bash
-bunx konteks-cli@latest status
+bunx konteks-cli status
 ```
 
-Successful setup means the status command can find the project root, memory directory, and indexed project memory. If status says memory is not initialized, return to the project root and run `konteks-cli@latest init` again.
+Successful setup means the status command can find the project root, memory directory, and indexed project memory. If status says memory is not initialized, return to the project root and run `konteks-cli init` again.
 
 ## First Session Workflow
 
@@ -187,7 +187,7 @@ The save prompt should persist compact durable memories first, then one session 
 When everything is ready, leave the user with a short message like:
 
 ```text
-Konteks is initialized for this project. I configured the MCP server with npx, installed global compatibility skills because this agent does not expose MCP prompts, and verified setup with `konteks-cli@latest status`.
+Konteks is initialized for this project. I configured the MCP server with npx, installed global compatibility skills because this agent does not expose MCP prompts, and verified setup with `konteks-cli status`.
 
 For future fresh sessions, start with `/konteks-warm-up`. Use `/konteks-recall <task>` when you need focused project memory, and run `/konteks-save` before ending a meaningful session.
 ```
