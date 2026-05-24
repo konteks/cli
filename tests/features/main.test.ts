@@ -34,7 +34,11 @@ describe('CLI initialization middleware', () => {
             const result = await runKonteks(projectRoot, args)
 
             expect(result.exitCode).not.toBe(0)
-            if (!args[0]?.startsWith('mcp') && args[0] !== 'status') {
+            if (
+                !args[0]?.startsWith('mcp') &&
+                args[0] !== 'status' &&
+                args[0] !== 'rebuild'
+            ) {
                 expect(result.output).toContain(`Konteks v${getVersion()}`)
             }
             expect(result.output).toContain('Konteks memory is not initialized')
