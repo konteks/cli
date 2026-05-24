@@ -45,7 +45,7 @@ Paste this prompt into your agent. It points the agent to the Konteks installati
 ```text
 I want to add Konteks to this project.
 
-Read and follow https://raw.githubusercontent.com/dominosaurs/konteks/refs/heads/main/docs/for-agents/installation.md. Treat that Markdown as the source of truth for installing Konteks, configuring MCP, verifying setup, and explaining the Warm Up -> Build -> Save workflow.
+Read and follow https://raw.githubusercontent.com/konteks/cli/refs/heads/main/docs/for-agents/installation.md. Treat that Markdown as the source of truth for installing Konteks, configuring MCP, verifying setup, and explaining the Warm Up -> Build -> Save workflow.
 ```
 
 The agent should read the instructions, make safe defaults, ask only when a local-machine or agent-configuration decision is required, and leave you with a verified Konteks setup.
