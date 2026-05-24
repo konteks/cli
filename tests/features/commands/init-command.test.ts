@@ -202,7 +202,11 @@ describe('InitCommand', () => {
         expect(plainOutput).toContain('✓ Preparing dependencies')
         expect(plainOutput).not.toContain('Loading embedding model')
         expect(plainOutput).not.toContain('Embedding model ready')
+        expect(plainOutput).toContain('Extracting files:')
         expect(plainOutput).toContain('Building project memory...')
+        expect(plainOutput.indexOf('Extracting files:')).toBeLessThan(
+            plainOutput.indexOf('Building project memory...'),
+        )
         expect(plainOutput).toContain('vectors indexed')
         expect(plainOutput).toContain('✓ Generated project summary')
         expect(plainOutput).toContain('Project memory ready')
