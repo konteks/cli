@@ -98,6 +98,60 @@ describe('extractProjectMetadata', () => {
         })
     })
 
+    it('prefers Composer descriptions over README setup bullets in Laravel Inertia apps', async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-meta-test-'))
+        tempDirs.push(projectRoot)
+        await mkdir(join(projectRoot, 'public'), { recursive: true })
+        await writeFile(
+            join(projectRoot, 'composer.json'),
+            JSON.stringify({
+                description: 'A Laravel Inertia application.',
+                name: 'acme/inertia-app',
+                require: {
+                    'inertiajs/inertia-laravel': '^2.0',
+                    'laravel/framework': '^12.0',
+                    php: '^8.3',
+                },
+            }),
+        )
+        await writeFile(
+            join(projectRoot, 'package.json'),
+            JSON.stringify({
+                dependencies: {
+                    '@inertiajs/vue3': '^2.0.0',
+                    vite: '^6.0.0',
+                    vue: '^3.5.0',
+                },
+                scripts: { build: 'vite build' },
+            }),
+        )
+        await writeFile(
+            join(projectRoot, 'README.md'),
+            ['# Setup', '', '- git clone.', '- composer install.', ''].join(
+                '\n',
+            ),
+        )
+        await writeFile(join(projectRoot, 'artisan'), '#!/usr/bin/env php\n')
+        await writeFile(join(projectRoot, 'public', 'index.php'), '<?php\n')
+
+        const scan = await scanProjectFilesWithDiagnostics(projectRoot)
+        const metadata = await extractProjectMetadata(projectRoot, scan.files)
+
+        expect(metadata).toMatchObject({
+            description: 'A Laravel Inertia application.',
+            name: 'acme/inertia-app',
+            packageManager: 'npm',
+            packagePath: 'package.json',
+        })
+        expect(metadata.dependencies).toEqual(
+            expect.arrayContaining([
+                '@inertiajs/vue3',
+                'inertiajs/inertia-laravel',
+                'laravel/framework',
+            ]),
+        )
+    })
+
     it('extracts Flutter pubspec metadata', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-meta-test-'))
         tempDirs.push(projectRoot)
