@@ -1,7 +1,10 @@
 import { sql } from 'drizzle-orm'
 import getDb from '@/database/actions/_db'
 import searchEntities from '@/database/actions/search-entities'
-import traverseNeighbors from '@/database/actions/traverse-neighbors'
+import traverseNeighbors, {
+    type TraversedNeighbor,
+    traverseNeighborsForEntities,
+} from '@/database/actions/traverse-neighbors'
 import { normalizeEntityAlias } from '@/database/services/graph'
 import type {
     MemoryEntity,
@@ -196,14 +199,40 @@ async function graphItemsForEntities(
 ): Promise<RecallGraphItem[]> {
     const seenRelations = new Set<string>()
     const graph: RecallGraphItem[] = []
+    const entitiesById = new Map(entities.map(entity => [entity.id, entity]))
+    const neighbors =
+        entities.length === 1
+            ? (
+                  await traverseNeighbors(entities[0].id, {
+                      limit: NEIGHBOR_LIMIT,
+                      maxDepth: 2,
+                  })
+              ).map(neighbor => ({
+                  ...neighbor,
+                  originId: entities[0].id,
+              }))
+            : await traverseNeighborsForEntities(
+                  entities.map(entity => entity.id),
+                  {
+                      limit: NEIGHBOR_LIMIT,
+                      maxDepth: 2,
+                  },
+              )
+    const neighborsByOrigin = new Map<string, TraversedNeighbor[]>()
+    for (const neighbor of neighbors) {
+        neighborsByOrigin.set(neighbor.originId, [
+            ...(neighborsByOrigin.get(neighbor.originId) ?? []),
+            neighbor,
+        ])
+    }
 
-    for (const entity of entities) {
-        const neighbors = await traverseNeighbors(entity.id, {
-            limit: NEIGHBOR_LIMIT,
-            maxDepth: 2,
-        })
-        for (const neighbor of neighbors) {
+    for (const inputEntity of entities) {
+        for (const neighbor of neighborsByOrigin.get(inputEntity.id) ?? []) {
             if (seenRelations.has(neighbor.relationId)) {
+                continue
+            }
+            const entity = entitiesById.get(neighbor.originId)
+            if (!entity) {
                 continue
             }
             seenRelations.add(neighbor.relationId)

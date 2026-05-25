@@ -1,5 +1,7 @@
 import { withTransaction } from '@/database/actions/_db'
-import { historicalRelationsAction } from '@/database/services/_recall-repository-memory-actions'
+import historicalRelations, {
+    historicalRelationsForEntities,
+} from '@/database/actions/historical-relations'
 import { buildRetrievalGraphContext } from '@/database/services/graph-context'
 import searchMemory, {
     type MemoryRecallInput,
@@ -32,27 +34,33 @@ export default async function recallRepositoryMemory(
 
         if (needsHistory(input.task)) {
             const seenRelations = new Set<string>()
-            for (const entity of entities) {
-                const relations = await historicalRelationsAction(entity.id, {
-                    limit: HISTORICAL_RELATION_LIMIT,
-                })
-                for (const relation of relations) {
-                    if (seenRelations.has(relation.relationId)) continue
-                    seenRelations.add(relation.relationId)
-
-                    historyItems.push({
-                        objectEntityId: relation.object.id,
-                        objectEntityName: relation.object.name,
-                        predicate: relation.predicate,
-                        reason: `Included because task asks for historical or superseded context.`,
-                        relationId: relation.relationId,
-                        status: relation.status,
-                        subjectEntityId: relation.subject.id,
-                        subjectEntityName: relation.subject.name,
-                        validFrom: relation.validFrom,
-                        validTo: relation.validTo,
-                    })
+            const relations =
+                entities.length === 1
+                    ? await historicalRelations(entities[0].id, {
+                          limit: HISTORICAL_RELATION_LIMIT,
+                      })
+                    : await historicalRelationsForEntities(
+                          entities.map(entity => entity.id),
+                          { limit: HISTORICAL_RELATION_LIMIT },
+                      )
+            for (const relation of relations) {
+                if (seenRelations.has(relation.relationId)) {
+                    continue
                 }
+                seenRelations.add(relation.relationId)
+
+                historyItems.push({
+                    objectEntityId: relation.object.id,
+                    objectEntityName: relation.object.name,
+                    predicate: relation.predicate,
+                    reason: `Included because task asks for historical or superseded context.`,
+                    relationId: relation.relationId,
+                    status: relation.status,
+                    subjectEntityId: relation.subject.id,
+                    subjectEntityName: relation.subject.name,
+                    validFrom: relation.validFrom,
+                    validTo: relation.validTo,
+                })
             }
         }
 
