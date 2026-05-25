@@ -12,6 +12,7 @@
         "@toon-format/toon": "^2.3.0",
         "@tree-sitter-grammars/tree-sitter-toml": "^0.7.0",
         "@tree-sitter-grammars/tree-sitter-yaml": "^0.7.1",
+        "@vercel/detect-agent": "^1.2.3",
         "commander": "^14.0.3",
         "drizzle-orm": "^0.45.2",
         "tree-sitter-json": "^0.24.8",

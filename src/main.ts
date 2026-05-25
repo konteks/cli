@@ -13,7 +13,7 @@ import consoleOutput, {
 import { appendProjectErrorLog } from '@/support/error-log'
 import getVersion from '@/support/get-version'
 
-export function createCliProgram(): Command {
+export async function createCliProgram(): Promise<Command> {
     const VERSION = getVersion()
 
     const program = new Command()
@@ -23,7 +23,7 @@ export function createCliProgram(): Command {
         )
         .version(VERSION)
 
-    configureCliHelp(program)
+    await configureCliHelp(program)
 
     registerCommands(program, {
         runInitializationGuard: ensureCliProjectInitialized,
@@ -46,20 +46,20 @@ function registerCommands(program: Command, context: BaseCommandContext): void {
     })
 }
 
-createCliProgram()
-    .parseAsync(process.argv)
-    .catch(async error => {
-        const logged =
-            error instanceof CliUserError
-                ? false
-                : await appendProjectErrorLog({
-                      error,
-                      metadata: { argv: process.argv.slice(2) },
-                      surface: 'cli',
-                  }).then(result => result.written)
-        printCliError(error, logged)
-        process.exitCode = 1
-    })
+const mainCommand = await createCliProgram()
+
+mainCommand.parseAsync(process.argv).catch(async error => {
+    const logged =
+        error instanceof CliUserError
+            ? false
+            : await appendProjectErrorLog({
+                  error,
+                  metadata: { argv: process.argv.slice(2) },
+                  surface: 'cli',
+              }).then(result => result.written)
+    printCliError(error, logged)
+    process.exitCode = 1
+})
 
 const uninitializedCliMessage = 'Project memory is missing or incomplete.'
 
