@@ -11,7 +11,11 @@ import type { ScannedFile } from './file-scan'
 import { initTreeSitterWithSelectedGrammars } from './grammar-loader'
 import persistPreparedFileSections from './persist-prepared-file-sections'
 import prepareFileSections from './prepare-file-sections'
-import rebuildModuleArtifacts from './rebuild-module-artifacts'
+import rebuildModuleArtifacts, {
+    type ModuleArtifactKey,
+    queryModuleArtifactKeysForPaths,
+    rebuildChangedModuleArtifacts,
+} from './rebuild-module-artifacts'
 import {
     clearExtractedSections,
     clearExtractedSectionsForPaths,
@@ -32,6 +36,7 @@ export default async function extractSections(
     extractedAt: string,
     options: {
         beforeExtract?: () => Promise<void>
+        canUpdateEmbeddings?: boolean
         deletedPaths?: string[]
         metadata?: ProjectMetadata
         mode?: 'changed' | 'full' | 'rebuild' | 'resume'
@@ -77,6 +82,12 @@ export default async function extractSections(
     let filesTruncatedBySectionLimit = 0
     let parserFallbackFiles = 0
     let parserUsedFiles = 0
+    const changedPaths = files.map(file => file.path)
+    const affectedPaths = [...changedPaths, ...(options.deletedPaths ?? [])]
+    const previousModuleKeys =
+        options.mode === 'changed'
+            ? await queryModuleArtifactKeysForPaths(affectedPaths)
+            : []
 
     let rootNodeId = ''
     progress?.({
@@ -167,9 +178,25 @@ export default async function extractSections(
         phase: 'modules',
         status: 'start',
     })
+    const currentModuleKeys =
+        options.mode === 'changed'
+            ? await queryModuleArtifactKeysForPaths(changedPaths)
+            : []
     await withTransaction(async () => {
-        await rebuildModuleArtifacts(extractedAt, options.metadata)
-        await reindexRetrievalDocumentFts()
+        if (options.mode === 'changed') {
+            await rebuildChangedModuleArtifacts(extractedAt, {
+                canUpdateEmbeddings: options.canUpdateEmbeddings ?? false,
+                metadata: options.metadata,
+                metadataChanged: hasMetadataRelevantPath(affectedPaths),
+                moduleKeys: dedupeModuleKeys([
+                    ...previousModuleKeys,
+                    ...currentModuleKeys,
+                ]),
+            })
+        } else {
+            await rebuildModuleArtifacts(extractedAt, options.metadata)
+            await reindexRetrievalDocumentFts()
+        }
 
         await appendMemoryEvent({
             actor: 'cli',
@@ -192,4 +219,40 @@ export default async function extractSections(
         parserUsedFiles,
         sectionCount: sectionCount,
     }
+}
+
+function dedupeModuleKeys(keys: ModuleArtifactKey[]): ModuleArtifactKey[] {
+    const seen = new Set<string>()
+    const deduped: ModuleArtifactKey[] = []
+    for (const key of keys) {
+        const value = `${key.modulePath}:${key.sourceRole}`
+        if (seen.has(value)) {
+            continue
+        }
+        seen.add(value)
+        deduped.push(key)
+    }
+    return deduped
+}
+
+function hasMetadataRelevantPath(paths: string[]): boolean {
+    return paths.some(path => {
+        const filename = path.split('/').at(-1)?.toLowerCase() ?? path
+        return (
+            /^readme(\..+)?$/iu.test(filename) ||
+            filename === 'package.json' ||
+            filename === 'composer.json' ||
+            filename === 'pubspec.yaml' ||
+            filename === 'pyproject.toml' ||
+            filename === 'go.mod' ||
+            filename === 'cargo.toml' ||
+            filename === 'pom.xml' ||
+            filename.endsWith('.csproj') ||
+            filename === 'gemfile' ||
+            filename === 'package.swift' ||
+            path.startsWith('.agents/') ||
+            path.startsWith('.codex/') ||
+            path.startsWith('docs/')
+        )
+    })
 }

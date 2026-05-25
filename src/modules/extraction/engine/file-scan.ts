@@ -34,7 +34,9 @@ type ScanProjectResult = {
     files: ScannedFile[]
 }
 
-type ScanProjectOptions = Record<string, never>
+type ScanProjectOptions = {
+    previousFiles?: ScannedFile[]
+}
 
 export async function scanProjectFiles(
     projectRoot: string,
@@ -48,9 +50,11 @@ export async function scanProjectFilesWithDiagnostics(
     options: ScanProjectOptions = {},
 ): Promise<ScanProjectResult> {
     const files: ScannedFile[] = []
-    void options
     const ignoreMatcher = await loadIgnoreMatcher(projectRoot)
     const diagnostics = createScanDiagnostics()
+    const previousByPath = new Map(
+        (options.previousFiles ?? []).map(file => [file.path, file]),
+    )
 
     await scanDirectory(
         projectRoot,
@@ -58,6 +62,7 @@ export async function scanProjectFilesWithDiagnostics(
         files,
         ignoreMatcher,
         diagnostics,
+        previousByPath,
     )
 
     const sortedFiles = files.sort((left, right) =>
@@ -77,6 +82,7 @@ async function scanDirectory(
     files: ScannedFile[],
     ignoreMatcher: IgnoreMatcher,
     diagnostics: ScanDiagnostics,
+    previousByPath: Map<string, ScannedFile>,
 ): Promise<void> {
     const entries = await readdir(directory, { withFileTypes: true })
 
@@ -97,6 +103,7 @@ async function scanDirectory(
                 files,
                 ignoreMatcher,
                 diagnostics,
+                previousByPath,
             )
             continue
         }
@@ -107,8 +114,23 @@ async function scanDirectory(
 
         diagnostics.filesScanned += 1
         const fileStat = await stat(absolutePath)
-        const bytes = await readFile(absolutePath)
+        const previous = previousByPath.get(relativePath)
+        if (
+            previous &&
+            previous.sizeBytes === fileStat.size &&
+            previous.mtimeMs === Math.trunc(fileStat.mtimeMs) &&
+            previous.contentHash
+        ) {
+            files.push({
+                contentHash: previous.contentHash,
+                mtimeMs: previous.mtimeMs,
+                path: relativePath,
+                sizeBytes: previous.sizeBytes,
+            })
+            continue
+        }
 
+        const bytes = await readFile(absolutePath)
         files.push({
             contentHash: hashBytes(bytes),
             mtimeMs: Math.trunc(fileStat.mtimeMs),
