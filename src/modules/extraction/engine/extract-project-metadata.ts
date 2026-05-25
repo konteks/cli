@@ -85,15 +85,15 @@ export default async function extractProjectMetadata(
         .map(file => file.path)
         .filter(path => /^readme(\..+)?$/i.test(path.split('/').at(-1) ?? ''))
 
+    const nodeName = stringValue(packageJson?.name)
     const name =
-        typeof packageJson?.name === 'string'
-            ? packageJson.name
-            : primaryManifest?.name
+        nodeName ??
+        packageManifests.find(manifest => manifest.name !== undefined)?.name
     const description = await inferDescription(
         projectRoot,
         packageJson,
         readmeFiles,
-        primaryManifest,
+        packageManifests,
     )
     const entryPoints = uniqueSorted([
         ...inferNodeEntryPoints(packageJson),
@@ -137,13 +137,17 @@ async function inferDescription(
     projectRoot: string,
     packageJson: PackageJson | undefined,
     readmeFiles: string[],
-    primaryManifest?: PackageManifestMetadata,
+    packageManifests: PackageManifestMetadata[],
 ): Promise<string | undefined> {
-    if (typeof packageJson?.description === 'string') {
-        return packageJson.description
+    const nodeDescription = stringValue(packageJson?.description)
+    if (nodeDescription) {
+        return nodeDescription
     }
-    if (primaryManifest?.description) {
-        return primaryManifest.description
+    const manifestDescription = packageManifests.find(
+        manifest => manifest.description,
+    )?.description
+    if (manifestDescription) {
+        return manifestDescription
     }
 
     if (readmeFiles.length > 0) {
