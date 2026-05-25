@@ -1,11 +1,18 @@
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, it, mock } from 'bun:test'
+import { decode } from '@toon-format/toon'
 import { Command } from 'commander'
-import { configureCliHelp } from '@/support/configure-cli-help'
 import getVersion from '@/support/get-version'
 
+let detectedAgent = false
+
+mock.module('@vercel/detect-agent', () => ({
+    determineAgent: async () => ({ isAgent: detectedAgent }),
+}))
+
 describe('configureCliHelp', () => {
-    it('preserves the default help sections and content', () => {
-        const program = createProgram(false)
+    it('preserves the default help sections and content for humans', async () => {
+        detectedAgent = false
+        const program = await createProgram(false)
 
         const help = program.helpInformation()
 
@@ -42,27 +49,74 @@ describe('configureCliHelp', () => {
         expect(help).not.toContain('\u001b[')
     })
 
-    it('omits the legend when help has no argument placeholders', () => {
+    it('omits the legend when human help has no argument placeholders', async () => {
+        detectedAgent = false
         const program = new Command()
             .name('konteks')
             .description('Project-local context memory.')
             .helpOption(false)
+        const { configureCliHelp } = await import(
+            '@/support/configure-cli-help'
+        )
 
-        configureCliHelp(program)
+        await configureCliHelp(program)
 
         const help = program.helpInformation()
 
         expect(help).not.toContain('Legend')
     })
+
+    it('prints structured TOON from rendered help for agents', async () => {
+        detectedAgent = true
+        const program = await createProgram(false)
+
+        const help = program.helpInformation()
+        const output = asRecord(decode(help))
+
+        expect(help).not.toContain('██████')
+        expect(help).not.toContain('USAGE')
+        expect(help).not.toContain('<value>  required')
+        expect(help).not.toContain('\u001b[')
+        expect(output.usage).toBe('konteks [options] [command]')
+
+        const entries = asRecords(output.entries)
+        expect(entries).toContainEqual(
+            expect.objectContaining({
+                description: 'output the version number',
+                term: '-V, --version',
+            }),
+        )
+        expect(entries).toContainEqual(
+            expect.objectContaining({
+                description: 'Restore a full .konteks backup archive.',
+                term: 'restore [options] <file>',
+            }),
+        )
+
+        const legend = asRecords(output.legend)
+        expect(legend).toContainEqual(
+            expect.objectContaining({
+                meaning: 'required',
+                term: '<value>',
+            }),
+        )
+        expect(legend).toContainEqual(
+            expect.objectContaining({
+                meaning: 'optional',
+                term: '[value]',
+            }),
+        )
+    })
 })
 
-function createProgram(hasColors: boolean): Command {
+async function createProgram(hasColors: boolean): Promise<Command> {
     const program = new Command()
         .name('konteks')
         .description('Project-local context memory.')
         .version('0.0.0')
+    const { configureCliHelp } = await import('@/support/configure-cli-help')
 
-    configureCliHelp(program)
+    await configureCliHelp(program)
     program.configureOutput({
         getOutHasColors: () => hasColors,
     })
@@ -74,6 +128,24 @@ function createProgram(hasColors: boolean): Command {
         .option('-f, --force', 'Overwrite existing memory.')
 
     return program
+}
+
+type JsonRecord = Record<string, unknown>
+
+function asRecord(value: unknown): JsonRecord {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+        return value as JsonRecord
+    }
+
+    throw new Error('Expected object value.')
+}
+
+function asRecords(value: unknown): JsonRecord[] {
+    if (Array.isArray(value)) {
+        return value.map(asRecord)
+    }
+
+    throw new Error('Expected object array.')
 }
 
 const bannerTagline = '✦ Project-local context memory for AI coding agents. ✦'

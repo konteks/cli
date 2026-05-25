@@ -1,3 +1,5 @@
+import { encode } from '@toon-format/toon'
+import { determineAgent } from '@vercel/detect-agent'
 import type { Command, Help } from 'commander'
 import {
     type BannerHeaderTheme,
@@ -6,17 +8,112 @@ import {
     formatBannerHeader,
 } from '@/support/tui/components'
 
-export function configureCliHelp(program: Command): void {
+export async function configureCliHelp(program: Command): Promise<void> {
+    const { isAgent } = await determineAgent()
+
     program.configureHelp({
         formatHelp: (command, helper) => {
             const theme = createBannerHeaderTheme()
             applyHelpTheme(helper, theme)
             const help = formatCommandHelp(command, helper, theme)
 
+            if (isAgent) {
+                return formatHelpForAgent(help)
+            }
+
             return `${formatBannerHeader(theme)}\n\n${help}`
         },
     })
 }
+
+type AgentHelpEntry = {
+    term: string
+    description?: string
+}
+
+type AgentHelpLegend = {
+    term: string
+    meaning: string
+}
+
+type AgentHelpToon = {
+    usage?: string
+    entries?: AgentHelpEntry[]
+    legend?: AgentHelpLegend[]
+}
+
+function formatHelpForAgent(help: string): string {
+    const output: AgentHelpToon = {}
+    const entries: AgentHelpEntry[] = []
+    const legend: AgentHelpLegend[] = []
+
+    for (const line of stripAnsi(help).trimEnd().split('\n')) {
+        const trimmed = line.trim()
+
+        if (trimmed.length === 0) {
+            continue
+        }
+
+        if (trimmed.startsWith('USAGE ')) {
+            output.usage = trimmed.slice('USAGE '.length)
+            continue
+        }
+
+        const item = parseHelpItem(trimmed)
+        if (!item) {
+            continue
+        }
+
+        if (isLegendItem(item)) {
+            legend.push({
+                meaning: item.description ?? '',
+                term: item.term,
+            })
+            continue
+        }
+
+        entries.push(item)
+    }
+
+    if (entries.length > 0) {
+        output.entries = entries
+    }
+
+    if (legend.length > 0) {
+        output.legend = legend
+    }
+
+    return encode(output)
+}
+
+function parseHelpItem(line: string): AgentHelpEntry | undefined {
+    const [term, description] = line.split(/\s{2,}/u, 2)
+
+    if (!term) {
+        return undefined
+    }
+
+    return {
+        description: description || undefined,
+        term,
+    }
+}
+
+function isLegendItem(item: AgentHelpEntry): boolean {
+    return (
+        (item.term === '<value>' || item.term === '[value]') &&
+        (item.description === 'required' || item.description === 'optional')
+    )
+}
+
+function stripAnsi(value: string): string {
+    return value.replace(ansiColorPattern, '')
+}
+
+const ansiColorPattern = new RegExp(
+    `${String.fromCharCode(27)}\\[[0-9;]*m`,
+    'gu',
+)
 
 type ColorName = 'dim' | 'warning'
 
