@@ -35,6 +35,8 @@ import {
 
 type SearchMemoryOptions = {
     embeddingProvider?: EmbeddingProvider
+    includeGraphBoost?: boolean
+    limit?: number
 }
 
 export type MemorySearchInput = {
@@ -59,7 +61,7 @@ async function searchBoundMemory(
     options: SearchMemoryOptions,
 ): Promise<MemorySearchResult[]> {
     const mode: SearchMode = 'query' in input ? 'search' : 'recall'
-    const limit = 'limit' in input ? (input.limit ?? 10) : 10
+    const limit = 'limit' in input ? (input.limit ?? 10) : (options.limit ?? 10)
     const query = 'query' in input ? input.query : input.task
     const terms = tokenize(query)
     const intent = detectIntent(query)
@@ -134,11 +136,14 @@ async function searchRetrievalDocuments(
         .filter(result => allowResult(result, mode, intent))
         .map(result => applyRolePolicy(result, mode, intent))
 
+    if (options.includeGraphBoost === false) {
+        return results.sort(compareSearchResults).slice(0, limit)
+    }
+
     const graphContext = await buildRetrievalGraphContext(
         terms.join(' '),
         results,
     )
-
     return results
         .map(result => applyGraphBoost(result, graphContext.boosts))
         .sort(compareSearchResults)

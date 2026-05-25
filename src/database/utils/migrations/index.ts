@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm'
 import type { LibSQLDatabase } from 'drizzle-orm/libsql'
 import type * as schema from '@/database/schema'
 import initialSchemaSql from './001_initial_schema.sql?raw'
+import aliasEntityIndexSql from './002_alias_entity_index.sql?raw'
 
 type ProjectDatabase = LibSQLDatabase<typeof schema>
 
@@ -13,6 +14,10 @@ const MIGRATIONS: readonly {
     {
         id: '001_initial_schema',
         sql: initialSchemaSql,
+    },
+    {
+        id: '002_alias_entity_index',
+        sql: aliasEntityIndexSql,
     },
 ]
 

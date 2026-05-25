@@ -20,10 +20,15 @@ export default async function recallRepositoryMemory(
     input: MemoryRecallInput,
 ): Promise<RecallPackage> {
     return await withTransaction(async () => {
-        const memories = await searchMemory({
-            limit: 20,
-            query: input.task,
-        })
+        const memories = await searchMemory(
+            {
+                task: input.task,
+            },
+            {
+                includeGraphBoost: false,
+                limit: 20,
+            },
+        )
         const graphContext = await buildRetrievalGraphContext(
             input.task,
             memories,

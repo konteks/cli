@@ -220,6 +220,8 @@ create index if not exists sections_deleted_idx on sections(deleted_at, suppress
 
 create index if not exists aliases_normalized_value_idx on entity_aliases(normalized_value);
 
+create index if not exists aliases_entity_idx on entity_aliases(entity_id);
+
 create index if not exists relations_subject_idx on relations(subject_id, status);
 
 create index if not exists relations_object_idx on relations(object_id, status);

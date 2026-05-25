@@ -94,6 +94,37 @@ describe('graph service', () => {
         })
     })
 
+    it('finds alias-backed entities from a larger alias set', async () => {
+        await withProjectRoot(async () => {
+            for (let index = 0; index < 75; index += 1) {
+                const entity = await upsertEntity({
+                    canonicalName: `fixture:${index}`,
+                    name: `fixture-${index}`,
+                    type: 'file',
+                })
+                await upsertEntityAliases(entity.id, [
+                    `unrelated alias ${index}`,
+                    `noise target ${index}`,
+                ])
+            }
+            const target = await upsertEntity({
+                canonicalName:
+                    'src/database/actions/query-entity-search-rows.ts',
+                name: 'query-entity-search-rows.ts',
+                type: 'file',
+            })
+            await upsertEntityAliases(target.id, [
+                'recall timeout entity search',
+            ])
+
+            const matches = await searchEntities('recall timeout', {
+                limit: 5,
+            })
+
+            expect(matches.map(match => match.id)).toContain(target.id)
+        })
+    })
+
     it('upserts relations idempotently and exposes them through traversal', async () => {
         await withProjectRoot(async () => {
             const moduleEntity = await upsertEntity({

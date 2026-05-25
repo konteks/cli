@@ -87,7 +87,10 @@ export const entityAliases = sqliteTable(
         normalizedValue: text('normalized_value').notNull(),
         value: text('value').notNull(),
     },
-    table => [index('aliases_normalized_value_idx').on(table.normalizedValue)],
+    table => [
+        index('aliases_entity_idx').on(table.entityId),
+        index('aliases_normalized_value_idx').on(table.normalizedValue),
+    ],
 )
 
 export const relations = sqliteTable(

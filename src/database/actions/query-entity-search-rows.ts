@@ -19,8 +19,18 @@ export default async function queryEntitySearchRows(
 ): Promise<EntitySearchRow[]> {
     const db = await getDb()
     return await db.all<EntitySearchRow>(sql`
-select *
-from (
+with alias_scores as (
+    select
+        a.entity_id,
+        3 as score
+    from entity_aliases a
+    where ${sql.join(
+        terms.map(term => sql`a.normalized_value like ${`%${term}%`}`),
+        sql` or `,
+    )}
+    group by a.entity_id
+),
+scored_entities as (
 select
     e.id,
     e.type,
@@ -42,20 +52,13 @@ select
             ),
             sql` or `,
         )} then 1 else 0 end
-        + case when exists (
-            select 1
-            from entity_aliases a
-            where a.entity_id = e.id
-              and (${sql.join(
-                  terms.map(
-                      term => sql`a.normalized_value like ${`%${term}%`}`,
-                  ),
-                  sql` or `,
-              )})
-        ) then 3 else 0 end
+        + coalesce(a.score, 0)
     ) as score
 from entities e
-) scored_entities
+left join alias_scores a on a.entity_id = e.id
+)
+select *
+from scored_entities
 where score > 0
 order by score desc
 limit ${limit}
