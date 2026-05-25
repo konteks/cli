@@ -6,19 +6,26 @@ import queryHistoricalRelationRows, {
 export default async function historicalRelations(
     entityId: string,
     options: { limit?: number } = {},
-): Promise<
-    {
-        relationId: string
-        predicate: string
-        status: 'invalidated' | 'superseded'
-        validFrom?: string
-        validTo?: string
-        subject: EntityRecord
-        object: EntityRecord
-    }[]
-> {
+): Promise<HistoricalRelation[]> {
+    return historicalRelationsForEntities([entityId], options)
+}
+
+export type HistoricalRelation = {
+    relationId: string
+    predicate: string
+    status: 'invalidated' | 'superseded'
+    validFrom?: string
+    validTo?: string
+    subject: EntityRecord
+    object: EntityRecord
+}
+
+export async function historicalRelationsForEntities(
+    entityIds: string[],
+    options: { limit?: number } = {},
+): Promise<HistoricalRelation[]> {
     const rows = await queryHistoricalRelationRows(
-        entityId,
+        entityIds,
         options.limit ?? 10,
     )
 

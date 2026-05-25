@@ -19,6 +19,12 @@ type EmbeddingWorkItem = {
     row: RetrievalDocumentRow
 }
 
+type ExistingEmbeddingRow = {
+    embedding_hash: string
+    target_id: string
+    target_type: TargetType
+}
+
 type EmbeddingRunResult = {
     embeddedCount: number
     reusedCount: number
@@ -97,28 +103,19 @@ async function embedRetrievalDocumentRows(
     let embeddedCount = 0
     let reusedCount = 0
     const workItems: EmbeddingWorkItem[] = []
+    const existingHashes = await loadExistingEmbeddingHashes(provider, rows)
 
     for (const row of rows) {
-        const existing = await db
-            .select({ embedding_hash: targetEmbeddings.embeddingHash })
-            .from(targetEmbeddings)
-            .where(
-                and(
-                    eq(targetEmbeddings.targetId, row.target_id),
-                    eq(targetEmbeddings.targetType, row.target_type),
-                    eq(targetEmbeddings.model, provider.model),
-                    eq(targetEmbeddings.dimensions, provider.dimensions),
-                ),
-            )
-            .limit(1)
-
         const embeddingHash = contentHash(
             `${provider.model}:${row.embedding_text}`,
         )
 
         workItems.push({
             embeddingHash,
-            existing: existing[0]?.embedding_hash === embeddingHash,
+            existing:
+                existingHashes.get(
+                    targetKey(row.target_type, row.target_id),
+                ) === embeddingHash,
             row,
         })
     }
@@ -229,6 +226,48 @@ async function embedRetrievalDocumentRows(
     })
 
     return { embeddedCount, reusedCount }
+}
+
+async function loadExistingEmbeddingHashes(
+    provider: EmbeddingProviderContract,
+    rows: RetrievalDocumentRow[],
+): Promise<Map<string, string>> {
+    if (rows.length === 0) {
+        return new Map()
+    }
+
+    const db = await getDb()
+    const targetTypes = [...new Set(rows.map(row => row.target_type))]
+    const existingRows = await db
+        .select({
+            embedding_hash: targetEmbeddings.embeddingHash,
+            target_id: targetEmbeddings.targetId,
+            target_type: targetEmbeddings.targetType,
+        })
+        .from(targetEmbeddings)
+        .where(
+            and(
+                eq(targetEmbeddings.model, provider.model),
+                eq(targetEmbeddings.dimensions, provider.dimensions),
+                inArray(targetEmbeddings.targetType, targetTypes),
+            ),
+        )
+
+    const rowKeys = new Set(
+        rows.map(row => targetKey(row.target_type, row.target_id)),
+    )
+    const hashes = new Map<string, string>()
+    for (const row of existingRows as ExistingEmbeddingRow[]) {
+        const key = targetKey(row.target_type, row.target_id)
+        if (rowKeys.has(key)) {
+            hashes.set(key, row.embedding_hash)
+        }
+    }
+    return hashes
+}
+
+function targetKey(targetType: TargetType, targetId: string): string {
+    return `${targetType}:${targetId}`
 }
 
 function toBlob(vector: Float32Array): Uint8Array {
