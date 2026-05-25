@@ -67,13 +67,22 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
             status: 'start',
         })
         await mkdir(context.memoryDir, { recursive: true })
+        const previousManifest =
+            mode === 'changed'
+                ? await readExtractionManifest(context.memoryDir)
+                : undefined
 
         progress?.({
             message: 'Scanning project files',
             phase: 'scan',
             status: 'start',
         })
-        const scan = await scanProjectFilesWithDiagnostics(context.projectRoot)
+        const scan = await scanProjectFilesWithDiagnostics(
+            context.projectRoot,
+            {
+                previousFiles: previousManifest?.files,
+            },
+        )
         const files = scan.files
         const detectedParserLanguages = detectParserLanguages(files)
         const languageCount = detectedParserLanguages.length
@@ -85,10 +94,28 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
             status: 'done',
             total: files.length,
         })
-        const previousManifest =
-            mode === 'changed'
-                ? await readExtractionManifest(context.memoryDir)
-                : undefined
+        const alreadyExtractedPaths =
+            mode === 'resume' ? await readExtractedProjectPaths() : undefined
+        const { deletedPaths, filesToExtract } = selectFilesForMode(
+            files,
+            previousManifest,
+            mode,
+            alreadyExtractedPaths,
+        )
+        if (
+            mode === 'changed' &&
+            previousManifest &&
+            filesToExtract.length === 0 &&
+            deletedPaths.length === 0
+        ) {
+            return unchangedExtractionResponse({
+                detectedParserLanguages,
+                files,
+                languageCount,
+                manifest: previousManifest,
+                projectRoot: context.projectRoot,
+            })
+        }
         progress?.({
             message: 'Extracting project metadata',
             phase: 'metadata',
@@ -114,14 +141,6 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
             phase: 'database',
             status: 'done',
         })
-        const alreadyExtractedPaths =
-            mode === 'resume' ? await readExtractedProjectPaths() : undefined
-        const { deletedPaths, filesToExtract } = selectFilesForMode(
-            files,
-            previousManifest,
-            mode,
-            alreadyExtractedPaths,
-        )
         progress?.({
             message: `Selected ${filesToExtract.length} files to extract`,
             phase: 'select',
@@ -234,6 +253,37 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
             updatedFilePaths: filesToExtract.map(file => file.path),
             vectorCount,
         }
+    }
+}
+
+function unchangedExtractionResponse(input: {
+    detectedParserLanguages: string[]
+    files: ScannedFile[]
+    languageCount: number
+    manifest: ExtractionManifest
+    projectRoot: string
+}): ExtractProjectResponse {
+    const diagnostics = input.manifest.diagnostics
+    return {
+        deletedFilePaths: [],
+        detectedParserLanguages:
+            diagnostics?.detectedParserLanguages ??
+            input.detectedParserLanguages,
+        embeddedCount: diagnostics?.embeddedCount ?? 0,
+        embeddingReusedCount: diagnostics?.embeddingReusedCount ?? 0,
+        extractedAt: input.manifest.extractedAt,
+        fileCount: input.files.length,
+        languageCount: diagnostics?.languageCount ?? input.languageCount,
+        loadedParserCount: diagnostics?.loadedParserCount ?? 0,
+        mode: 'changed',
+        ok: true,
+        projectRoot: input.projectRoot,
+        sectionCount:
+            diagnostics?.sectionCount ?? input.manifest.sectionCount ?? 0,
+        summaryRef: input.manifest.summaryRef,
+        technologies: input.manifest.metadata.technologies,
+        updatedFilePaths: [],
+        vectorCount: diagnostics?.vectorCount ?? 0,
     }
 }
 

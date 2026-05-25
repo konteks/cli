@@ -4,6 +4,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
+import { eq } from 'drizzle-orm'
+import getDb from '@/database/actions/_db'
+import { targetEmbeddings } from '@/database/schema'
 import mcpTools from '@/entrypoints/mcp/tools'
 import { extractProject } from '@/modules/extraction/extract-project'
 import { loadProjectContext } from '@/modules/project/context'
@@ -142,6 +145,39 @@ describe('konteks_warm_up', () => {
         expect(text).not.toContain('Extraction complete')
     })
 
+    it('does not delete module embeddings during warm-up changed extraction', async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
+        tempDirs.push(projectRoot)
+        await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await writeFile(
+            join(projectRoot, 'src', 'index.txt'),
+            'export const first = true\n',
+        )
+
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', extractionOptions()),
+        )
+        const beforeCount = await withProjectRoot(projectRoot, () =>
+            moduleEmbeddingCount(),
+        )
+        await writeFile(
+            join(projectRoot, 'src', 'later.txt'),
+            'export const later = true\n',
+        )
+
+        await withProjectRoot(projectRoot, () =>
+            callKonteksTool('konteks_warm_up', {}),
+        )
+
+        await expect(
+            withProjectRoot(projectRoot, () => moduleEmbeddingCount()),
+        ).resolves.toBe(beforeCount)
+    })
+
     it('returns quality-labeled focused recall without duplicate targets', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
         tempDirs.push(projectRoot)
@@ -224,4 +260,13 @@ function extractText(result: CallToolResult): string {
             > => item.type === 'text',
         )?.text ?? ''
     )
+}
+
+async function moduleEmbeddingCount(): Promise<number> {
+    const db = await getDb()
+    const rows = await db
+        .select()
+        .from(targetEmbeddings)
+        .where(eq(targetEmbeddings.targetType, 'module'))
+    return rows.length
 }

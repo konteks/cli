@@ -84,7 +84,9 @@ export async function getExtractionFreshness(
         }
     }
 
-    const currentFiles = await scanProjectFiles(context.projectRoot)
+    const currentFiles = await scanProjectFiles(context.projectRoot, {
+        previousFiles: manifest.files,
+    })
     const staleReason = findStaleReason(manifest.files, currentFiles)
 
     if (staleReason) {

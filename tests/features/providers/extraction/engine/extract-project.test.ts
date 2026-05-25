@@ -9,7 +9,7 @@ import {
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import getDb from '@/database/actions/_db'
 import { targetEmbeddings } from '@/database/schema'
 import {
@@ -352,6 +352,38 @@ describe('extractProject', () => {
         expect(paths).toContain('src/new.txt')
     })
 
+    it('changed mode is a no-op when extraction is already current', async () => {
+        const projectRoot = await makeTempProject()
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+
+        await extractTestProject(context, 'rebuild', {
+            embeddingProvider: new FakeEmbeddingProvider(),
+        })
+        const manifestPath = join(
+            projectRoot,
+            '.konteks',
+            'extraction-manifest.json',
+        )
+        const beforeManifest = await readFile(manifestPath, 'utf8')
+        const beforeCounts = await projectStateCounts()
+        const beforeParsedManifest = JSON.parse(beforeManifest) as {
+            extractedAt: string
+        }
+
+        const result = await extractTestProject(context, 'changed')
+
+        expect(result).toMatchObject({
+            deletedFilePaths: [],
+            extractedAt: beforeParsedManifest.extractedAt,
+            ok: true,
+            updatedFilePaths: [],
+        })
+        expect(await readFile(manifestPath, 'utf8')).toBe(beforeManifest)
+        expect(await projectStateCounts()).toEqual(beforeCounts)
+    })
+
     it('extracts repeated anchors with identical content without section ID collisions', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(
@@ -405,4 +437,16 @@ async function embeddingRowsFor(
         .select()
         .from(targetEmbeddings)
         .where(eq(targetEmbeddings.targetType, targetType))
+}
+
+async function projectStateCounts(): Promise<Record<string, number>> {
+    const db = await getDb()
+    const rows = await db.all<{ name: string; count: number }>(sql`
+select 'memory_events' as name, count(*) as count from memory_events
+union all select 'modules', count(*) from modules
+union all select 'retrieval_documents_fts', count(*) from retrieval_documents_fts
+union all select 'target_embeddings', count(*) from target_embeddings
+union all select 'relations', count(*) from relations
+`)
+    return Object.fromEntries(rows.map(row => [row.name, row.count]))
 }

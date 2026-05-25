@@ -43,6 +43,7 @@ export async function extractProjectSectionsWithDatabase(
         options.extractedAt,
         {
             beforeExtract: options.beforeExtract,
+            canUpdateEmbeddings: Boolean(options.embeddingProvider),
             deletedPaths: options.deletedPaths,
             metadata: options.metadata,
             mode: options.mode,
