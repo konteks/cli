@@ -17,21 +17,6 @@ export function stripAnsi(value: string): string {
     return value.replaceAll(ansiPattern, '')
 }
 
-export function parseJsonFromOutput<T>(output: string): T {
-    for (let index = 0; index < output.length; index += 1) {
-        const char = output[index]
-        if (char !== '{' && char !== '[' && char !== '"') {
-            continue
-        }
-
-        try {
-            return JSON.parse(output.slice(index)) as T
-        } catch {}
-    }
-
-    throw new Error(`Expected JSON output, got:\n${output}`)
-}
-
 function isOutputFormatter(
     message: ConsoleOutputMessage,
 ): message is (color: ConsoleColorPalette) => string {
