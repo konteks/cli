@@ -1,11 +1,11 @@
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { readFile, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { env, pipeline } from '@huggingface/transformers'
+import { mkdir } from '@/support/file-manager'
 import { formatBytes } from '@/support/format/number'
 import type { EmbeddingProviderContract } from '@/types/embedding-provider'
 import type { ExtractionProgressReporter } from '@/types/progress'
-
 export default class HuggingFaceEmbeddingProvider
     implements EmbeddingProviderContract
 {
@@ -55,7 +55,7 @@ export default class HuggingFaceEmbeddingProvider
         }
 
         const cacheDir = resolveGlobalModelCacheDir()
-        await mkdir(cacheDir, { recursive: true })
+        await mkdir(cacheDir)
         env.cacheDir = cacheDir
 
         this.onProgress?.({

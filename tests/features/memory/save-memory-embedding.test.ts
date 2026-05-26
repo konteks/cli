@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { eq } from 'drizzle-orm'
@@ -15,6 +15,7 @@ import {
     saveKonteksMemories,
 } from '@/database/services/save-memory'
 import { loadProjectContext } from '@/modules/project/context'
+import { mkdir, rm } from '@/support/file-manager'
 import type { EmbeddingProviderContract } from '@/types/embedding-provider'
 import FakeEmbeddingProvider from '../../fake/fake-embedding-provider'
 
@@ -42,11 +43,7 @@ afterEach(async () => {
         process.env.KONTEKS_SQLITE_TEST_DATABASE = previousSqliteTestDatabase
     }
 
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
+    await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
 describe('save memory embeddings', () => {
@@ -193,8 +190,8 @@ describe('save diary embeddings', () => {
 async function makeInitializedProject(): Promise<string> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-save-embed-'))
     tempDirs.push(projectRoot)
-    await mkdir(join(projectRoot, '.git'), { recursive: true })
-    await mkdir(join(projectRoot, '.konteks'), { recursive: true })
+    await mkdir(join(projectRoot, '.git'))
+    await mkdir(join(projectRoot, '.konteks'))
     await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
     return projectRoot
 }

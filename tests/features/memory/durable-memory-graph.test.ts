@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import historicalRelations from '@/database/actions/historical-relations'
@@ -13,6 +13,7 @@ import {
 import { extractProject } from '@/modules/extraction/extract-project'
 import recallRepositoryMemory from '@/modules/memory/recall-repository-memory'
 import { loadProjectContext } from '@/modules/project/context'
+import { mkdir, rm } from '@/support/file-manager'
 import FakeEmbeddingProvider from '../../fake/fake-embedding-provider'
 
 const tempDirs: string[] = []
@@ -20,11 +21,7 @@ const originalCwd = process.cwd()
 
 afterEach(async () => {
     process.chdir(originalCwd)
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
+    await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
 describe('durable memory graph projection', () => {
@@ -378,9 +375,9 @@ describe('durable memory graph projection', () => {
 async function makeExtractedProject(): Promise<string> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-durable-graph-'))
     tempDirs.push(projectRoot)
-    await mkdir(join(projectRoot, '.git'), { recursive: true })
-    await mkdir(join(projectRoot, '.konteks'), { recursive: true })
-    await mkdir(join(projectRoot, 'src'), { recursive: true })
+    await mkdir(join(projectRoot, '.git'))
+    await mkdir(join(projectRoot, '.konteks'))
+    await mkdir(join(projectRoot, 'src'))
     await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
     await writeFile(
         join(projectRoot, 'src', 'durable-policy.txt'),

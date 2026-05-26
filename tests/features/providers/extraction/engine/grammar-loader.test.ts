@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, writeFile } from 'node:fs/promises'
 import * as os from 'node:os'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -9,6 +9,8 @@ import {
     listGrammarDefinitions,
 } from '@/modules/extraction/engine/grammar-loader'
 import { loadProjectContext } from '@/modules/project/context'
+
+import { mkdir, rm } from '@/support/file-manager'
 
 const tempDirs: string[] = []
 
@@ -27,11 +29,7 @@ class MockTreeSitterEngine {
 
 afterEach(async () => {
     mock.restore()
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
+    await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
 describe('grammar loader registry', () => {
@@ -91,15 +89,9 @@ describe('grammar loader registry', () => {
             'konteks',
             'grammars',
         )
-        await mkdir(grammarCacheDir, {
-            recursive: true,
-        })
-        await mkdir(join(projectRoot, '.git'), {
-            recursive: true,
-        })
-        await mkdir(join(projectRoot, '.konteks'), {
-            recursive: true,
-        })
+        await mkdir(grammarCacheDir)
+        await mkdir(join(projectRoot, '.git'))
+        await mkdir(join(projectRoot, '.konteks'))
         await writeFile(
             join(projectRoot, '.konteks', 'config.json'),
             JSON.stringify({
@@ -148,12 +140,8 @@ describe('grammar loader registry', () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-grammar-'))
         tempDirs.push(projectRoot)
         spyOn(os, 'homedir').mockReturnValue(projectRoot)
-        await mkdir(join(projectRoot, '.git'), {
-            recursive: true,
-        })
-        await mkdir(join(projectRoot, '.konteks'), {
-            recursive: true,
-        })
+        await mkdir(join(projectRoot, '.git'))
+        await mkdir(join(projectRoot, '.konteks'))
         await writeFile(
             join(projectRoot, '.konteks', 'config.json'),
             JSON.stringify({
@@ -219,15 +207,9 @@ describe('grammar loader registry', () => {
             'konteks',
             'grammars',
         )
-        await mkdir(grammarCacheDir, {
-            recursive: true,
-        })
-        await mkdir(join(projectRoot, '.git'), {
-            recursive: true,
-        })
-        await mkdir(join(projectRoot, '.konteks'), {
-            recursive: true,
-        })
+        await mkdir(grammarCacheDir)
+        await mkdir(join(projectRoot, '.git'))
+        await mkdir(join(projectRoot, '.konteks'))
         await writeFile(
             join(projectRoot, '.konteks', 'config.json'),
             JSON.stringify({
@@ -276,12 +258,8 @@ describe('grammar loader registry', () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-grammar-'))
         tempDirs.push(projectRoot)
         spyOn(os, 'homedir').mockReturnValue(projectRoot)
-        await mkdir(join(projectRoot, '.git'), {
-            recursive: true,
-        })
-        await mkdir(join(projectRoot, '.konteks'), {
-            recursive: true,
-        })
+        await mkdir(join(projectRoot, '.git'))
+        await mkdir(join(projectRoot, '.konteks'))
         await writeFile(
             join(projectRoot, '.konteks', 'config.json'),
             JSON.stringify({
@@ -317,12 +295,8 @@ describe('grammar loader registry', () => {
     it('loads bundled grammars from package dependencies', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-grammar-'))
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, '.git'), {
-            recursive: true,
-        })
-        await mkdir(join(projectRoot, '.konteks'), {
-            recursive: true,
-        })
+        await mkdir(join(projectRoot, '.git'))
+        await mkdir(join(projectRoot, '.konteks'))
         await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
         const project = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),

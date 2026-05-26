@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { ensureProjectMemory } from '@/database/services/project-memory'
 import createProjectExtractor from '@/modules/extraction/create-project-extractor'
@@ -8,6 +8,7 @@ import {
     createDefaultConfig,
     loadProjectContext,
 } from '@/modules/project/context'
+import { mkdir } from '@/support/file-manager'
 import {
     colorRgb,
     createBannerHeaderTheme,
@@ -19,7 +20,6 @@ import type { Project } from '@/types/project'
 import BaseCommand from './_base-command'
 import { reviewDetectedGrammars } from './_support/grammar-selection'
 import createProjectMemoryProgressReporter from './_support/project-memory-progress-reporter'
-
 export default class InitCommand extends BaseCommand {
     public readonly description =
         'Initialize memory, section the project, and build indexes.'
@@ -125,7 +125,7 @@ async function writeInitialMemoryFiles(
     context: Project,
     grammars: string[],
 ): Promise<void> {
-    await mkdir(context.memoryDir, { recursive: true })
+    await mkdir(context.memoryDir)
 
     const defaultConfig = createDefaultConfig()
     await writeFile(

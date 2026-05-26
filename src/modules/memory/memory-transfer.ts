@@ -1,13 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import {
-    cp,
-    mkdir,
-    mkdtemp,
-    readdir,
-    readFile,
-    rm,
-    writeFile,
-} from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, resolve } from 'node:path'
 import {
     exportProjectDurableMemory,
@@ -15,6 +7,7 @@ import {
 } from '@/database/services/memory-transfer'
 import { loadProjectContext, pathExists } from '@/modules/project/context'
 import CliUserError from '@/support/cli/cli-user-error'
+import { cp, mkdir, rm } from '@/support/file-manager'
 import { createTarGz, extractTarGz } from '@/support/targz'
 import type {
     DurableMemoryExport,
@@ -25,7 +18,6 @@ import type {
     MemoryRestoreOptions,
     MemoryRestoreResult,
 } from '@/types/memory-transfer'
-
 export async function exportMemory(
     options: DurableMemoryExportOptions,
 ): Promise<DurableMemoryExportResult> {
@@ -34,7 +26,7 @@ export async function exportMemory(
         includeInactive: options.includeInactive,
     })
     payload.project.name = basename(context.projectRoot)
-    await mkdir(dirname(resolve(options.outputPath)), { recursive: true })
+    await mkdir(dirname(resolve(options.outputPath)))
     await writeFile(options.outputPath, `${JSON.stringify(payload, null, 2)}\n`)
     return {
         diaries: payload.diaries.length,
@@ -80,11 +72,11 @@ export async function restoreMemory(
     const tempDir = await mkdtemp(join(dirname(context.memoryDir), '.restore-'))
     try {
         await extractTarGz(inputPath, tempDir)
-        await rm(context.memoryDir, { force: true, recursive: true })
-        await mkdir(dirname(context.memoryDir), { recursive: true })
-        await cp(tempDir, context.memoryDir, { recursive: true })
+        await rm(context.memoryDir)
+        await mkdir(dirname(context.memoryDir))
+        await cp(tempDir, context.memoryDir)
     } finally {
-        await rm(tempDir, { force: true, recursive: true })
+        await rm(tempDir)
     }
 
     return {

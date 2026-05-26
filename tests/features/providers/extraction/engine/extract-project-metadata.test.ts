@@ -1,25 +1,23 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import extractProjectMetadata from '@/modules/extraction/engine/extract-project-metadata'
 import { scanProjectFilesWithDiagnostics } from '@/modules/extraction/engine/file-scan'
 
+import { mkdir, rm } from '@/support/file-manager'
+
 const tempDirs: string[] = []
 
 afterEach(async () => {
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
+    await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
 describe('extractProjectMetadata', () => {
     it('extracts package, dependency, and workspace metadata', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-meta-test-'))
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'packages', 'app'), { recursive: true })
+        await mkdir(join(projectRoot, 'packages', 'app'))
         await writeFile(
             join(projectRoot, 'package.json'),
             JSON.stringify(
@@ -65,7 +63,7 @@ describe('extractProjectMetadata', () => {
     it('extracts Composer and PHP framework metadata', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-meta-test-'))
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'public'), { recursive: true })
+        await mkdir(join(projectRoot, 'public'))
         await writeFile(
             join(projectRoot, 'composer.json'),
             JSON.stringify({
@@ -101,7 +99,7 @@ describe('extractProjectMetadata', () => {
     it('prefers Composer descriptions over README setup bullets in Laravel Inertia apps', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-meta-test-'))
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'public'), { recursive: true })
+        await mkdir(join(projectRoot, 'public'))
         await writeFile(
             join(projectRoot, 'composer.json'),
             JSON.stringify({
@@ -155,7 +153,7 @@ describe('extractProjectMetadata', () => {
     it('extracts Flutter pubspec metadata', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-meta-test-'))
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'lib'), { recursive: true })
+        await mkdir(join(projectRoot, 'lib'))
         await writeFile(
             join(projectRoot, 'pubspec.yaml'),
             [
@@ -196,8 +194,8 @@ describe('extractProjectMetadata', () => {
     it('extracts common non-Node project manifests', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-meta-test-'))
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'cmd', 'app'), { recursive: true })
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, 'cmd', 'app'))
+        await mkdir(join(projectRoot, 'src'))
         await writeFile(
             join(projectRoot, 'pyproject.toml'),
             [
@@ -266,9 +264,7 @@ describe('extractProjectMetadata', () => {
     it('extracts JVM, Ruby, Swift, and .NET manifests', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-meta-test-'))
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'src', 'main', 'java'), {
-            recursive: true,
-        })
+        await mkdir(join(projectRoot, 'src', 'main', 'java'))
         await writeFile(
             join(projectRoot, 'build.gradle'),
             'dependencies { implementation("org.springframework.boot:spring-boot-starter-web:3.0.0") }\n',

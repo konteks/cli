@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import searchEntities from '@/database/actions/search-entities'
@@ -12,20 +12,18 @@ import {
     upsertRelation,
 } from '@/database/services/graph'
 
+import { mkdir, rm } from '@/support/file-manager'
+
 const tempDirs: string[] = []
 
 afterEach(async () => {
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
+    await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
 async function withProjectRoot<T>(operation: () => Promise<T>): Promise<T> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-graph-'))
     tempDirs.push(projectRoot)
-    await mkdir(join(projectRoot, '.git'), { recursive: true })
+    await mkdir(join(projectRoot, '.git'))
     await writeFile(join(projectRoot, 'package.json'), '{"name":"graph"}\n')
 
     const previous = process.cwd()

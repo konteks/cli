@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { extractProject } from '@/modules/extraction/extract-project'
@@ -7,6 +7,7 @@ import {
     loadProjectContext,
     writeProjectConfig,
 } from '@/modules/project/context'
+import { mkdir, rm } from '@/support/file-manager'
 import getVersion from '@/support/get-version'
 import FakeEmbeddingProvider from '../../fake/fake-embedding-provider'
 import {
@@ -325,13 +326,13 @@ async function createInitializedProject(prefix: string): Promise<{
     return withFileBackedSqlite(async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), prefix))
 
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'))
+        await mkdir(join(projectRoot, '.git'))
         await writeFile(
             join(projectRoot, 'src', 'index.txt'),
             'export const run = () => "stdio fixture"\n',
         )
-        await mkdir(join(projectRoot, '.konteks'), { recursive: true })
+        await mkdir(join(projectRoot, '.konteks'))
 
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
@@ -345,7 +346,7 @@ async function createInitializedProject(prefix: string): Promise<{
 
         return {
             async cleanup() {
-                await rm(projectRoot, { force: true, recursive: true })
+                await rm(projectRoot)
             },
             projectRoot,
         }

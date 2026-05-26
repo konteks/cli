@@ -1,11 +1,10 @@
-import { mkdir } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { loadProjectContext, pathExists } from '@/modules/project/context'
 import CliUserError from '@/support/cli/cli-user-error'
+import { mkdir } from '@/support/file-manager'
 import { createTarGz } from '@/support/targz'
 import type { BaseCommandInput } from './_base-command'
 import BaseCommand from './_base-command'
-
 export default class BackupCommand extends BaseCommand<[string]> {
     public override readonly args = [
         {
@@ -29,7 +28,7 @@ export default class BackupCommand extends BaseCommand<[string]> {
         }
 
         const outputPath = resolve(args[0])
-        await mkdir(dirname(outputPath), { recursive: true })
+        await mkdir(dirname(outputPath))
         await createTarGz(context.memoryDir, outputPath)
 
         this.consoleOutput.print(outputPath)

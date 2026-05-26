@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import consoleOutput from '@/support/console-output'
+import { mkdir, rm } from '@/support/file-manager'
 import FakeEmbeddingProvider from '../../fake/fake-embedding-provider'
 
 const checkboxCalls: unknown[] = []
@@ -71,7 +72,7 @@ const tempDirs: string[] = []
 async function makeTempProject(): Promise<string> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-init-test-'))
     tempDirs.push(projectRoot)
-    await mkdir(join(projectRoot, '.git'), { recursive: true })
+    await mkdir(join(projectRoot, '.git'))
     await writeFile(join(projectRoot, 'README.md'), '# Fixture\n')
     return projectRoot
 }
@@ -81,11 +82,7 @@ afterEach(async () => {
     checkboxResult = []
     selectCalls.splice(0)
     selectResult = 'CONTINUE'
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
+    await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
 async function withWorkingDirectory<T>(
@@ -154,7 +151,7 @@ describe('InitCommand', () => {
 
     it('does not duplicate existing .konteks ignore entries', async () => {
         const projectRoot = await makeTempProject()
-        await mkdir(join(projectRoot, '.konteks'), { recursive: true })
+        await mkdir(join(projectRoot, '.konteks'))
         await writeFile(
             join(projectRoot, '.gitignore'),
             'node_modules\n.konteks/\n',
@@ -327,7 +324,7 @@ describe('InitCommand', () => {
 
     it('finishes setup when a previous init stopped before extraction', async () => {
         const projectRoot = await makeTempProject()
-        await mkdir(join(projectRoot, '.konteks'), { recursive: true })
+        await mkdir(join(projectRoot, '.konteks'))
         await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
 
         await init(projectRoot)

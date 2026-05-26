@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
@@ -10,6 +10,7 @@ import { targetEmbeddings } from '@/database/schema'
 import mcpTools from '@/entrypoints/mcp/tools'
 import { extractProject } from '@/modules/extraction/extract-project'
 import { loadProjectContext } from '@/modules/project/context'
+import { mkdir, rm } from '@/support/file-manager'
 import FakeEmbeddingProvider from '../../../fake/fake-embedding-provider'
 
 function extractionOptions() {
@@ -37,7 +38,7 @@ describe('konteks_warm_up', () => {
 
     afterEach(async () => {
         for (const dir of tempDirs) {
-            await rm(dir, { force: true, recursive: true })
+            await rm(dir)
         }
         tempDirs = []
     })
@@ -45,8 +46,8 @@ describe('konteks_warm_up', () => {
     it('returns stable project context assembled from stored artifacts', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'))
+        await mkdir(join(projectRoot, '.git'))
         await writeFile(
             join(projectRoot, 'src', 'index.txt'),
             'export const version = "1.0.0"\n',
@@ -111,8 +112,8 @@ describe('konteks_warm_up', () => {
     it('updates changed project memory before warming up', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'))
+        await mkdir(join(projectRoot, '.git'))
         await writeFile(
             join(projectRoot, 'src', 'index.txt'),
             'export const first = true\n',
@@ -148,8 +149,8 @@ describe('konteks_warm_up', () => {
     it('does not delete module embeddings during warm-up changed extraction', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'))
+        await mkdir(join(projectRoot, '.git'))
         await writeFile(
             join(projectRoot, 'src', 'index.txt'),
             'export const first = true\n',
@@ -181,8 +182,8 @@ describe('konteks_warm_up', () => {
     it('returns quality-labeled focused recall without duplicate targets', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'src', 'mcp'), { recursive: true })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, 'src', 'mcp'))
+        await mkdir(join(projectRoot, '.git'))
         await writeFile(
             join(projectRoot, 'src', 'mcp', 'server.txt'),
             'export const warmUpServer = () => "focused recall"\n',

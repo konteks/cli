@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
@@ -10,6 +10,7 @@ import { readExtractionManifest } from '@/modules/extraction/engine/manifest'
 import { extractProject } from '@/modules/extraction/extract-project'
 import recallRepositoryMemory from '@/modules/memory/recall-repository-memory'
 import { loadProjectContext } from '@/modules/project/context'
+import { mkdir, rm } from '@/support/file-manager'
 import FakeEmbeddingProvider from '../../../fake/fake-embedding-provider'
 
 const tempDirs: string[] = []
@@ -35,18 +36,14 @@ async function withProjectRoot<T>(
 }
 
 afterEach(async () => {
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
+    await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
 describe('retrieval quality evals', () => {
     it('falls back cleanly when no graph or retrieval data exists', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-eval-empty-'))
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'))
 
         const recall = await withProjectRoot(projectRoot, () =>
             recallRepositoryMemory({
@@ -64,8 +61,8 @@ describe('retrieval quality evals', () => {
             join(tmpdir(), 'konteks-eval-packaging-'),
         )
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'))
+        await mkdir(join(projectRoot, '.git'))
         await writeFile(
             join(projectRoot, 'src', 'cli.txt'),
             'export const run = () => "ok"\n',
@@ -93,7 +90,7 @@ describe('retrieval quality evals', () => {
             join(tmpdir(), 'konteks-eval-errors-'),
         )
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, '.git'))
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
         )
@@ -115,8 +112,8 @@ describe('retrieval quality evals', () => {
             join(tmpdir(), 'konteks-eval-save-invalid-'),
         )
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'))
+        await mkdir(join(projectRoot, '.git'))
         await writeFile(
             join(projectRoot, 'src', 'index.txt'),
             'export const first = true\n',
@@ -157,8 +154,8 @@ describe('retrieval quality evals', () => {
     it('updates changed project memory after saving context', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-eval-save-'))
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'))
+        await mkdir(join(projectRoot, '.git'))
         await writeFile(
             join(projectRoot, 'src', 'index.txt'),
             'export const first = true\n',
@@ -197,8 +194,8 @@ describe('retrieval quality evals', () => {
             join(tmpdir(), 'konteks-eval-warm-up-'),
         )
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'src', 'mcp'), { recursive: true })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, 'src', 'mcp'))
+        await mkdir(join(projectRoot, '.git'))
         await writeFile(
             join(projectRoot, 'src', 'mcp', 'server.txt'),
             'export const serve = () => true\n',
@@ -222,8 +219,8 @@ describe('retrieval quality evals', () => {
     it('keeps TOON output more compact than JSON-in-text for recall', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-eval-toon-'))
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'))
+        await mkdir(join(projectRoot, '.git'))
         await writeFile(
             join(projectRoot, 'src', 'index.txt'),
             'export const f = () => 1\n',
@@ -251,11 +248,9 @@ describe('retrieval quality evals', () => {
             join(tmpdir(), 'konteks-eval-recall-shape-'),
         )
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'src', 'mcp'), { recursive: true })
-        await mkdir(join(projectRoot, 'docs', 'getting-started'), {
-            recursive: true,
-        })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, 'src', 'mcp'))
+        await mkdir(join(projectRoot, 'docs', 'getting-started'))
+        await mkdir(join(projectRoot, '.git'))
         await writeFile(
             join(projectRoot, 'src', 'mcp', 'server.txt'),
             'export const konteks_recall = () => "return shape"\n',
@@ -294,8 +289,8 @@ describe('retrieval quality evals', () => {
             join(tmpdir(), 'konteks-eval-graph-dominance-'),
         )
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'))
+        await mkdir(join(projectRoot, '.git'))
         await writeFile(
             join(projectRoot, 'src', 'direct.txt'),
             'directmatch sharedgraph directmatch sharedgraph directmatch\n',
@@ -324,8 +319,8 @@ describe('retrieval quality evals', () => {
             join(tmpdir(), 'konteks-eval-graph-boost-'),
         )
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'))
+        await mkdir(join(projectRoot, '.git'))
         await writeFile(
             join(projectRoot, 'src', 'boosted.txt'),
             'sharedboost\n',
@@ -358,9 +353,9 @@ describe('retrieval quality evals', () => {
             join(tmpdir(), 'konteks-eval-graph-relevance-'),
         )
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
-        await mkdir(join(projectRoot, 'docs'), { recursive: true })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'))
+        await mkdir(join(projectRoot, 'docs'))
+        await mkdir(join(projectRoot, '.git'))
         await writeFile(
             join(projectRoot, 'src', 'connected.txt'),
             'connected graph evidence target\n',
@@ -393,8 +388,8 @@ describe('retrieval quality evals', () => {
             join(tmpdir(), 'konteks-eval-sqlite-'),
         )
         tempDirs.push(projectRoot)
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'))
+        await mkdir(join(projectRoot, '.git'))
         await writeFile(
             join(projectRoot, 'src', 'store.txt'),
             'export const storage = "sqlite wasm local storage"\n',

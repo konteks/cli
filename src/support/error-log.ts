@@ -1,6 +1,8 @@
-import { appendFile, mkdir } from 'node:fs/promises'
+import { appendFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { resolveProjectContext } from '@/modules/project/context'
+
+import { mkdir } from '@/support/file-manager'
 
 type ErrorLogSurface = 'cli' | 'mcp_prompt' | 'mcp_tool'
 
@@ -42,7 +44,7 @@ export async function appendProjectErrorLog(
     try {
         const context = await resolveProjectContext()
         const logPath = join(context.memoryDir, 'errors.log')
-        await mkdir(context.memoryDir, { recursive: true })
+        await mkdir(context.memoryDir)
         await appendFile(logPath, formatErrorLogEntry(input))
 
         return {

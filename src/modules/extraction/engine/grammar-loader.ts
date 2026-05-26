@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import * as os from 'node:os'
 import { join } from 'node:path'
@@ -7,6 +7,7 @@ import GRAMMAR_REGISTRY, {
     type GrammarDefinition,
 } from '@/assets/grammar-registry'
 import { pathExists } from '@/modules/project/context'
+import { mkdir } from '@/support/file-manager'
 import type { ExtractionProgressReporter } from '@/types/progress'
 import type { Project } from '@/types/project'
 
@@ -282,7 +283,7 @@ async function ensureCachedGrammar(
     })
     const bytes = await downloadBytes(definition.downloadUrl)
     const sha256 = sha256Hex(bytes)
-    await mkdir(grammarCacheDir(), { recursive: true })
+    await mkdir(grammarCacheDir())
     await writeFile(cachedPath, bytes)
     cache.grammars[definition.id] = {
         checkedAt: new Date().toISOString(),
@@ -323,7 +324,7 @@ async function readCacheManifest(): Promise<GrammarCacheManifest> {
 }
 
 async function writeCacheManifest(cache: GrammarCacheManifest): Promise<void> {
-    await mkdir(grammarCacheDir(), { recursive: true })
+    await mkdir(grammarCacheDir())
     await writeFile(
         grammarCacheManifestPath(),
         `${JSON.stringify(cache, null, 2)}\n`,

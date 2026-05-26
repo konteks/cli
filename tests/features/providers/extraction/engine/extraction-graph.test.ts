@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, unlink, writeFile } from 'node:fs/promises'
+import { mkdtemp, unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { withTransaction } from '@/database/actions/_db'
@@ -16,6 +16,7 @@ import { extractProject } from '@/modules/extraction/extract-project'
 import recallRepositoryMemory from '@/modules/memory/recall-repository-memory'
 import { loadProjectContext } from '@/modules/project/context'
 import contentHash from '@/support/content-hash'
+import { mkdir, rm } from '@/support/file-manager'
 import FakeEmbeddingProvider from '../../../../fake/fake-embedding-provider'
 
 const tempDirs: string[] = []
@@ -23,11 +24,7 @@ const originalCwd = process.cwd()
 
 afterEach(async () => {
     process.chdir(originalCwd)
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
+    await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
 describe('extraction graph', () => {
@@ -84,7 +81,7 @@ describe('extraction graph', () => {
 
     it('creates module graph rows during extraction', async () => {
         const projectRoot = await makeProject()
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'))
         await writeFile(
             join(projectRoot, 'src', 'alpha.txt'),
             'Alpha extraction graph fixture.\n',
@@ -155,7 +152,7 @@ describe('extraction graph', () => {
 
     it('cleans stale extraction graph rows and preserves durable graph rows', async () => {
         const projectRoot = await makeProject()
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'))
         await writeFile(join(projectRoot, 'src', 'old.txt'), 'Old file.\n')
         await writeFile(join(projectRoot, 'src', 'keep.txt'), 'Keep file.\n')
         await writeFile(join(projectRoot, 'biome.json'), '{"extends":[]}\n')
@@ -242,7 +239,7 @@ describe('extraction graph', () => {
 
     it('recreates missing file entities for unchanged legacy sections during changed extraction', async () => {
         const projectRoot = await makeProject()
-        await mkdir(join(projectRoot, 'src'), { recursive: true })
+        await mkdir(join(projectRoot, 'src'))
         await writeFile(join(projectRoot, 'src', 'legacy.txt'), 'Legacy.\n')
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
@@ -449,8 +446,8 @@ describe('extraction graph', () => {
 async function makeProject(): Promise<string> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-graph-extract-'))
     tempDirs.push(projectRoot)
-    await mkdir(join(projectRoot, '.git'), { recursive: true })
-    await mkdir(join(projectRoot, '.konteks'), { recursive: true })
+    await mkdir(join(projectRoot, '.git'))
+    await mkdir(join(projectRoot, '.konteks'))
     await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
     return projectRoot
 }

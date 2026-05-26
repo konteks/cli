@@ -1,16 +1,14 @@
 import { afterEach } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+
+import { mkdir, rm } from '@/support/file-manager'
 
 const tempDirs: string[] = []
 
 afterEach(async () => {
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
+    await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
 export function trackTempDir(path: string): string {
@@ -32,7 +30,7 @@ export async function createConfiguredProject(
     const projectRoot = await makeTempProject(prefix)
     const memoryDir = join(projectRoot, '.konteks')
 
-    await mkdir(memoryDir, { recursive: true })
+    await mkdir(memoryDir)
     await writeFile(join(memoryDir, 'config.json'), '{}\n')
 
     return projectRoot

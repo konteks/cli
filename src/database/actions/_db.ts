@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Client } from '@libsql/client'
 import { createClient } from '@libsql/client'
@@ -9,6 +9,7 @@ import * as schema from '@/database/schema'
 import { isSqliteTestRuntime } from '@/database/support/test-runtime'
 import runMigrations from '@/database/utils/migrations'
 import { loadProjectContext } from '@/modules/project/context'
+import { mkdir } from '@/support/file-manager'
 import type { Project } from '@/types/project'
 
 type ProjectDatabase = ReturnType<typeof drizzle<typeof schema>>
@@ -109,7 +110,7 @@ async function ensureConfigFile(context: Project): Promise<void> {
         return
     }
 
-    await mkdir(context.memoryDir, { recursive: true })
+    await mkdir(context.memoryDir)
     await writeFile(
         context.configPath,
         `${JSON.stringify(context.config, null, 2)}\n`,
