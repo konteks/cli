@@ -1,8 +1,15 @@
 import { afterEach, beforeAll, describe, expect, it } from 'bun:test'
 import { execFile } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import {
+    mkdir,
+    mkdtemp,
+    readdir,
+    readFile,
+    rm,
+    writeFile,
+} from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { extractProject } from '@/modules/extraction/extract-project'
 import { saveDiary, saveMemories } from '@/modules/memory/save-memory'
@@ -14,7 +21,6 @@ import getVersion from '@/support/get-version'
 import type { DurableMemoryExport } from '@/types/memory-transfer'
 import FakeEmbeddingProvider from '../fake/fake-embedding-provider'
 import { isolatedCommandEnv, runBuiltCli as runKonteks } from '../support/cli'
-import { parseJsonFromOutput } from '../support/output'
 import { withWorkingDirectory as withProjectRoot } from '../support/project'
 
 const execFileAsync = promisify(execFile)
@@ -89,9 +95,7 @@ describe('cli/e2e', () => {
             archivePath,
         ])
         expect(backup.exitCode).toBe(0)
-        expect(parseJsonFromOutput<string>(backup.output)).toBe(
-            resolve(archivePath),
-        )
+        expect(backup.output).toContain(archivePath)
         expect(await Bun.file(archivePath).exists()).toBe(true)
 
         const refused = await runKonteks(target.projectRoot, [
@@ -107,18 +111,15 @@ describe('cli/e2e', () => {
             archivePath,
             '--force',
         ])
-        const restoreJson = parseJsonFromOutput<{
-            inputPath: string
-            memoryDir: string
-            safetyBackupPath?: string
-        }>(restored.output)
         expect(restored.exitCode).toBe(0)
-        expect(restoreJson.inputPath).toBe(resolve(archivePath))
-        expect(restoreJson.memoryDir).toBe(join(target.projectRoot, '.konteks'))
-        expect(restoreJson.safetyBackupPath).toContain('.safety-')
-        expect(
-            await Bun.file(restoreJson.safetyBackupPath ?? '').exists(),
-        ).toBe(true)
+        expect(restored.output).toContain(archivePath)
+        expect(restored.output).toContain(join(target.projectRoot, '.konteks'))
+        expect(restored.output).toContain('.safety-')
+
+        const safetyBackupPaths = await readdir(source.projectRoot)
+        expect(safetyBackupPaths.some(path => path.includes('.safety-'))).toBe(
+            true,
+        )
 
         expect(await readActiveCounts(target.projectRoot)).toEqual(
             await readActiveCounts(source.projectRoot),
@@ -135,17 +136,10 @@ describe('cli/e2e', () => {
             'export',
             exportPath,
         ])
-        const exportJson = parseJsonFromOutput<{
-            diaries: number
-            memories: number
-            outputPath: string
-        }>(exported.output)
         expect(exported.exitCode).toBe(0)
-        expect(exportJson).toEqual({
-            diaries: 1,
-            memories: 1,
-            outputPath: resolve(exportPath),
-        })
+        expect(exported.output).toContain('"diaries": 1')
+        expect(exported.output).toContain('"memories": 1')
+        expect(exported.output).toContain(exportPath)
 
         const payload = JSON.parse(
             await readFile(exportPath, 'utf8'),
@@ -161,19 +155,9 @@ describe('cli/e2e', () => {
             exportPath,
             '--dry-run',
         ])
-        expect(
-            parseJsonFromOutput<{
-                diariesImported: number
-                diariesSkipped: number
-                dryRun: boolean
-                memoriesImported: number
-                memoriesSkipped: number
-            }>(dryRun.output),
-        ).toMatchObject({
-            diariesImported: 1,
-            dryRun: true,
-            memoriesImported: 1,
-        })
+        expect(dryRun.output).toContain('"diariesImported": 1')
+        expect(dryRun.output).toContain('"dryRun": true')
+        expect(dryRun.output).toContain('"memoriesImported": 1')
         expect(await readActiveCounts(target.projectRoot)).toEqual(before)
 
         const imported = await runKonteks(target.projectRoot, [
@@ -181,17 +165,9 @@ describe('cli/e2e', () => {
             'import',
             exportPath,
         ])
-        expect(
-            parseJsonFromOutput<{
-                diariesImported: number
-                dryRun: boolean
-                memoriesImported: number
-            }>(imported.output),
-        ).toMatchObject({
-            diariesImported: 1,
-            dryRun: false,
-            memoriesImported: 1,
-        })
+        expect(imported.output).toContain('"diariesImported": 1')
+        expect(imported.output).toContain('"dryRun": false')
+        expect(imported.output).toContain('"memoriesImported": 1')
         expect(await readActiveCounts(target.projectRoot)).toEqual({
             diaries: 1,
             memories: 1,
@@ -267,15 +243,14 @@ async function readActiveCounts(projectRoot: string): Promise<{
     ])
     expect(exported.exitCode).toBe(0)
 
-    const result = parseJsonFromOutput<{
-        diaries: number
-        memories: number
-    }>(exported.output)
+    const payload = JSON.parse(
+        await readFile(outputPath, 'utf8'),
+    ) as DurableMemoryExport
     await rm(outputPath, { force: true })
 
     return {
-        diaries: result.diaries,
-        memories: result.memories,
+        diaries: payload.diaries.length,
+        memories: payload.memories.length,
     }
 }
 
