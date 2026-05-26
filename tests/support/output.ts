@@ -1,7 +1,8 @@
 import consoleOutput, {
     type ConsoleColorPalette,
-    type ConsoleOutputMessage,
 } from '@/support/console-output'
+
+type ConsoleOutputMessage = Parameters<typeof consoleOutput.print>[0]
 
 export function renderStdoutMessage(message: ConsoleOutputMessage): string {
     return isOutputFormatter(message)

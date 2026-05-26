@@ -28,8 +28,9 @@ export default class StatusCommand extends BaseCommand {
 
         const status = await statusReader.read(context)
 
-        this.print(formatBannerHeader(theme))
-        this.print(formatStatus(status, theme))
+        this.consoleOutput
+            .print(formatBannerHeader(theme))
+            .print(formatStatus(status, theme))
     }
 }
 

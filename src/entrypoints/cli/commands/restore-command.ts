@@ -30,7 +30,7 @@ export default class RestoreCommand extends BaseCommand<
         args,
         options,
     }: Required<BaseCommandInput<[string], RestoreOptions>>): Promise<void> {
-        this.print(
+        this.consoleOutput.print(
             await restoreMemory({
                 force: options.force,
                 inputPath: args[0],

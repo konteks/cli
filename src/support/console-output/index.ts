@@ -9,7 +9,7 @@ export type ConsoleColorPalette = {
     warning(value: string): string
 }
 
-export type ConsoleOutputMessage =
+type ConsoleOutputMessage =
     | object
     | string
     | ((palette: ConsoleColorPalette) => string)

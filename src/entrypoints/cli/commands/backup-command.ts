@@ -32,6 +32,6 @@ export default class BackupCommand extends BaseCommand<[string]> {
         await mkdir(dirname(outputPath), { recursive: true })
         await createTarGz(context.memoryDir, outputPath)
 
-        return this.print(outputPath)
+        this.consoleOutput.print(outputPath)
     }
 }

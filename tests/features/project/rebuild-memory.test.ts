@@ -3,9 +3,10 @@ import * as progressReporterModule from '@/entrypoints/cli/commands/_support/pro
 import * as extractorModule from '@/modules/extraction/create-project-extractor'
 import consoleOutput, {
     type ConsoleColorPalette,
-    type ConsoleOutputMessage,
 } from '@/support/console-output'
 import type { ExtractProjectResponse } from '@/types/extraction'
+
+type ConsoleOutputMessage = Parameters<typeof consoleOutput.print>[0]
 
 let confirmResult = true
 const confirmCalls: unknown[] = []

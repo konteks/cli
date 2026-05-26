@@ -31,7 +31,7 @@ export default class ExportCommand extends BaseCommand<
     }: Required<
         BaseCommandInput<[string], MemoryExportOptions>
     >): Promise<void> {
-        this.print(
+        this.consoleOutput.print(
             await exportMemory({
                 includeInactive: options.includeInactive,
                 outputPath: args[0],

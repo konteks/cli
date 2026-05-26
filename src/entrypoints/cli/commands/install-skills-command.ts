@@ -35,7 +35,7 @@ export default class InstallSkillsCommand extends BaseCommand<
 
         const result = await installKonteksSkills({ skillsDir })
 
-        this.print(
+        this.consoleOutput.print(
             `Installed ${result.installedCount} Konteks skills at ${result.skillsDir}`,
         )
     }
