@@ -1,18 +1,7 @@
-import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { describe, expect, it } from 'bun:test'
 import getVersion from '@/support/get-version'
-
-const tempDirs: string[] = []
-
-afterEach(async () => {
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
-})
+import { runSourceCli } from '../support/cli'
+import { makeTempProject } from '../support/project'
 
 describe('CLI initialization middleware', () => {
     for (const args of [
@@ -28,10 +17,9 @@ describe('CLI initialization middleware', () => {
         // ['mcp', 'tools', 'konteks_warm_up'],
     ]) {
         it(`blocks ${args.join(' ')} when project memory is not initialized`, async () => {
-            const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-cli-'))
-            tempDirs.push(projectRoot)
+            const projectRoot = await makeTempProject('konteks-cli-')
 
-            const result = await runKonteks(projectRoot, args)
+            const result = await runSourceCli(projectRoot, args)
 
             expect(result.exitCode).not.toBe(0)
             if (
@@ -51,10 +39,9 @@ describe('CLI initialization middleware', () => {
     }
 
     it('renders the initialization error with color when color is forced', async () => {
-        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-cli-'))
-        tempDirs.push(projectRoot)
+        const projectRoot = await makeTempProject('konteks-cli-')
 
-        const result = await runKonteks(projectRoot, ['status'], {
+        const result = await runSourceCli(projectRoot, ['status'], {
             FORCE_COLOR: '1',
             NO_COLOR: '',
         })
@@ -66,40 +53,13 @@ describe('CLI initialization middleware', () => {
     })
 })
 
-async function runKonteks(
-    projectRoot: string,
-    args: string[],
-    env: Record<string, string> = {},
-): Promise<{
-    exitCode: number | null
-    output: string
-}> {
-    const proc = Bun.spawn(
-        ['bun', join(process.cwd(), 'src/main.ts'), ...args],
-        {
-            cwd: projectRoot,
-            env: { ...process.env, ...env },
-            stderr: 'pipe',
-            stdout: 'pipe',
-        },
-    )
-    const [stdout, stderr, exitCode] = await Promise.all([
-        new Response(proc.stdout).text(),
-        new Response(proc.stderr).text(),
-        proc.exited,
-    ])
-
-    return {
-        exitCode,
-        output: `${stdout}\n${stderr}`,
-    }
-}
-
 it('allows restore to run before project memory is initialized', async () => {
-    const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-cli-'))
-    tempDirs.push(projectRoot)
+    const projectRoot = await makeTempProject('konteks-cli-')
 
-    const result = await runKonteks(projectRoot, ['restore', 'missing.tar.gz'])
+    const result = await runSourceCli(projectRoot, [
+        'restore',
+        'missing.tar.gz',
+    ])
 
     expect(result.exitCode).not.toBe(0)
     expect(result.output).toContain(`Konteks v${getVersion()}`)

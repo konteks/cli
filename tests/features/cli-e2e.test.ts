@@ -13,6 +13,9 @@ import {
 import getVersion from '@/support/get-version'
 import type { DurableMemoryExport } from '@/types/memory-transfer'
 import FakeEmbeddingProvider from '../fake/fake-embedding-provider'
+import { isolatedCommandEnv, runBuiltCli as runKonteks } from '../support/cli'
+import { parseJsonFromOutput } from '../support/output'
+import { withWorkingDirectory as withProjectRoot } from '../support/project'
 
 const execFileAsync = promisify(execFile)
 const tempDirs: string[] = []
@@ -21,7 +24,7 @@ const repoRoot = process.cwd()
 beforeAll(async () => {
     await execFileAsync('bun', ['run', 'build'], {
         cwd: repoRoot,
-        env: commandEnv(process.env.HOME ?? repoRoot),
+        env: isolatedCommandEnv(process.env.HOME ?? repoRoot),
     })
 })
 
@@ -291,109 +294,4 @@ async function withFileBackedSqlite<T>(
             process.env.KONTEKS_SQLITE_TEST_DATABASE = previous
         }
     }
-}
-
-async function runKonteks(
-    projectRoot: string,
-    args: string[],
-): Promise<{
-    exitCode: number | null
-    output: string
-}> {
-    const homeDir = await mkdtemp(join(tmpdir(), 'konteks-cli-home-'))
-    const ioDir = await mkdtemp(join(tmpdir(), 'konteks-cli-io-'))
-    tempDirs.push(homeDir)
-    tempDirs.push(ioDir)
-    const stdoutPath = join(ioDir, 'stdout.txt')
-    const stderrPath = join(ioDir, 'stderr.txt')
-    const command = [
-        'node',
-        shellQuote(join(repoRoot, 'dist', 'main.js')),
-        ...args.map(shellQuote),
-        '>',
-        shellQuote(stdoutPath),
-        '2>',
-        shellQuote(stderrPath),
-    ].join(' ')
-
-    try {
-        await execFileAsync('sh', ['-lc', command], {
-            cwd: projectRoot,
-            env: commandEnv(homeDir),
-        })
-
-        return {
-            exitCode: 0,
-            output: await readOutput(stdoutPath, stderrPath),
-        }
-    } catch (error) {
-        const failure = error as {
-            code?: number
-        }
-
-        return {
-            exitCode: typeof failure.code === 'number' ? failure.code : null,
-            output: await readOutput(stdoutPath, stderrPath),
-        }
-    }
-}
-
-async function withProjectRoot<T>(
-    projectRoot: string,
-    operation: () => Promise<T>,
-): Promise<T> {
-    const previous = process.cwd()
-    process.chdir(projectRoot)
-
-    try {
-        return await operation()
-    } finally {
-        process.chdir(previous)
-    }
-}
-
-function parseJsonFromOutput<T>(output: string): T {
-    for (let index = 0; index < output.length; index += 1) {
-        const char = output[index]
-        if (char !== '{' && char !== '[' && char !== '"') {
-            continue
-        }
-
-        try {
-            return JSON.parse(output.slice(index)) as T
-        } catch {}
-    }
-
-    throw new Error(`Expected JSON output, got:\n${output}`)
-}
-
-function commandEnv(homeDir: string): Record<string, string> {
-    return {
-        ...Object.fromEntries(
-            Object.entries(process.env).filter(
-                (entry): entry is [string, string] =>
-                    typeof entry[1] === 'string',
-            ),
-        ),
-        HOME: homeDir,
-        KONTEKS_MODEL_CACHE_DIR: join(homeDir, '.cache', 'konteks', 'models'),
-        KONTEKS_SQLITE_TEST_DATABASE: 'file',
-        NO_COLOR: '1',
-    }
-}
-
-function shellQuote(value: string): string {
-    return `'${value.replaceAll("'", "'\"'\"'")}'`
-}
-
-async function readOutput(
-    stdoutPath: string,
-    stderrPath: string,
-): Promise<string> {
-    const [stdout, stderr] = await Promise.all([
-        readFile(stdoutPath, 'utf8').catch(() => ''),
-        readFile(stderrPath, 'utf8').catch(() => ''),
-    ])
-
-    return `${stdout}\n${stderr}`.trim()
 }

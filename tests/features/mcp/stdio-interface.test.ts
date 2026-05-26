@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'bun:test'
-import { execFile } from 'node:child_process'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { promisify } from 'node:util'
-import { LATEST_PROTOCOL_VERSION } from '@modelcontextprotocol/sdk/types.js'
 import { extractProject } from '@/modules/extraction/extract-project'
 import {
     loadProjectContext,
@@ -12,9 +9,15 @@ import {
 } from '@/modules/project/context'
 import getVersion from '@/support/get-version'
 import FakeEmbeddingProvider from '../../fake/fake-embedding-provider'
-
-const execFileAsync = promisify(execFile)
-const repoRoot = process.cwd()
+import {
+    extractToolText,
+    isRecord,
+    type Json,
+    request,
+    resultById,
+    runMcpExchange,
+} from '../../support/mcp'
+import { withWorkingDirectory as withProjectRoot } from '../../support/project'
 
 describe('mcp/stdio interface', () => {
     it('exposes live server metadata and tool registrations over stdio', async () => {
@@ -275,15 +278,6 @@ describe('mcp/stdio interface', () => {
     }, 20000)
 })
 
-type Json = null | boolean | number | string | Json[] | { [key: string]: Json }
-
-type JsonRpcResponse = {
-    error?: { code: number; message: string }
-    id: number
-    jsonrpc: '2.0'
-    result?: Json
-}
-
 type InitializeResult = {
     capabilities: Json
     instructions?: string
@@ -375,93 +369,6 @@ async function withFileBackedSqlite<T>(
     }
 }
 
-async function runMcpExchange(
-    projectRoot: string,
-    requests: Array<{ id: number; method: string; params?: Json }>,
-): Promise<JsonRpcResponse[]> {
-    const exchangeRoot = await mkdtemp(join(tmpdir(), 'konteks-mcp-exchange-'))
-    const inputPath = join(exchangeRoot, 'input.jsonl')
-    const outputPath = join(exchangeRoot, 'output.jsonl')
-
-    try {
-        const input = [
-            request(1, 'initialize', {
-                capabilities: {},
-                clientInfo: {
-                    name: 'konteks-stdio-test',
-                    version: '0.0.0',
-                },
-                protocolVersion: LATEST_PROTOCOL_VERSION,
-            }),
-            notification('notifications/initialized'),
-            ...requests,
-        ]
-            .map(message => JSON.stringify(message))
-            .join('\n')
-
-        await writeFile(inputPath, `${input}\n`)
-        const command = `node ${shellQuote(join(repoRoot, 'dist', 'main.js'))} mcp < ${shellQuote(inputPath)} > ${shellQuote(outputPath)}`
-
-        await execFileAsync('sh', ['-lc', command], {
-            cwd: projectRoot,
-            env: commandEnv(),
-        })
-
-        const raw = await Bun.file(outputPath).text()
-        return raw
-            .split('\n')
-            .map(line => line.trim())
-            .filter(Boolean)
-            .map(line => JSON.parse(line) as JsonRpcResponse)
-    } finally {
-        await rm(exchangeRoot, { force: true, recursive: true })
-    }
-}
-
-async function withProjectRoot<T>(
-    projectRoot: string,
-    operation: () => Promise<T>,
-): Promise<T> {
-    const previous = process.cwd()
-    process.chdir(projectRoot)
-
-    try {
-        return await operation()
-    } finally {
-        process.chdir(previous)
-    }
-}
-
-function request(id: number, method: string, params?: Json) {
-    return {
-        id,
-        jsonrpc: '2.0' as const,
-        method,
-        params,
-    }
-}
-
-function notification(method: string, params?: Json) {
-    return {
-        jsonrpc: '2.0' as const,
-        method,
-        params,
-    }
-}
-
-function resultById<T>(responses: JsonRpcResponse[], id: number): T {
-    const response = responses.find(item => item.id === id)
-
-    if (!response) {
-        throw new Error(`Missing MCP response with id ${id}`)
-    }
-    if (response.error) {
-        throw new Error(response.error.message)
-    }
-
-    return response.result as T
-}
-
 function extractPromptText(messages: Json): string {
     if (!Array.isArray(messages)) {
         throw new Error('Expected prompt messages to be an array')
@@ -487,36 +394,4 @@ function extractPromptText(messages: Json): string {
     }
 
     return firstText.content.text
-}
-
-function extractToolText(result: ToolCallResult): string {
-    const firstText = result.content.find(
-        item => item.type === 'text' && typeof item.text === 'string',
-    )
-
-    if (!firstText?.text) {
-        throw new Error('Expected a text tool result')
-    }
-
-    return firstText.text
-}
-
-function isRecord(value: Json): value is Record<string, Json> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function commandEnv(): Record<string, string> {
-    return {
-        ...Object.fromEntries(
-            Object.entries(process.env).filter(
-                (entry): entry is [string, string] =>
-                    typeof entry[1] === 'string',
-            ),
-        ),
-        KONTEKS_SQLITE_TEST_DATABASE: 'file',
-    }
-}
-
-function shellQuote(value: string): string {
-    return `'${value.replaceAll("'", "'\"'\"'")}'`
 }
