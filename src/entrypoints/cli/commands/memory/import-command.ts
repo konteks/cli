@@ -31,7 +31,7 @@ export default class ImportCommand extends BaseCommand<
     }: Required<
         BaseCommandInput<[string], MemoryImportOptions>
     >): Promise<void> {
-        this.print(
+        this.consoleOutput.print(
             await importMemory({
                 dryRun: options.dryRun,
                 inputPath: args[0],

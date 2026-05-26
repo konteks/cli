@@ -18,19 +18,21 @@ export default class RebuildCommand extends BaseCommand {
     public async handle(): Promise<void> {
         const theme = createBannerHeaderTheme()
 
-        this.print(formatBannerHeader(theme))
-        this.print('')
+        this.consoleOutput.print(formatBannerHeader(theme)).print('')
 
         const confirmRebuild = confirmRebuildPrompt
         if (!(await confirmRebuild())) {
-            this.print('Rebuild canceled. Derived memory was not changed.')
+            this.consoleOutput.print(
+                'Rebuild canceled. Derived memory was not changed.',
+            )
 
             return
         }
 
-        this.print('')
-        this.print(colorRgb(theme.primary, 'Rebuilding project memory'))
-        this.print('')
+        this.consoleOutput
+            .print('')
+            .print(colorRgb(theme.primary, 'Rebuilding project memory'))
+            .print('')
 
         const progress = createProjectMemoryProgressReporter()
         try {

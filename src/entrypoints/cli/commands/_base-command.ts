@@ -1,7 +1,5 @@
 import type { Command as CommanderCommand } from 'commander'
-import consoleOutput, {
-    type ConsoleOutputMessage,
-} from '@/support/console-output'
+import consoleOutput from '@/support/console-output'
 import getVersion from '@/support/get-version'
 
 export type Command = CommanderCommand
@@ -44,13 +42,6 @@ export default abstract class BaseCommand<
         input?: BaseCommandInput<Args, Options>,
     ): Promise<void> | void
 
-    /**
-     * @deprecated use `this.consoleOutput.print` instead
-     */
-    protected print(value: ConsoleOutputMessage): void {
-        consoleOutput.print(value)
-    }
-
     public register(parent: Command, context: BaseCommandContext) {
         const command = parent.command(this.name).description(this.description)
 
@@ -73,7 +64,7 @@ export default abstract class BaseCommand<
 
             if (this.printsHeader) {
                 const version = getVersion()
-                this.print(
+                this.consoleOutput.print(
                     color =>
                         `${color.accent('Konteks')} ${color.dim(`v${version}`)}`,
                 )

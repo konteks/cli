@@ -37,7 +37,9 @@ export default class ConfigCommand extends BaseCommand {
                     },
                 },
             })
-            this.print(`Saved ${selected.length} selected grammars.`)
+            this.consoleOutput.print(
+                `Saved ${selected.length} selected grammars.`,
+            )
             return
         }
 
@@ -46,7 +48,7 @@ export default class ConfigCommand extends BaseCommand {
             const result = await updateSelectedGrammarCache(context, {
                 onProgress: progress.report,
             })
-            this.print(
+            this.consoleOutput.print(
                 `Grammar cache checked: ${result.updated} updated, ${result.reused} unchanged.`,
             )
         } finally {

@@ -38,10 +38,11 @@ export default class InitCommand extends BaseCommand {
         let grammars: string[] | undefined
 
         if (!alreadyInitialized) {
-            this.print(formatBannerHeader(theme))
-            this.print('')
-            this.print(colorRgb(theme.primary, 'Initializing project memory'))
-            this.print('')
+            this.consoleOutput
+                .print(formatBannerHeader(theme))
+                .print('')
+                .print(colorRgb(theme.primary, 'Initializing project memory'))
+                .print('')
 
             await ensureKonteksGitignore(context.projectRoot)
             const files = await scanProjectFiles(context.projectRoot)
@@ -57,14 +58,15 @@ export default class InitCommand extends BaseCommand {
         }).finally(progress.done)
 
         if (result.alreadyInitialized) {
-            this.print(formatBannerHeader(theme))
-            this.print('')
-            this.print(
-                colorRgb(
-                    theme.primary,
-                    `Project memory is already ready at ${result.memoryDir}.`,
-                ),
-            )
+            this.consoleOutput
+                .print(formatBannerHeader(theme))
+                .print('')
+                .print(
+                    colorRgb(
+                        theme.primary,
+                        `Project memory is already ready at ${result.memoryDir}.`,
+                    ),
+                )
             return
         }
 
