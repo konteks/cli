@@ -2,7 +2,6 @@ import { mkdir } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { loadProjectContext, pathExists } from '@/modules/project/context'
 import CliUserError from '@/support/cli/cli-user-error'
-import { stringifyPretty } from '@/support/json/io'
 import { createTarGz } from '@/support/targz'
 import type { BaseCommandInput } from './_base-command'
 import BaseCommand from './_base-command'
@@ -33,6 +32,6 @@ export default class BackupCommand extends BaseCommand<[string]> {
         await mkdir(dirname(outputPath), { recursive: true })
         await createTarGz(context.memoryDir, outputPath)
 
-        return this.print(stringifyPretty(outputPath))
+        return this.print(outputPath)
     }
 }

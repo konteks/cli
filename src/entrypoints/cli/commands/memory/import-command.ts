@@ -1,5 +1,4 @@
 import { importMemory } from '@/modules/memory/memory-transfer'
-import { stringifyPretty } from '@/support/json/io'
 import BaseCommand, { type BaseCommandInput } from '../_base-command'
 
 type MemoryImportOptions = {
@@ -33,12 +32,10 @@ export default class ImportCommand extends BaseCommand<
         BaseCommandInput<[string], MemoryImportOptions>
     >): Promise<void> {
         this.print(
-            stringifyPretty(
-                await importMemory({
-                    dryRun: options.dryRun,
-                    inputPath: args[0],
-                }),
-            ),
+            await importMemory({
+                dryRun: options.dryRun,
+                inputPath: args[0],
+            }),
         )
     }
 }
