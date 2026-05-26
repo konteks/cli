@@ -1,4 +1,3 @@
-import { mkdir } from 'node:fs/promises'
 import {
     extractProjectSectionsWithDatabase,
     readExtractedProjectPaths,
@@ -20,6 +19,7 @@ import {
     writeExtractionManifest,
 } from '@/modules/extraction/engine/manifest'
 import contentHash from '@/support/content-hash'
+import { mkdir } from '@/support/file-manager'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/types/embedding-provider'
 import type {
     ExtractProjectRequest,
@@ -28,7 +28,6 @@ import type {
 import type { ExtractionEngineContract } from '@/types/extraction-engine'
 import type { ExtractionProgressReporter } from '@/types/progress'
 import type { Project } from '@/types/project'
-
 export async function extractProject(
     project: Project,
     mode: ExtractionMode,
@@ -66,7 +65,7 @@ export class KonteksExtractionEngine implements ExtractionEngineContract {
             phase: 'start',
             status: 'start',
         })
-        await mkdir(context.memoryDir, { recursive: true })
+        await mkdir(context.memoryDir)
         const previousManifest =
             mode === 'changed'
                 ? await readExtractionManifest(context.memoryDir)

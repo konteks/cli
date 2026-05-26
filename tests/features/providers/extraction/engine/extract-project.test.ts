@@ -1,12 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import {
-    mkdir,
-    mkdtemp,
-    readFile,
-    rm,
-    unlink,
-    writeFile,
-} from 'node:fs/promises'
+import { mkdtemp, readFile, unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { eq, sql } from 'drizzle-orm'
@@ -22,6 +15,7 @@ import {
 } from '@/modules/extraction/engine/manifest'
 import { extractProject } from '@/modules/extraction/extract-project'
 import { loadProjectContext } from '@/modules/project/context'
+import { mkdir, rm } from '@/support/file-manager'
 import type { EmbeddingProviderContract } from '@/types/embedding-provider'
 import FakeEmbeddingProvider from '../../../../fake/fake-embedding-provider'
 
@@ -50,9 +44,9 @@ async function extractTestProject(
 async function makeTempProject(): Promise<string> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-extract-test-'))
     tempDirs.push(projectRoot)
-    await mkdir(join(projectRoot, '.git'), { recursive: true })
-    await mkdir(join(projectRoot, 'src'), { recursive: true })
-    await mkdir(join(projectRoot, '.konteks'), { recursive: true })
+    await mkdir(join(projectRoot, '.git'))
+    await mkdir(join(projectRoot, 'src'))
+    await mkdir(join(projectRoot, '.konteks'))
     await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
     await writeFile(join(projectRoot, 'README.md'), '# Fixture\n')
     await writeFile(
@@ -67,11 +61,7 @@ async function makeTempProject(): Promise<string> {
 
 afterEach(async () => {
     process.chdir(originalCwd)
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
+    await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
 describe('extractProject', () => {

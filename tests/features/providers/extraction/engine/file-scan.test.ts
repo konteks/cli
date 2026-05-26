@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -7,24 +7,22 @@ import {
     scanProjectFilesWithDiagnostics,
 } from '@/modules/extraction/engine/file-scan'
 
+import { mkdir, rm } from '@/support/file-manager'
+
 const tempDirs: string[] = []
 
 async function makeProject(): Promise<string> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-scan-test-'))
     tempDirs.push(projectRoot)
-    await mkdir(join(projectRoot, 'src'), { recursive: true })
-    await mkdir(join(projectRoot, 'docs', 'private'), { recursive: true })
-    await mkdir(join(projectRoot, 'tmp'), { recursive: true })
+    await mkdir(join(projectRoot, 'src'))
+    await mkdir(join(projectRoot, 'docs', 'private'))
+    await mkdir(join(projectRoot, 'tmp'))
     await writeFile(join(projectRoot, 'package.json'), '{"name":"fixture"}\n')
     return projectRoot
 }
 
 afterEach(async () => {
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
+    await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
 describe('scanProjectFiles', () => {

@@ -1,11 +1,11 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { getKonteksSkillFiles } from '@/entrypoints/mcp/prompts'
 import { resolveProjectContext } from '@/modules/project/context'
+import { mkdir } from '@/support/file-manager'
 import type { BaseCommandInput } from './_base-command'
 import BaseCommand from './_base-command'
-
 export default class InstallSkillsCommand extends BaseCommand<
     [],
     { global?: boolean }
@@ -53,13 +53,13 @@ type InstallKonteksSkillsResult = {
 async function installKonteksSkills(
     request: InstallKonteksSkillsRequest,
 ): Promise<InstallKonteksSkillsResult> {
-    await mkdir(request.skillsDir, { recursive: true })
+    await mkdir(request.skillsDir)
 
     const skills = getKonteksSkillFiles()
 
     for (const skill of skills) {
         const targetDir = join(request.skillsDir, skill.name)
-        await mkdir(targetDir, { recursive: true })
+        await mkdir(targetDir)
         await writeFile(join(targetDir, 'SKILL.md'), `${skill.content}\n`)
     }
 

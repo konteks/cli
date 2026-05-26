@@ -1,9 +1,10 @@
 import { execFile } from 'node:child_process'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { LATEST_PROTOCOL_VERSION } from '@modelcontextprotocol/sdk/types.js'
+import { rm } from '@/support/file-manager'
 import { shellQuote } from './cli'
 
 const execFileAsync = promisify(execFile)
@@ -64,7 +65,7 @@ export async function runMcpExchange(
             .filter(Boolean)
             .map(line => JSON.parse(line) as JsonRpcResponse)
     } finally {
-        await rm(exchangeRoot, { force: true, recursive: true })
+        await rm(exchangeRoot)
     }
 }
 

@@ -1,13 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it } from 'bun:test'
 import { execFile } from 'node:child_process'
-import {
-    mkdir,
-    mkdtemp,
-    readdir,
-    readFile,
-    rm,
-    writeFile,
-} from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -17,6 +10,7 @@ import {
     loadProjectContext,
     writeProjectConfig,
 } from '@/modules/project/context'
+import { mkdir, rm as rmRecursive } from '@/support/file-manager'
 import getVersion from '@/support/get-version'
 import type { DurableMemoryExport } from '@/types/memory-transfer'
 import FakeEmbeddingProvider from '../fake/fake-embedding-provider'
@@ -35,11 +29,7 @@ beforeAll(async () => {
 })
 
 afterEach(async () => {
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
+    await Promise.all(tempDirs.splice(0).map(path => rmRecursive(path)))
 })
 
 describe('cli/e2e', () => {
@@ -182,9 +172,9 @@ async function createInitializedProject(
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-cli-e2e-'))
         tempDirs.push(projectRoot)
 
-        await mkdir(projectRoot, { recursive: true })
-        await mkdir(join(projectRoot, '.git'), { recursive: true })
-        await mkdir(join(projectRoot, '.konteks'), { recursive: true })
+        await mkdir(projectRoot)
+        await mkdir(join(projectRoot, '.git'))
+        await mkdir(join(projectRoot, '.konteks'))
         await writeFile(join(projectRoot, 'README.md'), '# Fixture\n')
 
         const context = await withProjectRoot(projectRoot, () =>

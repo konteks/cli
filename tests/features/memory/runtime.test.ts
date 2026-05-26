@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -7,14 +7,12 @@ import {
     updateChangedProjectMemorySilently,
 } from '@/modules/memory/runtime'
 
+import { mkdir, rm } from '@/support/file-manager'
+
 const tempDirs: string[] = []
 
 afterEach(async () => {
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
+    await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
 async function withWorkingDirectory<T>(
@@ -39,7 +37,7 @@ describe('memory/runtime', () => {
             join(projectRoot, 'package.json'),
             '{"name":"fixture"}\n',
         )
-        await mkdir(join(projectRoot, '.konteks'), { recursive: true })
+        await mkdir(join(projectRoot, '.konteks'))
 
         const context = await withWorkingDirectory(projectRoot, () =>
             loadMcpProjectContext(),

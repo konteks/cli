@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
+import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import createProjectExtractor from '@/modules/extraction/create-project-extractor'
+import { mkdir } from '@/support/file-manager'
 import type {
     ExtractProjectRequest,
     ExtractProjectResponse,
@@ -78,9 +79,9 @@ describe('extraction/extract', () => {
 async function createConfiguredProject(): Promise<string> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-extraction-'))
     const memoryDir = join(projectRoot, '.konteks')
-    await mkdir(join(projectRoot, '.git'), { recursive: true })
+    await mkdir(join(projectRoot, '.git'))
     await writeFile(join(projectRoot, 'package.json'), '{"type":"module"}\n')
-    await mkdir(memoryDir, { recursive: true })
+    await mkdir(memoryDir)
     await writeFile(
         join(memoryDir, 'config.json'),
         `${JSON.stringify(

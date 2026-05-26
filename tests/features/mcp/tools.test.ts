@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
@@ -7,6 +7,8 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import z from 'zod'
 import mcpTools from '@/entrypoints/mcp/tools'
 import BaseMcpTool from '@/entrypoints/mcp/tools/_base-mcp-tool'
+
+import { mkdir, rm } from '@/support/file-manager'
 
 describe('MCP tools', () => {
     it('registers tools in API order with protocol annotations', () => {
@@ -149,7 +151,7 @@ describe('MCP tools', () => {
             expect(log).toContain('database exploded')
         })
 
-        await rm(projectRoot, { force: true, recursive: true })
+        await rm(projectRoot)
     })
 })
 
@@ -174,7 +176,7 @@ function registeredHandlerFor(
 
 async function makeProjectRoot(): Promise<string> {
     const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-tool-log-'))
-    await mkdir(join(projectRoot, '.git'), { recursive: true })
+    await mkdir(join(projectRoot, '.git'))
     await writeFile(join(projectRoot, 'package.json'), '{"name":"fixture"}\n')
     return projectRoot
 }

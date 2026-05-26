@@ -1,12 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import {
-    mkdir,
-    mkdtemp,
-    readdir,
-    readFile,
-    rm,
-    writeFile,
-} from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import BackupCommand from '@/entrypoints/cli/commands/backup-command'
@@ -17,14 +10,16 @@ import {
 } from '@/modules/memory/memory-transfer'
 import { saveDiary, saveMemories } from '@/modules/memory/save-memory'
 
+import { mkdir, rm } from '@/support/file-manager'
+
 const tempDirs: string[] = []
 let previousSqliteTestDatabase: string | undefined
 
 async function makeInitializedProject(prefix = 'konteks-transfer-test-') {
     const projectRoot = await mkdtemp(join(tmpdir(), prefix))
     tempDirs.push(projectRoot)
-    await mkdir(join(projectRoot, '.git'), { recursive: true })
-    await mkdir(join(projectRoot, '.konteks'), { recursive: true })
+    await mkdir(join(projectRoot, '.git'))
+    await mkdir(join(projectRoot, '.konteks'))
     await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
     return projectRoot
 }
@@ -41,11 +36,7 @@ afterEach(async () => {
         process.env.KONTEKS_SQLITE_TEST_DATABASE = previousSqliteTestDatabase
     }
 
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
+    await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
 async function withProjectRoot<T>(
@@ -219,10 +210,7 @@ describe('memory transfer', () => {
                 options: {},
             }),
         )
-        await rm(join(projectRoot, '.konteks'), {
-            force: true,
-            recursive: true,
-        })
+        await rm(join(projectRoot, '.konteks'))
 
         await withProjectRoot(projectRoot, () =>
             restoreMemory({ inputPath: archivePath }),

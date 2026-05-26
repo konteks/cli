@@ -1,18 +1,16 @@
 import { afterEach, describe, expect, it, spyOn } from 'bun:test'
-import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
 import * as os from 'node:os'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import InstallSkillsCommand from '@/entrypoints/cli/commands/install-skills-command'
 
+import { rm } from '@/support/file-manager'
+
 const tempDirs: string[] = []
 
 afterEach(async () => {
-    await Promise.all(
-        tempDirs
-            .splice(0)
-            .map(path => rm(path, { force: true, recursive: true })),
-    )
+    await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
 async function withWorkingDirectory<T>(
