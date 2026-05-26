@@ -1,5 +1,4 @@
 import { exportMemory } from '@/modules/memory/memory-transfer'
-import { stringifyPretty } from '@/support/json/io'
 import BaseCommand, { type BaseCommandInput } from '../_base-command'
 
 type MemoryExportOptions = {
@@ -33,12 +32,10 @@ export default class ExportCommand extends BaseCommand<
         BaseCommandInput<[string], MemoryExportOptions>
     >): Promise<void> {
         this.print(
-            stringifyPretty(
-                await exportMemory({
-                    includeInactive: options.includeInactive,
-                    outputPath: args[0],
-                }),
-            ),
+            await exportMemory({
+                includeInactive: options.includeInactive,
+                outputPath: args[0],
+            }),
         )
     }
 }

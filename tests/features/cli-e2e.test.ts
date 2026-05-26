@@ -137,8 +137,8 @@ describe('cli/e2e', () => {
             exportPath,
         ])
         expect(exported.exitCode).toBe(0)
-        expect(exported.output).toContain('"diaries": 1')
-        expect(exported.output).toContain('"memories": 1')
+        expect(exported.output).toContain('diaries: 1')
+        expect(exported.output).toContain('memories: 1')
         expect(exported.output).toContain(exportPath)
 
         const payload = JSON.parse(
@@ -155,9 +155,9 @@ describe('cli/e2e', () => {
             exportPath,
             '--dry-run',
         ])
-        expect(dryRun.output).toContain('"diariesImported": 1')
-        expect(dryRun.output).toContain('"dryRun": true')
-        expect(dryRun.output).toContain('"memoriesImported": 1')
+        expect(dryRun.output).toContain('diariesImported: 1')
+        expect(dryRun.output).toContain('dryRun: true')
+        expect(dryRun.output).toContain('memoriesImported: 1')
         expect(await readActiveCounts(target.projectRoot)).toEqual(before)
 
         const imported = await runKonteks(target.projectRoot, [
@@ -165,9 +165,9 @@ describe('cli/e2e', () => {
             'import',
             exportPath,
         ])
-        expect(imported.output).toContain('"diariesImported": 1')
-        expect(imported.output).toContain('"dryRun": false')
-        expect(imported.output).toContain('"memoriesImported": 1')
+        expect(imported.output).toContain('diariesImported: 1')
+        expect(imported.output).toContain('dryRun: false')
+        expect(imported.output).toContain('memoriesImported: 1')
         expect(await readActiveCounts(target.projectRoot)).toEqual({
             diaries: 1,
             memories: 1,

@@ -1,5 +1,4 @@
 import { restoreMemory } from '@/modules/memory/memory-transfer'
-import { stringifyPretty } from '@/support/json/io'
 import type { BaseCommandInput } from './_base-command'
 import BaseCommand from './_base-command'
 
@@ -32,12 +31,10 @@ export default class RestoreCommand extends BaseCommand<
         options,
     }: Required<BaseCommandInput<[string], RestoreOptions>>): Promise<void> {
         this.print(
-            stringifyPretty(
-                await restoreMemory({
-                    force: options.force,
-                    inputPath: args[0],
-                }),
-            ),
+            await restoreMemory({
+                force: options.force,
+                inputPath: args[0],
+            }),
         )
     }
 }

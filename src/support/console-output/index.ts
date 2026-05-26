@@ -1,5 +1,4 @@
 import { encode } from '@toon-format/toon'
-import { stringifyPretty } from '@/support/json/io'
 
 export type ConsoleColorPalette = {
     accent(value: string): string
@@ -53,10 +52,6 @@ class ConsoleOutput {
     ): this {
         this.stderr.write(this.resolveText(message, this.stderrPalette()))
         return this
-    }
-
-    public json(value: unknown): void {
-        this.print(stringifyPretty(value))
     }
 
     public toon(value: object | string): this {
