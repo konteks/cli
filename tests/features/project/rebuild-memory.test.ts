@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
+import { describe, expect, it, mock, spyOn } from 'bun:test'
 import * as progressReporterModule from '@/entrypoints/cli/commands/_support/project-memory-progress-reporter'
 import * as extractorModule from '@/modules/extraction/create-project-extractor'
 import consoleOutput, {
@@ -42,10 +42,6 @@ mock.module('@inquirer/prompts', () => ({
     number: async () => undefined,
     select: async () => undefined,
 }))
-
-afterEach(() => {
-    mock.restore()
-})
 
 describe('RebuildCommand', () => {
     const createCommand = async () => {

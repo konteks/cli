@@ -18,6 +18,7 @@ const numberCalls: unknown[] = []
 const numberResults: Array<number | undefined> = []
 const selectCalls: unknown[] = []
 const selectResults: unknown[] = []
+const activeSpies: Array<{ mockRestore(): void }> = []
 const SELECT_OMIT = 'SELECT_OMIT'
 
 mock.module('@inquirer/prompts', () => ({
@@ -53,10 +54,13 @@ mock.module('@inquirer/prompts', () => ({
 }))
 
 beforeEach(() => {
-    spyOn(console, 'log').mockImplementation(() => undefined)
+    trackSpy(spyOn(console, 'log')).mockImplementation(() => undefined)
 })
 
 afterEach(() => {
+    for (const spy of activeSpies.splice(0)) {
+        spy.mockRestore()
+    }
     confirmCalls.length = 0
     confirmResults.length = 0
     inputCalls.length = 0
@@ -65,7 +69,6 @@ afterEach(() => {
     numberResults.length = 0
     selectCalls.length = 0
     selectResults.length = 0
-    mock.restore()
 })
 
 describe('commands/mcp/tools', () => {
@@ -74,7 +77,7 @@ describe('commands/mcp/tools', () => {
         confirmResults.push(true, false)
         inputResults.push('Explain the CLI command shape')
         const tool = getTool('konteks_recall')
-        const handleSpy = spyOn(tool, 'handle').mockImplementation(
+        const handleSpy = trackSpy(spyOn(tool, 'handle')).mockImplementation(
             async () => ({
                 ok: true,
             }),
@@ -97,7 +100,7 @@ describe('commands/mcp/tools', () => {
         confirmResults.push(true, false)
         inputResults.push('')
         const tool = getTool('konteks_warm_up')
-        const handleSpy = spyOn(tool, 'handle').mockImplementation(
+        const handleSpy = trackSpy(spyOn(tool, 'handle')).mockImplementation(
             async () => ({
                 ok: true,
             }),
@@ -118,7 +121,7 @@ describe('commands/mcp/tools', () => {
         confirmResults.push(true, false)
         inputResults.push('Find relevant context')
         const tool = getTool('konteks_recall')
-        const handleSpy = spyOn(tool, 'handle').mockImplementation(
+        const handleSpy = trackSpy(spyOn(tool, 'handle')).mockImplementation(
             async () => ({
                 ok: true,
             }),
@@ -146,7 +149,7 @@ describe('commands/mcp/tools', () => {
         confirmResults.push(true, false)
         inputResults.push('memory#1', '', 'No longer true')
         const tool = getTool('konteks_forget')
-        const handleSpy = spyOn(tool, 'handle').mockImplementation(
+        const handleSpy = trackSpy(spyOn(tool, 'handle')).mockImplementation(
             async () => ({
                 ok: true,
             }),
@@ -180,7 +183,7 @@ describe('commands/mcp/tools', () => {
             '["cli","mcp"]',
         )
         const tool = getTool('konteks_save_diary')
-        const handleSpy = spyOn(tool, 'handle').mockImplementation(
+        const handleSpy = trackSpy(spyOn(tool, 'handle')).mockImplementation(
             async () => ({
                 ok: true,
             }),
@@ -204,14 +207,14 @@ describe('commands/mcp/tools', () => {
         confirmResults.push(true, false)
         inputResults.push('', 'Valid task')
         const tool = getTool('konteks_recall')
-        const handleSpy = spyOn(tool, 'handle').mockImplementation(
+        const handleSpy = trackSpy(spyOn(tool, 'handle')).mockImplementation(
             async () => ({
                 ok: true,
             }),
         )
-        const errorSpy = spyOn(consoleOutput, 'writeError').mockImplementation(
-            () => consoleOutput,
-        )
+        const errorSpy = trackSpy(
+            spyOn(consoleOutput, 'writeError'),
+        ).mockImplementation(() => consoleOutput)
 
         await createCommand().then(command => command.handle())
 
@@ -227,7 +230,7 @@ describe('commands/mcp/tools', () => {
         confirmResults.push(true)
         inputResults.push('')
         const tool = getTool('konteks_warm_up')
-        const handleSpy = spyOn(tool, 'handle').mockImplementation(
+        const handleSpy = trackSpy(spyOn(tool, 'handle')).mockImplementation(
             async () => ({
                 ok: true,
             }),
@@ -278,6 +281,11 @@ function getTool(name: string) {
     }
 
     return tool
+}
+
+function trackSpy<T extends { mockRestore(): void }>(spy: T): T {
+    activeSpies.push(spy)
+    return spy
 }
 
 function isSelectOptions(value: unknown): value is {

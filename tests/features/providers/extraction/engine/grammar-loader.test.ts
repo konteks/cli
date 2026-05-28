@@ -13,6 +13,7 @@ import { loadProjectContext } from '@/modules/project/context'
 import { mkdir, rm } from '@/support/file-manager'
 
 const tempDirs: string[] = []
+const activeSpies: Array<{ mockRestore(): void }> = []
 
 class MockTreeSitterEngine {
     public readonly loaded: Array<{ lang: string; path: string }> = []
@@ -28,12 +29,14 @@ class MockTreeSitterEngine {
 }
 
 afterEach(async () => {
-    mock.restore()
+    for (const spy of activeSpies.splice(0)) {
+        spy.mockRestore()
+    }
     await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
-describe('grammar loader registry', () => {
-    it('exposes a curated grammar registry', () => {
+describe.serial('grammar loader registry', () => {
+    it.serial('exposes a curated grammar registry', () => {
         const grammars = listGrammarDefinitions()
         const ids = grammars.map(grammar => grammar.id)
         const sortedIds = [...ids].sort((left, right) =>
@@ -61,7 +64,7 @@ describe('grammar loader registry', () => {
         expect('wasmFile' in grammars[0]).toBe(false)
     })
 
-    it('routes paths through the grammar registry', () => {
+    it.serial('routes paths through the grammar registry', () => {
         expect(getGrammarForPath('src/index.ts')?.id).toBe('typescript')
         expect(getGrammarForPath('src/view.tsx')?.id).toBe('tsx')
         expect(getGrammarForPath('src/index.js')?.id).toBe('javascript')
@@ -79,10 +82,10 @@ describe('grammar loader registry', () => {
         expect(getGrammarForPath('Makefile')).toBeUndefined()
     })
 
-    it('loads selected grammars from cache without downloading', async () => {
+    it.serial('loads selected grammars from cache without downloading', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-grammar-'))
         tempDirs.push(projectRoot)
-        spyOn(os, 'homedir').mockReturnValue(projectRoot)
+        trackSpy(spyOn(os, 'homedir')).mockReturnValue(projectRoot)
         const grammarCacheDir = join(
             projectRoot,
             '.cache',
@@ -136,10 +139,10 @@ describe('grammar loader registry', () => {
         ])
     })
 
-    it('downloads selected grammars directly from the registry URL', async () => {
+    it.serial('downloads selected grammars directly from the registry URL', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-grammar-'))
         tempDirs.push(projectRoot)
-        spyOn(os, 'homedir').mockReturnValue(projectRoot)
+        trackSpy(spyOn(os, 'homedir')).mockReturnValue(projectRoot)
         await mkdir(join(projectRoot, '.git'))
         await mkdir(join(projectRoot, '.konteks'))
         await writeFile(
@@ -197,10 +200,10 @@ describe('grammar loader registry', () => {
         }
     })
 
-    it('refreshes stale cache entries from older manifests', async () => {
+    it.serial('refreshes stale cache entries from older manifests', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-grammar-'))
         tempDirs.push(projectRoot)
-        spyOn(os, 'homedir').mockReturnValue(projectRoot)
+        trackSpy(spyOn(os, 'homedir')).mockReturnValue(projectRoot)
         const grammarCacheDir = join(
             projectRoot,
             '.cache',
@@ -254,10 +257,10 @@ describe('grammar loader registry', () => {
         }
     })
 
-    it('asks users to report broken registry download URLs', async () => {
+    it.serial('asks users to report broken registry download URLs', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-grammar-'))
         tempDirs.push(projectRoot)
-        spyOn(os, 'homedir').mockReturnValue(projectRoot)
+        trackSpy(spyOn(os, 'homedir')).mockReturnValue(projectRoot)
         await mkdir(join(projectRoot, '.git'))
         await mkdir(join(projectRoot, '.konteks'))
         await writeFile(
@@ -292,7 +295,7 @@ describe('grammar loader registry', () => {
         }
     })
 
-    it('loads bundled grammars from package dependencies', async () => {
+    it.serial('loads bundled grammars from package dependencies', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-grammar-'))
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, '.git'))
@@ -334,4 +337,9 @@ async function withProjectRoot<T>(
     } finally {
         process.chdir(previous)
     }
+}
+
+function trackSpy<T extends { mockRestore(): void }>(spy: T): T {
+    activeSpies.push(spy)
+    return spy
 }

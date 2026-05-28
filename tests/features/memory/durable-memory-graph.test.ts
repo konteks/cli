@@ -24,8 +24,8 @@ afterEach(async () => {
     await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
-describe('durable memory graph projection', () => {
-    it('projects constraint memories to source graph entities and recall evidence', async () => {
+describe.serial('durable memory graph projection', () => {
+    it.serial('projects constraint memories to source graph entities and recall evidence', async () => {
         const projectRoot = await makeExtractedProject()
         process.chdir(projectRoot)
         const context = await loadProjectContext()
@@ -81,7 +81,7 @@ describe('durable memory graph projection', () => {
         )
     })
 
-    it('projects code insight and diary mentions with idempotent relation writes', async () => {
+    it.serial('projects code insight and diary mentions with idempotent relation writes', async () => {
         const projectRoot = await makeExtractedProject()
         process.chdir(projectRoot)
         const context = await loadProjectContext()
@@ -145,7 +145,7 @@ describe('durable memory graph projection', () => {
         )
     })
 
-    it('removes durable graph rows when memory is forgotten', async () => {
+    it.serial('removes durable graph rows when memory is forgotten', async () => {
         const projectRoot = await makeExtractedProject()
         process.chdir(projectRoot)
         const context = await loadProjectContext()
@@ -184,7 +184,7 @@ describe('durable memory graph projection', () => {
         ).resolves.toEqual([])
     })
 
-    it('supersedes prior decision graph claims and recalls them as history', async () => {
+    it.serial('supersedes prior decision graph claims and recalls them as history', async () => {
         const projectRoot = await makeExtractedProject()
         process.chdir(projectRoot)
         const context = await loadProjectContext()
@@ -305,7 +305,7 @@ describe('durable memory graph projection', () => {
         )
     })
 
-    it('invalidates relation forget targets and recalls invalidated history', async () => {
+    it.serial('invalidates relation forget targets and recalls invalidated history', async () => {
         const projectRoot = await makeExtractedProject()
         process.chdir(projectRoot)
         const context = await loadProjectContext()

@@ -39,8 +39,8 @@ afterEach(async () => {
     await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
-describe('retrieval quality evals', () => {
-    it('falls back cleanly when no graph or retrieval data exists', async () => {
+describe.serial('retrieval quality evals', () => {
+    it.serial('falls back cleanly when no graph or retrieval data exists', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-eval-empty-'))
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, '.git'))
@@ -56,7 +56,7 @@ describe('retrieval quality evals', () => {
         expect(recall.graph).toEqual([])
     })
 
-    it('supports packaging and MCP retrieval dogfood flow', async () => {
+    it.serial('supports packaging and MCP retrieval dogfood flow', async () => {
         const projectRoot = await mkdtemp(
             join(tmpdir(), 'konteks-eval-packaging-'),
         )
@@ -85,7 +85,7 @@ describe('retrieval quality evals', () => {
         expect(text).toContain('memories:')
     })
 
-    it('returns useful MCP runtime errors for invalid save input', async () => {
+    it.serial('returns useful MCP runtime errors for invalid save input', async () => {
         const projectRoot = await mkdtemp(
             join(tmpdir(), 'konteks-eval-errors-'),
         )
@@ -107,7 +107,7 @@ describe('retrieval quality evals', () => {
         })
     })
 
-    it('rejects invalid save chat before refreshing project memory', async () => {
+    it.serial('rejects invalid save chat before refreshing project memory', async () => {
         const projectRoot = await mkdtemp(
             join(tmpdir(), 'konteks-eval-save-invalid-'),
         )
@@ -151,7 +151,7 @@ describe('retrieval quality evals', () => {
         )
     })
 
-    it('updates changed project memory after saving context', async () => {
+    it.serial('updates changed project memory after saving context', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-eval-save-'))
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, 'src'))
@@ -189,7 +189,7 @@ describe('retrieval quality evals', () => {
         expect(text).not.toContain('Extraction complete')
     })
 
-    it('includes module artifacts in warm up highlights', async () => {
+    it.serial('includes module artifacts in warm up highlights', async () => {
         const projectRoot = await mkdtemp(
             join(tmpdir(), 'konteks-eval-warm-up-'),
         )
@@ -216,7 +216,7 @@ describe('retrieval quality evals', () => {
         expect(text).toContain('highlights')
     })
 
-    it('keeps TOON output more compact than JSON-in-text for recall', async () => {
+    it.serial('keeps TOON output more compact than JSON-in-text for recall', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-eval-toon-'))
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, 'src'))
@@ -243,7 +243,7 @@ describe('retrieval quality evals', () => {
         expect(text).toContain('memories:')
     })
 
-    it('prioritizes implementation files for implementation recall tasks', async () => {
+    it.serial('prioritizes implementation files for implementation recall tasks', async () => {
         const projectRoot = await mkdtemp(
             join(tmpdir(), 'konteks-eval-recall-shape-'),
         )
@@ -284,7 +284,7 @@ describe('retrieval quality evals', () => {
         expect(text).not.toContain('- -')
     })
 
-    it('keeps direct text matches ahead of graph-boosted weaker matches', async () => {
+    it.serial('keeps direct text matches ahead of graph-boosted weaker matches', async () => {
         const projectRoot = await mkdtemp(
             join(tmpdir(), 'konteks-eval-graph-dominance-'),
         )
@@ -314,7 +314,7 @@ describe('retrieval quality evals', () => {
         expect(results.map(result => result.path)).toContain('src/weak.txt')
     })
 
-    it('boosts search candidates with connected graph evidence', async () => {
+    it.serial('boosts search candidates with connected graph evidence', async () => {
         const projectRoot = await mkdtemp(
             join(tmpdir(), 'konteks-eval-graph-boost-'),
         )
@@ -348,7 +348,7 @@ describe('retrieval quality evals', () => {
         })
     })
 
-    it('includes only connected graph evidence in recall output', async () => {
+    it.serial('includes only connected graph evidence in recall output', async () => {
         const projectRoot = await mkdtemp(
             join(tmpdir(), 'konteks-eval-graph-relevance-'),
         )
@@ -383,7 +383,7 @@ describe('retrieval quality evals', () => {
         ).toBe(false)
     })
 
-    it('uses SQLite WASM local storage context for retrieval', async () => {
+    it.serial('uses SQLite WASM local storage context for retrieval', async () => {
         const projectRoot = await mkdtemp(
             join(tmpdir(), 'konteks-eval-sqlite-'),
         )

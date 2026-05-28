@@ -10,8 +10,8 @@ import BaseMcpTool from '@/entrypoints/mcp/tools/_base-mcp-tool'
 
 import { mkdir, rm } from '@/support/file-manager'
 
-describe('MCP tools', () => {
-    it('registers tools in API order with protocol annotations', () => {
+describe.serial('MCP tools', () => {
+    it.serial('registers tools in API order with protocol annotations', () => {
         expect(mcpTools.map(tool => tool.name)).toEqual([
             'konteks_warm_up',
             'konteks_recall',
@@ -37,7 +37,7 @@ describe('MCP tools', () => {
         expect(mcpTools.every(tool => tool instanceof BaseMcpTool)).toBe(true)
     })
 
-    it('validates input before executing a tool and formats object output', async () => {
+    it.serial('validates input before executing a tool and formats object output', async () => {
         class FixtureTool extends BaseMcpTool {
             public readonly annotations = {
                 destructiveHint: false,
@@ -76,7 +76,7 @@ describe('MCP tools', () => {
         })
     })
 
-    it('formats string output through the base handle flow', async () => {
+    it.serial('formats string output through the base handle flow', async () => {
         class FixtureTool extends BaseMcpTool {
             public readonly annotations = {
                 destructiveHint: false,
@@ -106,7 +106,7 @@ describe('MCP tools', () => {
         })
     })
 
-    it('sanitizes unexpected execution failures', async () => {
+    it.serial('sanitizes unexpected execution failures', async () => {
         const projectRoot = await makeProjectRoot()
         class FixtureTool extends BaseMcpTool {
             public readonly annotations = {

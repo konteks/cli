@@ -53,7 +53,6 @@ describe('commands/mcp', () => {
         promptRegistrations.splice(0)
         serverConfigs.splice(0)
         connectedTransports.splice(0)
-        mock.restore()
     })
 
     it('registers tools and prompts before connecting the MCP server', async () => {

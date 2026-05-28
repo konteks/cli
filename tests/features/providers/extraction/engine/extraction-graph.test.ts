@@ -27,8 +27,8 @@ afterEach(async () => {
     await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
-describe('extraction graph', () => {
-    it('persists file and symbol graph rows from prepared sections', async () => {
+describe.serial('extraction graph', () => {
+    it.serial('persists file and symbol graph rows from prepared sections', async () => {
         const projectRoot = await makeProject()
         process.chdir(projectRoot)
 
@@ -79,7 +79,7 @@ describe('extraction graph', () => {
         ])
     })
 
-    it('creates module graph rows during extraction', async () => {
+    it.serial('creates module graph rows during extraction', async () => {
         const projectRoot = await makeProject()
         await mkdir(join(projectRoot, 'src'))
         await writeFile(
@@ -150,7 +150,7 @@ describe('extraction graph', () => {
         )
     })
 
-    it('cleans stale extraction graph rows and preserves durable graph rows', async () => {
+    it.serial('cleans stale extraction graph rows and preserves durable graph rows', async () => {
         const projectRoot = await makeProject()
         await mkdir(join(projectRoot, 'src'))
         await writeFile(join(projectRoot, 'src', 'old.txt'), 'Old file.\n')
@@ -237,7 +237,7 @@ describe('extraction graph', () => {
         ])
     })
 
-    it('recreates missing file entities for unchanged legacy sections during changed extraction', async () => {
+    it.serial('recreates missing file entities for unchanged legacy sections during changed extraction', async () => {
         const projectRoot = await makeProject()
         await mkdir(join(projectRoot, 'src'))
         await writeFile(join(projectRoot, 'src', 'legacy.txt'), 'Legacy.\n')
@@ -290,7 +290,7 @@ describe('extraction graph', () => {
         )
     })
 
-    it('creates package, command, config, and doc metadata graph rows', async () => {
+    it.serial('creates package, command, config, and doc metadata graph rows', async () => {
         const projectRoot = await makeProject()
         await writeFile(
             join(projectRoot, 'package.json'),
@@ -398,7 +398,7 @@ describe('extraction graph', () => {
         )
     })
 
-    it('creates package entities from non-Node manifest metadata', async () => {
+    it.serial('creates package entities from non-Node manifest metadata', async () => {
         const projectRoot = await makeProject()
         await writeFile(
             join(projectRoot, 'composer.json'),

@@ -46,8 +46,8 @@ afterEach(async () => {
     await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
-describe('save memory embeddings', () => {
-    it('embeds a newly saved durable memory retrieval document', async () => {
+describe.serial('save memory embeddings', () => {
+    it.serial('embeds a newly saved durable memory retrieval document', async () => {
         const projectRoot = await makeInitializedProject()
 
         await withProjectRoot(projectRoot, async () => {
@@ -77,7 +77,7 @@ describe('save memory embeddings', () => {
         })
     })
 
-    it('does not embed duplicate durable memories again', async () => {
+    it.serial('does not embed duplicate durable memories again', async () => {
         const projectRoot = await makeInitializedProject()
 
         await withProjectRoot(projectRoot, async () => {
@@ -105,7 +105,7 @@ describe('save memory embeddings', () => {
         })
     })
 
-    it('keeps durable memory save successful when embedding fails', async () => {
+    it.serial('keeps durable memory save successful when embedding fails', async () => {
         const projectRoot = await makeInitializedProject()
 
         await withProjectRoot(projectRoot, async () => {
@@ -136,8 +136,8 @@ describe('save memory embeddings', () => {
     })
 })
 
-describe('save diary embeddings', () => {
-    it('embeds a newly saved diary retrieval document', async () => {
+describe.serial('save diary embeddings', () => {
+    it.serial('embeds a newly saved diary retrieval document', async () => {
         const projectRoot = await makeInitializedProject()
 
         await withProjectRoot(projectRoot, async () => {
@@ -161,7 +161,7 @@ describe('save diary embeddings', () => {
         })
     })
 
-    it('keeps diary save successful when embedding fails', async () => {
+    it.serial('keeps diary save successful when embedding fails', async () => {
         const projectRoot = await makeInitializedProject()
 
         await withProjectRoot(projectRoot, async () => {

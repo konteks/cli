@@ -20,8 +20,8 @@ import {
 } from '../../support/mcp'
 import { withWorkingDirectory as withProjectRoot } from '../../support/project'
 
-describe('mcp/stdio interface', () => {
-    it('exposes live server metadata and tool registrations over stdio', async () => {
+describe.serial('mcp/stdio interface', () => {
+    it.serial('exposes live server metadata and tool registrations over stdio', async () => {
         const fixture = await createInitializedProject('konteks-mcp-stdio-')
 
         try {
@@ -161,7 +161,7 @@ describe('mcp/stdio interface', () => {
         }
     }, 20000)
 
-    it('exposes live prompt registrations and rendered prompt text over stdio', async () => {
+    it.serial('exposes live prompt registrations and rendered prompt text over stdio', async () => {
         const fixture = await createInitializedProject('konteks-mcp-stdio-')
 
         try {
@@ -206,7 +206,7 @@ describe('mcp/stdio interface', () => {
         }
     }, 20000)
 
-    it('executes read-only stdio tool calls and rejects invalid input', async () => {
+    it.serial('executes read-only stdio tool calls and rejects invalid input', async () => {
         const fixture = await createInitializedProject('konteks-mcp-stdio-')
 
         try {

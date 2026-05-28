@@ -35,8 +35,8 @@ async function withProjectRoot<T>(operation: () => Promise<T>): Promise<T> {
     }
 }
 
-describe('graph service', () => {
-    it('normalizes aliases and derives stable deterministic ids', () => {
+describe.serial('graph service', () => {
+    it.serial('normalizes aliases and derives stable deterministic ids', () => {
         expect(normalizeEntityAlias('  RecallRepositoryMemory  ')).toBe(
             'recall repository memory',
         )
@@ -51,7 +51,7 @@ describe('graph service', () => {
         )
     })
 
-    it('upserts entities and aliases idempotently', async () => {
+    it.serial('upserts entities and aliases idempotently', async () => {
         await withProjectRoot(async () => {
             const first = await upsertEntity({
                 canonicalName: 'src/modules/memory/recall-repository-memory.ts',
@@ -92,7 +92,7 @@ describe('graph service', () => {
         })
     })
 
-    it('finds alias-backed entities from a larger alias set', async () => {
+    it.serial('finds alias-backed entities from a larger alias set', async () => {
         await withProjectRoot(async () => {
             for (let index = 0; index < 75; index += 1) {
                 const entity = await upsertEntity({
@@ -123,7 +123,7 @@ describe('graph service', () => {
         })
     })
 
-    it('upserts relations idempotently and exposes them through traversal', async () => {
+    it.serial('upserts relations idempotently and exposes them through traversal', async () => {
         await withProjectRoot(async () => {
             const moduleEntity = await upsertEntity({
                 canonicalName: 'src',

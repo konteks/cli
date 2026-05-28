@@ -8,8 +8,8 @@ import {
     withWorkingDirectory,
 } from '../../support/project'
 
-describe('project/status', () => {
-    it('prints status with the current project paths', async () => {
+describe.serial('project/status', () => {
+    it.serial('prints status with the current project paths', async () => {
         const projectRoot = await createConfiguredProject()
         const output: string[] = []
         const logSpy = spyOn(consoleOutput, 'print').mockImplementation(

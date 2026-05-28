@@ -32,8 +32,8 @@ afterEach(async () => {
     await Promise.all(tempDirs.splice(0).map(path => rmRecursive(path)))
 })
 
-describe('cli/e2e', () => {
-    it('reports already-initialized on a seeded project', async () => {
+describe.serial('cli/e2e', () => {
+    it.serial('reports already-initialized on a seeded project', async () => {
         const fixture = await createInitializedProject()
 
         const result = await runKonteks(fixture.projectRoot, ['init'])
@@ -45,7 +45,7 @@ describe('cli/e2e', () => {
         expect(result.output).toContain('.konteks')
     }, 20000)
 
-    it('prints status for initialized projects and reports changed files', async () => {
+    it.serial('prints status for initialized projects and reports changed files', async () => {
         const fixture = await createInitializedProject()
 
         const initial = await runKonteks(fixture.projectRoot, ['status'])
@@ -75,7 +75,7 @@ describe('cli/e2e', () => {
         expect(changed.output).toContain('Status        STALE')
     }, 20000)
 
-    it('backs up memory, refuses restore without force, and restores with force', async () => {
+    it.serial('backs up memory, refuses restore without force, and restores with force', async () => {
         const source = await createInitializedProject({ seededMemory: true })
         const target = await createInitializedProject({ seededMemory: true })
         const archivePath = join(source.projectRoot, 'backup.tar.gz')
@@ -116,7 +116,7 @@ describe('cli/e2e', () => {
         )
     }, 20000)
 
-    it('exports durable memory and supports import dry-run plus real import', async () => {
+    it.serial('exports durable memory and supports import dry-run plus real import', async () => {
         const source = await createInitializedProject({ seededMemory: true })
         const target = await createInitializedProject()
         const exportPath = join(source.projectRoot, 'memory-export.json')

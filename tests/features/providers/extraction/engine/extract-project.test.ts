@@ -64,8 +64,8 @@ afterEach(async () => {
     await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
-describe('extractProject', () => {
-    it('writes a manifest with project summary metadata', async () => {
+describe.serial('extractProject', () => {
+    it.serial('writes a manifest with project summary metadata', async () => {
         const projectRoot = await makeTempProject()
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
@@ -95,7 +95,7 @@ describe('extractProject', () => {
         expect(manifest?.summaryHash).toHaveLength(64)
     })
 
-    it('reports fresh status after extraction and stale after a file change', async () => {
+    it.serial('reports fresh status after extraction and stale after a file change', async () => {
         const projectRoot = await makeTempProject()
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
@@ -115,7 +115,7 @@ describe('extractProject', () => {
         expect(stale.recommendedCommand).toBe('konteks rebuild')
     })
 
-    it('reports section progress for every selected file', async () => {
+    it.serial('reports section progress for every selected file', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(join(projectRoot, 'src', 'empty.txt'), '')
         const context = await withProjectRoot(projectRoot, () =>
@@ -151,7 +151,7 @@ describe('extractProject', () => {
         )
     })
 
-    it('does not cap sections per file', async () => {
+    it.serial('does not cap sections per file', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(
             join(projectRoot, 'src', 'many.md'),
@@ -173,7 +173,7 @@ describe('extractProject', () => {
         expect(manifest?.diagnostics?.filesTruncatedBySectionLimit).toBe(0)
     })
 
-    it('stores the manifest as local JSON', async () => {
+    it.serial('stores the manifest as local JSON', async () => {
         const projectRoot = await makeTempProject()
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
@@ -188,7 +188,7 @@ describe('extractProject', () => {
         expect(JSON.parse(rawManifest).mode).toBe('changed')
     })
 
-    it('reads legacy reindex manifests for compatibility', async () => {
+    it.serial('reads legacy reindex manifests for compatibility', async () => {
         const projectRoot = await makeTempProject()
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
@@ -220,7 +220,7 @@ describe('extractProject', () => {
         })
     })
 
-    it('extracts package.json with bundled config grammars', async () => {
+    it.serial('extracts package.json with bundled config grammars', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(
             join(projectRoot, 'package.json'),
@@ -237,7 +237,7 @@ describe('extractProject', () => {
         expect(manifest?.files.map(file => file.path)).toContain('package.json')
     })
 
-    it('stores rebuild mode in manifest', async () => {
+    it.serial('stores rebuild mode in manifest', async () => {
         const projectRoot = await makeTempProject()
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
@@ -256,7 +256,7 @@ describe('extractProject', () => {
         expect(manifest.diagnostics.sectionCount).toBeGreaterThan(0)
     })
 
-    it('repairs missing durable memory and diary embeddings during rebuild', async () => {
+    it.serial('repairs missing durable memory and diary embeddings during rebuild', async () => {
         const projectRoot = await makeTempProject()
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
@@ -320,7 +320,7 @@ describe('extractProject', () => {
         expect(second.embeddingReusedCount).toBeGreaterThanOrEqual(2)
     })
 
-    it('changed mode removes deleted-file sections and preserves unchanged sections', async () => {
+    it.serial('changed mode removes deleted-file sections and preserves unchanged sections', async () => {
         const projectRoot = await makeTempProject()
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
@@ -342,7 +342,7 @@ describe('extractProject', () => {
         expect(paths).toContain('src/new.txt')
     })
 
-    it('changed mode is a no-op when extraction is already current', async () => {
+    it.serial('changed mode is a no-op when extraction is already current', async () => {
         const projectRoot = await makeTempProject()
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),
@@ -374,7 +374,7 @@ describe('extractProject', () => {
         expect(await projectStateCounts()).toEqual(beforeCounts)
     })
 
-    it('extracts repeated anchors with identical content without section ID collisions', async () => {
+    it.serial('extracts repeated anchors with identical content without section ID collisions', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(
             join(projectRoot, 'README.md'),
@@ -391,7 +391,7 @@ describe('extractProject', () => {
         expect(result.sectionCount).toBeGreaterThanOrEqual(3)
     })
 
-    it('fails when a required Tree-sitter parser fails', async () => {
+    it.serial('fails when a required Tree-sitter parser fails', async () => {
         const projectRoot = await makeTempProject()
         const context = await withProjectRoot(projectRoot, () =>
             loadProjectContext(),

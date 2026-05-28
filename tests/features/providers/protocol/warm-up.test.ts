@@ -33,7 +33,7 @@ async function withProjectRoot<T>(
     }
 }
 
-describe('konteks_warm_up', () => {
+describe.serial('konteks_warm_up', () => {
     let tempDirs: string[] = []
 
     afterEach(async () => {
@@ -43,7 +43,7 @@ describe('konteks_warm_up', () => {
         tempDirs = []
     })
 
-    it('returns stable project context assembled from stored artifacts', async () => {
+    it.serial('returns stable project context assembled from stored artifacts', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, 'src'))
@@ -109,7 +109,7 @@ describe('konteks_warm_up', () => {
         )
     })
 
-    it('updates changed project memory before warming up', async () => {
+    it.serial('updates changed project memory before warming up', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, 'src'))
@@ -146,7 +146,7 @@ describe('konteks_warm_up', () => {
         expect(text).not.toContain('Extraction complete')
     })
 
-    it('does not delete module embeddings during warm-up changed extraction', async () => {
+    it.serial('does not delete module embeddings during warm-up changed extraction', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, 'src'))
@@ -179,7 +179,7 @@ describe('konteks_warm_up', () => {
         ).resolves.toBe(beforeCount)
     })
 
-    it('returns quality-labeled focused recall without duplicate targets', async () => {
+    it.serial('returns quality-labeled focused recall without duplicate targets', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-warm-up-'))
         tempDirs.push(projectRoot)
         await mkdir(join(projectRoot, 'src', 'mcp'))

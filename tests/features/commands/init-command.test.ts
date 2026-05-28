@@ -99,7 +99,7 @@ async function withWorkingDirectory<T>(
     }
 }
 
-describe('InitCommand', () => {
+describe.serial('InitCommand', () => {
     const init = async (project: string) =>
         await withWorkingDirectory(project, async () => {
             const output: string[] = []
@@ -128,7 +128,7 @@ describe('InitCommand', () => {
             return output.join('\n')
         })
 
-    it('adds .konteks to .gitignore during init', async () => {
+    it.serial('adds .konteks to .gitignore during init', async () => {
         const projectRoot = await makeTempProject()
 
         await init(projectRoot)
@@ -138,7 +138,7 @@ describe('InitCommand', () => {
         ).resolves.toBe('.konteks/\n')
     })
 
-    it('preserves existing .gitignore entries', async () => {
+    it.serial('preserves existing .gitignore entries', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(join(projectRoot, '.gitignore'), 'node_modules\n')
 
@@ -149,7 +149,7 @@ describe('InitCommand', () => {
         ).resolves.toBe('node_modules\n.konteks/\n')
     })
 
-    it('does not duplicate existing .konteks ignore entries', async () => {
+    it.serial('does not duplicate existing .konteks ignore entries', async () => {
         const projectRoot = await makeTempProject()
         await mkdir(join(projectRoot, '.konteks'))
         await writeFile(
@@ -164,7 +164,7 @@ describe('InitCommand', () => {
         ).resolves.toBe('node_modules\n.konteks/\n')
     })
 
-    it('skips when the project is already initialized', async () => {
+    it.serial('skips when the project is already initialized', async () => {
         const projectRoot = await makeTempProject()
 
         await init(projectRoot)
@@ -181,7 +181,7 @@ describe('InitCommand', () => {
         expect(secondManifest).toBe(firstManifest)
     })
 
-    it('prints the redesigned init progress and summary', async () => {
+    it.serial('prints the redesigned init progress and summary', async () => {
         const projectRoot = await makeTempProject()
 
         const output = await init(projectRoot)
@@ -215,7 +215,7 @@ describe('InitCommand', () => {
         expect(plainOutput).not.toContain('Extracted 2 semantic sections')
     })
 
-    it('colors init progress when color is supported', async () => {
+    it.serial('colors init progress when color is supported', async () => {
         const projectRoot = await makeTempProject()
         const previousForceColor = process.env.FORCE_COLOR
         const previousNoColor = process.env.NO_COLOR
@@ -242,7 +242,7 @@ describe('InitCommand', () => {
         }
     })
 
-    it('excludes bundled parser detections from the language review', async () => {
+    it.serial('excludes bundled parser detections from the language review', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(join(projectRoot, 'package.json'), '{"type":"module"}')
 
@@ -274,7 +274,7 @@ describe('InitCommand', () => {
         expect(checkboxCalls).toHaveLength(0)
     })
 
-    it('opens registry grammar checkboxes when detected languages are rejected', async () => {
+    it.serial('opens registry grammar checkboxes when detected languages are rejected', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(join(projectRoot, 'src.ts'), 'export const value = 1\n')
         selectResult = 'EDIT'
@@ -301,7 +301,7 @@ describe('InitCommand', () => {
         expect(config.extraction.grammars.selected).toEqual([])
     })
 
-    it('keeps parser and model preparation output compact', async () => {
+    it.serial('keeps parser and model preparation output compact', async () => {
         const projectRoot = await makeTempProject()
         await writeFile(join(projectRoot, 'package.json'), '{"type":"module"}')
 
@@ -322,7 +322,7 @@ describe('InitCommand', () => {
         )
     })
 
-    it('finishes setup when a previous init stopped before extraction', async () => {
+    it.serial('finishes setup when a previous init stopped before extraction', async () => {
         const projectRoot = await makeTempProject()
         await mkdir(join(projectRoot, '.konteks'))
         await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
@@ -337,7 +337,7 @@ describe('InitCommand', () => {
         ).resolves.toContain('"version": 1')
     })
 
-    it('continues from existing sections when the manifest is missing', async () => {
+    it.serial('continues from existing sections when the manifest is missing', async () => {
         const projectRoot = await makeTempProject()
 
         await init(projectRoot)

@@ -27,8 +27,8 @@ async function withWorkingDirectory<T>(
     }
 }
 
-describe('InstallSkillsCommand', () => {
-    it('installs Konteks skills', async () => {
+describe.serial('InstallSkillsCommand', () => {
+    it.serial('installs Konteks skills', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-skills-'))
         tempDirs.push(projectRoot)
         await writeFile(
@@ -59,7 +59,7 @@ describe('InstallSkillsCommand', () => {
         expect(warmUp).not.toContain('{{topic}}')
     })
 
-    it('installs Konteks skills globally', async () => {
+    it.serial('installs Konteks skills globally', async () => {
         const homeDir = await mkdtemp(join(tmpdir(), 'konteks-skills-home-'))
         tempDirs.push(homeDir)
         const homedirSpy = spyOn(os, 'homedir').mockReturnValue(homeDir)
@@ -82,7 +82,7 @@ describe('InstallSkillsCommand', () => {
         ).resolves.toContain('name: konteks-save')
     })
 
-    it('installs local skills into the current project by default', async () => {
+    it.serial('installs local skills into the current project by default', async () => {
         const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-skills-'))
         tempDirs.push(projectRoot)
         await writeFile(

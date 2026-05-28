@@ -53,8 +53,8 @@ async function withProjectRoot<T>(
     }
 }
 
-describe('memory transfer', () => {
-    it('exports durable memories and diaries as portable JSON', async () => {
+describe.serial('memory transfer', () => {
+    it.serial('exports durable memories and diaries as portable JSON', async () => {
         const projectRoot = await makeInitializedProject()
         await withProjectRoot(projectRoot, async () => {
             await saveMemories({
@@ -91,7 +91,7 @@ describe('memory transfer', () => {
         })
     })
 
-    it('imports durable memory, rebuilds search indexes, and skips duplicates', async () => {
+    it.serial('imports durable memory, rebuilds search indexes, and skips duplicates', async () => {
         const sourceRoot = await makeInitializedProject('konteks-transfer-src-')
         await withProjectRoot(sourceRoot, async () => {
             await saveMemories({
@@ -171,7 +171,7 @@ describe('memory transfer', () => {
         )
     })
 
-    it('rejects unsupported durable memory export formats', async () => {
+    it.serial('rejects unsupported durable memory export formats', async () => {
         const projectRoot = await makeInitializedProject()
         const inputPath = join(projectRoot, 'bad-export.json')
         await writeFile(
@@ -188,7 +188,7 @@ describe('memory transfer', () => {
         ).rejects.toThrow('Expected format "konteks.durable-memory.v1"')
     })
 
-    it('backs up and restores the full memory directory archive', async () => {
+    it.serial('backs up and restores the full memory directory archive', async () => {
         const projectRoot = await makeInitializedProject('konteks-backup-src-')
         await withProjectRoot(projectRoot, async () => {
             await saveMemories({
@@ -227,7 +227,7 @@ describe('memory transfer', () => {
         )
     })
 
-    it('refuses restore over non-empty memory unless forced and creates a safety backup', async () => {
+    it.serial('refuses restore over non-empty memory unless forced and creates a safety backup', async () => {
         const sourceRoot = await makeInitializedProject('konteks-backup-src-')
         await withProjectRoot(sourceRoot, async () => {
             await saveMemories({
