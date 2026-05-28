@@ -1,4 +1,4 @@
-import { confirm } from '@inquirer/prompts'
+import confirm from '@inquirer/confirm'
 import createProjectExtractor from '@/modules/extraction/create-project-extractor'
 import consoleOutput from '@/support/console-output'
 import {

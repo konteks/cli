@@ -20,23 +20,32 @@ const selectCalls: unknown[] = []
 const selectResults: unknown[] = []
 const SELECT_OMIT = 'SELECT_OMIT'
 
-mock.module('@inquirer/prompts', () => ({
-    confirm: async (options: unknown) => {
+mock.module('@inquirer/confirm', () => ({
+    default: async (options: unknown) => {
         confirmCalls.push(options)
 
         return confirmResults.shift() ?? true
     },
-    input: async (options: unknown) => {
+}))
+
+mock.module('@inquirer/input', () => ({
+    default: async (options: unknown) => {
         inputCalls.push(options)
 
         return inputResults.shift() ?? ''
     },
-    number: async (options: unknown) => {
+}))
+
+mock.module('@inquirer/number', () => ({
+    default: async (options: unknown) => {
         numberCalls.push(options)
 
         return numberResults.shift()
     },
-    select: async (options: unknown) => {
+}))
+
+mock.module('@inquirer/select', () => ({
+    default: async (options: unknown) => {
         selectCalls.push(options)
         const result = selectResults.shift()
 

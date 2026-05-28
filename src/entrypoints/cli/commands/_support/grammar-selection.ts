@@ -1,4 +1,5 @@
-import { checkbox, select } from '@inquirer/prompts'
+import checkbox from '@inquirer/checkbox'
+import select from '@inquirer/select'
 import type { ScannedFile } from '@/modules/extraction/engine/file-scan'
 import {
     getGrammarForPath,

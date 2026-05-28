@@ -53,15 +53,27 @@ mock.module('@/modules/embeddings/hugging-face-embedding-provider', () => ({
     default: MockHuggingFaceEmbeddingProvider,
 }))
 
-mock.module('@inquirer/prompts', () => ({
-    checkbox: async (options: unknown) => {
+mock.module('@inquirer/checkbox', () => ({
+    default: async (options: unknown) => {
         checkboxCalls.push(options)
         return checkboxResult
     },
-    confirm: async () => true,
-    input: async () => '',
-    number: async () => undefined,
-    select: async (options: unknown) => {
+}))
+
+mock.module('@inquirer/confirm', () => ({
+    default: async () => true,
+}))
+
+mock.module('@inquirer/input', () => ({
+    default: async () => '',
+}))
+
+mock.module('@inquirer/number', () => ({
+    default: async () => undefined,
+}))
+
+mock.module('@inquirer/select', () => ({
+    default: async (options: unknown) => {
         selectCalls.push(options)
         return selectResult
     },
