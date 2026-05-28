@@ -1,4 +1,4 @@
-import { select } from '@inquirer/prompts'
+import select from '@inquirer/select'
 import createExtractionProgressReporter from '@/modules/extraction/create-extraction-progress-reporter'
 import { updateSelectedGrammarCache } from '@/modules/extraction/engine/grammar-loader'
 import {
