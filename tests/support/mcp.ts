@@ -1,13 +1,8 @@
-import { execFile } from 'node:child_process'
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { promisify } from 'node:util'
 import { LATEST_PROTOCOL_VERSION } from '@modelcontextprotocol/sdk/types.js'
 import { rm } from '@/support/file-manager'
-import { shellQuote } from './cli'
-
-const execFileAsync = promisify(execFile)
 
 export type Json =
     | boolean
@@ -33,6 +28,7 @@ export async function runMcpExchange(
     const exchangeRoot = await mkdtemp(join(tmpdir(), 'konteks-mcp-exchange-'))
     const inputPath = join(exchangeRoot, 'input.jsonl')
     const outputPath = join(exchangeRoot, 'output.jsonl')
+    const stderrPath = join(exchangeRoot, 'stderr.txt')
 
     try {
         const input = [
@@ -51,12 +47,21 @@ export async function runMcpExchange(
             .join('\n')
 
         await writeFile(inputPath, `${input}\n`)
-        const command = `node ${shellQuote(join(process.cwd(), 'dist', 'main.js'))} mcp < ${shellQuote(inputPath)} > ${shellQuote(outputPath)}`
-
-        await execFileAsync('sh', ['-lc', command], {
+        const proc = Bun.spawn([process.execPath, cliPath(), 'mcp'], {
             cwd: projectRoot,
             env: commandEnv(),
+            stderr: Bun.file(stderrPath),
+            stdin: Bun.file(inputPath),
+            stdout: Bun.file(outputPath),
         })
+        const exitCode = await proc.exited
+
+        if (exitCode !== 0) {
+            const stderr = await Bun.file(stderrPath).text().catch(() => '')
+            throw new Error(
+                `MCP stdio command failed with exit code ${exitCode}\n${stderr}`.trim(),
+            )
+        }
 
         const raw = await Bun.file(outputPath).text()
         return raw
@@ -127,4 +132,8 @@ function commandEnv(): Record<string, string> {
         ),
         KONTEKS_SQLITE_TEST_DATABASE: 'file',
     }
+}
+
+function cliPath(): string {
+    return join(process.cwd(), 'dist', 'main.js')
 }
