@@ -33,14 +33,23 @@ const progressReports: unknown[] = []
 const summaryReports: unknown[] = []
 let progressDoneCount = 0
 
-mock.module('@inquirer/prompts', () => ({
-    confirm: async (options: unknown) => {
+mock.module('@inquirer/confirm', () => ({
+    default: async (options: unknown) => {
         confirmCalls.push(options)
         return confirmResult
     },
-    input: async () => '',
-    number: async () => undefined,
-    select: async () => undefined,
+}))
+
+mock.module('@inquirer/input', () => ({
+    default: async () => '',
+}))
+
+mock.module('@inquirer/number', () => ({
+    default: async () => undefined,
+}))
+
+mock.module('@inquirer/select', () => ({
+    default: async () => undefined,
 }))
 
 afterEach(() => {

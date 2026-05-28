@@ -1,4 +1,7 @@
-import * as prompts from '@inquirer/prompts'
+import promptConfirm from '@inquirer/confirm'
+import promptInput from '@inquirer/input'
+import promptNumber from '@inquirer/number'
+import promptSelect from '@inquirer/select'
 import z from 'zod'
 import MCP_TOOLS from '@/entrypoints/mcp/tools'
 import consoleOutput from '@/support/console-output'
@@ -70,7 +73,7 @@ export default class ToolsCommand extends BaseCommand<
 
             loop = directToolName
                 ? false
-                : await prompts.confirm({
+                : await promptConfirm({
                       default: true,
                       message: 'Run another MCP tool?',
                   })
@@ -79,7 +82,7 @@ export default class ToolsCommand extends BaseCommand<
 }
 
 function selectTool() {
-    return prompts.select({
+    return promptSelect({
         choices: MCP_TOOLS.map(tool => ({
             name: `${tool.name} - ${tool.description}`,
             value: tool.name,
@@ -98,7 +101,7 @@ function printTool(tool: (typeof MCP_TOOLS)[number]) {
 }
 
 function callToolConfirmation() {
-    return prompts.confirm({
+    return promptConfirm({
         default: true,
         message: 'Run this tool?',
     })
@@ -163,13 +166,13 @@ async function promptForBooleanField(
     optional: boolean,
 ): Promise<boolean | undefined> {
     if (!optional) {
-        return prompts.confirm({
+        return promptConfirm({
             default: false,
             message: promptMessage(key, 'boolean', optional),
         })
     }
 
-    const value = await prompts.select<boolean | typeof OMIT_OPTION>({
+    const value = await promptSelect<boolean | typeof OMIT_OPTION>({
         choices: [
             { name: 'Skip (leave unset)', value: OMIT_OPTION },
             { name: 'true', value: true },
@@ -192,7 +195,7 @@ async function promptForEnumField(
         name: String(value),
         value: String(value),
     }))
-    const value = await prompts.select<string | typeof OMIT_OPTION>({
+    const value = await promptSelect<string | typeof OMIT_OPTION>({
         choices: optional
             ? [
                   { name: 'Skip (leave unset)', value: OMIT_OPTION },
@@ -212,7 +215,7 @@ async function promptForNumberField(
     schema: z.ZodType,
     optional: boolean,
 ): Promise<number | undefined> {
-    return prompts.number({
+    return promptNumber({
         message: promptMessage(key, 'number', optional),
         required: !optional,
         validate: value => {
@@ -232,7 +235,7 @@ async function promptForStringField(
     schema: z.ZodType,
     optional: boolean,
 ): Promise<string | undefined> {
-    const value = await prompts.input({
+    const value = await promptInput({
         message: promptMessage(key, 'string', optional),
         validate: value => {
             if (value === '' && optional) {
@@ -253,7 +256,7 @@ async function promptForJsonField(
     schema: z.ZodType,
     optional: boolean,
 ): Promise<unknown> {
-    const value = await prompts.input({
+    const value = await promptInput({
         message: promptMessage(key, 'JSON', optional),
         validate: value => {
             if (value === '' && optional) {
