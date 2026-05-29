@@ -1,9 +1,7 @@
-import { afterEach, beforeAll, describe, expect, it } from 'bun:test'
-import { execFile } from 'node:child_process'
+import { afterEach, describe, expect, it } from 'bun:test'
 import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { promisify } from 'node:util'
 import { extractProject } from '@/modules/extraction/extract-project'
 import { saveDiary, saveMemories } from '@/modules/memory/save-memory'
 import {
@@ -14,19 +12,10 @@ import { mkdir, rm as rmRecursive } from '@/support/file-manager'
 import getVersion from '@/support/get-version'
 import type { DurableMemoryExport } from '@/types/memory-transfer'
 import FakeEmbeddingProvider from '../fake/fake-embedding-provider'
-import { isolatedCommandEnv, runBuiltCli as runKonteks } from '../support/cli'
+import { runSourceCli as runKonteks } from '../support/cli'
 import { withWorkingDirectory as withProjectRoot } from '../support/project'
 
-const execFileAsync = promisify(execFile)
 const tempDirs: string[] = []
-const repoRoot = process.cwd()
-
-beforeAll(async () => {
-    await execFileAsync('bun', ['run', 'build'], {
-        cwd: repoRoot,
-        env: isolatedCommandEnv(process.env.HOME ?? repoRoot),
-    })
-})
 
 afterEach(async () => {
     await Promise.all(tempDirs.splice(0).map(path => rmRecursive(path)))
