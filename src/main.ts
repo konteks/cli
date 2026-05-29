@@ -104,27 +104,27 @@ function formatUserError(
     color: ConsoleColorPalette,
 ): string {
     const lines = [
-        `${color.danger('╭─')} ${color.danger(error.title)}`,
-        `${color.danger('│')}`,
-        `${color.danger('│')}  ${error.message}`,
+        `${color.error('╭─')} ${color.error(error.title)}`,
+        `${color.error('│')}`,
+        `${color.error('│')}  ${error.message}`,
     ]
 
     if (error.command) {
         lines.push(
-            `${color.danger('│')}`,
-            `${color.danger('│')}  ${color.dim('Run')}`,
-            `${color.danger('│')}    ${color.accent(error.command)}`,
+            `${color.error('│')}`,
+            `${color.error('│')}  ${color.dim('Run')}`,
+            `${color.error('│')}    ${color.primary(error.command)}`,
         )
     }
 
     if (error.hint) {
         lines.push(
-            `${color.danger('│')}`,
-            `${color.danger('│')}  ${color.warning(error.hint)}`,
+            `${color.error('│')}`,
+            `${color.error('│')}  ${color.warning(error.hint)}`,
         )
     }
 
-    lines.push(`${color.danger('╰─')}`)
+    lines.push(`${color.error('╰─')}`)
 
     return lines.join('\n')
 }
@@ -136,34 +136,34 @@ function formatUnexpectedError(
 ): string {
     const message = error instanceof Error ? error.message : String(error)
     const lines = [
-        `${color.danger('╭─')} ${color.danger('Konteks command failed')}`,
-        `${color.danger('│')}`,
-        `${color.danger('│')}  ${message || 'Unknown error'}`,
+        `${color.error('╭─')} ${color.error('Konteks command failed')}`,
+        `${color.error('│')}`,
+        `${color.error('│')}  ${message || 'Unknown error'}`,
     ]
 
     if (error instanceof Error && process.env.KONTEKS_DEBUG && error.stack) {
         lines.push(
-            `${color.danger('│')}`,
+            `${color.error('│')}`,
             ...error.stack
                 .split('\n')
                 .slice(1)
-                .map(line => `${color.danger('│')}  ${color.dim(line.trim())}`),
+                .map(line => `${color.error('│')}  ${color.dim(line.trim())}`),
         )
     } else {
         lines.push(
-            `${color.danger('│')}`,
-            `${color.danger('│')}  ${color.dim('Set KONTEKS_DEBUG=1 to show the stack trace.')}`,
+            `${color.error('│')}`,
+            `${color.error('│')}  ${color.dim('Set KONTEKS_DEBUG=1 to show the stack trace.')}`,
         )
     }
 
     if (logged) {
         lines.push(
-            `${color.danger('│')}`,
-            `${color.danger('│')}  ${color.dim('Details were written to .konteks/errors.log.')}`,
+            `${color.error('│')}`,
+            `${color.error('│')}  ${color.dim('Details were written to .konteks/errors.log.')}`,
         )
     }
 
-    lines.push(`${color.danger('╰─')}`)
+    lines.push(`${color.error('╰─')}`)
 
     return lines.join('\n')
 }

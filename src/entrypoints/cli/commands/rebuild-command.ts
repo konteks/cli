@@ -1,11 +1,6 @@
 import confirm from '@inquirer/confirm'
 import createProjectExtractor from '@/modules/extraction/create-project-extractor'
 import consoleOutput from '@/support/console-output'
-import {
-    colorRgb,
-    createBannerHeaderTheme,
-    formatBannerHeader,
-} from '@/support/tui/components'
 import BaseCommand from './_base-command'
 import createProjectMemoryProgressReporter from './_support/project-memory-progress-reporter'
 
@@ -16,9 +11,7 @@ export default class RebuildCommand extends BaseCommand {
     public override readonly printsHeader = false
 
     public async handle(): Promise<void> {
-        const theme = createBannerHeaderTheme()
-
-        this.consoleOutput.print(formatBannerHeader(theme)).print('')
+        this.consoleOutput.printHeader().print('')
 
         const confirmRebuild = confirmRebuildPrompt
         if (!(await confirmRebuild())) {
@@ -31,7 +24,7 @@ export default class RebuildCommand extends BaseCommand {
 
         this.consoleOutput
             .print('')
-            .print(colorRgb(theme.primary, 'Rebuilding project memory'))
+            .print(color => color.primary('Rebuilding project memory'))
             .print('')
 
         const progress = createProjectMemoryProgressReporter()

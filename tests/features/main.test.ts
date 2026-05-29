@@ -48,7 +48,7 @@ describe('CLI initialization middleware', () => {
 
         expect(result.exitCode).not.toBe(0)
         expect(result.output).toContain('Konteks')
-        expect(result.output).toContain('\u001b[31m')
+        expect(result.output).toMatch(trueColorPattern('╭─'))
         expect(result.output).toContain('╭─')
     })
 })
@@ -65,3 +65,12 @@ it('allows restore to run before project memory is initialized', async () => {
     expect(result.output).toContain(`Konteks v${getVersion()}`)
     expect(result.output).not.toContain('Konteks memory is not initialized')
 })
+
+function trueColorPattern(value: string): RegExp {
+    const ansiEscape = String.fromCharCode(27)
+
+    return new RegExp(
+        `${ansiEscape}\\[38;2;\\d+;\\d+;\\d+m${value}${ansiEscape}\\[0m`,
+        'u',
+    )
+}

@@ -179,7 +179,7 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
         }
 
         const percent = modelPercent
-        return `Preparing dependencies: ${consoleOutput.colorPalette.accent(percent.toFixed(1))}%`
+        return `Preparing dependencies: ${consoleOutput.colorPalette.primary(percent.toFixed(1))}%`
     }
 
     function printInlineProgress(message: string): void {
@@ -202,7 +202,7 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
 
         printedPreparation = true
         completeInlineProgress(
-            `Preparing dependencies: ${consoleOutput.colorPalette.accent('100')}%`,
+            `Preparing dependencies: ${consoleOutput.colorPalette.primary('100')}%`,
         )
     }
 

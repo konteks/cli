@@ -116,7 +116,7 @@ function formatStepHeader(
     event: ExtractionProgressEvent,
     color: ConsoleColorPalette,
 ): string {
-    return `${color.dim('┌')} ${color.accent(stepTitle(event))}`
+    return `${color.dim('┌')} ${color.primary(stepTitle(event))}`
 }
 
 function formatInlineProgress(
@@ -124,7 +124,7 @@ function formatInlineProgress(
     spinnerIndex: number,
     color: ConsoleColorPalette,
 ): string {
-    const spinner = color.accent(spinnerFrame(spinnerIndex))
+    const spinner = color.primary(spinnerFrame(spinnerIndex))
     const progress = color.info(formatPercentAndCount(event).padEnd(20))
     const action = compactMessage(event)
     const detail = formatInlineDetail(event)

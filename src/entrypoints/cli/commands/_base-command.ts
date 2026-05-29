@@ -66,7 +66,7 @@ export default abstract class BaseCommand<
                 const version = getVersion()
                 this.consoleOutput.print(
                     color =>
-                        `${color.accent('Konteks')} ${color.dim(`v${version}`)}`,
+                        `${color.primary('Konteks')} ${color.dim(`v${version}`)}`,
                 )
             }
 

@@ -21,7 +21,7 @@ function highlightToonLine(line: string, color: ConsoleColorPalette): string {
 
         return [
             prefix,
-            color.accent(key),
+            color.primary(key),
             arraySize ? color.dim(arraySize) : '',
             fields ? color.dim(fields) : '',
             color.dim(colon),

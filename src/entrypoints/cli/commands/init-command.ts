@@ -9,11 +9,6 @@ import {
     loadProjectContext,
 } from '@/modules/project/context'
 import { mkdir } from '@/support/file-manager'
-import {
-    colorRgb,
-    createBannerHeaderTheme,
-    formatBannerHeader,
-} from '@/support/tui/components'
 import type { ExtractProjectResponse } from '@/types/extraction'
 import type { ExtractionProgressReporter } from '@/types/progress'
 import type { Project } from '@/types/project'
@@ -28,7 +23,6 @@ export default class InitCommand extends BaseCommand {
     public override readonly usesInitializationGuard = false
 
     public async handle(): Promise<void> {
-        const theme = createBannerHeaderTheme()
         const context = await loadProjectContext()
         const alreadyInitialized =
             context.configExists &&
@@ -39,9 +33,9 @@ export default class InitCommand extends BaseCommand {
 
         if (!alreadyInitialized) {
             this.consoleOutput
-                .print(formatBannerHeader(theme))
+                .printHeader()
                 .print('')
-                .print(colorRgb(theme.primary, 'Initializing project memory'))
+                .print(color => color.primary('Initializing project memory'))
                 .print('')
 
             await ensureKonteksGitignore(context.projectRoot)
@@ -59,11 +53,10 @@ export default class InitCommand extends BaseCommand {
 
         if (result.alreadyInitialized) {
             this.consoleOutput
-                .print(formatBannerHeader(theme))
+                .printHeader()
                 .print('')
-                .print(
-                    colorRgb(
-                        theme.primary,
+                .print(color =>
+                    color.primary(
                         `Project memory is already ready at ${result.memoryDir}.`,
                     ),
                 )

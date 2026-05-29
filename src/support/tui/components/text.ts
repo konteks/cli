@@ -17,10 +17,10 @@ export function createTuiText(color: ConsoleColorPalette): TuiText {
             return color.info(value.toString())
         },
         progressLine(spinnerIndex, message) {
-            return `${color.accent(spinnerFrame(spinnerIndex))} ${message}`
+            return `${color.primary(spinnerFrame(spinnerIndex))} ${message}`
         },
         sectionTitle(message) {
-            return color.accent(message)
+            return color.primary(message)
         },
         statLine(label, value) {
             return `${color.dim(label.padEnd(20))} ${color.info(value.toString())}`
