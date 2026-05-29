@@ -1,27 +1,25 @@
 import { encode } from '@toon-format/toon'
 import { determineAgent } from '@vercel/detect-agent'
 import type { Command, Help } from 'commander'
-import {
-    type BannerHeaderTheme,
-    colorRgb,
-    createBannerHeaderTheme,
-    formatBannerHeader,
-} from '@/support/tui/components'
+import consoleOutput, { type ConsoleColorPalette } from './console-output'
 
 export async function configureCliHelp(program: Command): Promise<void> {
     const { isAgent } = await determineAgent()
 
     program.configureHelp({
         formatHelp: (command, helper) => {
-            const theme = createBannerHeaderTheme()
-            applyHelpTheme(helper, theme)
-            const help = formatCommandHelp(command, helper, theme)
+            applyHelpTheme(helper, consoleOutput.colorPalette)
+            const help = formatCommandHelp(
+                command,
+                helper,
+                consoleOutput.colorPalette,
+            )
 
             if (isAgent) {
                 return formatHelpForAgent(help)
             }
 
-            return `${formatBannerHeader(theme)}\n\n${help}`
+            return `${consoleOutput.header()}\n\n${help}`
         },
     })
 }
@@ -115,40 +113,33 @@ const ansiColorPattern = new RegExp(
     'gu',
 )
 
-type ColorName = 'dim' | 'warning'
-
-const colorCodes: Record<ColorName, number> = {
-    dim: 90,
-    warning: 33,
-}
-
-function applyHelpTheme(helper: Help, theme: BannerHeaderTheme): void {
-    helper.styleArgumentTerm = argument => colorRgb(theme.secondary, argument)
-    helper.styleArgumentText = argument => colorRgb(theme.secondary, argument)
-    helper.styleCommandText = command => colorRgb(theme.primary, command)
-    helper.styleDescriptionText = description => color('dim', description)
-    helper.styleOptionTerm = term => highlightCliSyntax(term, theme)
-    helper.styleOptionText = option => colorRgb(theme.primary, option)
-    helper.styleSubcommandTerm = term => highlightCliSyntax(term, theme)
-    helper.styleTitle = title => color('warning', title.replace(/:$/u, ''))
-    helper.styleUsage = usage => highlightCliSyntax(usage, theme)
+function applyHelpTheme(helper: Help, color: ConsoleColorPalette): void {
+    helper.styleArgumentTerm = argument => color.secondary(argument)
+    helper.styleArgumentText = argument => color.secondary(argument)
+    helper.styleCommandText = command => color.primary(command)
+    helper.styleDescriptionText = description => color.dim(description)
+    helper.styleOptionTerm = term => highlightCliSyntax(term, color)
+    helper.styleOptionText = option => color.primary(option)
+    helper.styleSubcommandTerm = term => highlightCliSyntax(term, color)
+    helper.styleTitle = title => color.warning(title.replace(/:$/u, ''))
+    helper.styleUsage = usage => highlightCliSyntax(usage, color)
 }
 
 function formatCommandHelp(
     command: Command,
     helper: Help,
-    theme: BannerHeaderTheme,
+    color: ConsoleColorPalette,
 ): string {
     const termWidth = helper.padWidth(command, helper)
     const output = [
-        `${color('warning', '  USAGE')} ${helper.styleUsage(helper.commandUsage(command))}`,
+        `${color.warning('  USAGE')} ${helper.styleUsage(helper.commandUsage(command))}`,
         '',
     ]
 
     output.push(...formatArgumentSection(command, helper, termWidth))
     output.push(...formatCommandSection(command, helper, termWidth))
     output.push(...formatOptionSections(command, helper, termWidth))
-    output.push(...formatArgumentLegend(command, helper, theme))
+    output.push(...formatArgumentLegend(command, helper, color))
 
     return `${output.join('\n')}\n`
 }
@@ -256,7 +247,7 @@ function formatItemRows(items: string[]): string[] {
     return [...items, '']
 }
 
-function highlightCliSyntax(value: string, theme: BannerHeaderTheme): string {
+function highlightCliSyntax(value: string, color: ConsoleColorPalette): string {
     return value
         .split(/(\s+)/u)
         .map(part => {
@@ -265,30 +256,22 @@ function highlightCliSyntax(value: string, theme: BannerHeaderTheme): string {
             }
 
             if (part.startsWith('-')) {
-                return colorRgb(theme.primary, part)
+                return color.primary(part)
             }
 
             if (/^(?:\[[^\]]+\]|<[^>]+>)$/u.test(part)) {
-                return colorRgb(theme.secondary, part)
+                return color.secondary(part)
             }
 
-            return colorRgb(theme.primary, part)
+            return color.primary(part)
         })
         .join('')
-}
-
-function color(name: ColorName, value: string): string {
-    if (value.length === 0) {
-        return value
-    }
-
-    return `\u001b[${colorCodes[name]}m${value}\u001b[0m`
 }
 
 function formatArgumentLegend(
     command: Command,
     helper: Help,
-    theme: BannerHeaderTheme,
+    color: ConsoleColorPalette,
 ): string[] {
     const terms = helper.visibleCommands(command).flatMap(child => {
         return helper.subcommandTerm(child).split(/\s+/u)
@@ -305,15 +288,11 @@ function formatArgumentLegend(
     const lines: string[] = []
 
     if (hasRequired) {
-        lines.push(
-            `  ${colorRgb(theme.secondary, '<value>')}  ${color('dim', 'required')}`,
-        )
+        lines.push(`  ${color.secondary('<value>')}  ${color.dim('required')}`)
     }
 
     if (hasOptional) {
-        lines.push(
-            `  ${colorRgb(theme.secondary, '[value]')}  ${color('dim', 'optional')}`,
-        )
+        lines.push(`  ${color.secondary('[value]')}  ${color.dim('optional')}`)
     }
 
     lines.push('')

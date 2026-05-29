@@ -160,7 +160,7 @@ function registryGrammarChoices(selected: string[]): GrammarChoice[] {
 function getDetectedGrammarSummaryMessage(
     detected: DetectedGrammarSelection,
 ): string {
-    return `${colorPalette.info(detected.detectedParserIds.length.toString())} ${pluralizeWord('language', detected.detectedParserIds.length)} detected from ${colorPalette.info(detected.totalFileCount.toString())} ${pluralizeWord('file', detected.totalFileCount)}: ${colorPalette.accent(formatIds(detected.detectedParserIds))}`
+    return `${colorPalette.info(detected.detectedParserIds.length.toString())} ${pluralizeWord('language', detected.detectedParserIds.length)} detected from ${colorPalette.info(detected.totalFileCount.toString())} ${pluralizeWord('file', detected.totalFileCount)}: ${colorPalette.primary(formatIds(detected.detectedParserIds))}`
 }
 
 function formatIds(ids: string[]): string {

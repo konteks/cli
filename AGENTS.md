@@ -41,6 +41,8 @@ bun run check
 - Preserve strict TypeScript behavior; do not introduce `any` or loosen compiler settings.
 - Keep `.konteks/` local and ignored. Do not commit generated memory artifacts.
 - Keep project error logging best-effort and non-blocking; logging failures must not mask original CLI or MCP errors.
+- Route CLI color and branded header output through `src/support/console-output`; prefer `consoleOutput.print(color => ...)`, `consoleOutput.writeError(color => ...)`, `consoleOutput.header()`, and `consoleOutput.printHeader()` over importing palette or banner helpers in command code.
+- Keep `ConsoleOutput.colorPalette` as semantic string wrappers only: `dim`, `error`, `info`, `primary`, `secondary`, `success`, and `warning`. Keep raw RGB helpers, gradients, and banner-specific color logic private to console-output support modules.
 - Preserve rebuild semantics: `konteks rebuild` rebuilds derived memory artifacts and must preserve durable memories and diary entries.
 - Keep ignore matching fail-safe across ecosystems unless a deliberate product change says otherwise.
 - Do not reintroduce file-size caps, per-file section caps, word chunking caps, or embedding/FTS retrieval truncation in core SQLite payload handling.
@@ -53,6 +55,7 @@ bun run check
 - Avoid tests that import database internals or perform direct database operations.
 - For isolated project-root tests, create temp fixtures with a `.git` marker when root resolution matters.
 - For human CLI output, prefer `toContain` and `not.toContain` on visible fragments instead of exact-output parsing.
+- Avoid hardcoded ANSI RGB values in CLI color tests; derive expected output from palette constants/wrappers or assert color structure when the exact hue is not the behavior under test.
 - Keep strict parsing for generated JSON files and protocol responses such as MCP JSON-RPC.
 - Use fake providers from `tests/fake` when testing embeddings or extraction behavior without external dependencies.
 

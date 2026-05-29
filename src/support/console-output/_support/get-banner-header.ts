@@ -1,15 +1,8 @@
+import type { ConsoleColorPalette } from '@/support/console-output'
 import getVersion from '@/support/get-version'
-
-export type RgbColor = {
-    blue: number
-    green: number
-    red: number
-}
-
-export type BannerHeaderTheme = {
-    primary: RgbColor
-    secondary: RgbColor
-}
+import { primaryColorHex, secondaryColorHex } from './color-palette'
+import hexToRgb from './hex-to-rgb'
+import isSupportsColor from './is-supports-color'
 
 const bannerLines = [
     '  ██╗  ██╗  ██████╗  ███╗   ██╗ ████████╗ ███████╗ ██╗  ██╗ ███████╗  ',
@@ -20,69 +13,50 @@ const bannerLines = [
     '  ╚═╝  ╚═╝  ╚═════╝  ╚═╝  ╚═══╝    ╚═╝    ╚══════╝ ╚═╝  ╚═╝ ╚══════╝  ',
 ]
 
-const bannerGradientColors = [hexToRgb('0165fc'), hexToRgb('9d00ff')] as const
 const bannerTagline = '✦ Project-local context memory for AI coding agents. ✦'
 const bannerWidth = Math.max(...bannerLines.map(line => line.length))
+const primaryColor = hexToRgb(primaryColorHex)
+const secondaryColor = hexToRgb(secondaryColorHex)
 
-export function createBannerHeaderTheme(): BannerHeaderTheme {
-    const [primary, secondary] =
-        Math.random() < 0.5
-            ? bannerGradientColors
-            : [bannerGradientColors[1], bannerGradientColors[0]]
+type RgbColor = ReturnType<typeof hexToRgb>
 
-    return { primary, secondary }
-}
-
-export function formatBannerHeader(theme: BannerHeaderTheme): string {
+export default function getBannerHeader(color: ConsoleColorPalette): string {
     return [
-        colorBanner(theme.primary, theme.secondary),
+        colorBanner(),
         '',
-        colorBackground(theme.primary, centerText(bannerTagline, bannerWidth)),
+        primaryBackground(centerText(bannerTagline, bannerWidth)),
         '',
-        `  ${colorRgb(theme.primary, 'Konteks')}  ${dim(`v${getVersion()}`)}`,
+        `  ${color.primary('Konteks')}  ${color.dim(`v${getVersion()}`)}`,
     ].join('\n')
 }
 
-export function colorRgb(rgb: RgbColor, value: string): string {
-    if (value.length === 0 || !supportsColor()) {
-        return value
-    }
-
-    return `\u001b[38;2;${rgb.red};${rgb.green};${rgb.blue}m${value}\u001b[0m`
-}
-
-function colorBanner(top: RgbColor, bottom: RgbColor): string {
+function colorBanner(): string {
     return bannerLines
         .map((line, index) => {
             const ratio = index / (bannerLines.length - 1)
 
-            return colorRgb(interpolateRgb(top, bottom, ratio), line)
+            return foreground(
+                interpolateRgb(primaryColor, secondaryColor, ratio),
+                line,
+            )
         })
         .join('\n')
 }
 
-function colorBackground(rgb: RgbColor, value: string): string {
-    if (value.length === 0 || !supportsColor()) {
+function foreground(color: RgbColor, value: string): string {
+    if (value.length === 0 || !isSupportsColor()) {
         return value
     }
 
-    return `\u001b[48;2;${rgb.red};${rgb.green};${rgb.blue}m${value}\u001b[0m`
+    return `\u001b[38;2;${color.red};${color.green};${color.blue}m${value}\u001b[0m`
 }
 
-function dim(value: string): string {
-    if (value.length === 0 || !supportsColor()) {
+function primaryBackground(value: string): string {
+    if (value.length === 0 || !isSupportsColor()) {
         return value
     }
 
-    return `\u001b[90m${value}\u001b[0m`
-}
-
-function hexToRgb(hex: string): RgbColor {
-    return {
-        blue: Number.parseInt(hex.slice(4, 6), 16),
-        green: Number.parseInt(hex.slice(2, 4), 16),
-        red: Number.parseInt(hex.slice(0, 2), 16),
-    }
+    return `\u001b[48;2;${primaryColor.red};${primaryColor.green};${primaryColor.blue}m${value}\u001b[0m`
 }
 
 function interpolateRgb(
@@ -111,16 +85,4 @@ function centerText(value: string, width: number): string {
     const rightPadding = totalPadding - leftPadding
 
     return `${' '.repeat(leftPadding)}${value}${' '.repeat(rightPadding)}`
-}
-
-function supportsColor(): boolean {
-    if (process.env.NO_COLOR) {
-        return false
-    }
-
-    if (process.env.FORCE_COLOR && process.env.FORCE_COLOR !== '0') {
-        return true
-    }
-
-    return Boolean(process.stdout.isTTY)
 }

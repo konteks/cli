@@ -3,6 +3,11 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import consoleOutput from '@/support/console-output'
+import {
+    primaryColorHex,
+    secondaryColorHex,
+} from '@/support/console-output/_support/color-palette'
+import hexToRgb from '@/support/console-output/_support/hex-to-rgb'
 import { mkdir, rm } from '@/support/file-manager'
 import FakeEmbeddingProvider from '../../fake/fake-embedding-provider'
 
@@ -238,8 +243,12 @@ describe('InitCommand', () => {
             const output = await init(projectRoot)
 
             expect(output).toContain('\u001b[38;2;')
-            expect(output).toContain('\u001b[32m✓\u001b[0m')
-            expect(output).toContain('\u001b[36mProject memory ready\u001b[0m')
+            expect(output).toContain(ansiForeground(secondaryColorHex))
+            expect(output).toContain(ansiBackground(primaryColorHex))
+            expect(output).toContain(consoleOutput.colorPalette.success('✓'))
+            expect(output).toContain(
+                consoleOutput.colorPalette.primary('Project memory ready'),
+            )
         } finally {
             if (previousForceColor === undefined) {
                 delete process.env.FORCE_COLOR
@@ -412,4 +421,16 @@ function stripAnsi(value: string): string {
         'gu',
     )
     return value.replaceAll(ansiPattern, '')
+}
+
+function ansiForeground(hex: string): string {
+    const color = hexToRgb(hex)
+
+    return `\u001b[38;2;${color.red};${color.green};${color.blue}m`
+}
+
+function ansiBackground(hex: string): string {
+    const color = hexToRgb(hex)
+
+    return `\u001b[48;2;${color.red};${color.green};${color.blue}m`
 }

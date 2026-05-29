@@ -1,5 +1,6 @@
 import { encode } from '@toon-format/toon'
-import colorPalette from '../color-palette'
+import colorPalette from './_support/color-palette'
+import getBannerHeader from './_support/get-banner-header'
 import highlightToon from './_support/highlight-toon'
 
 export type ConsoleColorPalette = typeof colorPalette
@@ -68,6 +69,14 @@ class ConsoleOutput {
 
     public stdinIsInteractive(): boolean {
         return Boolean(this.stdin.isTTY)
+    }
+
+    public header(): string {
+        return getBannerHeader(this.colorPalette)
+    }
+
+    public printHeader(): this {
+        return this.print(this.header())
     }
 }
 
