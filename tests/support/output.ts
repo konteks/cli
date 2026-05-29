@@ -6,7 +6,7 @@ type ConsoleOutputMessage = Parameters<typeof consoleOutput.print>[0]
 
 export function renderStdoutMessage(message: ConsoleOutputMessage): string {
     return isOutputFormatter(message)
-        ? consoleOutput.withStdoutColor(message)
+        ? message(consoleOutput.colorPalette)
         : String(message)
 }
 

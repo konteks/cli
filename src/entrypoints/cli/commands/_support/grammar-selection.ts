@@ -9,6 +9,8 @@ import {
 import consoleOutput from '@/support/console-output'
 import pluralizeWord from '@/support/pluralize-word'
 
+const colorPalette = consoleOutput.colorPalette
+
 export type DetectedGrammarSelection = {
     detectedBundledParserIds: string[]
     detectedParserIds: string[]
@@ -64,11 +66,11 @@ export async function reviewDetectedGrammars(
         default: 'CONTINUE',
         loop: false,
         message: getDetectedGrammarSummaryMessage(detected),
-        theme: consoleOutput.withStdoutColor(color => ({
+        theme: {
             prefix: {
-                done: color.success('✓'),
+                done: colorPalette.success('✓'),
             },
-        })),
+        },
     })
 
     if (useDetected === 'CONTINUE') {
@@ -131,15 +133,15 @@ async function promptForRegistryGrammars(
         loop: true,
         message:
             'Select the programming languages or file types used in this project',
-        theme: consoleOutput.withStdoutColor(color => ({
+        theme: {
             icon: {
-                checked: color.success('■'),
-                unchecked: color.info('◻'),
+                checked: colorPalette.success('■'),
+                unchecked: colorPalette.info('◻'),
             },
             prefix: {
-                done: color.success('✓'),
+                done: colorPalette.success('✓'),
             },
-        })),
+        },
     })
 }
 
@@ -158,10 +160,7 @@ function registryGrammarChoices(selected: string[]): GrammarChoice[] {
 function getDetectedGrammarSummaryMessage(
     detected: DetectedGrammarSelection,
 ): string {
-    return consoleOutput.withStdoutColor(
-        color =>
-            `${color.info(detected.detectedParserIds.length.toString())} ${pluralizeWord('language', detected.detectedParserIds.length)} detected from ${color.info(detected.totalFileCount.toString())} ${pluralizeWord('file', detected.totalFileCount)}: ${color.accent(formatIds(detected.detectedParserIds))}`,
-    )
+    return `${colorPalette.info(detected.detectedParserIds.length.toString())} ${pluralizeWord('language', detected.detectedParserIds.length)} detected from ${colorPalette.info(detected.totalFileCount.toString())} ${pluralizeWord('file', detected.totalFileCount)}: ${colorPalette.accent(formatIds(detected.detectedParserIds))}`
 }
 
 function formatIds(ids: string[]): string {
