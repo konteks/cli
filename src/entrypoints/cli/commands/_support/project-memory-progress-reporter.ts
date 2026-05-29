@@ -24,7 +24,7 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
     const inline = createInlineProgress(value =>
         consoleOutput.writeError(value),
     )
-    const text = consoleOutput.withStderrColor(createTuiText)
+    const text = createTuiText(consoleOutput.colorPalette)
 
     return {
         done() {
@@ -179,10 +179,7 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
         }
 
         const percent = modelPercent
-        return consoleOutput.withStderrColor(
-            color =>
-                `Preparing dependencies: ${color.accent(percent.toFixed(1))}%`,
-        )
+        return `Preparing dependencies: ${consoleOutput.colorPalette.accent(percent.toFixed(1))}%`
     }
 
     function printInlineProgress(message: string): void {
@@ -205,9 +202,7 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
 
         printedPreparation = true
         completeInlineProgress(
-            consoleOutput.withStderrColor(
-                color => `Preparing dependencies: ${color.accent('100')}%`,
-            ),
+            `Preparing dependencies: ${consoleOutput.colorPalette.accent('100')}%`,
         )
     }
 

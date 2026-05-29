@@ -23,7 +23,7 @@ export default function createExtractionProgressReporter(): {
     const inline = createInlineProgress(value =>
         consoleOutput.writeError(value),
     )
-    const text = consoleOutput.withStderrColor(createTuiText)
+    const text = createTuiText(consoleOutput.colorPalette)
 
     return {
         done() {
@@ -74,8 +74,10 @@ export default function createExtractionProgressReporter(): {
             if (event.status === 'progress') {
                 spinnerIndex += 1
                 const compact = compactMessage(event)
-                const output = consoleOutput.withStderrColor(color =>
-                    formatInlineProgress(event, spinnerIndex, color),
+                const output = formatInlineProgress(
+                    event,
+                    spinnerIndex,
+                    consoleOutput.colorPalette,
                 )
                 if (
                     event.phase === 'preparation' &&

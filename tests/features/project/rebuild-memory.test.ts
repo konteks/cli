@@ -256,7 +256,7 @@ describe('RebuildCommand', () => {
 
         function renderStdoutMessage(message: ConsoleOutputMessage): string {
             return isOutputFormatter(message)
-                ? consoleOutput.withStdoutColor(message)
+                ? message(consoleOutput.colorPalette)
                 : String(message)
         }
 
@@ -264,7 +264,7 @@ describe('RebuildCommand', () => {
             message: string | ((color: ConsoleColorPalette) => string),
         ): string {
             return typeof message === 'function'
-                ? consoleOutput.withStderrColor(message)
+                ? message(consoleOutput.colorPalette)
                 : message
         }
 
