@@ -1,13 +1,8 @@
-import { execFile } from 'node:child_process'
-import { mkdtemp, writeFile } from 'node:fs/promises'
+import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { promisify } from 'node:util'
 import { LATEST_PROTOCOL_VERSION } from '@modelcontextprotocol/sdk/types.js'
 import { rm } from '@/support/file-manager'
-import { shellQuote } from './cli'
-
-const execFileAsync = promisify(execFile)
 
 export type Json =
     | boolean
@@ -31,8 +26,6 @@ export async function runMcpExchange(
     requests: Array<{ id: number; method: string; params?: Json }>,
 ): Promise<JsonRpcResponse[]> {
     const exchangeRoot = await mkdtemp(join(tmpdir(), 'konteks-mcp-exchange-'))
-    const inputPath = join(exchangeRoot, 'input.jsonl')
-    const outputPath = join(exchangeRoot, 'output.jsonl')
 
     try {
         const input = [
@@ -50,15 +43,26 @@ export async function runMcpExchange(
             .map(message => JSON.stringify(message))
             .join('\n')
 
-        await writeFile(inputPath, `${input}\n`)
-        const command = `node ${shellQuote(join(process.cwd(), 'dist', 'main.js'))} mcp < ${shellQuote(inputPath)} > ${shellQuote(outputPath)}`
+        const proc = Bun.spawn(
+            [process.execPath, join(process.cwd(), 'src/main.ts'), 'mcp'],
+            {
+                cwd: projectRoot,
+                env: commandEnv(),
+                stderr: 'pipe',
+                stdin: new Response(`${input}\n`),
+                stdout: 'pipe',
+            },
+        )
+        const [raw, stderr, exitCode] = await Promise.all([
+            new Response(proc.stdout).text(),
+            new Response(proc.stderr).text(),
+            proc.exited,
+        ])
 
-        await execFileAsync('sh', ['-lc', command], {
-            cwd: projectRoot,
-            env: commandEnv(),
-        })
+        if (exitCode !== 0) {
+            throw new Error(stderr.trim() || `MCP exited with ${exitCode}`)
+        }
 
-        const raw = await Bun.file(outputPath).text()
         return raw
             .split('\n')
             .map(line => line.trim())
