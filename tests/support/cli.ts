@@ -39,11 +39,12 @@ export async function runSourceCli(
     args: string[],
     env: Record<string, string> = {},
 ): Promise<CliResult> {
+    const homeDir = trackTempDir(await mkdtemp(join(tmpdir(), 'konteks-home-')))
     const proc = Bun.spawn(
-        ['bun', join(process.cwd(), 'src/main.ts'), ...args],
+        [process.execPath, join(process.cwd(), 'src/main.ts'), ...args],
         {
             cwd: projectRoot,
-            env: { ...process.env, ...env },
+            env: { ...isolatedCommandEnv(homeDir), ...env },
             stderr: 'pipe',
             stdout: 'pipe',
         },
