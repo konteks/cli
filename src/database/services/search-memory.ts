@@ -6,12 +6,14 @@ import queryObservations, {
     type ObservationRow,
 } from '@/database/actions/query-observations'
 import queryRetrievalDocuments, {
+    queryRetrievalDocumentsByTargets,
     type RetrievalDocumentRow,
 } from '@/database/actions/query-retrieval-documents'
 import {
     buildRetrievalGraphContext,
     resultKey,
 } from '@/database/services/graph-context'
+import { searchVectorIndex } from '@/database/services/vector-index'
 import { classifySourceRole } from '@/modules/project/source-classification'
 import { estimateTextTokens } from '@/support/format/tokens'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/types/embedding-provider'
@@ -122,9 +124,15 @@ async function searchRetrievalDocuments(
         ftsQuery,
         limit * 4,
     )
+    const expandedRows = await expandWithVectorCandidates({
+        limit,
+        provider: options.embeddingProvider,
+        queryVector,
+        rows,
+    })
 
     const results = applyGroupAwarePruning(
-        rows.map(row =>
+        expandedRows.map(row =>
             retrievalDocumentToResult(row, terms, {
                 provider: options.embeddingProvider,
                 queryVector,
@@ -148,6 +156,47 @@ async function searchRetrievalDocuments(
         .map(result => applyGraphBoost(result, graphContext.boosts))
         .sort(compareSearchResults)
         .slice(0, limit)
+}
+
+async function expandWithVectorCandidates(input: {
+    limit: number
+    provider?: EmbeddingProvider
+    queryVector?: Float32Array
+    rows: RetrievalDocumentRow[]
+}): Promise<RetrievalDocumentRow[]> {
+    if (!input.provider || !input.queryVector) {
+        return input.rows
+    }
+
+    const existingKeys = new Set(
+        input.rows.map(row => `${row.target_type}:${row.target_id}`),
+    )
+    const vectorRows = await searchVectorIndex({
+        dimensions: input.provider.dimensions,
+        limit: input.limit * 4,
+        model: input.provider.model,
+        vector: input.queryVector,
+    })
+    const vectorTargets = vectorRows
+        .filter(row => !existingKeys.has(`${row.targetType}:${row.targetId}`))
+        .map(row => ({
+            embeddingHash: row.embeddingHash,
+            model: row.model,
+            targetId: row.targetId,
+            targetType: row.targetType,
+            vectorScore: vectorDistanceToScore(row.distance),
+        }))
+
+    if (vectorTargets.length === 0) {
+        return input.rows
+    }
+
+    const semanticRows = await queryRetrievalDocumentsByTargets(vectorTargets)
+    return [...input.rows, ...semanticRows]
+}
+
+function vectorDistanceToScore(distance: number): number {
+    return Math.max(0, Math.min(1, 1 - distance / 2))
 }
 
 async function searchFts(
@@ -252,7 +301,7 @@ function retrievalDocumentToResult(
         ? `${location}\n${row.summary}`
         : `${location}\n${row.fts_text}`
 
-    const vectorScore = computeVectorScore(row, vectorInput)
+    const vectorScore = row.vector_score ?? computeVectorScore(row, vectorInput)
 
     return makeSearchResult({
         anchor: row.anchor ?? undefined,

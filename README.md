@@ -28,7 +28,7 @@ For a deep dive into the philosophy, architecture, and usage, see the [Full Docu
 
 ## ⚡ Quickstart
 
-Konteks runs on **Node.js (>=22)** or **Bun**. Start by initializing memory from your project root:
+Konteks runs on **Node.js (>=22.13)** or **Bun**. Start by initializing memory from your project root:
 
 ```bash
 npx -y konteks-cli init

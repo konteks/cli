@@ -145,6 +145,16 @@ erDiagram
         text created_at
     }
 
+    vector_index_entries {
+        text target_id PK
+        text target_type PK
+        text model PK
+        integer dimensions
+        text embedding_hash
+        text index_table
+        text updated_at
+    }
+
     modules {
         text id PK
         text path
@@ -213,14 +223,15 @@ foreign key. Valid retrieval target types are:
 The polymorphic target tables are:
 
 * `retrieval_documents`: canonical retrieval text for semantic and FTS indexing.
-* `target_embeddings`: one vector per `(target_id, target_type, model)`.
+* `target_embeddings`: vector payloads, one per `(target_id, target_type, model)`.
+* `vector_index_entries`: sqlite-vec metadata, one per indexed embedding.
 * `retrieval_documents_fts`: FTS5 mirror of retrieval documents.
 * `taxonomy_links`: attaches taxonomy nodes to sections or other target records.
 
 Because these links are not database foreign keys, cleanup order matters. For
 example, extracted section cleanup deletes `retrieval_documents` and
-`target_embeddings` rows for `target_type = 'section'` before deleting the
-matching `sections` rows.
+`target_embeddings` plus `vector_index_entries` rows for
+`target_type = 'section'` before deleting the matching `sections` rows.
 
 `sources.entities_json`, `sections.entities_json`, and `modules.entities_json`
 store graph entity ids associated with those retrieval targets. Recall uses
@@ -235,6 +246,16 @@ but their table options live in `src/database/utils/migrations`.
 `memory_fts_indexed` tracks which memory search documents have been indexed into
 `memory_fts`.
 
+Semantic retrieval can use sqlite-vec virtual tables created per embedding
+dimension through Node's built-in SQLite extension loader. `target_embeddings`
+remains the durable compatibility store and exact fallback source.
+`vector_index_entries` records which durable embeddings have been copied into
+the sqlite-vec virtual table for their dimension. A vector is considered fresh
+only when its model-aware `embedding_hash` matches the current retrieval text
+and the sqlite-vec metadata matches the same hash; stale or missing index rows
+are repaired from stored blobs during embedding generation and ignored during
+retrieval.
+
 ## Main Domains
 
 * Extraction: `sources`, `sections`, `modules`, `section_suppressions`.
@@ -242,7 +263,8 @@ but their table options live in `src/database/utils/migrations`.
 * Graph memory: `entities`, `entity_aliases`, `relations`.
 * Organization: `taxonomy_nodes`, `taxonomy_links`.
 * Retrieval: `retrieval_documents`, `retrieval_documents_fts`,
-  `target_embeddings`, `memory_fts`, `memory_fts_indexed`.
+  `target_embeddings`, `vector_index_entries`, `memory_fts`,
+  `memory_fts_indexed`.
 
 Graph relation `status` distinguishes active relations from `invalidated` and
 `superseded` historical relations. `supersedes_relation_id` links an older

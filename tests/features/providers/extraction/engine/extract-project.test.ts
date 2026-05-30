@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { eq, sql } from 'drizzle-orm'
 import getDb from '@/database/actions/_db'
-import { targetEmbeddings } from '@/database/schema'
+import { targetEmbeddings, vectorIndexEntries } from '@/database/schema'
 import {
     saveKonteksDiary,
     saveKonteksMemories,
@@ -28,6 +28,19 @@ class ThrowingEmbeddingProvider implements EmbeddingProviderContract {
 
     public async embed(): Promise<Float32Array[]> {
         throw new Error('embedding provider failed')
+    }
+}
+
+class ThrowingReuseEmbeddingProvider implements EmbeddingProviderContract {
+    public readonly dimensions = 8
+    public readonly model = 'fake/all-MiniLM-L6-v2'
+
+    public async prepare(): Promise<void> {
+        throw new Error('embedding provider prepare should not be called')
+    }
+
+    public async embed(): Promise<Float32Array[]> {
+        throw new Error('embedding provider embed should not be called')
     }
 }
 
@@ -372,6 +385,33 @@ describe('extractProject', () => {
         })
         expect(await readFile(manifestPath, 'utf8')).toBe(beforeManifest)
         expect(await projectStateCounts()).toEqual(beforeCounts)
+    })
+
+    it('reuses stored embeddings when changed mode repairs missing vector index metadata', async () => {
+        const projectRoot = await makeTempProject()
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+
+        await extractTestProject(context, 'rebuild', {
+            embeddingProvider: new FakeEmbeddingProvider(),
+        })
+        await withProjectRoot(projectRoot, async () => {
+            const db = await getDb()
+            await db.delete(vectorIndexEntries)
+        })
+
+        const result = await extractTestProject(context, 'changed', {
+            embeddingProvider: new ThrowingReuseEmbeddingProvider(),
+        })
+
+        expect(result).toMatchObject({
+            deletedFilePaths: [],
+            ok: true,
+            updatedFilePaths: [],
+        })
+        expect(result.embeddingReusedCount).toBeGreaterThan(0)
+        expect(result.embeddedCount).toBe(0)
     })
 
     it('extracts repeated anchors with identical content without section ID collisions', async () => {

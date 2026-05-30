@@ -1,6 +1,7 @@
-import { and, eq, inArray, or } from 'drizzle-orm'
+import { and, eq, inArray, or, sql } from 'drizzle-orm'
 import getDb from '@/database/actions/_db'
 import { retrievalDocuments, targetEmbeddings } from '@/database/schema'
+import { upsertVectorIndexTarget } from '@/database/services/vector-index'
 import contentHash from '@/support/content-hash'
 import type { EmbeddingProviderContract } from '@/types/embedding-provider'
 import type { ExtractionProgressReporter } from '@/types/progress'
@@ -15,7 +16,8 @@ type RetrievalDocumentRow = {
 
 type EmbeddingWorkItem = {
     embeddingHash: string
-    existing: boolean
+    existingEmbedding?: ExistingEmbeddingRow
+    status: 'fresh' | 'needs-embedding' | 'needs-vector-index'
     row: RetrievalDocumentRow
 }
 
@@ -23,6 +25,10 @@ type ExistingEmbeddingRow = {
     embedding_hash: string
     target_id: string
     target_type: TargetType
+    vector_blob: ArrayBuffer | Uint8Array
+    vector_index_dimensions: number | null
+    vector_index_hash: string | null
+    vector_index_table: string | null
 }
 
 type EmbeddingRunResult = {
@@ -112,15 +118,19 @@ async function embedRetrievalDocumentRows(
 
         workItems.push({
             embeddingHash,
-            existing:
-                existingHashes.get(
-                    targetKey(row.target_type, row.target_id),
-                ) === embeddingHash,
+            existingEmbedding: existingHashes.get(
+                targetKey(row.target_type, row.target_id),
+            ),
             row,
+            status: workItemStatus(
+                existingHashes.get(targetKey(row.target_type, row.target_id)),
+                embeddingHash,
+                provider.dimensions,
+            ),
         })
     }
 
-    if (workItems.some(item => !item.existing)) {
+    if (workItems.some(item => item.status === 'needs-embedding')) {
         await provider.prepare?.()
     }
 
@@ -136,12 +146,39 @@ async function embedRetrievalDocumentRows(
     for (const [index, item] of workItems.entries()) {
         const { embeddingHash, row } = item
 
-        if (item.existing) {
+        if (item.status === 'fresh') {
             reusedCount += 1
             options.onProgress?.({
                 current: index + 1,
                 embeddedCount,
                 message: `Reused embedding for ${row.target_type}:${row.target_id}`,
+                phase: 'embeddings',
+                reusedCount,
+                stage: 'embed',
+                status: 'progress',
+                total: rows.length,
+            })
+            continue
+        }
+
+        if (item.status === 'needs-vector-index' && item.existingEmbedding) {
+            const vector = blobToFloat32Array(
+                item.existingEmbedding.vector_blob,
+            )
+            await upsertVectorIndexTarget({
+                createdAt,
+                dimensions: provider.dimensions,
+                embeddingHash,
+                model: provider.model,
+                targetId: row.target_id,
+                targetType: row.target_type,
+                vector,
+            })
+            reusedCount += 1
+            options.onProgress?.({
+                current: index + 1,
+                embeddedCount,
+                message: `Repaired vector index for ${row.target_type}:${row.target_id}`,
                 phase: 'embeddings',
                 reusedCount,
                 stage: 'embed',
@@ -202,6 +239,15 @@ async function embedRetrievalDocumentRows(
                     targetEmbeddings.model,
                 ],
             })
+        await upsertVectorIndexTarget({
+            createdAt,
+            dimensions: provider.dimensions,
+            embeddingHash,
+            model: provider.model,
+            targetId: row.target_id,
+            targetType: row.target_type,
+            vector,
+        })
         embeddedCount += 1
         options.onProgress?.({
             current: index + 1,
@@ -231,39 +277,67 @@ async function embedRetrievalDocumentRows(
 async function loadExistingEmbeddingHashes(
     provider: EmbeddingProviderContract,
     rows: RetrievalDocumentRow[],
-): Promise<Map<string, string>> {
+): Promise<Map<string, ExistingEmbeddingRow>> {
     if (rows.length === 0) {
         return new Map()
     }
 
     const db = await getDb()
     const targetTypes = [...new Set(rows.map(row => row.target_type))]
-    const existingRows = await db
-        .select({
-            embedding_hash: targetEmbeddings.embeddingHash,
-            target_id: targetEmbeddings.targetId,
-            target_type: targetEmbeddings.targetType,
-        })
-        .from(targetEmbeddings)
-        .where(
-            and(
-                eq(targetEmbeddings.model, provider.model),
-                eq(targetEmbeddings.dimensions, provider.dimensions),
-                inArray(targetEmbeddings.targetType, targetTypes),
-            ),
-        )
+    const existingRows = await db.all<ExistingEmbeddingRow>(sql`
+select
+    te.embedding_hash,
+    te.target_id,
+    te.target_type,
+    te.vector_blob,
+    vie.dimensions as vector_index_dimensions,
+    vie.embedding_hash as vector_index_hash,
+    vie.index_table as vector_index_table
+from target_embeddings te
+left join vector_index_entries vie
+  on vie.target_id = te.target_id
+ and vie.target_type = te.target_type
+ and vie.model = te.model
+where te.model = ${provider.model}
+  and te.dimensions = ${provider.dimensions}
+  and te.target_type in (${sql.join(
+      targetTypes.map(type => sql`${type}`),
+      sql`, `,
+  )})
+`)
 
     const rowKeys = new Set(
         rows.map(row => targetKey(row.target_type, row.target_id)),
     )
-    const hashes = new Map<string, string>()
-    for (const row of existingRows as ExistingEmbeddingRow[]) {
+    const hashes = new Map<string, ExistingEmbeddingRow>()
+    for (const row of existingRows) {
         const key = targetKey(row.target_type, row.target_id)
         if (rowKeys.has(key)) {
-            hashes.set(key, row.embedding_hash)
+            hashes.set(key, row)
         }
     }
     return hashes
+}
+
+function workItemStatus(
+    existing: ExistingEmbeddingRow | undefined,
+    embeddingHash: string,
+    dimensions: number,
+): EmbeddingWorkItem['status'] {
+    if (!existing || existing.embedding_hash !== embeddingHash) {
+        return 'needs-embedding'
+    }
+    if (blobDimensions(existing.vector_blob) !== dimensions) {
+        return 'needs-embedding'
+    }
+    if (
+        existing.vector_index_hash !== embeddingHash ||
+        existing.vector_index_dimensions !== dimensions ||
+        existing.vector_index_table !== `vector_index_${dimensions}`
+    ) {
+        return 'needs-vector-index'
+    }
+    return 'fresh'
 }
 
 function targetKey(targetType: TargetType, targetId: string): string {
@@ -272,4 +346,20 @@ function targetKey(targetType: TargetType, targetId: string): string {
 
 function toBlob(vector: Float32Array): Uint8Array {
     return Buffer.from(vector.buffer, vector.byteOffset, vector.byteLength)
+}
+
+function blobToFloat32Array(blob: ArrayBuffer | Uint8Array): Float32Array {
+    if (blob instanceof ArrayBuffer) {
+        return new Float32Array(blob.slice(0))
+    }
+
+    const buffer = blob.buffer.slice(
+        blob.byteOffset,
+        blob.byteOffset + blob.byteLength,
+    )
+    return new Float32Array(buffer)
+}
+
+function blobDimensions(blob: ArrayBuffer | Uint8Array): number {
+    return blob.byteLength / Float32Array.BYTES_PER_ELEMENT
 }

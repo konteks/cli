@@ -256,6 +256,28 @@ export const targetEmbeddings = sqliteTable(
     ],
 )
 
+export const vectorIndexEntries = sqliteTable(
+    'vector_index_entries',
+    {
+        dimensions: integer('dimensions').notNull(),
+        embeddingHash: text('embedding_hash').notNull(),
+        indexTable: text('index_table').notNull(),
+        model: text('model').notNull(),
+        targetId: text('target_id').notNull(),
+        targetType: text('target_type')
+            .$type<'section' | 'diary' | 'memory' | 'module'>()
+            .notNull(),
+        updatedAt: text('updated_at').notNull(),
+    },
+    table => [
+        index('vector_index_entries_hash_idx').on(table.embeddingHash),
+        index('vector_index_entries_table_idx').on(table.indexTable),
+        primaryKey({
+            columns: [table.targetId, table.targetType, table.model],
+        }),
+    ],
+)
+
 export const modules = sqliteTable(
     'modules',
     {

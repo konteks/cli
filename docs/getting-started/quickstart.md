@@ -7,7 +7,7 @@ Set up Konteks once, then use the same [session](../reference/glossary.md#sessio
 
 ## Prerequisite: Project Setup
 
-Run setup commands from your project root. Konteks requires **Node.js 22+** or **Bun 1.3+**.
+Run setup commands from your project root. Konteks requires **Node.js 22.13+** or **Bun 1.3+**.
 
 Use `npx -y konteks-cli` by default unless you prefer another package runner.
 
