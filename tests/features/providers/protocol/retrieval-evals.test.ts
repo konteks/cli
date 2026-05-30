@@ -5,15 +5,35 @@ import { join } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import searchMemory from '@/database/services/search-memory'
+import { searchVectorIndex } from '@/database/services/vector-index'
 import mcpTools from '@/entrypoints/mcp/tools'
 import { readExtractionManifest } from '@/modules/extraction/engine/manifest'
 import { extractProject } from '@/modules/extraction/extract-project'
 import recallRepositoryMemory from '@/modules/memory/recall-repository-memory'
 import { loadProjectContext } from '@/modules/project/context'
 import { mkdir, rm } from '@/support/file-manager'
+import type { EmbeddingProviderContract } from '@/types/embedding-provider'
 import FakeEmbeddingProvider from '../../../fake/fake-embedding-provider'
 
 const tempDirs: string[] = []
+
+class TopicEmbeddingProvider implements EmbeddingProviderContract {
+    public readonly dimensions = 4
+    public readonly model = 'fake/topic-embedding'
+
+    public async embed(texts: string[]): Promise<Float32Array[]> {
+        return texts.map(text => {
+            const lower = text.toLowerCase()
+            if (
+                lower.includes('invoice orchestration') ||
+                lower.includes('accounts payable flow')
+            ) {
+                return new Float32Array([1, 0, 0, 0])
+            }
+            return new Float32Array([0, 1, 0, 0])
+        })
+    }
+}
 
 function extractionOptions() {
     return {
@@ -36,6 +56,7 @@ async function withProjectRoot<T>(
 }
 
 afterEach(async () => {
+    globalThis.__konteksVectorIndexConnectionFactoryForTests = undefined
     await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
 
@@ -413,7 +434,85 @@ describe('retrieval quality evals', () => {
         expect(text).toContain('results')
         expect(text).toContain('sqlite wasm local storage')
     })
+
+    it('uses vector candidates when FTS has no lexical match', async () => {
+        const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-eval-vec-'))
+        tempDirs.push(projectRoot)
+        await mkdir(join(projectRoot, 'src'))
+        await mkdir(join(projectRoot, '.git'))
+        await writeFile(
+            join(projectRoot, 'src', 'payments.txt'),
+            'invoice orchestration pipeline settlement ledger\n',
+        )
+        await writeFile(
+            join(projectRoot, 'src', 'other.txt'),
+            'unrelated cache adapter notes\n',
+        )
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        const provider = new TopicEmbeddingProvider()
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', { embeddingProvider: provider }),
+        )
+        useMissingVectorTableConnection()
+
+        const results = await withProjectRoot(projectRoot, () =>
+            searchMemory(
+                {
+                    limit: 3,
+                    query: 'accounts payable flow',
+                },
+                { embeddingProvider: provider },
+            ),
+        )
+
+        expect(results[0]?.path).toBe('src/payments.txt')
+        expect(results[0]?.vectorScore).toBeGreaterThan(0)
+    })
+
+    it('reports required sqlite-vec dependency failures clearly', async () => {
+        globalThis.__konteksVectorIndexConnectionFactoryForTests = async () => {
+            throw new Error(
+                'Failed to load the required sqlite-vec native extension.',
+            )
+        }
+
+        await expect(
+            searchVectorIndex({
+                dimensions: 4,
+                limit: 1,
+                model: 'fake/topic-embedding',
+                vector: new Float32Array([1, 0, 0, 0]),
+            }),
+        ).rejects.toThrow(
+            'Failed to load the required sqlite-vec native extension.',
+        )
+    })
 })
+
+function useMissingVectorTableConnection(): void {
+    globalThis.__konteksVectorIndexConnectionFactoryForTests = async () => ({
+        database: {
+            exec() {},
+            loadExtension() {},
+            prepare() {
+                return {
+                    all() {
+                        return []
+                    },
+                    get() {
+                        return undefined
+                    },
+                    run() {
+                        return { lastInsertRowid: 0 }
+                    },
+                }
+            },
+        },
+        path: 'missing-vector-table',
+    })
+}
 
 async function callKonteksTool(
     name: string,

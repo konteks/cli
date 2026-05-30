@@ -1,4 +1,5 @@
 import type { RetrievalDocumentRow } from '@/database/actions/query-retrieval-documents'
+import contentHash from '@/support/content-hash'
 import { estimateTextTokens } from '@/support/format/tokens'
 import type { EmbeddingProviderContract as EmbeddingProvider } from '@/types/embedding-provider'
 import type { MemorySearchResult } from '@/types/memory'
@@ -96,6 +97,8 @@ export function computeVectorScore(
         !input.provider ||
         !input.queryVector ||
         !row.vector_blob ||
+        row.target_embedding_hash !==
+            contentHash(`${input.provider.model}:${row.embedding_text}`) ||
         row.embedding_model !== input.provider.model ||
         row.embedding_dimensions !== input.provider.dimensions
     ) {

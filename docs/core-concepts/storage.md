@@ -59,6 +59,13 @@ Those projections include:
 
 This is why search and recall can continue to work even when one retrieval path is incomplete. The storage layer keeps multiple doors into the same memory.
 
+Semantic vectors are guarded by the retrieval text hash. The durable vector
+blob lives in `target_embeddings`; sqlite-vec rows are tracked separately in
+`vector_index_entries` and can be rebuilt from that blob. If text changes, old
+vectors are not used for scoring; changed extraction repairs missing or stale
+vectors without rebuilding unchanged sections or calling the embedding provider
+again when the stored blob is still fresh.
+
 ## 5. The Seal: Manifest and Summary
 
 Extraction writes two important project-level artifacts:

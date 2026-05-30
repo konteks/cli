@@ -20,7 +20,7 @@ Do not create a new application. Konteks is added to the project the user alread
 1. Confirm the current directory is the project root, or move to the nearest repository root if it is obvious.
 2. Check whether Konteks is already initialized by looking for `.konteks/config.json`.
 3. If it is already initialized, skip initialization and continue to MCP setup and workflow verification.
-4. Verify that either Node.js 22 or newer, or Bun 1.3 or newer, is available.
+4. Verify that either Node.js 22.13 or newer, or Bun 1.3 or newer, is available.
 5. Run `konteks-cli init` through the available package runner.
 6. Configure the user's MCP-compatible agent to run `konteks-cli mcp`.
 7. Install compatibility skills only when the agent supports MCP tools but does not show MCP prompts.
@@ -40,11 +40,11 @@ bun --version
 
 Use whichever runtime is available:
 
-* Prefer `npx -y konteks-cli` when Node.js 22 or newer is available.
+* Prefer `npx -y konteks-cli` when Node.js 22.13 or newer is available.
 * Use `bunx konteks-cli` when Bun 1.3 or newer is available.
 * If both are available, prefer the package manager the user requested. If they did not express a preference, use `npx`.
 
-If neither supported runtime is available, stop and ask the user to install Node.js 22+ or Bun 1.3+ before continuing. Do not install system runtimes unless the user explicitly asks you to do that.
+If neither supported runtime is available, stop and ask the user to install Node.js 22.13+ or Bun 1.3+ before continuing. Do not install system runtimes unless the user explicitly asks you to do that.
 
 ## Initialize Konteks
 

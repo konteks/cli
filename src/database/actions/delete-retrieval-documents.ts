@@ -1,5 +1,6 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import { retrievalDocuments, retrievalDocumentsFts } from '@/database/schema'
+import { deleteVectorIndexTargets } from '@/database/services/vector-index'
 import getDb from './_db'
 import type { RetrievalDocumentInput } from './upsert-retrieval-document'
 
@@ -13,6 +14,7 @@ export default async function deleteRetrievalDocuments(
     }
 
     if (targetIds) {
+        await deleteVectorIndexTargets(targetType, targetIds)
         await db
             .delete(retrievalDocumentsFts)
             .where(
@@ -32,6 +34,7 @@ export default async function deleteRetrievalDocuments(
         return
     }
 
+    await deleteVectorIndexTargets(targetType)
     await db
         .delete(retrievalDocumentsFts)
         .where(eq(retrievalDocumentsFts.targetType, targetType))

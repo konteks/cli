@@ -37,7 +37,7 @@ This guide helps you resolve common issues encountered while setting up or using
 **Solution**:
 
 1. Run `konteks status` to check project memory freshness.
-2. Ensure you are using a supported runtime (Bun 1.3+ or Node 22+).
+2. Ensure you are using a supported runtime (Bun 1.3+ or Node 22.13+).
 3. Check `.konteks/errors.log` for recent internal Konteks errors.
 4. Check the logs of your AI agent/host for connection-level errors.
 
