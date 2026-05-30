@@ -100,11 +100,12 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
             }
         },
         summary(result) {
-            inline.done()
             if (!printedDocumentLine) {
                 sectionCount = result.sectionCount
                 fileCount = result.fileCount
-                printCheck(preparedDocumentsMessage(result.vectorCount))
+                completeInlineProgress(preparedDocumentsMessage(result.vectorCount))
+            } else {
+                inline.done()
             }
             if (generatedSummary || result.summaryRef) {
                 printCheck('Generated project summary')
@@ -209,7 +210,7 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
     function printEmbeddingStart(documentCount: number): void {
         finishPreparation()
         printedDocumentLine = true
-        printCheck(preparedDocumentsMessage(documentCount))
+        completeInlineProgress(preparedDocumentsMessage(documentCount))
         consoleOutput.print('')
         consoleOutput.print(text.sectionTitle('Building project memory...'))
     }
