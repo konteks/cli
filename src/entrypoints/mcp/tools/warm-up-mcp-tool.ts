@@ -1,5 +1,6 @@
 import z from 'zod'
 import readWarmUpContext from '@/database/services/read-warm-up-context'
+import sharedEmbeddingProvider from '@/modules/embeddings/shared-embedding-provider'
 import recallRepositoryMemory from '@/modules/memory/recall-repository-memory'
 import {
     loadMcpProjectContext,
@@ -38,16 +39,22 @@ export default class WarmUpMcpTool extends BaseMcpTool<Input> {
 
     public async handle(input: Input): Promise<object> {
         const context = await loadMcpProjectContext()
-        await updateChangedProjectMemorySilently(context)
+        const embeddingProvider = sharedEmbeddingProvider()
+        await updateChangedProjectMemorySilently(context, embeddingProvider)
 
         const rawWarmUp = await readWarmUpContext(context)
         const warmUp = limitWarmUpContext(rawWarmUp, 2000)
 
         let recall: RecallPackage | undefined
         if (input.topic) {
-            recall = await recallRepositoryMemory({
-                task: input.topic ?? '',
-            })
+            recall = await recallRepositoryMemory(
+                {
+                    task: input.topic ?? '',
+                },
+                {
+                    embeddingProvider,
+                },
+            )
         }
 
         return toWarmUpOutput({ recall, warmUp })

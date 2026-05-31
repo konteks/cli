@@ -103,7 +103,9 @@ export default function createProjectMemoryProgressReporter(): ProjectMemoryProg
             if (!printedDocumentLine) {
                 sectionCount = result.sectionCount
                 fileCount = result.fileCount
-                completeInlineProgress(preparedDocumentsMessage(result.vectorCount))
+                completeInlineProgress(
+                    preparedDocumentsMessage(result.vectorCount),
+                )
             } else {
                 inline.done()
             }

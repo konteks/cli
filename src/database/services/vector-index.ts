@@ -1,6 +1,7 @@
+import { join } from 'node:path'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { getLoadablePath } from 'sqlite-vec'
-import getDb, { projectDatabasePath } from '@/database/actions/_db'
+import getDb from '@/database/actions/_db'
 import { vectorIndexEntries } from '@/database/schema'
 import { isSqliteTestRuntime } from '@/database/support/test-runtime'
 import { loadProjectContext } from '@/modules/project/context'
@@ -31,6 +32,7 @@ type StatementResult = {
 
 type StatementSync = {
     all(...values: unknown[]): unknown[]
+    finalize?(): void
     get(...values: unknown[]): unknown
     run(...values: unknown[]): StatementResult
 }
@@ -40,6 +42,10 @@ type DatabaseSync = {
     exec(sql: string): void
     loadExtension(path: string): void
     prepare(sql: string): StatementSync
+}
+
+type BunSqliteModule = {
+    Database: new (path: string, options: { create: boolean }) => DatabaseSync
 }
 
 type NodeSqliteModule = {
@@ -66,6 +72,11 @@ type VectorEmbeddingRow = {
     vector_blob: ArrayBuffer | Uint8Array
 }
 
+type VectorIndexDeletion = {
+    targetIds?: string[]
+    targetType: TargetType
+}
+
 declare global {
     var __konteksVectorIndexConnectionFactoryForTests:
         | VectorIndexConnectionFactory
@@ -73,6 +84,12 @@ declare global {
 }
 
 const connections = new Map<string, VectorIndexConnection>()
+const pendingDeletions = new Map<string, VectorIndexDeletion[]>()
+const BUN_SQLITE_MODULE = 'bun:sqlite'
+const NODE_SQLITE_MODULE = 'node:sqlite'
+const SQLITE_BIND_CHUNK_SIZE = 250
+let bunSqlitePromise: Promise<BunSqliteModule | undefined> | undefined
+let nodeSqlitePromise: Promise<NodeSqliteModule | undefined> | undefined
 
 class VectorIndexDependencyError extends Error {
     public constructor(message: string, options?: { cause?: unknown }) {
@@ -81,29 +98,32 @@ class VectorIndexDependencyError extends Error {
     }
 }
 
-export async function upsertVectorIndexTarget(
-    target: VectorIndexTarget,
+export async function upsertVectorIndexTargets(
+    targets: VectorIndexTarget[],
 ): Promise<boolean> {
+    if (targets.length === 0) {
+        return true
+    }
+
     const connection = await vectorConnection()
     if (!connection) {
         return false
     }
+    flushPendingDeletions(connection)
 
-    const vecTable = tableNameForDimensions(target.dimensions)
-    ensureVectorTable(connection.database, vecTable, target.dimensions)
-    connection.database
-        .prepare(
-            `
+    const indexTables = new Map<string, string>()
+    for (const [dimensions, groupedTargets] of groupTargetsByDimensions(
+        targets,
+    )) {
+        const vecTable = tableNameForDimensions(dimensions)
+        ensureVectorTable(connection.database, vecTable, dimensions)
+        const deleteStatement = connection.database.prepare(`
 delete from ${vecTable}
 where target_id = ?
   and target_type = ?
   and model = ?
-`,
-        )
-        .run(target.targetId, target.targetType, target.model)
-    connection.database
-        .prepare(
-            `
+`)
+        const insertStatement = connection.database.prepare(`
 insert into ${vecTable} (
     embedding,
     target_id,
@@ -111,18 +131,74 @@ insert into ${vecTable} (
     model,
     embedding_hash
 ) values (?, ?, ?, ?, ?)
-`,
-        )
-        .run(
-            vectorToBlob(target.vector),
-            target.targetId,
-            target.targetType,
-            target.model,
-            target.embeddingHash,
-        )
+`)
+        try {
+            withNativeTransaction(connection.database, () => {
+                for (const target of groupedTargets) {
+                    deleteStatement.run(
+                        target.targetId,
+                        target.targetType,
+                        target.model,
+                    )
+                    insertStatement.run(
+                        vectorToBlob(target.vector),
+                        target.targetId,
+                        target.targetType,
+                        target.model,
+                        target.embeddingHash,
+                    )
+                    indexTables.set(targetKey(target), vecTable)
+                }
+            })
+        } finally {
+            deleteStatement.finalize?.()
+            insertStatement.finalize?.()
+        }
+    }
 
-    await upsertVectorIndexEntry(target, vecTable)
+    await upsertVectorIndexEntries(targets, indexTables)
     return true
+}
+
+export async function reconcileVectorIndexGroup(input: {
+    dimensions: number
+    model: string
+}): Promise<boolean> {
+    const metadataCount = await vectorIndexEntryCount(input)
+    const connection = await vectorConnection()
+    if (!connection) {
+        return false
+    }
+    flushPendingDeletions(connection)
+
+    const tableName = tableNameForDimensions(input.dimensions)
+    if (!hasVectorTable(connection.database, tableName)) {
+        if (metadataCount > 0) {
+            await deleteVectorIndexEntriesForGroup(input)
+        }
+        return false
+    }
+
+    const vectorCount = rowCount(
+        withStatement(
+            connection.database,
+            `select count(*) as count from ${tableName} where model = ?`,
+            statement => statement.get(input.model),
+        ),
+    )
+    if (vectorCount === metadataCount) {
+        return true
+    }
+
+    withNativeTransaction(connection.database, () => {
+        withStatement(
+            connection.database,
+            `delete from ${tableName} where model = ?`,
+            statement => statement.run(input.model),
+        )
+    })
+    await deleteVectorIndexEntriesForGroup(input)
+    return false
 }
 
 export async function deleteVectorIndexTargets(
@@ -134,31 +210,14 @@ export async function deleteVectorIndexTargets(
     }
 
     await deleteVectorIndexEntries(targetType, targetIds)
-
+    const context = await loadProjectContext()
+    const path = vectorDatabasePath(context)
+    const deletions = pendingDeletions.get(path) ?? []
+    deletions.push({ targetIds, targetType })
+    pendingDeletions.set(path, deletions)
     const connection = await vectorConnection()
-    if (!connection) {
-        return
-    }
-
-    const tables = vectorTableNames(connection.database)
-    for (const table of tables) {
-        if (targetIds && targetIds.length > 0) {
-            const placeholders = targetIds.map(() => '?').join(', ')
-            connection.database
-                .prepare(
-                    `
-delete from ${table}
-where target_type = ?
-  and target_id in (${placeholders})
-`,
-                )
-                .run(targetType, ...targetIds)
-            continue
-        }
-
-        connection.database
-            .prepare(`delete from ${table} where target_type = ?`)
-            .run(targetType)
+    if (connection) {
+        flushPendingDeletions(connection)
     }
 }
 
@@ -175,12 +234,12 @@ export async function searchVectorIndex(input: {
 
     const vecTable = tableNameForDimensions(input.dimensions)
     if (!hasVectorTable(connection.database, vecTable)) {
-        return exactVectorSearch(input)
+        return await exactVectorSearch(input)
     }
 
-    return connection.database
-        .prepare(
-            `
+    const results = withStatement(
+        connection.database,
+        `
 select
     distance,
     embedding_hash as embeddingHash,
@@ -192,9 +251,12 @@ where embedding match ?
   and model = ?
   and k = ?
 `,
-        )
-        .all(vectorToBlob(input.vector), input.model, input.limit)
-        .map(toVectorSearchResult)
+        statement =>
+            statement
+                .all(vectorToBlob(input.vector), input.model, input.limit)
+                .map(toVectorSearchResult),
+    )
+    return results.length > 0 ? results : await exactVectorSearch(input)
 }
 
 function ensureVectorTable(
@@ -214,34 +276,79 @@ create virtual table if not exists ${tableName} using vec0(
 }
 
 function hasVectorTable(database: DatabaseSync, tableName: string): boolean {
-    const row = database
-        .prepare(
-            `
+    const row = withStatement(
+        database,
+        `
 select name
 from sqlite_master
 where type = 'table'
   and name = ?
 limit 1
 `,
-        )
-        .get(tableName)
+        statement => statement.get(tableName),
+    )
 
     return Boolean(row)
 }
 
 function vectorTableNames(database: DatabaseSync): string[] {
-    return database
-        .prepare(
-            `
+    return withStatement(
+        database,
+        `
 select name
 from sqlite_master
 where type = 'table'
   and name glob 'vector_index_[0-9]*'
 `,
-        )
-        .all()
-        .map(row => (row as { name: string }).name)
-        .filter(safeVectorTableName)
+        statement =>
+            statement
+                .all()
+                .map(row => (row as { name: string }).name)
+                .filter(safeVectorTableName),
+    )
+}
+
+function flushPendingDeletions(connection: VectorIndexConnection): void {
+    const deletions = pendingDeletions.get(connection.path)
+    if (!deletions || deletions.length === 0) {
+        return
+    }
+
+    const tables = vectorTableNames(connection.database)
+    withNativeTransaction(connection.database, () => {
+        for (const deletion of deletions) {
+            for (const table of tables) {
+                if (deletion.targetIds && deletion.targetIds.length > 0) {
+                    for (const targetIdChunk of chunks(deletion.targetIds)) {
+                        const placeholders = targetIdChunk
+                            .map(() => '?')
+                            .join(', ')
+                        withStatement(
+                            connection.database,
+                            `
+delete from ${table}
+where target_type = ?
+  and target_id in (${placeholders})
+`,
+                            statement =>
+                                statement.run(
+                                    deletion.targetType,
+                                    ...targetIdChunk,
+                                ),
+                        )
+                    }
+                    continue
+                }
+
+                withStatement(
+                    connection.database,
+                    `delete from ${table} where target_type = ?`,
+                    statement => statement.run(deletion.targetType),
+                )
+            }
+        }
+    })
+    pendingDeletions.delete(connection.path)
 }
 
 async function vectorConnection(): Promise<VectorIndexConnection | undefined> {
@@ -254,43 +361,79 @@ async function vectorConnection(): Promise<VectorIndexConnection | undefined> {
     }
 
     const context = await loadProjectContext()
-    const path = projectDatabasePath(context)
+    const path = vectorDatabasePath(context)
     const existing = connections.get(path)
     if (existing) {
         return existing
     }
 
-    const sqlite = await loadNodeSqlite()
-    if (!sqlite) {
-        return undefined
+    const database = await openVectorDatabase(path)
+    const connection = { database, path }
+    connections.set(path, connection)
+    return connection
+}
+
+async function openVectorDatabase(path: string): Promise<DatabaseSync> {
+    const errors: unknown[] = []
+    const bunSqlite = await loadBunSqlite()
+    if (bunSqlite) {
+        try {
+            return loadVectorExtension(
+                new bunSqlite.Database(path, { create: true }),
+            )
+        } catch (error) {
+            errors.push(error)
+        }
     }
 
-    const database = new sqlite.DatabaseSync(path, { allowExtension: true })
+    const nodeSqlite = await loadNodeSqlite()
+    if (nodeSqlite) {
+        try {
+            return loadVectorExtension(
+                new nodeSqlite.DatabaseSync(path, { allowExtension: true }),
+            )
+        } catch (error) {
+            errors.push(error)
+        }
+    }
+
+    throw new VectorIndexDependencyError(
+        'Failed to load the required sqlite-vec native extension with bun:sqlite or node:sqlite. Reinstall project dependencies so the sqlite-vec platform package is available.',
+        { cause: new AggregateError(errors) },
+    )
+}
+
+function loadVectorExtension(database: DatabaseSync): DatabaseSync {
     try {
         database.loadExtension(getLoadablePath())
+        database.exec('pragma journal_mode = wal; pragma busy_timeout = 5000;')
+        return database
     } catch (error) {
         try {
             database.close?.()
         } catch {
             // Preserve the actionable sqlite-vec load failure.
         }
-        throw new VectorIndexDependencyError(
-            'Failed to load the required sqlite-vec native extension. Reinstall project dependencies so the sqlite-vec platform package is available.',
-            { cause: error },
-        )
+        throw error
     }
+}
 
-    const connection = { database, path }
-    connections.set(path, connection)
-    return connection
+function vectorDatabasePath(context: { memoryDir: string }): string {
+    return join(context.memoryDir, 'vectors.sqlite')
+}
+
+async function loadBunSqlite(): Promise<BunSqliteModule | undefined> {
+    bunSqlitePromise ??= import(BUN_SQLITE_MODULE)
+        .then(module => module as BunSqliteModule)
+        .catch(() => undefined)
+    return await bunSqlitePromise
 }
 
 async function loadNodeSqlite(): Promise<NodeSqliteModule | undefined> {
-    try {
-        return (await import('node:sqlite')) as NodeSqliteModule
-    } catch {
-        return undefined
-    }
+    nodeSqlitePromise ??= import(NODE_SQLITE_MODULE)
+        .then(module => module as NodeSqliteModule)
+        .catch(() => undefined)
+    return await nodeSqlitePromise
 }
 
 async function exactVectorSearch(input: {
@@ -387,35 +530,41 @@ function safeVectorTableName(tableName: string): boolean {
     return /^vector_index_\d+$/u.test(tableName)
 }
 
-async function upsertVectorIndexEntry(
-    target: VectorIndexTarget,
-    indexTable: string,
+async function upsertVectorIndexEntries(
+    targets: VectorIndexTarget[],
+    indexTables: Map<string, string>,
 ): Promise<void> {
     const db = await getDb()
-    await db
-        .insert(vectorIndexEntries)
-        .values({
-            dimensions: target.dimensions,
-            embeddingHash: target.embeddingHash,
-            indexTable,
-            model: target.model,
-            targetId: target.targetId,
-            targetType: target.targetType,
-            updatedAt: target.createdAt,
-        })
-        .onConflictDoUpdate({
-            set: {
-                dimensions: target.dimensions,
-                embeddingHash: target.embeddingHash,
-                indexTable,
-                updatedAt: target.createdAt,
-            },
-            target: [
-                vectorIndexEntries.targetId,
-                vectorIndexEntries.targetType,
-                vectorIndexEntries.model,
-            ],
-        })
+    for (const targetChunk of chunks(targets)) {
+        await db
+            .insert(vectorIndexEntries)
+            .values(
+                targetChunk.map(target => ({
+                    dimensions: target.dimensions,
+                    embeddingHash: target.embeddingHash,
+                    indexTable:
+                        indexTables.get(targetKey(target)) ??
+                        tableNameForDimensions(target.dimensions),
+                    model: target.model,
+                    targetId: target.targetId,
+                    targetType: target.targetType,
+                    updatedAt: target.createdAt,
+                })),
+            )
+            .onConflictDoUpdate({
+                set: {
+                    dimensions: sql`excluded.dimensions`,
+                    embeddingHash: sql`excluded.embedding_hash`,
+                    indexTable: sql`excluded.index_table`,
+                    updatedAt: sql`excluded.updated_at`,
+                },
+                target: [
+                    vectorIndexEntries.targetId,
+                    vectorIndexEntries.targetType,
+                    vectorIndexEntries.model,
+                ],
+            })
+    }
 }
 
 async function deleteVectorIndexEntries(
@@ -429,18 +578,107 @@ async function deleteVectorIndexEntries(
     const db = await getDb()
 
     if (targetIds && targetIds.length > 0) {
-        await db
-            .delete(vectorIndexEntries)
-            .where(
-                and(
-                    eq(vectorIndexEntries.targetType, targetType),
-                    inArray(vectorIndexEntries.targetId, targetIds),
-                ),
-            )
+        for (const targetIdChunk of chunks(targetIds)) {
+            await db
+                .delete(vectorIndexEntries)
+                .where(
+                    and(
+                        eq(vectorIndexEntries.targetType, targetType),
+                        inArray(vectorIndexEntries.targetId, targetIdChunk),
+                    ),
+                )
+        }
         return
     }
 
     await db
         .delete(vectorIndexEntries)
         .where(eq(vectorIndexEntries.targetType, targetType))
+}
+
+async function deleteVectorIndexEntriesForGroup(input: {
+    dimensions: number
+    model: string
+}): Promise<void> {
+    const db = await getDb()
+    await db
+        .delete(vectorIndexEntries)
+        .where(
+            and(
+                eq(vectorIndexEntries.model, input.model),
+                eq(vectorIndexEntries.dimensions, input.dimensions),
+            ),
+        )
+}
+
+async function vectorIndexEntryCount(input: {
+    dimensions: number
+    model: string
+}): Promise<number> {
+    const db = await getDb()
+    const row = await db.get<{ count: number }>(sql`
+select count(*) as count
+from vector_index_entries
+where model = ${input.model}
+  and dimensions = ${input.dimensions}
+`)
+    return rowCount(row)
+}
+
+function withStatement<T>(
+    database: DatabaseSync,
+    query: string,
+    operation: (statement: StatementSync) => T,
+): T {
+    const statement = database.prepare(query)
+    try {
+        return operation(statement)
+    } finally {
+        statement.finalize?.()
+    }
+}
+
+function withNativeTransaction(
+    database: DatabaseSync,
+    operation: () => void,
+): void {
+    database.exec('begin immediate')
+    try {
+        operation()
+        database.exec('commit')
+    } catch (error) {
+        database.exec('rollback')
+        throw error
+    }
+}
+
+function groupTargetsByDimensions(
+    targets: VectorIndexTarget[],
+): Map<number, VectorIndexTarget[]> {
+    const grouped = new Map<number, VectorIndexTarget[]>()
+    for (const target of targets) {
+        const group = grouped.get(target.dimensions) ?? []
+        group.push(target)
+        grouped.set(target.dimensions, group)
+    }
+    return grouped
+}
+
+function chunks<T>(items: T[]): T[][] {
+    const result: T[][] = []
+    for (let index = 0; index < items.length; index += SQLITE_BIND_CHUNK_SIZE) {
+        result.push(items.slice(index, index + SQLITE_BIND_CHUNK_SIZE))
+    }
+    return result
+}
+
+function rowCount(row: unknown): number {
+    const count = (row as { count?: bigint | number } | undefined)?.count ?? 0
+    return Number(count)
+}
+
+function targetKey(
+    target: Pick<VectorIndexTarget, 'model' | 'targetId' | 'targetType'>,
+): string {
+    return `${target.targetType}:${target.targetId}:${target.model}`
 }
