@@ -1,0 +1,120 @@
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { mkdtemp, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import getDb from '@/database/actions/_db'
+import { vectorIndexEntries } from '@/database/schema'
+import {
+    deleteVectorIndexTargets,
+    searchVectorIndex,
+    upsertVectorIndexTargets,
+} from '@/database/services/vector-index'
+import { extractProject } from '@/modules/extraction/extract-project'
+import { loadProjectContext } from '@/modules/project/context'
+import { mkdir, rm } from '@/support/file-manager'
+import type { EmbeddingProviderContract } from '@/types/embedding-provider'
+import FakeEmbeddingProvider from '../../../fake/fake-embedding-provider'
+
+const tempDirs: string[] = []
+const originalCwd = process.cwd()
+let previousSqliteTestDatabase: string | undefined
+
+class ThrowingReuseEmbeddingProvider implements EmbeddingProviderContract {
+    public readonly dimensions = 8
+    public readonly model = 'fake/all-MiniLM-L6-v2'
+
+    public async prepare(): Promise<void> {
+        throw new Error('embedding provider prepare should not be called')
+    }
+
+    public async embed(): Promise<Float32Array[]> {
+        throw new Error('embedding provider embed should not be called')
+    }
+}
+
+beforeEach(() => {
+    previousSqliteTestDatabase = process.env.KONTEKS_SQLITE_TEST_DATABASE
+    process.env.KONTEKS_SQLITE_TEST_DATABASE = 'file'
+})
+
+afterEach(async () => {
+    process.chdir(originalCwd)
+    globalThis.__konteksVectorIndexConnectionFactoryForTests = undefined
+    if (previousSqliteTestDatabase === undefined) {
+        delete process.env.KONTEKS_SQLITE_TEST_DATABASE
+    } else {
+        process.env.KONTEKS_SQLITE_TEST_DATABASE = previousSqliteTestDatabase
+    }
+    await Promise.all(tempDirs.splice(0).map(path => rm(path)))
+})
+
+describe('vector index', () => {
+    it('loads sqlite-vec through Bun and indexes vectors in a batch', async () => {
+        await makeTempProject()
+        const createdAt = new Date().toISOString()
+        const targets = Array.from({ length: 300 }, (_, index) => ({
+            createdAt,
+            dimensions: 4,
+            embeddingHash: `hash-${index}`,
+            model: 'fake/batch',
+            targetId: `section-${index}`,
+            targetType: 'section' as const,
+            vector: new Float32Array([index === 42 ? 1 : 0, 1, 0, 0]),
+        }))
+
+        await expect(upsertVectorIndexTargets(targets)).resolves.toBe(true)
+        await expect(
+            searchVectorIndex({
+                dimensions: 4,
+                limit: 1,
+                model: 'fake/batch',
+                vector: new Float32Array([1, 1, 0, 0]),
+            }),
+        ).resolves.toMatchObject([{ targetId: 'section-42' }])
+
+        await deleteVectorIndexTargets('section')
+        await expect(
+            searchVectorIndex({
+                dimensions: 4,
+                limit: 1,
+                model: 'fake/batch',
+                vector: new Float32Array([1, 1, 0, 0]),
+            }),
+        ).resolves.toEqual([])
+    })
+
+    it('keeps repaired vectors fresh on a second changed extraction', async () => {
+        await makeTempProject()
+        const context = await loadProjectContext()
+
+        await extractProject(context, 'full', {
+            embeddingProvider: new FakeEmbeddingProvider(),
+        })
+        const db = await getDb()
+        await db.delete(vectorIndexEntries)
+
+        const repaired = await extractProject(context, 'changed', {
+            embeddingProvider: new ThrowingReuseEmbeddingProvider(),
+        })
+        const stable = await extractProject(context, 'changed', {
+            embeddingProvider: new ThrowingReuseEmbeddingProvider(),
+        })
+
+        expect(repaired.embeddedCount).toBe(0)
+        expect(repaired.embeddingReusedCount).toBeGreaterThan(0)
+        expect(stable.embeddedCount).toBe(0)
+        expect(stable.embeddingReusedCount).toBe(repaired.embeddingReusedCount)
+    })
+})
+
+async function makeTempProject(): Promise<string> {
+    const projectRoot = await mkdtemp(join(tmpdir(), 'konteks-vector-index-'))
+    tempDirs.push(projectRoot)
+    await mkdir(join(projectRoot, '.git'))
+    await mkdir(join(projectRoot, '.konteks'))
+    await mkdir(join(projectRoot, 'src'))
+    await writeFile(join(projectRoot, '.konteks', 'config.json'), '{}\n')
+    await writeFile(join(projectRoot, 'src', 'index.txt'), 'vector fixture\n')
+    process.chdir(projectRoot)
+    return projectRoot
+}

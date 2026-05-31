@@ -56,6 +56,7 @@ async function withProjectRoot<T>(
 }
 
 afterEach(async () => {
+    globalThis.__konteksEmbeddingProviderForTests = undefined
     globalThis.__konteksVectorIndexConnectionFactoryForTests = undefined
     await Promise.all(tempDirs.splice(0).map(path => rm(path)))
 })
@@ -469,6 +470,38 @@ describe('retrieval quality evals', () => {
 
         expect(results[0]?.path).toBe('src/payments.txt')
         expect(results[0]?.vectorScore).toBeGreaterThan(0)
+    })
+
+    it('shares semantic retrieval with MCP search, recall, and focused warm-up', async () => {
+        const projectRoot = await mkdtemp(
+            join(tmpdir(), 'konteks-eval-mcp-vec-'),
+        )
+        tempDirs.push(projectRoot)
+        await mkdir(join(projectRoot, 'src'))
+        await mkdir(join(projectRoot, '.git'))
+        await writeFile(
+            join(projectRoot, 'src', 'payments.txt'),
+            'invoice orchestration pipeline settlement ledger\n',
+        )
+        const context = await withProjectRoot(projectRoot, () =>
+            loadProjectContext(),
+        )
+        const provider = new TopicEmbeddingProvider()
+        await withProjectRoot(projectRoot, () =>
+            extractProject(context, 'full', { embeddingProvider: provider }),
+        )
+        globalThis.__konteksEmbeddingProviderForTests = provider
+
+        for (const [name, input] of [
+            ['konteks_search', { query: 'accounts payable flow' }],
+            ['konteks_recall', { task: 'accounts payable flow' }],
+            ['konteks_warm_up', { topic: 'accounts payable flow' }],
+        ] as const) {
+            const result = await withProjectRoot(projectRoot, () =>
+                callKonteksTool(name, input),
+            )
+            expect(extractText(result)).toContain('payments')
+        }
     })
 
     it('reports required sqlite-vec dependency failures clearly', async () => {

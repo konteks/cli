@@ -1,5 +1,6 @@
 import z from 'zod'
 import searchMemory from '@/database/services/search-memory'
+import sharedEmbeddingProvider from '@/modules/embeddings/shared-embedding-provider'
 import type { MemorySearchResult } from '@/types/memory'
 import BaseMcpTool from './_base-mcp-tool'
 
@@ -26,7 +27,9 @@ export default class SearchMcpTool extends BaseMcpTool<Input> {
     public readonly name = 'konteks_search'
 
     public async handle(input: Input): Promise<object> {
-        const results = await searchMemory(input)
+        const results = await searchMemory(input, {
+            embeddingProvider: sharedEmbeddingProvider(),
+        })
 
         return toSearchOutput({
             limit: input.limit ?? 10,

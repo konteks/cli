@@ -22,7 +22,7 @@ graph LR
 
 Konteks keeps project memory under the repository memory directory. By default, that directory is `.konteks/`.
 
-This directory holds the project configuration, local memory database, and extraction manifest. Because it lives beside the repository, the memory can be backed up, ignored, copied, or rebuilt with the project.
+This directory holds the project configuration, local memory database, sqlite-vec acceleration index, and extraction manifest. Because it lives beside the repository, the memory can be backed up, ignored, copied, or rebuilt with the project.
 
 The project config controls extraction grammar selection and recall defaults.
 
@@ -61,10 +61,15 @@ This is why search and recall can continue to work even when one retrieval path 
 
 Semantic vectors are guarded by the retrieval text hash. The durable vector
 blob lives in `target_embeddings`; sqlite-vec rows are tracked separately in
-`vector_index_entries` and can be rebuilt from that blob. If text changes, old
+`vector_index_entries` and copied into `.konteks/vectors.sqlite`. The
+acceleration index can be rebuilt from the durable blob. If text changes, old
 vectors are not used for scoring; changed extraction repairs missing or stale
 vectors without rebuilding unchanged sections or calling the embedding provider
 again when the stored blob is still fresh.
+
+Konteks loads sqlite-vec through Bun's SQLite extension loader when available,
+then falls back to Node's built-in SQLite loader. If neither runtime can load the
+native extension, indexing reports an actionable dependency error.
 
 ## 5. The Seal: Manifest and Summary
 

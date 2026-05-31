@@ -1,7 +1,11 @@
 import { and, eq, inArray, or, sql } from 'drizzle-orm'
 import getDb from '@/database/actions/_db'
 import { retrievalDocuments, targetEmbeddings } from '@/database/schema'
-import { upsertVectorIndexTarget } from '@/database/services/vector-index'
+import {
+    reconcileVectorIndexGroup,
+    upsertVectorIndexTargets,
+    type VectorIndexTarget,
+} from '@/database/services/vector-index'
 import contentHash from '@/support/content-hash'
 import type { EmbeddingProviderContract } from '@/types/embedding-provider'
 import type { ExtractionProgressReporter } from '@/types/progress'
@@ -63,6 +67,10 @@ export default async function generateTargetEmbeddings(
         .from(retrievalDocuments)
         .where(inArray(retrievalDocuments.targetType, targetTypes))
 
+    await reconcileVectorIndexGroup({
+        dimensions: provider.dimensions,
+        model: provider.model,
+    })
     return await embedRetrievalDocumentRows(provider, rows, createdAt, options)
 }
 
@@ -109,6 +117,7 @@ async function embedRetrievalDocumentRows(
     let embeddedCount = 0
     let reusedCount = 0
     const workItems: EmbeddingWorkItem[] = []
+    const vectorIndexTargets: VectorIndexTarget[] = []
     const existingHashes = await loadExistingEmbeddingHashes(provider, rows)
 
     for (const row of rows) {
@@ -165,7 +174,7 @@ async function embedRetrievalDocumentRows(
             const vector = blobToFloat32Array(
                 item.existingEmbedding.vector_blob,
             )
-            await upsertVectorIndexTarget({
+            vectorIndexTargets.push({
                 createdAt,
                 dimensions: provider.dimensions,
                 embeddingHash,
@@ -239,7 +248,7 @@ async function embedRetrievalDocumentRows(
                     targetEmbeddings.model,
                 ],
             })
-        await upsertVectorIndexTarget({
+        vectorIndexTargets.push({
             createdAt,
             dimensions: provider.dimensions,
             embeddingHash,
@@ -260,6 +269,8 @@ async function embedRetrievalDocumentRows(
             total: rows.length,
         })
     }
+
+    await upsertVectorIndexTargets(vectorIndexTargets)
 
     options.onProgress?.({
         embeddedCount,

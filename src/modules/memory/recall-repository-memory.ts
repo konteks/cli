@@ -6,6 +6,7 @@ import { buildRetrievalGraphContext } from '@/database/services/graph-context'
 import searchMemory, {
     type MemoryRecallInput,
 } from '@/database/services/search-memory'
+import type { EmbeddingProviderContract } from '@/types/embedding-provider'
 import type {
     MemorySearchResult,
     RecallGraphItem,
@@ -18,6 +19,9 @@ const RECALL_OUTPUT_BUDGET_TOKENS = 2000
 
 export default async function recallRepositoryMemory(
     input: MemoryRecallInput,
+    options: {
+        embeddingProvider?: EmbeddingProviderContract
+    } = {},
 ): Promise<RecallPackage> {
     return await withTransaction(async () => {
         const memories = await searchMemory(
@@ -25,6 +29,7 @@ export default async function recallRepositoryMemory(
                 task: input.task,
             },
             {
+                embeddingProvider: options.embeddingProvider,
                 includeGraphBoost: false,
                 limit: 20,
             },

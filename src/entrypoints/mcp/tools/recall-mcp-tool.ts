@@ -1,4 +1,5 @@
 import z from 'zod'
+import sharedEmbeddingProvider from '@/modules/embeddings/shared-embedding-provider'
 import recallRepositoryMemory from '@/modules/memory/recall-repository-memory'
 import type {
     MemorySearchResult,
@@ -31,7 +32,9 @@ export default class RecallMcpTool extends BaseMcpTool<Input> {
     public readonly name = 'konteks_recall'
 
     public async handle(input: Input): Promise<object> {
-        const result = await recallRepositoryMemory(input)
+        const result = await recallRepositoryMemory(input, {
+            embeddingProvider: sharedEmbeddingProvider(),
+        })
 
         return toRecallOutput({
             includeSources: input.includeSources ?? false,
